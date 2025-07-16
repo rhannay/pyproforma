@@ -231,6 +231,91 @@ class TestConstraintResultsChartMethod:
             )
 
 
+class TestConstraintResultsTargetMethod:
+    """Test target method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_with_dict_target(self, model_with_constraints):
+        """Create a ConstraintResults instance with dict target for testing."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+    
+    def test_target_method_with_float_target(self, constraint_results):
+        """Test target method with constraint having float target."""
+        # The "min_revenue" constraint has a float target of 80000.0
+        result = constraint_results.target(2023)
+        assert result == 80000.0
+        
+        # Should return same value for any year when target is a float
+        result = constraint_results.target(2024)
+        assert result == 80000.0
+        
+        result = constraint_results.target(2025)
+        assert result == 80000.0
+    
+    def test_target_method_with_dict_target(self, constraint_results_with_dict_target):
+        """Test target method with constraint having dict target."""
+        # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        result = constraint_results_with_dict_target.target(2023)
+        assert result == 95000.0
+        
+        result = constraint_results_with_dict_target.target(2024)
+        assert result == 115000.0
+        
+        result = constraint_results_with_dict_target.target(2025)
+        assert result == 135000.0
+    
+    def test_target_method_with_dict_target_missing_year(self, constraint_results_with_dict_target):
+        """Test target method with dict target for year not in dict."""
+        # The "revenue_growth" constraint doesn't have a target for 2026
+        result = constraint_results_with_dict_target.target(2026)
+        assert result is None
+    
+    def test_target_method_calls_constraint_definition(self, constraint_results):
+        """Test that target method calls get_target on constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+            mock_get_target.return_value = 80000.0
+            
+            result = constraint_results.target(2023)
+            
+            mock_get_target.assert_called_once_with(2023)
+            assert result == 80000.0
+    
+    def test_target_method_propagates_exceptions(self, constraint_results):
+        """Test that target method propagates exceptions from constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+            mock_get_target.side_effect = ValueError("Custom error")
+            
+            with pytest.raises(ValueError, match="Custom error"):
+                constraint_results.target(2023)
+    
+    def test_target_method_with_custom_constraint(self, basic_line_items, basic_categories):
+        """Test target method with a custom constraint having specific target."""
+        # Create a constraint with specific target value
+        constraint_custom = Constraint(
+            name="test_constraint",
+            line_item_name="revenue",
+            target=90000.0,
+            operator="gt",
+            label="Test Constraint"
+        )
+        
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[constraint_custom]
+        )
+        
+        constraint_results = ConstraintResults(model, "test_constraint")
+        result = constraint_results.target(2023)
+        assert result == 90000.0
+
+
 class TestConstraintResultsHtmlRepr:
     """Test _repr_html_ method for Jupyter notebook integration."""
     
@@ -512,3 +597,4 @@ class TestConstraintResultsEdgeCases:
         summary = constraint_results.summary()
         assert "ConstraintResults('revenue_check_2024')" in summary
         assert "Label: Revenue Check 2024" in summary
+        assert "Value (2024): 100,000.00" in summary

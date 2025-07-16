@@ -364,6 +364,21 @@ class ConstraintResults:
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
     
+    def target(self, year: int) -> float:
+        """
+        Return the target value for this constraint for a specific year.
+        
+        Args:
+            year (int): The year to get the target value for
+            
+        Returns:
+            float: The constraint target value for the specified year
+            
+        Raises:
+            KeyError: If the year is not in the model's years
+        """
+        return self.constraint_definition.get_target(year)
+    
     def table(self):
         """
         Return a Table object for this constraint using the tables.constraint() function.
