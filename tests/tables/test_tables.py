@@ -86,7 +86,7 @@ class TestTableCreation:
         assert table is not None, "Category table creation failed"
 
         # Test the new item() method
-        table = sample_model.tables.item('revenue_sales')
+        table = sample_model.tables.line_item('revenue_sales')
         assert table is not None, "Item table creation failed"
         # Verify the table has the correct structure - it now includes change calculations
         assert len(table.rows) == 4, "Item table should have 4 rows (value, % change, cumulative change, cumulative % change)"
@@ -110,7 +110,7 @@ class TestTableCreation:
             categories=categories,
             years=[2023, 2024, 2025, 2026, 2027]
         )
-        table = model.tables.item('growth_rate')
+        table = model.tables.line_item('growth_rate')
         assert table is not None, "Assumption item table creation failed"
         assert len(table.rows) == 4, "Assumption item table should have 4 rows (value, % change, cumulative change, cumulative % change)"
         assert table.rows[0].cells[0].value == 'growth_rate', "First cell should contain assumption name"

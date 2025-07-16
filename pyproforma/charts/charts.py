@@ -498,7 +498,7 @@ class Charts:
         """
         # Get the constraint
         try:
-            constraint = self._model.get_constraint(constraint_name)
+            constraint = self._model.get_constraint_definition(constraint_name)
         except KeyError:
             raise KeyError(f"Constraint '{constraint_name}' not found in model constraints.")
         

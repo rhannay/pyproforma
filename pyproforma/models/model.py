@@ -1,6 +1,6 @@
 from .line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
-from .results import CategoryResults, LineItemResults
+from .results import CategoryResults, LineItemResults, ConstraintResults
 from .constraint import Constraint
 from .serialization import SerializationMixin
 import pandas as pd
@@ -400,7 +400,7 @@ class Model(SerializationMixin):
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
 
-    def category(self, category_name: str) -> CategoryResults:
+    def category(self, category_name: str = None) -> CategoryResults:
         """
         Get a CategoryResults object for exploring and analyzing a specific category.
         
@@ -415,6 +415,7 @@ class Model(SerializationMixin):
             CategoryResults: An object with methods for exploring the category
             
         Raises:
+            ValueError: If category_name is None or empty
             KeyError: If the category name is not found
             
         Examples:
@@ -423,15 +424,55 @@ class Model(SerializationMixin):
             >>> revenue.total()  # Returns dict of year: total
             >>> revenue.to_dataframe()  # Returns pandas DataFrame
         """
+        if category_name is None or category_name == "":
+            available_categories = [category.name for category in self._category_definitions]
+            if available_categories:
+                raise ValueError(f"Category name is required. Available category names are: {available_categories}")
+            else:
+                raise ValueError("Category name is required, but no categories are defined in this model.")
+        
         # Validate that the category exists
         self.get_category_definition(category_name)  # This will raise KeyError if not found
         return CategoryResults(self, category_name)
     
-    def c(self, category_name: str) -> CategoryResults:
+    def c(self, category_name: str = None) -> CategoryResults:
         """Shorthand for category() - see category() for full documentation."""
         return self.category(category_name)
     
-    def line_item(self, item_name: str) -> LineItemResults:
+    def constraint(self, constraint_name: str = None) -> ConstraintResults:
+        """
+        Get a ConstraintResults object for exploring and analyzing a specific constraint.
+        
+        This method returns a ConstraintResults instance that provides convenient methods
+        for notebook exploration, including constraint values, validation status, 
+        table formatting, and more.
+        
+        Args:
+            constraint_name (str): The name of the constraint to analyze
+            
+        Returns:
+            ConstraintResults: An object with methods for exploring the constraint
+            
+        Raises:
+            ValueError: If constraint_name is None or empty
+            KeyError: If the constraint name is not found
+            
+        Examples:
+            >>> debt_constraint = model.constraint('debt_limit')
+            >>> print(debt_constraint)  # Shows summary information
+            >>> debt_constraint.values()  # Returns dict of year: value
+            >>> debt_constraint.table()  # Returns Table object
+        """
+        if constraint_name is None or constraint_name == "":
+            available_constraints = [constraint.name for constraint in self.constraints]
+            if available_constraints:
+                raise ValueError(f"Constraint name is required. Available constraint names are: {available_constraints}")
+            else:
+                raise ValueError("Constraint name is required, but no constraints are defined in this model.")
+        
+        return ConstraintResults(self, constraint_name)
+    
+    def line_item(self, item_name: str = None) -> LineItemResults:
         """
         Get a LineItemResults object for exploring and analyzing a specific named item.
         
@@ -446,6 +487,7 @@ class Model(SerializationMixin):
             LineItemResults: An object with methods for exploring the item
             
         Raises:
+            ValueError: If item_name is None or empty
             KeyError: If the item name is not found in defined names
             
         Examples:
@@ -454,9 +496,16 @@ class Model(SerializationMixin):
             >>> revenue_item.values()  # Returns dict of year: value
             >>> revenue_item.to_series()  # Returns pandas Series
         """
+        if item_name is None or item_name == "":
+            available_items = sorted([item['name'] for item in self.defined_names])
+            if available_items:
+                raise ValueError(f"Item name is required. Available item names are: {available_items}")
+            else:
+                raise ValueError("Item name is required, but no items are defined in this model.")
+        
         return LineItemResults(self, item_name)
     
-    def li(self, item_name: str) -> LineItemResults:
+    def li(self, item_name: str = None) -> LineItemResults:
         """Shorthand for line_item() - see line_item() for full documentation."""
         return self.line_item(item_name)
     
@@ -506,8 +555,8 @@ class Model(SerializationMixin):
         
         return line_item_names
 
-    def get_constraint(self, name: str) -> Constraint:
-        """Get a constraint by name.
+    def get_constraint_definition(self, name: str) -> Constraint:
+        """Get a constraint definition by name.
         
         Args:
             name (str): The name of the constraint to retrieve
@@ -523,6 +572,7 @@ class Model(SerializationMixin):
                 return constraint
         valid_constraints = [constraint.name for constraint in self.constraints]
         raise KeyError(f"Constraint with name '{name}' not found. Valid constraint names are: {valid_constraints}")
+
 
     # ============================================================================
     # CALCULATION METHODS

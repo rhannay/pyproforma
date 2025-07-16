@@ -218,7 +218,7 @@ class ConstraintPassRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint evaluation results across all years."""
         # Get the constraint object
-        constraint = model.get_constraint(self.constraint_name)
+        constraint = model.get_constraint_definition(self.constraint_name)
         
         # Use constraint name as label if no custom label provided
         label = self.label or self.constraint_name
@@ -260,7 +260,7 @@ class ConstraintVarianceRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint variance (actual - target) across all years."""
         # Get the constraint object
-        constraint = model.get_constraint(self.constraint_name)
+        constraint = model.get_constraint_definition(self.constraint_name)
         
         # Use constraint name with "Variance" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Variance"
@@ -298,7 +298,7 @@ class ConstraintTargetRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint target values across all years."""
         # Get the constraint object
-        constraint = model.get_constraint(self.constraint_name)
+        constraint = model.get_constraint_definition(self.constraint_name)
         
         # Use constraint name with "Target" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Target"

@@ -5,6 +5,7 @@ from pyproforma.tables.table_class import format_value
 if TYPE_CHECKING:
     from .model import Model
     from .line_item import LineItem, Category
+    from .constraint import Constraint
 
 
 class LineItemResults:
@@ -102,7 +103,7 @@ class LineItemResults:
         Returns:
             Table: A Table object containing the item formatted for display
         """
-        return self.model.tables.item(self.item_name)
+        return self.model.tables.line_item(self.item_name)
 
     def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line'):
         """
@@ -328,3 +329,99 @@ class CategoryResults:
                 f"Label: {self.category_obj.label}\n"
                 f"Line Items: {num_items}\n"
                 f"Items: {', '.join(item_names)}{total_info}")
+
+
+class ConstraintResults:
+    """
+    A helper class that provides convenient methods for exploring and analyzing 
+    constraints in a financial model.
+    
+    This class is typically instantiated through the Model.constraint() method and
+    provides an intuitive interface for notebook exploration and analysis of constraints.
+    
+    Args:
+        model: The parent Model instance
+        constraint_name: The name of the constraint to analyze
+        
+    Examples:
+        >>> debt_constraint = model.constraint('debt_limit')
+        >>> print(debt_constraint)  # Shows summary info
+        >>> debt_constraint.values()  # Returns dict of year: value
+        >>> debt_constraint.table()  # Returns Table object
+        >>> debt_constraint.chart()  # Returns Plotly chart
+    """
+    
+    def __init__(self, model: 'Model', constraint_name: str):
+        self.model = model
+        self.constraint_name = constraint_name
+        self.constraint_definition = model.get_constraint_definition(constraint_name)
+        self.line_item_name = self.constraint_definition.line_item_name
+    
+    def __str__(self) -> str:
+        """Return a string representation showing key information about the constraint."""
+        return self.summary()
+    
+    def __repr__(self) -> str:
+        return f"ConstraintResults(constraint_name='{self.constraint_name}')"
+    
+    def table(self):
+        """
+        Return a Table object for this constraint using the tables.constraint() function.
+        
+        Returns:
+            Table: A Table object containing the constraint formatted for display
+        """
+        return self.model.tables.constraint(self.constraint_name)
+
+    def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', line_item_type: str = 'bar', constraint_type: str = 'line'):
+        """
+        Create a chart using Plotly showing the values for this constraint over years.
+        
+        Args:
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
+            
+        Returns:
+            Chart figure: The Plotly chart figure
+            
+        Raises:
+            KeyError: If the constraint name is not found in the model
+        """
+        return self.model.charts.constraint(self.constraint_name, width=width, height=height, template=template, line_item_type=line_item_type, constraint_type=constraint_type)
+
+    def _repr_html_(self) -> str:
+        """
+        Return HTML representation for Jupyter notebooks.
+        This ensures proper formatting when the object is displayed in a notebook cell.
+        """
+        summary_text = self.summary()
+        html_summary = summary_text.replace('\n', '<br>')
+        return f'<pre>{html_summary}</pre>'
+    
+    def summary(self) -> str:
+        """
+        Return a summary string with key information about the constraint.
+        
+        Returns:
+            str: Formatted summary of the constraint
+        """
+        # Get value for first year if available
+        value_info = ""
+        if self.model.years:
+            first_year = self.model.years[0]
+            try:
+                value = self.model.get_value(self.line_item_name, first_year)
+                value_info = f"\nValue ({first_year}): {value:,.2f}"
+            except KeyError:
+                value_info = "\nValue: Not available"
+        
+        # Get constraint formula/expression
+        formula_info = ""
+        if hasattr(self.constraint_definition, 'expression') and self.constraint_definition.expression:
+            formula_info = f"\nExpression: {self.constraint_definition.expression}"
+        
+        return (f"ConstraintResults('{self.constraint_name}')\n"
+                f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"
+                f"Type: {getattr(self.constraint_definition, 'constraint_type', 'Unknown')}{formula_info}{value_info}")

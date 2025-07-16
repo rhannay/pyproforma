@@ -71,21 +71,21 @@ class Tables:
         rows = self._category_rows(category_name)
         return self.generate_table(rows, include_name=True)
     
-    def item(self, item_name: str):
+    def line_item(self, name: str):
         """
-        Generate a table for a specific item showing its label and values by year.
+        Generate a table for a specific line item showing its label and values by year.
         
         Args:
-            item_name (str): The name of the item to generate the table for.
+            name (str): The name of the line item to generate the table for.
         
         Returns:
-            Table: A Table object containing the item's label and values across years.
+            Table: A Table object containing the line item's label and values across years.
         """
         rows = [
-            rt.ItemRow(name=item_name),
-            rt.PercentChangeRow(name=item_name, label='% Change'),
-            rt.CumulativeChangeRow(name=item_name, label='Cumulative Change'),
-            rt.CumulativePercentChangeRow(name=item_name, label='Cumulative % Change')
+            rt.ItemRow(name=name),
+            rt.PercentChangeRow(name=name, label='% Change'),
+            rt.CumulativeChangeRow(name=name, label='Cumulative Change'),
+            rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')
         ]
         return self.generate_table(rows, include_name=True)
     
@@ -100,7 +100,7 @@ class Tables:
         Returns:
             Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.
         """
-        constraint = self._model.get_constraint(constraint_name)
+        constraint = self._model.get_constraint_definition(constraint_name)
         rows = [
             rt.LabelRow(label=constraint.label, bold=True),
             rt.ItemRow(name=constraint.line_item_name),
