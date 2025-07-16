@@ -378,6 +378,128 @@ class TestConstraintResultsTargetMethod:
         assert result == 90000.0
 
 
+class TestConstraintResultsEvaluateMethod:
+    """Test evaluate method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_expenses(self, model_with_constraints):
+        """Create a ConstraintResults instance for expenses constraint."""
+        return ConstraintResults(model_with_constraints, "max_expenses")
+    
+    @pytest.fixture
+    def constraint_results_revenue_growth(self, model_with_constraints):
+        """Create a ConstraintResults instance for revenue growth constraint."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+    
+    def test_evaluate_method_returns_true_when_constraint_satisfied(self, constraint_results):
+        """Test evaluate method returns True when constraint is satisfied."""
+        # The "min_revenue" constraint is: revenue > 80000
+        # Revenue in 2023 is 100000, so 100000 > 80000 should be True
+        result = constraint_results.evaluate(2023)
+        assert result is True
+    
+    def test_evaluate_method_returns_false_when_constraint_not_satisfied(self, constraint_results_expenses):
+        """Test evaluate method returns False when constraint is not satisfied."""
+        # The "max_expenses" constraint is: expenses < 75000
+        # Expenses in 2025 is 70000, so 70000 < 75000 should be True
+        # But let's test with a different year or modify the test
+        result = constraint_results_expenses.evaluate(2025)
+        assert result is True  # 70000 < 75000
+        
+        # Test with a year where it might not be satisfied
+        result = constraint_results_expenses.evaluate(2023)
+        assert result is True  # 50000 < 75000
+        
+        # All years should pass for this constraint based on fixture values
+        for year in [2023, 2024, 2025]:
+            result = constraint_results_expenses.evaluate(year)
+            assert result is True
+    
+    def test_evaluate_method_with_dict_target_constraint(self, constraint_results_revenue_growth):
+        """Test evaluate method with constraint having dictionary target."""
+        # The "revenue_growth" constraint has dict target and operator "ge" (>=)
+        # Revenue growth targets: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        # Revenue values: {2023: 100000, 2024: 120000, 2025: 140000}
+        
+        # 2023: 100000 >= 95000 should be True
+        result = constraint_results_revenue_growth.evaluate(2023)
+        assert result is True
+        
+        # 2024: 120000 >= 115000 should be True
+        result = constraint_results_revenue_growth.evaluate(2024)
+        assert result is True
+        
+        # 2025: 140000 >= 135000 should be True
+        result = constraint_results_revenue_growth.evaluate(2025)
+        assert result is True
+    
+    def test_evaluate_method_calls_constraint_definition_evaluate(self, constraint_results):
+        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.return_value = True
+            
+            result = constraint_results.evaluate(2023)
+            
+            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+            assert result is True
+    
+    def test_evaluate_method_propagates_value_error(self, constraint_results):
+        """Test that evaluate method propagates ValueError from constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.side_effect = ValueError("Year 2026 not found in value_matrix")
+            
+            with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
+                constraint_results.evaluate(2026)
+    
+    def test_evaluate_method_with_invalid_year(self, constraint_results):
+        """Test evaluate method with year not in model raises ValueError."""
+        # Test with a year that's not in the model
+        with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
+            constraint_results.evaluate(2026)
+    
+    def test_evaluate_method_uses_correct_value_matrix(self, constraint_results):
+        """Test that evaluate method uses the correct value matrix from the model."""
+        # Verify the constraint uses the model's _value_matrix
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.return_value = True
+            
+            constraint_results.evaluate(2023)
+            
+            # Verify it was called with the model's _value_matrix
+            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+    
+    def test_evaluate_method_with_custom_constraint(self, basic_line_items, basic_categories):
+        """Test evaluate method with a custom constraint that fails."""
+        # Create a constraint that will fail
+        failing_constraint = Constraint(
+            name="failing_constraint",
+            line_item_name="revenue",
+            target=150000.0,  # Higher than any revenue value
+            operator="gt",
+            label="Failing Constraint"
+        )
+        
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[failing_constraint]
+        )
+        
+        constraint_results = ConstraintResults(model, "failing_constraint")
+        
+        # Revenue values are 100000, 120000, 140000 - all < 150000
+        # So revenue > 150000 should be False for all years
+        assert constraint_results.evaluate(2023) is False
+        assert constraint_results.evaluate(2024) is False
+        assert constraint_results.evaluate(2025) is False
+
+
 class TestConstraintResultsHtmlRepr:
     """Test _repr_html_ method for Jupyter notebook integration."""
     

@@ -421,6 +421,21 @@ class ConstraintResults:
         """
         return self.model.charts.constraint(self.constraint_name, width=width, height=height, template=template, line_item_type=line_item_type, constraint_type=constraint_type)
 
+    def evaluate(self, year: int) -> bool:
+        """
+        Evaluate whether the constraint is satisfied for a specific year.
+        
+        Args:
+            year (int): The year to evaluate the constraint for
+            
+        Returns:
+            bool: True if the constraint is satisfied, False otherwise
+            
+        Raises:
+            ValueError: If year or line item is not found in the model, or no target available
+        """
+        return self.constraint_definition.evaluate(self.model._value_matrix, year)
+
     def _repr_html_(self) -> str:
         """
         Return HTML representation for Jupyter notebooks.
