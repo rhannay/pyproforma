@@ -364,6 +364,21 @@ class ConstraintResults:
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
     
+    def line_item_value(self, year: int) -> float:
+        """
+        Return the line item value for this constraint for a specific year.
+        
+        Args:
+            year (int): The year to get the line item value for
+            
+        Returns:
+            float: The line item value for the specified year
+            
+        Raises:
+            KeyError: If the year is not in the model's years
+        """
+        return self.model.get_value(self.line_item_name, year)
+    
     def target(self, year: int) -> float:
         """
         Return the target value for this constraint for a specific year.

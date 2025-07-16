@@ -231,6 +231,68 @@ class TestConstraintResultsChartMethod:
             )
 
 
+class TestConstraintResultsLineItemValueMethod:
+    """Test line_item_value method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_expenses(self, model_with_constraints):
+        """Create a ConstraintResults instance for expenses constraint."""
+        return ConstraintResults(model_with_constraints, "max_expenses")
+    
+    def test_line_item_value_method_returns_correct_values(self, constraint_results):
+        """Test line_item_value method returns correct values for each year."""
+        # The "min_revenue" constraint is linked to the "revenue" line item
+        # Revenue values from fixture: {2023: 100000, 2024: 120000, 2025: 140000}
+        assert constraint_results.line_item_value(2023) == 100000
+        assert constraint_results.line_item_value(2024) == 120000
+        assert constraint_results.line_item_value(2025) == 140000
+    
+    def test_line_item_value_method_for_expenses_constraint(self, constraint_results_expenses):
+        """Test line_item_value method for expenses constraint."""
+        # The "max_expenses" constraint is linked to the "expenses" line item
+        # Expenses values from fixture: {2023: 50000, 2024: 60000, 2025: 70000}
+        assert constraint_results_expenses.line_item_value(2023) == 50000
+        assert constraint_results_expenses.line_item_value(2024) == 60000
+        assert constraint_results_expenses.line_item_value(2025) == 70000
+    
+    def test_line_item_value_method_calls_model_get_value(self, constraint_results):
+        """Test that line_item_value method calls model.get_value with correct parameters."""
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.return_value = 100000.0
+            
+            result = constraint_results.line_item_value(2023)
+            
+            mock_get_value.assert_called_once_with("revenue", 2023)
+            assert result == 100000.0
+    
+    def test_line_item_value_method_propagates_key_error(self, constraint_results):
+        """Test that line_item_value method propagates KeyError from model.get_value."""
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.side_effect = KeyError("Year 2026 not found")
+            
+            with pytest.raises(KeyError, match="Year 2026 not found"):
+                constraint_results.line_item_value(2026)
+    
+    def test_line_item_value_method_uses_correct_line_item_name(self, constraint_results):
+        """Test that line_item_value method uses the correct line item name from constraint."""
+        # Verify the constraint is set up correctly
+        assert constraint_results.line_item_name == "revenue"
+        
+        # Mock the model.get_value to verify it's called with the right line item name
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.return_value = 100000.0
+            
+            constraint_results.line_item_value(2023)
+            
+            # Verify it was called with the constraint's line_item_name
+            mock_get_value.assert_called_once_with(constraint_results.line_item_name, 2023)
+
+
 class TestConstraintResultsTargetMethod:
     """Test target method of ConstraintResults."""
     
