@@ -43,7 +43,6 @@ class Debt(MultiLineItemABC):
 
         self.ds_schedules = {}
         
-        # TODO: implement this later
         self.existing_debt_service = existing_debt_service or []
     
     # ----------------------------------
@@ -61,6 +60,7 @@ class Debt(MultiLineItemABC):
         return [self._principal_name, self._interest_name, self._bond_proceeds_name]
 
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
+                  years: List[int],
                   year: int) -> Dict[str, Optional[float]]:
         """
         Get all values for this debt component for a specific year.
@@ -68,6 +68,7 @@ class Debt(MultiLineItemABC):
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
                 by year, used to prevent circular references and for formula calculations.
+            years (List[int]): List of all years in the model.
             year (int): The year for which to get the values.
             
         Returns:
@@ -85,13 +86,18 @@ class Debt(MultiLineItemABC):
                 name in interim_values_by_year[year]):
                 raise ValueError(f"Circular reference detected for '{name}' in year {year}.")
 
-        # Gather interest rate, par amount, and term for this year bond issue            
-        interest_rate = self._get_interest_rate(interim_values_by_year, year)
-        par_amount = self._get_par_amount(interim_values_by_year, year)
-        term = self._get_term(interim_values_by_year, year)
+        # Build up bond issues
+        # Start by clearing out self.debt_service_schedules
+        self.ds_schedules = {}
 
-        # Add it to the schedules
-        self._add_bond_issue(par_amount, interest_rate, year, term)
+        for _year in [y for y in years if y <= year]:
+            # Gather interest rate, par amount, and term for this year bond issue
+            interest_rate = self._get_interest_rate(interim_values_by_year, _year)
+            par_amount = self._get_par_amount(interim_values_by_year, _year)
+            term = self._get_term(interim_values_by_year, _year)
+
+            # Add it to the schedules
+            self._add_bond_issue(par_amount, interest_rate, _year, term)
 
         # Principal and interest payments for this year
         result[self._principal_name] = self.get_principal(year)
