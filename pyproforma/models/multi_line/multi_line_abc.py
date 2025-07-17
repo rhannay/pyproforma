@@ -27,23 +27,21 @@ class MultiLineItemABC(ABC):
         pass
     
     @abstractmethod
-    def get_value(self, name: str, interim_values_by_year: Dict[int, Dict[str, Any]], 
-                  year: int) -> Optional[float]:
+    def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]], 
+                  year: int) -> Dict[str, Optional[float]]:
         """
-        Get the value for a specific line item in a specific year.
+        Get all values for this multi-line component for a specific year.
         
         Args:
-            name (str): The name of the line item to retrieve.
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
                 by year, used to prevent circular references and for formula calculations.
-            year (int): The year for which to get the value.
+            year (int): The year for which to get the values.
             
         Returns:
-            Optional[float]: The calculated value for the specified line item and year,
-                             or None if no value exists.
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
+                                        component for the specified year, with line item names as keys.
                              
         Raises:
-            ValueError: If the requested name is not in defined_names.
             ValueError: If value already exists in interim_values_by_year to prevent circular references.
         """
         pass
