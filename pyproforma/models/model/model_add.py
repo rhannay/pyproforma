@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
+from ...constants import ValueFormat
 
 class AddNamespace:
     def __init__(self, model: 'Model'):
@@ -141,7 +142,7 @@ class AddNamespace:
         label: str = None,
         values: dict[int, float] = None,
         formula: str = None,
-        value_format: str = 'no_decimals'
+        value_format: ValueFormat = 'no_decimals'
     ):
         """
         Add a new line item to the model.

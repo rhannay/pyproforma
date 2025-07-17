@@ -2,6 +2,7 @@ from typing import List, Optional, Union, Literal
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
+from ..constants import ValueFormat
 
 
 class ChartDataSet:
@@ -39,7 +40,7 @@ class Chart:
         data_sets: List[ChartDataSet],
         id: str = 'chart',
         title: str = 'Chart',
-        value_format: Optional[str] = None
+        value_format: Optional[ValueFormat] = None
     ):
         self.id = id
         self.title = title

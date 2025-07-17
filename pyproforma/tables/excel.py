@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from .table_class import Table
 
-def value_format_to_excel_format(value_format: Optional[str]) -> str:
+from ..constants import ValueFormat
+
+def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
     """Convert a cell value_format to an Excel number_format."""
     if value_format is None:
         return 'General'  # Excel default
