@@ -231,6 +231,275 @@ class TestConstraintResultsChartMethod:
             )
 
 
+class TestConstraintResultsLineItemValueMethod:
+    """Test line_item_value method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_expenses(self, model_with_constraints):
+        """Create a ConstraintResults instance for expenses constraint."""
+        return ConstraintResults(model_with_constraints, "max_expenses")
+    
+    def test_line_item_value_method_returns_correct_values(self, constraint_results):
+        """Test line_item_value method returns correct values for each year."""
+        # The "min_revenue" constraint is linked to the "revenue" line item
+        # Revenue values from fixture: {2023: 100000, 2024: 120000, 2025: 140000}
+        assert constraint_results.line_item_value(2023) == 100000
+        assert constraint_results.line_item_value(2024) == 120000
+        assert constraint_results.line_item_value(2025) == 140000
+    
+    def test_line_item_value_method_for_expenses_constraint(self, constraint_results_expenses):
+        """Test line_item_value method for expenses constraint."""
+        # The "max_expenses" constraint is linked to the "expenses" line item
+        # Expenses values from fixture: {2023: 50000, 2024: 60000, 2025: 70000}
+        assert constraint_results_expenses.line_item_value(2023) == 50000
+        assert constraint_results_expenses.line_item_value(2024) == 60000
+        assert constraint_results_expenses.line_item_value(2025) == 70000
+    
+    def test_line_item_value_method_calls_model_get_value(self, constraint_results):
+        """Test that line_item_value method calls model.get_value with correct parameters."""
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.return_value = 100000.0
+            
+            result = constraint_results.line_item_value(2023)
+            
+            mock_get_value.assert_called_once_with("revenue", 2023)
+            assert result == 100000.0
+    
+    def test_line_item_value_method_propagates_key_error(self, constraint_results):
+        """Test that line_item_value method propagates KeyError from model.get_value."""
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.side_effect = KeyError("Year 2026 not found")
+            
+            with pytest.raises(KeyError, match="Year 2026 not found"):
+                constraint_results.line_item_value(2026)
+    
+    def test_line_item_value_method_uses_correct_line_item_name(self, constraint_results):
+        """Test that line_item_value method uses the correct line item name from constraint."""
+        # Verify the constraint is set up correctly
+        assert constraint_results.line_item_name == "revenue"
+        
+        # Mock the model.get_value to verify it's called with the right line item name
+        with patch.object(constraint_results.model, 'get_value') as mock_get_value:
+            mock_get_value.return_value = 100000.0
+            
+            constraint_results.line_item_value(2023)
+            
+            # Verify it was called with the constraint's line_item_name
+            mock_get_value.assert_called_once_with(constraint_results.line_item_name, 2023)
+
+
+class TestConstraintResultsTargetMethod:
+    """Test target method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_with_dict_target(self, model_with_constraints):
+        """Create a ConstraintResults instance with dict target for testing."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+    
+    def test_target_method_with_float_target(self, constraint_results):
+        """Test target method with constraint having float target."""
+        # The "min_revenue" constraint has a float target of 80000.0
+        result = constraint_results.target(2023)
+        assert result == 80000.0
+        
+        # Should return same value for any year when target is a float
+        result = constraint_results.target(2024)
+        assert result == 80000.0
+        
+        result = constraint_results.target(2025)
+        assert result == 80000.0
+    
+    def test_target_method_with_dict_target(self, constraint_results_with_dict_target):
+        """Test target method with constraint having dict target."""
+        # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        result = constraint_results_with_dict_target.target(2023)
+        assert result == 95000.0
+        
+        result = constraint_results_with_dict_target.target(2024)
+        assert result == 115000.0
+        
+        result = constraint_results_with_dict_target.target(2025)
+        assert result == 135000.0
+    
+    def test_target_method_with_dict_target_missing_year(self, constraint_results_with_dict_target):
+        """Test target method with dict target for year not in dict."""
+        # The "revenue_growth" constraint doesn't have a target for 2026
+        result = constraint_results_with_dict_target.target(2026)
+        assert result is None
+    
+    def test_target_method_calls_constraint_definition(self, constraint_results):
+        """Test that target method calls get_target on constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+            mock_get_target.return_value = 80000.0
+            
+            result = constraint_results.target(2023)
+            
+            mock_get_target.assert_called_once_with(2023)
+            assert result == 80000.0
+    
+    def test_target_method_propagates_exceptions(self, constraint_results):
+        """Test that target method propagates exceptions from constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+            mock_get_target.side_effect = ValueError("Custom error")
+            
+            with pytest.raises(ValueError, match="Custom error"):
+                constraint_results.target(2023)
+    
+    def test_target_method_with_custom_constraint(self, basic_line_items, basic_categories):
+        """Test target method with a custom constraint having specific target."""
+        # Create a constraint with specific target value
+        constraint_custom = Constraint(
+            name="test_constraint",
+            line_item_name="revenue",
+            target=90000.0,
+            operator="gt",
+            label="Test Constraint"
+        )
+        
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[constraint_custom]
+        )
+        
+        constraint_results = ConstraintResults(model, "test_constraint")
+        result = constraint_results.target(2023)
+        assert result == 90000.0
+
+
+class TestConstraintResultsEvaluateMethod:
+    """Test evaluate method of ConstraintResults."""
+    
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+    
+    @pytest.fixture
+    def constraint_results_expenses(self, model_with_constraints):
+        """Create a ConstraintResults instance for expenses constraint."""
+        return ConstraintResults(model_with_constraints, "max_expenses")
+    
+    @pytest.fixture
+    def constraint_results_revenue_growth(self, model_with_constraints):
+        """Create a ConstraintResults instance for revenue growth constraint."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+    
+    def test_evaluate_method_returns_true_when_constraint_satisfied(self, constraint_results):
+        """Test evaluate method returns True when constraint is satisfied."""
+        # The "min_revenue" constraint is: revenue > 80000
+        # Revenue in 2023 is 100000, so 100000 > 80000 should be True
+        result = constraint_results.evaluate(2023)
+        assert result is True
+    
+    def test_evaluate_method_returns_false_when_constraint_not_satisfied(self, constraint_results_expenses):
+        """Test evaluate method returns False when constraint is not satisfied."""
+        # The "max_expenses" constraint is: expenses < 75000
+        # Expenses in 2025 is 70000, so 70000 < 75000 should be True
+        # But let's test with a different year or modify the test
+        result = constraint_results_expenses.evaluate(2025)
+        assert result is True  # 70000 < 75000
+        
+        # Test with a year where it might not be satisfied
+        result = constraint_results_expenses.evaluate(2023)
+        assert result is True  # 50000 < 75000
+        
+        # All years should pass for this constraint based on fixture values
+        for year in [2023, 2024, 2025]:
+            result = constraint_results_expenses.evaluate(year)
+            assert result is True
+    
+    def test_evaluate_method_with_dict_target_constraint(self, constraint_results_revenue_growth):
+        """Test evaluate method with constraint having dictionary target."""
+        # The "revenue_growth" constraint has dict target and operator "ge" (>=)
+        # Revenue growth targets: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        # Revenue values: {2023: 100000, 2024: 120000, 2025: 140000}
+        
+        # 2023: 100000 >= 95000 should be True
+        result = constraint_results_revenue_growth.evaluate(2023)
+        assert result is True
+        
+        # 2024: 120000 >= 115000 should be True
+        result = constraint_results_revenue_growth.evaluate(2024)
+        assert result is True
+        
+        # 2025: 140000 >= 135000 should be True
+        result = constraint_results_revenue_growth.evaluate(2025)
+        assert result is True
+    
+    def test_evaluate_method_calls_constraint_definition_evaluate(self, constraint_results):
+        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.return_value = True
+            
+            result = constraint_results.evaluate(2023)
+            
+            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+            assert result is True
+    
+    def test_evaluate_method_propagates_value_error(self, constraint_results):
+        """Test that evaluate method propagates ValueError from constraint definition."""
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.side_effect = ValueError("Year 2026 not found in value_matrix")
+            
+            with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
+                constraint_results.evaluate(2026)
+    
+    def test_evaluate_method_with_invalid_year(self, constraint_results):
+        """Test evaluate method with year not in model raises ValueError."""
+        # Test with a year that's not in the model
+        with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
+            constraint_results.evaluate(2026)
+    
+    def test_evaluate_method_uses_correct_value_matrix(self, constraint_results):
+        """Test that evaluate method uses the correct value matrix from the model."""
+        # Verify the constraint uses the model's _value_matrix
+        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+            mock_evaluate.return_value = True
+            
+            constraint_results.evaluate(2023)
+            
+            # Verify it was called with the model's _value_matrix
+            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+    
+    def test_evaluate_method_with_custom_constraint(self, basic_line_items, basic_categories):
+        """Test evaluate method with a custom constraint that fails."""
+        # Create a constraint that will fail
+        failing_constraint = Constraint(
+            name="failing_constraint",
+            line_item_name="revenue",
+            target=150000.0,  # Higher than any revenue value
+            operator="gt",
+            label="Failing Constraint"
+        )
+        
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[failing_constraint]
+        )
+        
+        constraint_results = ConstraintResults(model, "failing_constraint")
+        
+        # Revenue values are 100000, 120000, 140000 - all < 150000
+        # So revenue > 150000 should be False for all years
+        assert constraint_results.evaluate(2023) is False
+        assert constraint_results.evaluate(2024) is False
+        assert constraint_results.evaluate(2025) is False
+
+
 class TestConstraintResultsHtmlRepr:
     """Test _repr_html_ method for Jupyter notebook integration."""
     
@@ -512,3 +781,4 @@ class TestConstraintResultsEdgeCases:
         summary = constraint_results.summary()
         assert "ConstraintResults('revenue_check_2024')" in summary
         assert "Label: Revenue Check 2024" in summary
+        assert "Value (2024): 100,000.00" in summary

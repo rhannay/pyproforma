@@ -364,6 +364,36 @@ class ConstraintResults:
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
     
+    def line_item_value(self, year: int) -> float:
+        """
+        Return the line item value for this constraint for a specific year.
+        
+        Args:
+            year (int): The year to get the line item value for
+            
+        Returns:
+            float: The line item value for the specified year
+            
+        Raises:
+            KeyError: If the year is not in the model's years
+        """
+        return self.model.get_value(self.line_item_name, year)
+    
+    def target(self, year: int) -> float:
+        """
+        Return the target value for this constraint for a specific year.
+        
+        Args:
+            year (int): The year to get the target value for
+            
+        Returns:
+            float: The constraint target value for the specified year
+            
+        Raises:
+            KeyError: If the year is not in the model's years
+        """
+        return self.constraint_definition.get_target(year)
+    
     def table(self):
         """
         Return a Table object for this constraint using the tables.constraint() function.
@@ -390,6 +420,21 @@ class ConstraintResults:
             KeyError: If the constraint name is not found in the model
         """
         return self.model.charts.constraint(self.constraint_name, width=width, height=height, template=template, line_item_type=line_item_type, constraint_type=constraint_type)
+
+    def evaluate(self, year: int) -> bool:
+        """
+        Evaluate whether the constraint is satisfied for a specific year.
+        
+        Args:
+            year (int): The year to evaluate the constraint for
+            
+        Returns:
+            bool: True if the constraint is satisfied, False otherwise
+            
+        Raises:
+            ValueError: If year or line item is not found in the model, or no target available
+        """
+        return self.constraint_definition.evaluate(self.model._value_matrix, year)
 
     def _repr_html_(self) -> str:
         """
