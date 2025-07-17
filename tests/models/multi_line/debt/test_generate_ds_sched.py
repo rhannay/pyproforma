@@ -62,9 +62,24 @@ def test_generate_debt_service_schedule_zero_interest():
     start_year = 2025
     term = 4
     
-    with pytest.raises(ZeroDivisionError):
-        # This should raise a ZeroDivisionError because the formula has (1 - (1 + 0) ** -term)
-        Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    schedule = Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    
+    # Check that we have the expected number of entries
+    assert len(schedule) == term
+    
+    # Check that principal payments are equal (loan amount divided by term)
+    expected_principal_payment = par / term
+    for entry in schedule:
+        assert entry['interest'] == 0  # Zero interest
+        assert math.isclose(entry['principal'], expected_principal_payment)
+    
+    # Check the years are correct
+    for i, entry in enumerate(schedule):
+        assert entry['year'] == start_year + i
+    
+    # Verify total principal payments equal the original loan amount
+    total_principal = sum(entry['principal'] for entry in schedule)
+    assert math.isclose(total_principal, par)
 
 
 def test_generate_debt_service_schedule_different_params():

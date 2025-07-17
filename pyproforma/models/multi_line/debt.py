@@ -46,19 +46,32 @@ class Debt(MultiLineItemABC):
             list: A list of dictionaries representing the debt service schedule,
                  with each dictionary containing 'year', 'principal', and 'interest'.
         """
-        annual_payment = (par * interest_rate) / (1 - (1 + interest_rate) ** -term)
-        remaining_principal = par
         schedule = []
-        for i in range(term):
-            year = start_year + i
-            interest = remaining_principal * interest_rate
-            principal_payment = annual_payment - interest
-            schedule.append({
-                'year': year,
-                'principal': principal_payment,
-                'interest': interest
-            })
-            remaining_principal -= principal_payment
+        
+        if interest_rate == 0:
+            # For zero interest loans, simply divide principal evenly across the term
+            equal_payment = par / term
+            for i in range(term):
+                year = start_year + i
+                schedule.append({
+                    'year': year,
+                    'principal': equal_payment,
+                    'interest': 0.0
+                })
+        else:
+            # Standard amortization calculation for non-zero interest
+            annual_payment = (par * interest_rate) / (1 - (1 + interest_rate) ** -term)
+            remaining_principal = par
+            for i in range(term):
+                year = start_year + i
+                interest = remaining_principal * interest_rate
+                principal_payment = annual_payment - interest
+                schedule.append({
+                    'year': year,
+                    'principal': principal_payment,
+                    'interest': interest
+                })
+                remaining_principal -= principal_payment
         
         return schedule
     
