@@ -165,7 +165,7 @@ class AddNamespace:
             label (str, optional): Human-readable display name. Defaults to name if not provided.
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (str, optional): Format for displaying values. Defaults to 'no_decimals'
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
             
         Returns:
             None

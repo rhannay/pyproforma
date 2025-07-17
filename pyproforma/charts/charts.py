@@ -79,7 +79,7 @@ class Charts:
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            value_format (str, optional): Y-axis value format. If None, uses the first item's format.
+            value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.
             
         Returns:
             Chart figure: The Plotly chart figure with multiple lines

@@ -159,7 +159,7 @@ class UpdateNamespace:
             label (str, optional): New label for the line item
             values (dict[int, float], optional): New values dictionary for the line item
             formula (str, optional): New formula string for the line item
-            value_format (str, optional): New value format for the line item
+            value_format (ValueFormat, optional): New value format for the line item
             
         Returns:
             None
