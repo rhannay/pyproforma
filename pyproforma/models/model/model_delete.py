@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma import Model 
+    from .model import Model 
 
 
 class DeleteNamespace:

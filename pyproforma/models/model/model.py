@@ -1,7 +1,7 @@
-from .line_item import LineItem, Category
+from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
-from .results import CategoryResults, LineItemResults, ConstraintResults
-from .constraint import Constraint
+from ..results import CategoryResults, LineItemResults, ConstraintResults
+from ..constraint import Constraint
 from .serialization import SerializationMixin
 import pandas as pd
 import copy
@@ -10,9 +10,9 @@ from pathlib import Path
 # Namespace imports
 from pyproforma.tables import Tables
 from pyproforma.charts import Charts
-from pyproforma.models.model_add import AddNamespace
-from pyproforma.models.model_delete import DeleteNamespace
-from pyproforma.models.model_update import UpdateNamespace
+from .model_add import AddNamespace
+from .model_delete import DeleteNamespace
+from .model_update import UpdateNamespace
 
 class Model(SerializationMixin):
     """

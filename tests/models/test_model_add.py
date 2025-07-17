@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.models.model_add import AddNamespace
+from pyproforma.models.model.model_add import AddNamespace
 from pyproforma.generators.debt import Debt, Generator
 
 

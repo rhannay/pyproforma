@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma import Model 
+    from .model import Model 
 
-from .line_item import LineItem, Category
-from ..generators.generator_class import Generator
+from ..line_item import LineItem, Category
+from pyproforma.generators.generator_class import Generator
 
 
 class UpdateNamespace:
