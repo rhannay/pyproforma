@@ -13,6 +13,7 @@ class Debt(MultiLineItemABC):
     """
     
     def __init__(self, 
+                name: str,
                 par_amounts: dict, 
                 interest_rate: float, 
                 term: int,
@@ -21,15 +22,23 @@ class Debt(MultiLineItemABC):
         Initialize a Debt object with specified parameters.
         
         Args:
+            name (str): The name of this debt component.
             par_amounts (dict): The principal amounts for each debt issue.
             interest_rate (float): The interest rate applied to the debt.
             term (int): The term of the debt in years.
             existing_debt_service (list[dict], optional): Pre-existing debt service schedule.
         """
+        self.name = name
         self.par_amounts = par_amounts
         self.interest_rate = interest_rate
         self.term = term
+        
+        self.ds_schedules = {}
+        
+        # TODO: implement this later
         self.existing_debt_service = existing_debt_service or []
+    
+    
     
     @classmethod
     def _generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
@@ -83,8 +92,7 @@ class Debt(MultiLineItemABC):
         Returns:
             List[str]: The names of all line items this component can generate values for.
         """
-        # Placeholder implementation
-        return []
+        return [f'{self.name}.principal', f'{self.name}.interest', f'{self.name}.bond_proceeds']
     
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
                   year: int) -> Dict[str, Optional[float]]:
@@ -116,3 +124,26 @@ class Debt(MultiLineItemABC):
             result[name] = None
             
         return result
+    
+    def _add_bond_issue(self, par, interest_rate: float, start_year: int, term: int):
+        """
+        Add a bond issue to the debt service schedules.
+        
+        Args:
+            par: The principal amount of the debt.
+            interest_rate (float): Annual interest rate (as a decimal, e.g., 0.05 for 5%).
+            start_year (int): The starting year for the debt service.
+            term (int): The term of the debt in years.
+            
+        Raises:
+            ValueError: If a debt service schedule already exists with the same start_year.
+        """
+        # Check if a schedule with this start_year already exists
+        if start_year in self.ds_schedules:
+            raise ValueError(f"A debt service schedule already exists for year {start_year}")
+            
+        # Generate debt service schedule using class method
+        schedule = self._generate_debt_service_schedule(par, interest_rate, start_year, term)
+        
+        # Add to ds_schedules with start_year as key
+        self.ds_schedules[start_year] = schedule
