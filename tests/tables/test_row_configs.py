@@ -1,5 +1,6 @@
 """Test the new dataclass row configuration approach."""
 import pytest
+from pyproforma import Model
 from pyproforma.tables.row_types import (
     ItemRow, LabelRow, BlankRow, dict_to_row_config
 )
@@ -85,7 +86,7 @@ def test_dataclass_serialization():
     assert new_config.include_name is False
 
 
-def test_mixed_template_types(sample_line_item_set):
+def test_mixed_template_types(sample_line_item_set: Model):
     """Test that generate_table works with mixed dict and dataclass configs."""
     # Mix of dict and dataclass configs
     template = [

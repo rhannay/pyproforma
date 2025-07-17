@@ -25,7 +25,7 @@ class TestItemTypeValidation:
 
 class TestLineItemsWithFormulas:
     @pytest.fixture
-    def sample_line_item_set_2(self):
+    def sample_line_item_set_2(self) -> Model:
         # Create a sample Model with LineItems and Formulas
         rev_1 = LineItem(name="rev_1", label="Item 1", category="revenue", values={2020: 300.0}, formula='rev_1[-1] * 1.05')
         rev_2 = LineItem(name="rev_2", label="Item 2", category="revenue", values={2020: 100.0}, formula='rev_2[-1] + 50.0')
@@ -46,7 +46,7 @@ class TestLineItemsWithFormulas:
             years=[2020, 2021, 2022]
         )
     
-    def test_line_item_set_init(self, sample_line_item_set_2):
+    def test_line_item_set_init(self, sample_line_item_set_2: Model):
         # Check the Model initialization
         assert isinstance(sample_line_item_set_2, Model)
         assert len(sample_line_item_set_2._line_item_definitions) == 4  # Now includes the formula as a LineItem
@@ -72,7 +72,7 @@ class TestLineItemsWithFormulas:
 
 class TestModelWithBalanceSheetConcept:
     @pytest.fixture
-    def sample_line_item_set(self):
+    def sample_line_item_set(self) -> Model:
         rev_1 = LineItem(name="rev_1", label="Item 1", category="revenue", values={2020: 300.0, 2021: 400.0})
         rev_2 = LineItem(name="rev_2", label="Item 2", category="revenue", values={2020: 100.0, 2021: 200.0})
         exp_1 = LineItem(name="exp_1", label="Item 3", category="expense", values={2020: 200.0, 2021: 300.0})
@@ -85,7 +85,7 @@ class TestModelWithBalanceSheetConcept:
             years=[2020, 2021]
         )
     
-    def test_line_item_set_init(self, sample_line_item_set):
+    def test_line_item_set_init(self, sample_line_item_set: Model):
         assert sample_line_item_set['rev_1', 2020] == 300.0
         expected_end_cash_2020 = 1000.0 + 300.0 + 100.0 - 200.0
         assert sample_line_item_set['end_cash', 2020] == expected_end_cash_2020
@@ -138,7 +138,7 @@ class TestSetWithAssumptions:
 
 class TestModelWithGenerators:
     @pytest.fixture
-    def sample_line_item_set_with_generators(self):
+    def sample_line_item_set_with_generators(self) -> Model:
         # Create a sample Model with LineItems and Generators
         p = LineItem(name="principal", category="debt_service", values={2020: 300.0}, formula='debt.principal')
         i = LineItem(name="interest", category="debt_service", values={2020: 100.0}, formula='debt.interest')
@@ -149,7 +149,7 @@ class TestModelWithGenerators:
             generators=[debt]
         )
     
-    def test_line_item_set_with_generators(self, sample_line_item_set_with_generators):
+    def test_line_item_set_with_generators(self, sample_line_item_set_with_generators: Model):
         lis = sample_line_item_set_with_generators
         ds_schedule = generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
         
@@ -197,7 +197,7 @@ class TestDuplicateNames:
         assert "Duplicate" in str(excinfo.value)
 
 class TestOtherMisc:
-    def test_line_item_set_get_item(self, sample_line_item_set):
+    def test_line_item_set_get_item(self, sample_line_item_set: Model):
         
         # assert item values by year
         assert sample_line_item_set["item1", 2020] == 100.0
@@ -295,7 +295,7 @@ class TestPercentChange:
     """Test cases for the percent_change method."""
     
     @pytest.fixture
-    def sample_model_for_percent_change(self):
+    def sample_model_for_percent_change(self) -> Model:
         """Create a sample model with predictable values for percent change testing."""
         return Model(
             line_items=[
@@ -306,7 +306,7 @@ class TestPercentChange:
             years=[2020, 2021, 2022, 2023]
         )
     
-    def test_percent_change_basic_calculation(self, sample_model_for_percent_change):
+    def test_percent_change_basic_calculation(self, sample_model_for_percent_change: Model):
         """Test basic percent change calculation."""
         model = sample_model_for_percent_change
         
@@ -319,14 +319,14 @@ class TestPercentChange:
         # Revenue: 150 -> 120 = -20% decrease = -0.2
         assert model.percent_change("revenue", 2023) == -0.2
     
-    def test_percent_change_no_change(self, sample_model_for_percent_change):
+    def test_percent_change_no_change(self, sample_model_for_percent_change: Model):
         """Test percent change when values don't change."""
         model = sample_model_for_percent_change
         
         # Expense: 50 -> 50 = 0% change = 0.0
         assert model.percent_change("expense", 2021) == 0.0
     
-    def test_percent_change_first_year_returns_none(self, sample_model_for_percent_change):
+    def test_percent_change_first_year_returns_none(self, sample_model_for_percent_change: Model):
         """Test that first year returns None (no previous year to compare)."""
         model = sample_model_for_percent_change
         
@@ -335,7 +335,7 @@ class TestPercentChange:
         assert model.percent_change("expense", 2020) is None
         assert model.percent_change("zero_item", 2020) is None
     
-    def test_percent_change_with_zero_previous_value(self, sample_model_for_percent_change):
+    def test_percent_change_with_zero_previous_value(self, sample_model_for_percent_change: Model):
         """Test percent change when previous value is zero (should return None)."""
         model = sample_model_for_percent_change
         
@@ -345,7 +345,7 @@ class TestPercentChange:
         # zero_item: 0 -> 5, can't calculate percent change from zero  
         assert model.percent_change("zero_item", 2023) is None
     
-    def test_percent_change_to_zero(self, sample_model_for_percent_change):
+    def test_percent_change_to_zero(self, sample_model_for_percent_change: Model):
         """Test percent change when current value becomes zero."""
         model = sample_model_for_percent_change
         
@@ -372,7 +372,7 @@ class TestPercentChange:
         # none_assumption: None -> 20.0, can't calculate  
         assert model.percent_change("none_assumption", 2022) is None
     
-    def test_percent_change_invalid_name(self, sample_model_for_percent_change):
+    def test_percent_change_invalid_name(self, sample_model_for_percent_change: Model):
         """Test percent change with invalid item name."""
         model = sample_model_for_percent_change
         
@@ -380,7 +380,7 @@ class TestPercentChange:
             model.percent_change("nonexistent_item", 2021)
         assert "not found in defined names" in str(excinfo.value)
     
-    def test_percent_change_invalid_year(self, sample_model_for_percent_change):
+    def test_percent_change_invalid_year(self, sample_model_for_percent_change: Model):
         """Test percent change with invalid year."""
         model = sample_model_for_percent_change
         
@@ -444,7 +444,7 @@ class TestCumulativePercentChange:
     """Test cases for the cumulative_percent_change method."""
     
     @pytest.fixture
-    def sample_model_for_cumulative_percent_change(self):
+    def sample_model_for_cumulative_percent_change(self) -> Model:
         """Create a sample model with predictable values for cumulative percent change testing."""
         return Model(
             line_items=[
@@ -458,7 +458,7 @@ class TestCumulativePercentChange:
             years=[2020, 2021, 2022, 2023]
         )
     
-    def test_cumulative_percent_change_basic_calculation(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_basic_calculation(self, sample_model_for_cumulative_percent_change: Model):
         """Test basic cumulative percent change calculation."""
         model = sample_model_for_cumulative_percent_change
         
@@ -471,7 +471,7 @@ class TestCumulativePercentChange:
         # Revenue: 100 -> 80 = -20% decrease = -0.2
         assert model.cumulative_percent_change("revenue", 2023) == -0.2
     
-    def test_cumulative_percent_change_expense_increase(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_expense_increase(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change for increasing expenses."""
         model = sample_model_for_cumulative_percent_change
         
@@ -484,7 +484,7 @@ class TestCumulativePercentChange:
         # Expense: 50 -> 100 = 100% increase = 1.0
         assert model.cumulative_percent_change("expense", 2023) == 1.0
     
-    def test_cumulative_percent_change_returns_none(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_returns_none(self, sample_model_for_cumulative_percent_change: Model):
         """Test that first year returns None (no change from itself)."""
         model = sample_model_for_cumulative_percent_change
         
@@ -493,7 +493,7 @@ class TestCumulativePercentChange:
         assert model.cumulative_percent_change("expense", 2020) == 0
         assert model.cumulative_percent_change("zero_start", 2020) == 0
 
-    def test_cumulative_percent_change_with_zero_first_value(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_with_zero_first_value(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change when first year value is zero (should return None)."""
         model = sample_model_for_cumulative_percent_change
         
@@ -503,7 +503,7 @@ class TestCumulativePercentChange:
         # zero_start: 0 -> 20, can't calculate percent change from zero
         assert model.cumulative_percent_change("zero_start", 2022) is None
     
-    def test_cumulative_percent_change_with_none_values(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_with_none_values(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change when assumption values contain None."""
         model = sample_model_for_cumulative_percent_change
         
@@ -514,7 +514,7 @@ class TestCumulativePercentChange:
         # none_values: 100.0 (2020) -> 150.0 (2022) = 50% increase = 0.5
         assert model.cumulative_percent_change("none_values", 2022) == 0.5
     
-    def test_cumulative_percent_change_invalid_name(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_invalid_name(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change with invalid item name."""
         model = sample_model_for_cumulative_percent_change
         
@@ -522,7 +522,7 @@ class TestCumulativePercentChange:
             model.cumulative_percent_change("nonexistent_item", 2021)
         assert "not found in defined names" in str(excinfo.value)
     
-    def test_cumulative_percent_change_invalid_year(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_invalid_year(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change with invalid year."""
         model = sample_model_for_cumulative_percent_change
         
@@ -530,7 +530,7 @@ class TestCumulativePercentChange:
             model.cumulative_percent_change("revenue", 2025)
         assert "Year 2025 not found in model years" in str(excinfo.value)
     
-    def test_cumulative_percent_change_rejects_assumptions_with_none(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_rejects_assumptions_with_none(self, sample_model_for_cumulative_percent_change: Model):
         """Test that cumulative_percent_change returns None for assumptions with None values."""
         model = sample_model_for_cumulative_percent_change
         
@@ -544,7 +544,7 @@ class TestCumulativePercentChange:
         # But 2022 should work fine since both 2020 and 2022 have values
         assert model.cumulative_percent_change("none_values", 2022) == 0.5
     
-    def test_cumulative_percent_change_accepts_valid_assumptions(self, sample_model_for_cumulative_percent_change):
+    def test_cumulative_percent_change_accepts_valid_assumptions(self, sample_model_for_cumulative_percent_change: Model):
         """Test that cumulative_percent_change works for assumptions with all non-None values."""
         model = sample_model_for_cumulative_percent_change
         
@@ -637,7 +637,7 @@ class TestCumulativePercentChange:
     # Tests for start_year parameter functionality
     
     @pytest.fixture
-    def sample_model_for_start_year_tests(self):
+    def sample_model_for_start_year_tests(self) -> Model:
         """Create a sample model for testing start_year parameter functionality."""
         return Model(
             line_items=[
@@ -654,7 +654,7 @@ class TestCumulativePercentChange:
             years=[2020, 2021, 2022, 2023, 2024]
         )
     
-    def test_cumulative_percent_change_with_start_year_basic(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_with_start_year_basic(self, sample_model_for_start_year_tests: Model):
         """Test basic cumulative percent change calculation with custom start_year."""
         model = sample_model_for_start_year_tests
         
@@ -668,7 +668,7 @@ class TestCumulativePercentChange:
         result = model.cumulative_percent_change("revenue", 2024, start_year=2022)
         assert abs(result - (200.0 - 150.0) / 150.0) < 1e-10
     
-    def test_cumulative_percent_change_start_year_same_as_target_year(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_same_as_target_year(self, sample_model_for_start_year_tests: Model):
         """Test that using start_year same as target year returns 0."""
         model = sample_model_for_start_year_tests
 
@@ -677,7 +677,7 @@ class TestCumulativePercentChange:
         assert model.cumulative_percent_change("expense", 2023, start_year=2023) == 0
         assert model.cumulative_percent_change("growth_rate", 2021, start_year=2021) == 0
     
-    def test_cumulative_percent_change_start_year_vs_default(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_vs_default(self, sample_model_for_start_year_tests: Model):
         """Test that start_year=None behaves same as not providing start_year (default behavior)."""
         model = sample_model_for_start_year_tests
         
@@ -689,7 +689,7 @@ class TestCumulativePercentChange:
         assert default_result == explicit_none_result
         assert default_result == first_year_result
     
-    def test_cumulative_percent_change_different_start_years(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_different_start_years(self, sample_model_for_start_year_tests: Model):
         """Test cumulative percent change with different start years for the same target year."""
         model = sample_model_for_start_year_tests
         
@@ -707,7 +707,7 @@ class TestCumulativePercentChange:
         # Verify they're all different (since start values are different)
         assert from_2020 > from_2021 > from_2022 > from_2023
     
-    def test_cumulative_percent_change_start_year_invalid(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_invalid(self, sample_model_for_start_year_tests: Model):
         """Test cumulative percent change with invalid start_year."""
         model = sample_model_for_start_year_tests
         
@@ -720,7 +720,7 @@ class TestCumulativePercentChange:
             model.cumulative_percent_change("revenue", 2023, start_year=2025)
         assert "Start year 2025 not found in model years" in str(excinfo.value)
     
-    def test_cumulative_percent_change_start_year_with_zero_value(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_with_zero_value(self, sample_model_for_start_year_tests: Model):
         """Test cumulative percent change when start_year has zero value."""
         # Create model with zero value in middle year
         model = Model(
@@ -740,7 +740,7 @@ class TestCumulativePercentChange:
         # 100 -> 150 = 50% increase
         assert model.cumulative_percent_change("zero_middle", 2022, start_year=2020) == 0.5
     
-    def test_cumulative_percent_change_start_year_with_assumptions(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_with_assumptions(self, sample_model_for_start_year_tests: Model):
         """Test cumulative percent change with start_year for assumptions."""
         model = sample_model_for_start_year_tests
         
@@ -751,7 +751,7 @@ class TestCumulativePercentChange:
         result = model.cumulative_percent_change("growth_rate", 2024, start_year=2022)
         assert abs(result - (0.25 - 0.15) / 0.15) < 1e-10
     
-    def test_cumulative_percent_change_start_year_backward_calculation(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_backward_calculation(self, sample_model_for_start_year_tests: Model):
         """Test cumulative percent change with start_year later than target year."""
         model = sample_model_for_start_year_tests
         
@@ -780,7 +780,7 @@ class TestCumulativePercentChange:
         # But should work fine for line items
         assert model.cumulative_percent_change("revenue", 2022, start_year=2021) == (140.0 - 120.0) / 120.0
     
-    def test_cumulative_percent_change_start_year_consistency(self, sample_model_for_start_year_tests):
+    def test_cumulative_percent_change_start_year_consistency(self, sample_model_for_start_year_tests: Model):
         """Test that chaining cumulative percent changes gives consistent results."""
         model = sample_model_for_start_year_tests
         
@@ -800,7 +800,7 @@ class TestCumulativeChange:
     """Test cases for the cumulative_change method."""
 
     @pytest.fixture
-    def sample_model_for_cumulative_change(self):
+    def sample_model_for_cumulative_change(self) -> Model:
         """Create a sample model with predictable values for cumulative change testing."""
         return Model(
             line_items=[
@@ -814,7 +814,7 @@ class TestCumulativeChange:
             years=[2020, 2021, 2022, 2023]
         )
 
-    def test_cumulative_change_basic_calculation(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_basic_calculation(self, sample_model_for_cumulative_change: Model):
         """Test basic cumulative change calculation."""
         model = sample_model_for_cumulative_change
         
@@ -827,7 +827,7 @@ class TestCumulativeChange:
         # Revenue: 100 -> 80 = -20 absolute change
         assert model.cumulative_change("revenue", 2023) == -20.0
     
-    def test_cumulative_change_expense_increase(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_expense_increase(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change for increasing expenses."""
         model = sample_model_for_cumulative_change
         
@@ -840,7 +840,7 @@ class TestCumulativeChange:
         # Expense: 50 -> 100 = +50 absolute change
         assert model.cumulative_change("expense", 2023) == 50.0
     
-    def test_cumulative_change_base_year_returns_zero(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_base_year_returns_zero(self, sample_model_for_cumulative_change: Model):
         """Test that base year returns 0 (no change from itself)."""
         model = sample_model_for_cumulative_change
         
@@ -849,7 +849,7 @@ class TestCumulativeChange:
         assert model.cumulative_change("expense", 2020) == 0
         assert model.cumulative_change("zero_start", 2020) == 0
 
-    def test_cumulative_change_with_zero_start_value(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_with_zero_start_value(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change when base year value is zero."""
         model = sample_model_for_cumulative_change
         
@@ -862,7 +862,7 @@ class TestCumulativeChange:
         # zero_start: 0 -> 30 = +30 absolute change
         assert model.cumulative_change("zero_start", 2023) == 30.0
     
-    def test_cumulative_change_invalid_name(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_invalid_name(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change with invalid item name."""
         model = sample_model_for_cumulative_change
         
@@ -870,7 +870,7 @@ class TestCumulativeChange:
             model.cumulative_change("nonexistent_item", 2021)
         assert "not found in defined names" in str(excinfo.value)
 
-    def test_cumulative_change_invalid_year(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_invalid_year(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change with invalid year."""
         model = sample_model_for_cumulative_change
         
@@ -878,7 +878,7 @@ class TestCumulativeChange:
             model.cumulative_change("revenue", 2025)
         assert "Year 2025 not found in model years" in str(excinfo.value)
     
-    def test_cumulative_change_invalid_start_year(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_invalid_start_year(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change with invalid start year."""
         model = sample_model_for_cumulative_change
         
@@ -967,7 +967,7 @@ class TestCumulativeChange:
         # negative_values: -10 -> -20 = -10 absolute change
         assert model.cumulative_change("negative_values", 2023) == -10.0
     
-    def test_cumulative_change_with_custom_start_year(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_with_custom_start_year(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change with custom start year."""
         model = sample_model_for_cumulative_change
         
@@ -980,7 +980,7 @@ class TestCumulativeChange:
         # Expense from 2022 -> 2023: 75 -> 100 = +25 absolute change
         assert model.cumulative_change("expense", 2023, start_year=2022) == 25.0
     
-    def test_cumulative_change_same_as_start_year(self, sample_model_for_cumulative_change):
+    def test_cumulative_change_same_as_start_year(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change when target year equals start year."""
         model = sample_model_for_cumulative_change
         
@@ -1056,7 +1056,7 @@ class TestIndexToYear:
             years=[2020, 2021, 2022, 2023]
         )
 
-    def test_basic_index_to_year(self, sample_model_for_index_to_year):
+    def test_basic_index_to_year(self, sample_model_for_index_to_year: Model):
         """Test basic index_to_year functionality with line items."""
         model = sample_model_for_index_to_year
         
@@ -1073,7 +1073,7 @@ class TestIndexToYear:
         # Revenue: 2020: 100 -> 2023: 80 = 80/100 * 100 = 80
         assert model.index_to_year("revenue", 2023) == 80.0
 
-    def test_index_to_year_with_custom_start_year(self, sample_model_for_index_to_year):
+    def test_index_to_year_with_custom_start_year(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with custom start year."""
         model = sample_model_for_index_to_year
         
@@ -1085,7 +1085,7 @@ class TestIndexToYear:
         indexed_2023 = model.index_to_year("revenue", 2023, start_year=2021)
         assert abs(indexed_2023 - 66.67) < 0.01
 
-    def test_index_to_year_zero_base_value(self, sample_model_for_index_to_year):
+    def test_index_to_year_zero_base_value(self, sample_model_for_index_to_year: Model):
         """Test index_to_year when base year value is zero."""
         model = sample_model_for_index_to_year
         
@@ -1093,7 +1093,7 @@ class TestIndexToYear:
         assert model.index_to_year("zero_start", 2021) is None
         assert model.index_to_year("zero_start", 2022) is None
 
-    def test_index_to_year_with_assumptions_valid(self, sample_model_for_index_to_year):
+    def test_index_to_year_with_assumptions_valid(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with valid assumptions (no None values)."""
         model = sample_model_for_index_to_year
         
@@ -1103,7 +1103,7 @@ class TestIndexToYear:
         assert model.index_to_year("valid_assumption", 2022) == 150.0
         assert model.index_to_year("valid_assumption", 2023) == 80.0
 
-    def test_index_to_year_with_assumptions_none_values(self, sample_model_for_index_to_year):
+    def test_index_to_year_with_assumptions_none_values(self, sample_model_for_index_to_year: Model):
         """Test that index_to_year raises error for assumptions with None values."""
         model = sample_model_for_index_to_year
         
@@ -1112,7 +1112,7 @@ class TestIndexToYear:
         assert model.index_to_year("none_values", 2021) is None # Should return None due to None value
         assert model.index_to_year("none_values", 2022) == 150.0
 
-    def test_index_to_year_invalid_name(self, sample_model_for_index_to_year):
+    def test_index_to_year_invalid_name(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with invalid item name."""
         model = sample_model_for_index_to_year
         
@@ -1120,7 +1120,7 @@ class TestIndexToYear:
             model.index_to_year("invalid_name", 2020)
         assert "'invalid_name' not found in" in str(excinfo.value)
 
-    def test_index_to_year_invalid_year(self, sample_model_for_index_to_year):
+    def test_index_to_year_invalid_year(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with invalid year."""
         model = sample_model_for_index_to_year
         
@@ -1128,7 +1128,7 @@ class TestIndexToYear:
             model.index_to_year("revenue", 2025)
         assert "Year 2025 not found in model years" in str(excinfo.value)
 
-    def test_index_to_year_invalid_start_year(self, sample_model_for_index_to_year):
+    def test_index_to_year_invalid_start_year(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with invalid start year."""
         model = sample_model_for_index_to_year
         
@@ -1136,7 +1136,7 @@ class TestIndexToYear:
             model.index_to_year("revenue", 2021, start_year=2025)
         assert "Start year 2025 not found in model years" in str(excinfo.value)
 
-    def test_index_to_year_percentage_calculations(self, sample_model_for_index_to_year):
+    def test_index_to_year_percentage_calculations(self, sample_model_for_index_to_year: Model):
         """Test that index_to_year calculations are correct for various scenarios."""
         model = sample_model_for_index_to_year
         
@@ -1162,7 +1162,7 @@ class TestIndexToYear:
         result = model.index_to_year("partial_assumption", 2021)
         assert result is None
 
-    def test_index_to_year_fractional_results(self, sample_model_for_index_to_year):
+    def test_index_to_year_fractional_results(self, sample_model_for_index_to_year: Model):
         """Test index_to_year with fractional results."""
         model = Model(
             line_items=[
@@ -1209,7 +1209,7 @@ class TestModelWithConstraints:
             categories=categories
         )
     
-    def test_model_initialization_with_constraints(self, sample_model_with_constraints):
+    def test_model_initialization_with_constraints(self, sample_model_with_constraints: Model):
         """Test that model can be initialized with constraints."""
         from pyproforma.models.constraint import Constraint
         
@@ -1243,7 +1243,7 @@ class TestModelWithConstraints:
         assert model.get_value("revenue", 2023) == 100000
         assert model.get_value("expenses", 2024) == 60000
     
-    def test_constraints_preserved_during_copy(self, sample_model_with_constraints):
+    def test_constraints_preserved_during_copy(self, sample_model_with_constraints: Model):
         """Test that constraints are preserved when copying a model."""
         from pyproforma.models.constraint import Constraint
         
@@ -1272,7 +1272,7 @@ class TestModelWithConstraints:
         # Check that they are independent objects
         assert original_model.constraints[0] is not copied_model.constraints[0]
     
-    def test_constraints_in_serialization(self, sample_model_with_constraints):
+    def test_constraints_in_serialization(self, sample_model_with_constraints: Model):
         """Test that constraints are included in serialization."""
         from pyproforma.models.constraint import Constraint
         
@@ -1314,7 +1314,7 @@ class TestModelWithConstraints:
         assert len(yaml_model.constraints) == 1
         assert yaml_model.constraints[0].name == 'test_constraint'
     
-    def test_model_functions_with_many_constraints(self, sample_model_with_constraints):
+    def test_model_functions_with_many_constraints(self, sample_model_with_constraints: Model):
         """Test that model functions correctly with many constraints."""
         from pyproforma.models.constraint import Constraint
         
