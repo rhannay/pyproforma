@@ -46,6 +46,10 @@ class Debt(MultiLineItemABC):
         # TODO: implement this later
         self.existing_debt_service = existing_debt_service or []
     
+    # ----------------------------------
+    # MAIN PUBLIC API METHODS
+    # ----------------------------------
+    
     @property
     def defined_names(self) -> List[str]:
         """
@@ -98,28 +102,9 @@ class Debt(MultiLineItemABC):
             
         return result
     
-    def _add_bond_issue(self, par: float, interest_rate: float, start_year: int, term: int):
-        """
-        Add a bond issue to the debt service schedules.
-        
-        Args:
-            par (float): The principal amount of the debt.
-            interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).
-            start_year (int): The starting year for the debt service.
-            term (int): The term of the debt in years.
-            
-        Raises:
-            ValueError: If a debt service schedule already exists with the same start_year.
-        """
-        # Check if a schedule with this start_year already exists
-        if start_year in self.ds_schedules:
-            raise ValueError(f"A debt service schedule already exists for year {start_year}")
-            
-        # Generate debt service schedule using static method
-        schedule = self.generate_debt_service_schedule(par, interest_rate, start_year, term)
-        
-        # Add to ds_schedules with start_year as key
-        self.ds_schedules[start_year] = schedule
+    # ----------------------------------
+    # PRINCIPAL AND INTEREST BY YEAR
+    # ----------------------------------
     
     def get_principal(self, year: int) -> float:
         """
@@ -170,6 +155,33 @@ class Debt(MultiLineItemABC):
                     total_interest += entry['interest']
         
         return total_interest
+        
+    # ----------------------------------
+    # DEBT SCHEDULE MANAGEMENT
+    # ----------------------------------
+    
+    def _add_bond_issue(self, par: float, interest_rate: float, start_year: int, term: int):
+        """
+        Add a bond issue to the debt service schedules.
+        
+        Args:
+            par (float): The principal amount of the debt.
+            interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).
+            start_year (int): The starting year for the debt service.
+            term (int): The term of the debt in years.
+            
+        Raises:
+            ValueError: If a debt service schedule already exists with the same start_year.
+        """
+        # Check if a schedule with this start_year already exists
+        if start_year in self.ds_schedules:
+            raise ValueError(f"A debt service schedule already exists for year {start_year}")
+            
+        # Generate debt service schedule using static method
+        schedule = self.generate_debt_service_schedule(par, interest_rate, start_year, term)
+        
+        # Add to ds_schedules with start_year as key
+        self.ds_schedules[start_year] = schedule
     
     @classmethod
     def generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
@@ -214,6 +226,10 @@ class Debt(MultiLineItemABC):
                 remaining_principal -= principal_payment
         
         return schedule
+    
+    # ----------------------------------
+    # DEBT ISSUE PARAMETER METHODS
+    # ----------------------------------
     
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """
