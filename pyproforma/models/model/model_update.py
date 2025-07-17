@@ -276,3 +276,57 @@ class UpdateNamespace:
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update generator '{name}': {str(e)}") from e
+
+    def years(self, new_years: list[int]):
+        """
+        Update the years in the model.
+        
+        This method updates the model's years attribute and recalculates the value matrix
+        for the new year range. It validates the update by first testing it on a copy of 
+        the model, then applies the change to the actual model if successful.
+        
+        Line items with values for years not in the new list will retain those values,
+        but they won't be accessible through the model until those years are added back.
+        
+        Usage:
+            # Update years to a new range
+            model.update.years([2024, 2025, 2026])
+            
+            # Extend years
+            model.update.years([2023, 2024, 2025, 2026, 2027])
+        
+        Args:
+            new_years (list[int]): New list of years for the model
+            
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If the years list is invalid (empty, non-integers, etc.)
+            TypeError: If new_years is not a list
+        """
+        # Validate input
+        if not isinstance(new_years, list):
+            raise TypeError(f"Expected list, got {type(new_years).__name__}")
+        
+        if not new_years:
+            raise ValueError("Years cannot be an empty list")
+        
+        if not all(isinstance(year, int) for year in new_years):
+            raise ValueError("All years must be integers")
+        
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            # Update years and recalculate (remove duplicates and sort)
+            model_copy.years = sorted(list(set(new_years)))
+            model_copy._reclalculate()
+            
+            # If we get here, the update was successful on the copy
+            # Now apply it to the actual model
+            self._model.years = sorted(list(set(new_years)))
+            self._model._reclalculate()
+            
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to update years: {str(e)}") from e
