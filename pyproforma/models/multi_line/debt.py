@@ -184,7 +184,7 @@ class Debt(MultiLineItemABC):
         self.ds_schedules[start_year] = schedule
     
     @classmethod
-    def generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
+    def generate_debt_service_schedule(cls, par_amount, interest_rate: float, start_year: int, term: int):
         """
         Generate an amortization schedule for a debt instrument.
         
@@ -202,7 +202,7 @@ class Debt(MultiLineItemABC):
         
         if interest_rate == 0:
             # For zero interest loans, simply divide principal evenly across the term
-            equal_payment = par / term
+            equal_payment = par_amount / term
             for i in range(term):
                 year = start_year + i
                 schedule.append({
@@ -212,8 +212,8 @@ class Debt(MultiLineItemABC):
                 })
         else:
             # Standard amortization calculation for non-zero interest
-            annual_payment = (par * interest_rate) / (1 - (1 + interest_rate) ** -term)
-            remaining_principal = par
+            annual_payment = (par_amount * interest_rate) / (1 - (1 + interest_rate) ** -term)
+            remaining_principal = par_amount
             for i in range(term):
                 year = start_year + i
                 interest = remaining_principal * interest_rate
