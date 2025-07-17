@@ -14,34 +14,165 @@ class Debt(MultiLineItemABC):
     
     def __init__(self, 
                 name: str,
-                par_amounts: dict, 
-                interest_rate: float, 
-                term: int,
+                par_amount: dict | str, 
+                interest_rate: float | str, 
+                term: int | str,
                 existing_debt_service: list[dict] = None):
         """
         Initialize a Debt object with specified parameters.
         
         Args:
             name (str): The name of this debt component.
-            par_amounts (dict): The principal amounts for each debt issue.
-            interest_rate (float): The interest rate applied to the debt.
-            term (int): The term of the debt in years.
+            par_amount (dict | str): The principal amounts for each debt issue. Can be a dict with years as keys
+                                   or a string representing a line item name to look up in the value matrix.
+            interest_rate (float | str): The interest rate applied to the debt. Can be a float (e.g., 0.05 for 5%)
+                                      or a string representing a line item name to look up in the value matrix.
+            term (int | str): The term of the debt in years. Can be an integer or a string representing
+                           a line item name to look up in the value matrix.
             existing_debt_service (list[dict], optional): Pre-existing debt service schedule.
         """
         self.name = name
-        self.par_amounts = par_amounts
-        self.interest_rate = interest_rate
-        self.term = term
-        
+        self._par_amount = par_amount
+        self._interest_rate = interest_rate
+        self._term = term
+
+        # Gather the defined names
+        self._principal_name = f'{self.name}.principal'
+        self._interest_name = f'{self.name}.interest'
+        self._bond_proceeds_name = f'{self.name}.bond_proceeds'
+
         self.ds_schedules = {}
         
         # TODO: implement this later
         self.existing_debt_service = existing_debt_service or []
     
+    @property
+    def defined_names(self) -> List[str]:
+        """
+        Returns a list of all line item names defined by this component.
+        
+        Returns:
+            List[str]: The names of all line items this component can generate values for.
+        """
+        return [self._principal_name, self._interest_name, self._bond_proceeds_name]
+
+    def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
+                  year: int) -> Dict[str, Optional[float]]:
+        """
+        Get all values for this debt component for a specific year.
+        
+        Args:
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
+                by year, used to prevent circular references and for formula calculations.
+            year (int): The year for which to get the values.
+            
+        Returns:
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
+                                        component for the specified year, with line item names as keys.
+                             
+        Raises:
+            ValueError: If value already exists in interim_values_by_year to prevent circular references.
+        """
+        result = {}
+        
+        # Check for circular references
+        for name in self.defined_names:
+            if (year in interim_values_by_year and 
+                name in interim_values_by_year[year]):
+                raise ValueError(f"Circular reference detected for '{name}' in year {year}.")
+
+        # Gather interest rate, par amount, and term for this year bond issue            
+        interest_rate = self._get_interest_rate(interim_values_by_year, year)
+        par_amount = self._get_par_amount(interim_values_by_year, year)
+        term = self._get_term(interim_values_by_year, year)
+
+        # Add it to the schedules
+        self._add_bond_issue(par_amount, interest_rate, year, term)
+
+        # Principal and interest payments for this year
+        result[self._principal_name] = self.get_principal(year)
+        result[self._interest_name] = self.get_interest(year)
+
+        # Bond proceeds (par amounts for new debt issues in this year)
+        result[self._bond_proceeds_name] = self._get_par_amount(interim_values_by_year, year)
+            
+        return result
     
+    def _add_bond_issue(self, par: float, interest_rate: float, start_year: int, term: int):
+        """
+        Add a bond issue to the debt service schedules.
+        
+        Args:
+            par (float): The principal amount of the debt.
+            interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).
+            start_year (int): The starting year for the debt service.
+            term (int): The term of the debt in years.
+            
+        Raises:
+            ValueError: If a debt service schedule already exists with the same start_year.
+        """
+        # Check if a schedule with this start_year already exists
+        if start_year in self.ds_schedules:
+            raise ValueError(f"A debt service schedule already exists for year {start_year}")
+            
+        # Generate debt service schedule using static method
+        schedule = self.generate_debt_service_schedule(par, interest_rate, start_year, term)
+        
+        # Add to ds_schedules with start_year as key
+        self.ds_schedules[start_year] = schedule
+    
+    def get_principal(self, year: int) -> float:
+        """
+        Get the total principal payment for a specific year across all debt issues.
+        
+        Args:
+            year (int): The year for which to calculate the total principal payment.
+            
+        Returns:
+            float: The total principal payment for the specified year.
+        """
+        total_principal = 0.0
+        
+        # Check existing debt service schedule
+        for entry in self.existing_debt_service:
+            if entry['year'] == year:
+                total_principal += entry['principal']
+        
+        # Check scheduled debt issues
+        for start_year, schedule in self.ds_schedules.items():
+            for entry in schedule:
+                if entry['year'] == year:
+                    total_principal += entry['principal']
+        
+        return total_principal
+    
+    def get_interest(self, year: int) -> float:
+        """
+        Get the total interest payment for a specific year across all debt issues.
+        
+        Args:
+            year (int): The year for which to calculate the total interest payment.
+            
+        Returns:
+            float: The total interest payment for the specified year.
+        """
+        total_interest = 0.0
+        
+        # Check existing debt service schedule
+        for entry in self.existing_debt_service:
+            if entry['year'] == year:
+                total_interest += entry['interest']
+        
+        # Check scheduled debt issues
+        for start_year, schedule in self.ds_schedules.items():
+            for entry in schedule:
+                if entry['year'] == year:
+                    total_interest += entry['interest']
+        
+        return total_interest
     
     @classmethod
-    def _generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
+    def generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
         """
         Generate an amortization schedule for a debt instrument.
         
@@ -84,66 +215,96 @@ class Debt(MultiLineItemABC):
         
         return schedule
     
-    @property
-    def defined_names(self) -> List[str]:
+    def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """
-        Returns a list of all line item names defined by this component.
-        
-        Returns:
-            List[str]: The names of all line items this component can generate values for.
-        """
-        return [f'{self.name}.principal', f'{self.name}.interest', f'{self.name}.bond_proceeds']
-    
-    def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
-                  year: int) -> Dict[str, Optional[float]]:
-        """
-        Get all values for this debt component for a specific year.
+        Get the interest rate for a specific year.
         
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
-                by year, used to prevent circular references and for formula calculations.
-            year (int): The year for which to get the values.
+                by year, used for looking up the interest rate if it's specified as a string.
+            year (int): The year for which to get the interest rate.
             
         Returns:
-            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
-                                        component for the specified year, with line item names as keys.
-                             
+            float: The interest rate as a float value.
+            
         Raises:
-            ValueError: If value already exists in interim_values_by_year to prevent circular references.
+            ValueError: If the interest_rate is a string but the value cannot be found in interim_values_by_year.
+            TypeError: If the interest_rate is not a float or string.
         """
-        # Placeholder implementation
-        result = {}
-        
-        # Check for circular references
-        for name in self.defined_names:
+        if isinstance(self._interest_rate, (float, int)):
+            return float(self._interest_rate)
+        elif isinstance(self._interest_rate, str):
+            # Look up the value in interim_values_by_year
             if (year in interim_values_by_year and 
-                name in interim_values_by_year[year]):
-                raise ValueError(f"Circular reference detected for '{name}' in year {year}.")
-            
-            # Will be implemented in future
-            result[name] = None
-            
-        return result
+                self._interest_rate in interim_values_by_year[year]):
+                value = interim_values_by_year[year][self._interest_rate]
+                if value is None:
+                    raise ValueError(f"Interest rate '{self._interest_rate}' for year {year} is None")
+                return float(value)
+            else:
+                raise ValueError(f"Could not find interest rate '{self._interest_rate}' for year {year} in interim values")
+        else:
+            raise TypeError(f"Interest rate must be a float or string, not {type(self._interest_rate)}")
     
-    def _add_bond_issue(self, par, interest_rate: float, start_year: int, term: int):
+    def _get_par_amount(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """
-        Add a bond issue to the debt service schedules.
+        Get the par amount for a specific year.
         
         Args:
-            par: The principal amount of the debt.
-            interest_rate (float): Annual interest rate (as a decimal, e.g., 0.05 for 5%).
-            start_year (int): The starting year for the debt service.
-            term (int): The term of the debt in years.
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
+                by year, used for looking up the par amount if it's specified as a string.
+            year (int): The year for which to get the par amount.
+            
+        Returns:
+            float: The par amount as a float value, or 0.0 if no par amount for this year.
             
         Raises:
-            ValueError: If a debt service schedule already exists with the same start_year.
+            ValueError: If the par_amount is a string but the value cannot be found in interim_values_by_year.
+            TypeError: If the par_amount is not a dict or string.
         """
-        # Check if a schedule with this start_year already exists
-        if start_year in self.ds_schedules:
-            raise ValueError(f"A debt service schedule already exists for year {start_year}")
-            
-        # Generate debt service schedule using class method
-        schedule = self._generate_debt_service_schedule(par, interest_rate, start_year, term)
+        if isinstance(self._par_amount, dict):
+            # Direct lookup from the dictionary
+            return float(self._par_amount.get(year, 0.0))
+        elif isinstance(self._par_amount, str):
+            # Look up the value in interim_values_by_year
+            if (year in interim_values_by_year and 
+                self._par_amount in interim_values_by_year[year]):
+                value = interim_values_by_year[year][self._par_amount]
+                if value is None:
+                    return 0.0  # No par amount for this year
+                return float(value)
+            else:
+                raise ValueError(f"Could not find par amount '{self._par_amount}' for year {year} in interim values")
+        else:
+            raise TypeError(f"Par amount must be a dict or string, not {type(self._par_amount)}")
+    
+    def _get_term(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> int:
+        """
+        Get the term for a specific year.
         
-        # Add to ds_schedules with start_year as key
-        self.ds_schedules[start_year] = schedule
+        Args:
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
+                by year, used for looking up the term if it's specified as a string.
+            year (int): The year for which to get the term.
+            
+        Returns:
+            int: The term as an integer value.
+            
+        Raises:
+            ValueError: If the term is a string but the value cannot be found in interim_values_by_year.
+            TypeError: If the term is not an int or string.
+        """
+        if isinstance(self._term, int):
+            return self._term
+        elif isinstance(self._term, str):
+            # Look up the value in interim_values_by_year
+            if (year in interim_values_by_year and 
+                self._term in interim_values_by_year[year]):
+                value = interim_values_by_year[year][self._term]
+                if value is None:
+                    raise ValueError(f"Term '{self._term}' for year {year} is None")
+                return int(value)
+            else:
+                raise ValueError(f"Could not find term '{self._term}' for year {year} in interim values")
+        else:
+            raise TypeError(f"Term must be an int or string, not {type(self._term)}")
