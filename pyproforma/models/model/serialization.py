@@ -78,9 +78,9 @@ class SerializationMixin:
         Returns:
             Model: New Model instance created from the configuration
         """
-        from .line_item import LineItem, Category
+        from ..line_item import LineItem, Category
         from pyproforma.generators.generator_class import Generator
-        from .constraint import Constraint
+        from ..constraint import Constraint
         
         # Reconstruct line items
         line_items = [

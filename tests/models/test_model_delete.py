@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.models.model_delete import DeleteNamespace
+from pyproforma.models.model.model_delete import DeleteNamespace
 from pyproforma.generators.debt import Debt
 
 
