@@ -1,12 +1,8 @@
-from typing import List, Literal, Union
+from typing import List, Union
 import pandas as pd
 from ._utils import check_name
 from .formula import calculate_formula
-from ..constants import VALUE_FORMATS
-
-# Type alias for valid value formats (based on VALUE_FORMATS constant)
-# Note: Using explicit Literal since dynamic Literal is not supported at runtime
-ValueFormat = Literal[None, 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals']
+from ..constants import VALUE_FORMATS, ValueFormat
 
 
 class LineItem:

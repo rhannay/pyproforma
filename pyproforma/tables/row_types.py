@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 from .table_class import Row, Cell
+from ..constants import ValueFormat
 
 
 class BaseRow(ABC):
@@ -30,7 +31,7 @@ class BaseRow(ABC):
 class ItemRow(BaseRow):
     """Configuration for item row generation."""
     name: str
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -58,7 +59,7 @@ class ItemRow(BaseRow):
 class ItemsByCategoryRow(BaseRow):
     """Configuration for items by category row generation."""
     category: str
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -82,7 +83,7 @@ class PercentChangeRow(BaseRow):
     """Configuration for percent change row generation."""
     name: str
     label: Optional[str] = None
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -117,7 +118,7 @@ class CumulativeChangeRow(BaseRow):
     """Configuration for cumulative change row generation."""
     name: str
     label: Optional[str] = None
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -163,7 +164,7 @@ class CumulativePercentChangeRow(BaseRow):
     """Configuration for cumulative percent change row generation."""
     name: str
     label: Optional[str] = None
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -253,7 +254,7 @@ class ConstraintVarianceRow(BaseRow):
     """Configuration for constraint variance row generation."""
     constraint_name: str
     label: Optional[str] = None
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     
@@ -291,7 +292,7 @@ class ConstraintTargetRow(BaseRow):
     """Configuration for constraint target row generation."""
     constraint_name: str
     label: Optional[str] = None
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
     

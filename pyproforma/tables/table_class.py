@@ -4,6 +4,7 @@ import pandas as pd
 from pandas.io.formats.style import Styler
 from .excel import to_excel
 from typing import TYPE_CHECKING
+from ..constants import ValueFormat
 
 if TYPE_CHECKING:
     from pyproforma import LineItemSet 
@@ -14,7 +15,7 @@ class Cell:
     value: Optional[Any] = None
     bold: bool = False
     align: str = 'right'
-    value_format: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
     background_color: Optional[str] = None
 
     @property
@@ -110,7 +111,7 @@ class Table:
         return style_map
     
 
-def format_value(value: Any, value_format: Optional[str], none_returns='') -> Any:
+def format_value(value: Any, value_format: Optional[ValueFormat], none_returns='') -> Any:
     if value is None:
         return none_returns
     if value_format is None:

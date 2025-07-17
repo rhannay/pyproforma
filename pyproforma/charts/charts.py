@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Union
 from .chart_class import Chart, ChartDataSet
+from ..constants import ValueFormat
 
 if TYPE_CHECKING:
     from pyproforma import Model 
@@ -69,7 +70,7 @@ class Charts:
                 
         return fig
     
-    def items(self, item_names: list[str], width: int = 800, height: int = 600, template: str = 'plotly_white', value_format: str = None):
+    def items(self, item_names: list[str], width: int = 800, height: int = 600, template: str = 'plotly_white', value_format: ValueFormat = None):
         """
         Create a line chart using Plotly showing the values for multiple items over years.
         
@@ -78,7 +79,7 @@ class Charts:
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            value_format (str, optional): Y-axis value format. If None, uses the first item's format.
+            value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.
             
         Returns:
             Chart figure: The Plotly chart figure with multiple lines

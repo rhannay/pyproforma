@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
+from ...constants import ValueFormat
 
 
 class UpdateNamespace:
@@ -130,7 +131,7 @@ class UpdateNamespace:
         label: str = None,
         values: dict[int, float] = None,
         formula: str = None,
-        value_format: str = None
+        value_format: ValueFormat = None
     ):
         """
         Update a line item in the model by name.
@@ -158,7 +159,7 @@ class UpdateNamespace:
             label (str, optional): New label for the line item
             values (dict[int, float], optional): New values dictionary for the line item
             formula (str, optional): New formula string for the line item
-            value_format (str, optional): New value format for the line item
+            value_format (ValueFormat, optional): New value format for the line item
             
         Returns:
             None
