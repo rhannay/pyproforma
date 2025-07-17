@@ -2,7 +2,7 @@ import pytest
 from pyproforma import LineItem, Model
 
 @pytest.fixture
-def sample_line_item_list():
+def sample_line_item_list() -> list[LineItem]:
     return [
         LineItem(
             name="item1",
@@ -25,7 +25,7 @@ def sample_line_item_list():
     ]
 
 @pytest.fixture
-def sample_line_item_set():
+def sample_line_item_set() -> Model:
     li_1 = LineItem(
         name="item1",
         label="Item 1",

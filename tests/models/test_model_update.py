@@ -6,7 +6,7 @@ from pyproforma.models.line_item import Category
 class TestUpdateCategory:
     
     @pytest.fixture
-    def sample_model_with_categories(self):
+    def sample_model_with_categories(self) -> Model:
         """Create a sample model with categories for testing."""
         revenue = LineItem(
             name="revenue",
@@ -70,7 +70,7 @@ class TestUpdateCategory:
         total_def = next(name for name in sample_model_with_categories.defined_names if name['name'] == 'total_income')
         assert total_def['label'] == "Total Revenue"
 
-    def test_update_category_include_total(self, sample_model_with_categories):
+    def test_update_category_include_total(self, sample_model_with_categories: Model):
         """Test updating category include_total setting."""
         # Initially has total
         initial_names = [name['name'] for name in sample_model_with_categories.defined_names]
@@ -92,7 +92,7 @@ class TestUpdateCategory:
         updated_names = [name['name'] for name in sample_model_with_categories.defined_names]
         assert "total_income" not in updated_names
 
-    def test_update_category_enable_total(self, sample_model_with_categories):
+    def test_update_category_enable_total(self, sample_model_with_categories: Model):
         """Test enabling total for a category that didn't have it."""
         # Initially unused category has no total
         initial_names = [name['name'] for name in sample_model_with_categories.defined_names]
@@ -182,7 +182,7 @@ class TestUpdateCategory:
         assert category.label == "Replacement Income Category"
         assert category.total_label == "Replacement Total"
 
-    def test_update_category_not_found(self, sample_model_with_categories):
+    def test_update_category_not_found(self, sample_model_with_categories: Model):
         """Test that updating a non-existent category raises KeyError."""
         with pytest.raises(KeyError) as excinfo:
             sample_model_with_categories.update.category(
@@ -299,7 +299,7 @@ class TestUpdateCategory:
         category = next(cat for cat in sample_model_with_categories._category_definitions if cat.name == "income")
         assert category.label == original_income_label
 
-    def test_update_category_total_behavior_changes(self, sample_model_with_categories):
+    def test_update_category_total_behavior_changes(self, sample_model_with_categories: Model):
         """Test changing total behavior and its effect on model calculations."""
         # Initially income has total
         assert sample_model_with_categories["total_income", 2023] == 100000
@@ -353,7 +353,7 @@ class TestUpdateCategory:
 class TestUpdateLineItem:
     
     @pytest.fixture
-    def sample_model(self):
+    def sample_model(self) -> Model:
         """Create a sample model for testing."""
         revenue = LineItem(
             name="revenue",
@@ -726,7 +726,7 @@ class TestUpdateGenerator:
         )
     
     @pytest.fixture
-    def sample_model_with_generator(self, sample_generator):
+    def sample_model_with_generator(self, sample_generator) -> Model:
         """Create a sample model with a generator for testing."""
         revenue = LineItem(
             name="revenue",
@@ -745,7 +745,7 @@ class TestUpdateGenerator:
             generators=[sample_generator]
         )
 
-    def test_update_generator_replacement(self, sample_model_with_generator):
+    def test_update_generator_replacement(self, sample_model_with_generator: Model):
         """Test replacing a generator with a new instance."""
         from pyproforma.generators.debt import Debt
         
@@ -771,7 +771,7 @@ class TestUpdateGenerator:
         new_principal_2023 = sample_model_with_generator["test_debt.principal", 2023]
         assert new_principal_2023 != original_principal_2023
 
-    def test_update_generator_not_found(self, sample_model_with_generator):
+    def test_update_generator_not_found(self, sample_model_with_generator: Model):
         """Test error when trying to update non-existent generator."""
         from pyproforma.generators.debt import Debt
         
@@ -785,12 +785,12 @@ class TestUpdateGenerator:
         with pytest.raises(KeyError, match="Generator 'nonexistent' not found in model"):
             sample_model_with_generator.update.generator("nonexistent", generator=new_debt)
 
-    def test_update_generator_invalid_type(self, sample_model_with_generator):
+    def test_update_generator_invalid_type(self, sample_model_with_generator: Model):
         """Test error when trying to update with non-Generator instance."""
         with pytest.raises(TypeError, match="Expected Generator instance, got str"):
             sample_model_with_generator.update.generator("test_debt", generator="not_a_generator")
 
-    def test_update_generator_validation_failure(self, sample_model_with_generator):
+    def test_update_generator_validation_failure(self, sample_model_with_generator: Model):
         """Test that validation failures are properly handled."""
         from pyproforma.generators.generator_class import Generator
         

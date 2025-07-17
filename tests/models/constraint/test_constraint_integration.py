@@ -7,7 +7,7 @@ class TestConstraintSerialization:
     """Test that constraints are properly serialized and deserialized."""
     
     @pytest.fixture
-    def sample_model_with_constraints(self):
+    def sample_model_with_constraints(self) -> Model:
         """Create a sample model with constraints for testing."""
         line_items = [
             LineItem(
@@ -49,7 +49,7 @@ class TestConstraintSerialization:
             constraints=constraints
         )
     
-    def test_to_dict_includes_constraints(self, sample_model_with_constraints):
+    def test_to_dict_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_dict includes constraints in the output."""
         model_dict = sample_model_with_constraints.to_dict()
         
@@ -70,7 +70,7 @@ class TestConstraintSerialization:
         assert constraint2['target'] == 70000.0
         assert constraint2['operator'] == 'le'
     
-    def test_from_dict_reconstructs_constraints(self, sample_model_with_constraints):
+    def test_from_dict_reconstructs_constraints(self, sample_model_with_constraints: Model):
         """Test that from_dict properly reconstructs constraints."""
         model_dict = sample_model_with_constraints.to_dict()
         reconstructed_model = Model.from_dict(model_dict)
@@ -91,7 +91,7 @@ class TestConstraintSerialization:
         assert constraint2.target == 70000.0
         assert constraint2.operator == 'le'
     
-    def test_to_yaml_includes_constraints(self, sample_model_with_constraints):
+    def test_to_yaml_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_yaml includes constraints in the output."""
         yaml_str = sample_model_with_constraints.to_yaml()
         
@@ -102,7 +102,7 @@ class TestConstraintSerialization:
         assert 'target: 80000.0' in yaml_str
         assert 'operator: gt' in yaml_str
     
-    def test_from_yaml_reconstructs_constraints(self, sample_model_with_constraints):
+    def test_from_yaml_reconstructs_constraints(self, sample_model_with_constraints: Model):
         """Test that from_yaml properly reconstructs constraints."""
         yaml_str = sample_model_with_constraints.to_yaml()
         reconstructed_model = Model.from_yaml(yaml_str=yaml_str)
@@ -114,7 +114,7 @@ class TestConstraintSerialization:
         assert 'min_revenue' in constraint_names
         assert 'max_expenses' in constraint_names
     
-    def test_to_json_includes_constraints(self, sample_model_with_constraints):
+    def test_to_json_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_json includes constraints in the output."""
         json_str = sample_model_with_constraints.to_json()
         
@@ -125,7 +125,7 @@ class TestConstraintSerialization:
         assert '"target": 80000.0' in json_str
         assert '"operator": "gt"' in json_str
     
-    def test_from_json_reconstructs_constraints(self, sample_model_with_constraints):
+    def test_from_json_reconstructs_constraints(self, sample_model_with_constraints: Model):
         """Test that from_json properly reconstructs constraints."""
         json_str = sample_model_with_constraints.to_json()
         reconstructed_model = Model.from_json(json_str=json_str)
