@@ -819,3 +819,328 @@ class TestUpdateGenerator:
         
         with pytest.raises(ValueError, match="Failed to update generator 'test_debt'"):
             sample_model_with_generator.update.generator("test_debt", generator=bad_generator)
+
+
+class TestUpdateYears:
+    
+    @pytest.fixture
+    def sample_model_with_years(self):
+        """Create a sample model with years for testing."""
+        revenue = LineItem(
+            name="revenue",
+            category="income",
+            values={2023: 100000, 2024: 120000, 2025: 140000, 2026: 160000}
+        )
+        
+        costs = LineItem(
+            name="costs",
+            category="expenses",
+            values={2023: 60000, 2024: 70000, 2025: 80000, 2026: 90000}
+        )
+        
+        profit = LineItem(
+            name="profit",
+            category="income",
+            formula="revenue - costs"
+        )
+        
+        categories = [
+            Category(name="income", label="Income", include_total=True),
+            Category(name="expenses", label="Expenses", include_total=True)
+        ]
+        
+        return Model(
+            line_items=[revenue, costs, profit],
+            years=[2023, 2024, 2025],
+            categories=categories
+        )
+
+    def test_update_years_extend_range(self, sample_model_with_years: Model):
+        """Test extending the year range."""
+        # Initial state
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2023, 2024, 2025]
+        
+        # Can't access 2026 initially
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2026]
+        
+        # Update years to extend range
+        sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        
+        # Verify years were updated
+        assert sample_model_with_years.years == [2023, 2024, 2025, 2026]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2023, 2024, 2025, 2026]
+        
+        # Can now access 2026 values
+        assert sample_model_with_years["revenue", 2026] == 160000
+        assert sample_model_with_years["costs", 2026] == 90000
+        assert sample_model_with_years["profit", 2026] == 70000  # 160000 - 90000
+        
+        # Original years still work
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["costs", 2023] == 60000
+        assert sample_model_with_years["profit", 2023] == 40000  # 100000 - 60000
+
+    def test_update_years_reduce_range(self, sample_model_with_years: Model):
+        """Test reducing the year range."""
+        # Initial state
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        assert sample_model_with_years["revenue", 2025] == 140000
+        
+        # Update years to reduce range
+        sample_model_with_years.update.years([2023, 2024])
+        
+        # Verify years were updated
+        assert sample_model_with_years.years == [2023, 2024]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2023, 2024]
+        
+        # Can no longer access 2025
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2025]
+        
+        # Original years still work
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["profit", 2023] == 40000  # 100000 - 60000
+        assert sample_model_with_years["profit", 2024] == 50000  # 120000 - 70000
+
+    def test_update_years_completely_different_range(self, sample_model_with_years: Model):
+        """Test changing to a completely different year range."""
+        # Initial state
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        
+        # Update to completely different range, but use a year that has values
+        sample_model_with_years.update.years([2026])
+        
+        # Verify years were updated
+        assert sample_model_with_years.years == [2026]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2026]
+        
+        # Can no longer access original years
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2023]
+        
+        # Can access new year (where line items have values)
+        assert sample_model_with_years["revenue", 2026] == 160000
+        assert sample_model_with_years["costs", 2026] == 90000
+        assert sample_model_with_years["profit", 2026] == 70000
+
+    def test_update_years_unsorted_input(self, sample_model_with_years: Model):
+        """Test that unsorted years input gets sorted."""
+        # Update with unsorted years
+        sample_model_with_years.update.years([2025, 2023, 2024, 2026])
+        
+        # Verify years were sorted
+        assert sample_model_with_years.years == [2023, 2024, 2025, 2026]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2023, 2024, 2025, 2026]
+        
+        # All values should be accessible
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["revenue", 2025] == 140000
+        assert sample_model_with_years["revenue", 2026] == 160000
+
+    def test_update_years_duplicate_years(self, sample_model_with_years: Model):
+        """Test that duplicate years in input are handled properly."""
+        # Update with duplicate years
+        sample_model_with_years.update.years([2023, 2024, 2024, 2025])
+        
+        # Verify duplicates are removed and years are sorted
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2023, 2024, 2025]
+        
+        # Values should be accessible
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["revenue", 2025] == 140000
+
+    def test_update_years_preserves_line_item_values(self, sample_model_with_years: Model):
+        """Test that line item values are preserved even for years not in model."""
+        # Get original line item
+        revenue_item = sample_model_with_years.get_line_item_definition("revenue")
+        original_values = revenue_item.values.copy()
+        
+        # Reduce years range
+        sample_model_with_years.update.years([2023, 2024])
+        
+        # Line item should still have all original values
+        revenue_item = sample_model_with_years.get_line_item_definition("revenue")
+        assert revenue_item.values == original_values
+        
+        # But 2025 is not accessible through the model
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2025]
+        
+        # Extend years back
+        sample_model_with_years.update.years([2023, 2024, 2025])
+        
+        # Now 2025 is accessible again
+        assert sample_model_with_years["revenue", 2025] == 140000
+
+    def test_update_years_with_formula_dependencies(self, sample_model_with_years: Model):
+        """Test that formula dependencies work correctly with year updates."""
+        # Initial calculated values
+        assert sample_model_with_years["profit", 2023] == 40000  # 100000 - 60000
+        assert sample_model_with_years["profit", 2024] == 50000  # 120000 - 70000
+        
+        # Extend years
+        sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        
+        # Formula calculations should work for all years
+        assert sample_model_with_years["profit", 2023] == 40000  # 100000 - 60000
+        assert sample_model_with_years["profit", 2024] == 50000  # 120000 - 70000
+        assert sample_model_with_years["profit", 2025] == 60000  # 140000 - 80000
+        assert sample_model_with_years["profit", 2026] == 70000  # 160000 - 90000
+
+    def test_update_years_empty_list_fails(self, sample_model_with_years: Model):
+        """Test that empty years list raises ValueError."""
+        with pytest.raises(ValueError, match="Years cannot be an empty list"):
+            sample_model_with_years.update.years([])
+        
+        # Verify model is unchanged
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+
+    def test_update_years_non_list_fails(self, sample_model_with_years: Model):
+        """Test that non-list input raises TypeError."""
+        with pytest.raises(TypeError, match="Expected list, got str"):
+            sample_model_with_years.update.years("2023,2024,2025")
+        
+        with pytest.raises(TypeError, match="Expected list, got int"):
+            sample_model_with_years.update.years(2023)
+        
+        # Verify model is unchanged
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+
+    def test_update_years_non_integer_fails(self, sample_model_with_years: Model):
+        """Test that non-integer years raise ValueError."""
+        with pytest.raises(ValueError, match="All years must be integers"):
+            sample_model_with_years.update.years([2023, 2024.5, 2025])
+        
+        with pytest.raises(ValueError, match="All years must be integers"):
+            sample_model_with_years.update.years([2023, "2024", 2025])
+        
+        # Verify model is unchanged
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+
+    def test_update_years_returns_none(self, sample_model_with_years: Model):
+        """Test that the method returns None (emphasizing side effect over return value)."""
+        result = sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        
+        # Verify method returns None
+        assert result is None
+        
+        # Verify the years were still updated
+        assert sample_model_with_years.years == [2023, 2024, 2025, 2026]
+
+    def test_update_years_with_categories(self, sample_model_with_years: Model):
+        """Test that category totals work correctly after year updates."""
+        # Extend years
+        sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        
+        # Category totals should work for all years
+        assert sample_model_with_years["total_income", 2023] == 140000  # 100000 + 40000
+        assert sample_model_with_years["total_income", 2024] == 170000  # 120000 + 50000
+        assert sample_model_with_years["total_income", 2025] == 200000  # 140000 + 60000
+        assert sample_model_with_years["total_income", 2026] == 230000  # 160000 + 70000
+        
+        assert sample_model_with_years["total_expenses", 2023] == 60000
+        assert sample_model_with_years["total_expenses", 2024] == 70000
+        assert sample_model_with_years["total_expenses", 2025] == 80000
+        assert sample_model_with_years["total_expenses", 2026] == 90000
+
+    def test_update_years_single_year(self, sample_model_with_years: Model):
+        """Test updating to a single year."""
+        # Update to single year
+        sample_model_with_years.update.years([2024])
+        
+        # Verify model works with single year
+        assert sample_model_with_years.years == [2024]
+        assert list(sample_model_with_years._value_matrix.keys()) == [2024]
+        
+        # Values should be accessible
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["costs", 2024] == 70000
+        assert sample_model_with_years["profit", 2024] == 50000
+        
+        # Other years should not be accessible
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2023]
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2025]
+
+    def test_update_years_preserves_other_model_attributes(self, sample_model_with_years: Model):
+        """Test that updating years doesn't affect other model attributes."""
+        # Record initial state
+        initial_line_items = len(sample_model_with_years._line_item_definitions)
+        initial_categories = len(sample_model_with_years._category_definitions)
+        initial_generators = len(sample_model_with_years.generators)
+        
+        # Update years
+        sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        
+        # Verify other attributes unchanged
+        assert len(sample_model_with_years._line_item_definitions) == initial_line_items
+        assert len(sample_model_with_years._category_definitions) == initial_categories
+        assert len(sample_model_with_years.generators) == initial_generators
+        
+        # Verify line items still have correct attributes
+        revenue_item = sample_model_with_years.get_line_item_definition("revenue")
+        assert revenue_item.name == "revenue"
+        assert revenue_item.category == "income"
+        assert revenue_item.values == {2023: 100000, 2024: 120000, 2025: 140000, 2026: 160000}
+        
+        profit_item = sample_model_with_years.get_line_item_definition("profit")
+        assert profit_item.name == "profit"
+        assert profit_item.category == "income"
+        assert profit_item.formula == "revenue - costs"
+
+    def test_update_years_complex_scenario(self, sample_model_with_years: Model):
+        """Test a complex scenario with multiple year updates."""
+        # Initial state
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        assert sample_model_with_years["revenue", 2023] == 100000
+        
+        # First update: extend range (only use years with values)
+        sample_model_with_years.update.years([2023, 2024, 2025, 2026])
+        assert sample_model_with_years.years == [2023, 2024, 2025, 2026]
+        
+        # Values should work for years with data
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2026] == 160000
+        
+        # Second update: reduce to middle range
+        sample_model_with_years.update.years([2024, 2025])
+        assert sample_model_with_years.years == [2024, 2025]
+        
+        # Only middle years should be accessible
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["revenue", 2025] == 140000
+        
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2023]
+        with pytest.raises(KeyError):
+            sample_model_with_years["revenue", 2026]
+        
+        # Third update: back to original range
+        sample_model_with_years.update.years([2023, 2024, 2025])
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        
+        # Original values should be restored
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["revenue", 2025] == 140000
+
+    def test_update_years_formula_validation_failure(self, sample_model_with_years: Model):
+        """Test that year updates fail gracefully when formulas can't be calculated."""
+        # Try to update to a year where formulas will fail (line items don't have values)
+        # This should fail because the profit formula depends on revenue and costs
+        # which don't have values for 2022
+        with pytest.raises(ValueError, match="Failed to update years"):
+            sample_model_with_years.update.years([2022])
+        
+        # Verify model is unchanged after failure
+        assert sample_model_with_years.years == [2023, 2024, 2025]
+        assert sample_model_with_years["revenue", 2023] == 100000
+        assert sample_model_with_years["revenue", 2024] == 120000
+        assert sample_model_with_years["revenue", 2025] == 140000
