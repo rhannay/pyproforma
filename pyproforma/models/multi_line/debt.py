@@ -31,6 +31,37 @@ class Debt(MultiLineItemABC):
         self.term = term
         self.existing_debt_service = existing_debt_service or []
     
+    @classmethod
+    def _generate_debt_service_schedule(cls, par, interest_rate: float, start_year: int, term: int):
+        """
+        Generate an amortization schedule for a debt instrument.
+        
+        Args:
+            par: The principal amount of the debt.
+            interest_rate (float): Annual interest rate (as a decimal, e.g., 0.05 for 5%).
+            start_year (int): The starting year for the debt service.
+            term (int): The term of the debt in years.
+            
+        Returns:
+            list: A list of dictionaries representing the debt service schedule,
+                 with each dictionary containing 'year', 'principal', and 'interest'.
+        """
+        annual_payment = (par * interest_rate) / (1 - (1 + interest_rate) ** -term)
+        remaining_principal = par
+        schedule = []
+        for i in range(term):
+            year = start_year + i
+            interest = remaining_principal * interest_rate
+            principal_payment = annual_payment - interest
+            schedule.append({
+                'year': year,
+                'principal': principal_payment,
+                'interest': interest
+            })
+            remaining_principal -= principal_payment
+        
+        return schedule
+    
     @property
     def defined_names(self) -> List[str]:
         """
