@@ -309,11 +309,14 @@ class Debt(MultiLineItemABC):
             int: The term as an integer value.
             
         Raises:
-            ValueError: If the term is a string but the value cannot be found in interim_values_by_year.
+            ValueError: If the term is a string but the value cannot be found in interim_values_by_year,
+                        or if the term is zero, negative, or not a whole number.
             TypeError: If the term is not an int or string.
         """
+        term_value = None
+        
         if isinstance(self._term, int):
-            return self._term
+            term_value = self._term
         elif isinstance(self._term, str):
             term_name = self._term
             # Look up the value in interim_values_by_year
@@ -322,8 +325,16 @@ class Debt(MultiLineItemABC):
                 value = interim_values_by_year[year][term_name]
                 if value is None:
                     raise ValueError(f"Term '{term_name}' for year {year} is None")
-                return int(value)
+                term_value = int(value)
             else:
                 raise ValueError(f"Could not find term '{term_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Term must be an int or string, not {type(self._term)}")
+            
+        # Validate that the term is a positive whole number greater than zero
+        if term_value <= 0:
+            raise ValueError(f"Term must be positive, got {term_value}")
+        if not isinstance(term_value, int) or term_value != float(term_value):
+            raise ValueError(f"Term must be a whole number, got {term_value}")
+            
+        return term_value
