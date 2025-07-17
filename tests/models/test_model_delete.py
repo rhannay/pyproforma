@@ -18,7 +18,7 @@ class TestDeleteNameSpaceInit:
 class TestDeleteGenerator:
     
     @pytest.fixture
-    def sample_model_with_generators(self):
+    def sample_model_with_generators(self) -> Model:
         """Create a sample model with generators for testing."""
         revenue = LineItem(
             name="revenue",
@@ -50,7 +50,7 @@ class TestDeleteGenerator:
             generators=[debt1, debt2]
         )
 
-    def test_delete_generator_basic(self, sample_model_with_generators):
+    def test_delete_generator_basic(self, sample_model_with_generators: Model):
         """Test basic generator deletion."""
         initial_count = len(sample_model_with_generators.generators)
         initial_names = [name['name'] for name in sample_model_with_generators.defined_names]
@@ -84,7 +84,7 @@ class TestDeleteGenerator:
             with pytest.raises(KeyError):
                 sample_model_with_generators[gen_name, 2023]
 
-    def test_delete_generator_not_found(self, sample_model_with_generators):
+    def test_delete_generator_not_found(self, sample_model_with_generators: Model):
         """Test that deleting a non-existent generator raises KeyError."""
         with pytest.raises(KeyError) as excinfo:
             sample_model_with_generators.delete.generator("nonexistent_generator")
@@ -138,7 +138,7 @@ class TestDeleteGenerator:
         assert len(model.generators) == 1
         assert model[debt_variable, 2023] is not None  # Should still be accessible
 
-    def test_delete_generator_updates_defined_names(self, sample_model_with_generators):
+    def test_delete_generator_updates_defined_names(self, sample_model_with_generators: Model):
         """Test that deleting a generator properly updates the model's defined names."""
         # Get generator defined names before deletion
         loan2_generator = next(gen for gen in sample_model_with_generators.generators if gen.name == "loan2")
@@ -168,7 +168,7 @@ class TestDeleteGenerator:
         for gen_name in loan1_defined_names:
             assert gen_name in updated_names
 
-    def test_delete_generator_preserves_other_generators(self, sample_model_with_generators):
+    def test_delete_generator_preserves_other_generators(self, sample_model_with_generators: Model):
         """Test that deleting one generator doesn't affect others."""
         # Get initial state of both generators
         loan1_generator = next(gen for gen in sample_model_with_generators.generators if gen.name == "loan1")
@@ -198,7 +198,7 @@ class TestDeleteGenerator:
             with pytest.raises(KeyError):
                 sample_model_with_generators[gen_name, 2023]
 
-    def test_delete_generator_returns_none(self, sample_model_with_generators):
+    def test_delete_generator_returns_none(self, sample_model_with_generators: Model):
         """Test that the method returns None (emphasizing side effect over return value)."""
         result = sample_model_with_generators.delete.generator("loan1")
         
@@ -328,7 +328,7 @@ class TestDeleteGenerator:
 class TestDeleteCategory:
     
     @pytest.fixture
-    def sample_model_with_categories(self):
+    def sample_model_with_categories(self) -> Model:
         """Create a sample model with multiple categories for testing."""
         revenue = LineItem(
             name="revenue",
@@ -436,7 +436,7 @@ class TestDeleteCategory:
         category_names = [cat.name for cat in model._category_definitions]
         assert "unused" not in category_names
 
-    def test_delete_category_returns_none(self, sample_model_with_categories):
+    def test_delete_category_returns_none(self, sample_model_with_categories: Model):
         """Test that the method returns None (emphasizing side effect over return value)."""
         result = sample_model_with_categories.delete.category("unused_category")
         
@@ -533,7 +533,7 @@ class TestDeleteCategory:
 class TestDeleteLineItem:
     
     @pytest.fixture
-    def sample_model(self):
+    def sample_model(self) -> Model:
         """Create a sample model for testing."""
         revenue = LineItem(
             name="revenue",
