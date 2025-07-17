@@ -250,15 +250,16 @@ class Debt(MultiLineItemABC):
         if isinstance(self._interest_rate, (float, int)):
             return float(self._interest_rate)
         elif isinstance(self._interest_rate, str):
+            interest_rate_name = self._interest_rate
             # Look up the value in interim_values_by_year
             if (year in interim_values_by_year and 
-                self._interest_rate in interim_values_by_year[year]):
-                value = interim_values_by_year[year][self._interest_rate]
+                interest_rate_name in interim_values_by_year[year]):
+                value = interim_values_by_year[year][interest_rate_name]
                 if value is None:
-                    raise ValueError(f"Interest rate '{self._interest_rate}' for year {year} is None")
+                    raise ValueError(f"Interest rate '{interest_rate_name}' for year {year} is None")
                 return float(value)
             else:
-                raise ValueError(f"Could not find interest rate '{self._interest_rate}' for year {year} in interim values")
+                raise ValueError(f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Interest rate must be a float or string, not {type(self._interest_rate)}")
     
@@ -282,15 +283,16 @@ class Debt(MultiLineItemABC):
             # Direct lookup from the dictionary
             return float(self._par_amount.get(year, 0.0))
         elif isinstance(self._par_amount, str):
+            par_amount_name = self._par_amount
             # Look up the value in interim_values_by_year
             if (year in interim_values_by_year and 
-                self._par_amount in interim_values_by_year[year]):
-                value = interim_values_by_year[year][self._par_amount]
+                par_amount_name in interim_values_by_year[year]):
+                value = interim_values_by_year[year][par_amount_name]
                 if value is None:
-                    return 0.0  # No par amount for this year
+                    raise ValueError(f"Par amount '{par_amount_name}' for year {year} is None")
                 return float(value)
             else:
-                raise ValueError(f"Could not find par amount '{self._par_amount}' for year {year} in interim values")
+                raise ValueError(f"Could not find par amount '{par_amount_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Par amount must be a dict or string, not {type(self._par_amount)}")
     
@@ -313,14 +315,15 @@ class Debt(MultiLineItemABC):
         if isinstance(self._term, int):
             return self._term
         elif isinstance(self._term, str):
+            term_name = self._term
             # Look up the value in interim_values_by_year
             if (year in interim_values_by_year and 
-                self._term in interim_values_by_year[year]):
-                value = interim_values_by_year[year][self._term]
+                term_name in interim_values_by_year[year]):
+                value = interim_values_by_year[year][term_name]
                 if value is None:
-                    raise ValueError(f"Term '{self._term}' for year {year} is None")
+                    raise ValueError(f"Term '{term_name}' for year {year} is None")
                 return int(value)
             else:
-                raise ValueError(f"Could not find term '{self._term}' for year {year} in interim values")
+                raise ValueError(f"Could not find term '{term_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Term must be an int or string, not {type(self._term)}")
