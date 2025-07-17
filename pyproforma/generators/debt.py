@@ -5,6 +5,79 @@ from typing import Dict, Any
 
 @Generator.register("debt")
 class Debt(Generator):
+    """
+    A generator for modeling long-term debt instruments with fixed payment schedules.
+    
+    This class calculates debt service schedules for long-term debt based on principal amounts,
+    interest rates, and terms. It generates amortization schedules where each payment includes
+    both principal and interest components, with the principal portion increasing over time
+    while the interest portion decreases.
+    
+    The class supports multiple debt issuances in different years and can incorporate existing
+    debt service schedules from previous debt issuances. It provides methods to calculate
+    total principal payments, interest expenses, and bond proceeds for any given year.
+    
+    Args:
+        name (str): Unique identifier for the debt instrument. Must contain only letters,
+            numbers, underscores, or hyphens (no spaces or special characters).
+        par_amounts (dict): Dictionary mapping issuance years (int) to principal amounts (float).
+            Represents the face value of debt issued in each year. Only positive amounts
+            generate debt service schedules.
+        interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).
+            Applied to all debt issuances.
+        term (int): Number of years over which the debt is amortized. Applied to all
+            debt issuances.
+        existing_debt_service (list[dict], optional): List of dictionaries representing
+            existing debt service payments not captured in par_amounts. Each dictionary
+            must contain 'year' (int), 'principal' (float), and 'interest' (float).
+            Years must be sequential with no gaps. Defaults to None.
+    
+    Raises:
+        ValueError: If name contains invalid characters, if any principal amount is negative,
+            or if existing_debt_service validation fails (non-sequential years, negative
+            values, missing required keys, etc.).
+    
+    Examples:
+        >>> # Simple debt with single issuance
+        >>> debt = Debt(
+        ...     name='municipal_bonds',
+        ...     par_amounts={2024: 5000000},
+        ...     interest_rate=0.04,
+        ...     term=20
+        ... )
+        >>> 
+        >>> # Get debt service for 2024
+        >>> debt.get_values(2024)
+        {
+            'municipal_bonds.principal': 167908.75,
+            'municipal_bonds.interest': 200000.00,
+            'municipal_bonds.bond_proceeds': 5000000.0
+        }
+        >>> 
+        >>> # Multiple issuances with existing debt service
+        >>> debt_multi = Debt(
+        ...     name='corporate_debt',
+        ...     par_amounts={2024: 1000000, 2025: 1500000},
+        ...     interest_rate=0.06,
+        ...     term=15,
+        ...     existing_debt_service=[
+        ...         {'year': 2023, 'principal': 50000, 'interest': 25000},
+        ...         {'year': 2024, 'principal': 55000, 'interest': 20000}
+        ...     ]
+        ... )
+        >>> 
+        >>> # Total principal payment in 2024 includes existing debt service
+        >>> debt_multi.get_total_principal(2024)  # ~55000 + new debt principal
+        
+    Note:
+        The debt service schedule uses standard amortization where the annual payment
+        remains constant over the term, but the split between principal and interest
+        changes each year. Interest is calculated on the remaining principal balance
+        at the beginning of each year.
+        
+        Bond proceeds are recorded in the year of issuance and represent the face value
+        of the debt issued, regardless of any existing debt service in that year.
+    """
     def __init__(
             self, 
             name: str,
