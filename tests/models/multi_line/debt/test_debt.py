@@ -269,6 +269,69 @@ class TestDebtParamsFromValueMatrix:
         assert value_dict['test_all_params.bond_proceeds'] == 0
 
 
+    def test_interest_rate_missing(self):
+        """Test debt where one of the parameters is missing in interim_values_by_year."""
+        # Create a debt object with par_amount as a string reference
+        debt = Debt(
+            name='test_missing_param',
+            par_amount='par_amount',  # This string refers to a key in interim_values_by_year
+            interest_rate='interest_rate',  # This will be missing for 2021
+            term=30  # Fixed term
+        )
+        
+        years = [2020, 2021, 2022]
+        
+        # Create interim_values_by_year with par_amount values but missing interest_rate for 2021
+        interim_values = {
+            2020: {'par_amount': 1_000_000, 'interest_rate': 0.05},
+            2021: {'par_amount': 1_500_000},  # Missing interest_rate
+            2022: {'par_amount': 0}  # No new issuance
+        }
+        
+        # Test first year (2020)
+        value_dict = debt.get_values(interim_values, years, 2020)
+        p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
+        assert _is_close(value_dict['test_missing_param.principal'], p1)
+        assert _is_close(value_dict['test_missing_param.interest'], i1)
+        assert value_dict['test_missing_param.bond_proceeds'] == 1_000_000
+        
+        # Test second year (2021) - should raise an error due to missing interest_rate
+        with pytest.raises(ValueError) as excinfo:
+            debt.get_values(interim_values, years, 2021)
+        assert "Could not find interest rate 'interest_rate' for year 2021 in interim values" in str(excinfo.value)
+
+    def test_par_amount_missing(self):
+        """Test debt where par_amount is missing in interim_values_by_year."""
+        # Create a debt object with par_amount as a string reference
+        debt = Debt(
+            name='test_missing_par',
+            par_amount='par_amount',  # This string refers to a key in interim_values_by_year
+            interest_rate=0.05,  # Fixed interest rate
+            term=30  # Fixed term
+        )
+        
+        years = [2020, 2021, 2022]
+        
+        # Create interim_values_by_year with missing par_amount for 2021
+        interim_values = {
+            2020: {'par_amount': 1_000_000},
+            2021: {},  # Missing par_amount
+            2022: {'par_amount': 0}  # No new issuance
+        }
+        
+        # Test first year (2020)
+        value_dict = debt.get_values(interim_values, years, 2020)
+        p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
+        assert _is_close(value_dict['test_missing_par.principal'], p1)
+        assert _is_close(value_dict['test_missing_par.interest'], i1)
+        assert value_dict['test_missing_par.bond_proceeds'] == 1_000_000
+        
+        # Test second year (2021) - should raise an error due to missing par_amount
+        with pytest.raises(ValueError) as excinfo:
+            debt.get_values(interim_values, years, 2021)
+        assert "Could not find par amount 'par_amount' for year 2021 in interim values" in str(excinfo.value)
+
+
 class TestDebtParAmountNone:
     
     def test_debt_with_second_par_amount_none(self):
