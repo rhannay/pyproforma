@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional, Any
 
 from pyproforma.models.multi_line.multi_line_abc import MultiLineItemABC
+from pyproforma.models._utils import check_name
 
 
 class Debt(MultiLineItemABC):
@@ -31,6 +32,8 @@ class Debt(MultiLineItemABC):
                            a line item name to look up in the value matrix.
             existing_debt_service (list[dict], optional): Pre-existing debt service schedule.
         """
+        if not check_name(name):
+            raise ValueError("Debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters).")
         self.name = name
         self._par_amount = par_amount
         self._interest_rate = interest_rate
