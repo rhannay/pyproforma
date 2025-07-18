@@ -11,7 +11,7 @@ def test_generate_debt_service_schedule_basic():
     start_year = 2025
     term = 3
     
-    schedule = Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    schedule = Debt.generate_debt_service_schedule(par, interest_rate, start_year, term)
     
     # Check if the schedule has the correct number of entries
     assert len(schedule) == term
@@ -37,7 +37,7 @@ def test_generate_debt_service_schedule_interest_calculation():
     start_year = 2025
     term = 3
     
-    schedule = Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    schedule = Debt.generate_debt_service_schedule(par, interest_rate, start_year, term)
     
     # First year interest should be exactly par * interest_rate
     assert math.isclose(schedule[0]['interest'], par * interest_rate, rel_tol=1e-9)
@@ -62,7 +62,7 @@ def test_generate_debt_service_schedule_zero_interest():
     start_year = 2025
     term = 4
     
-    schedule = Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    schedule = Debt.generate_debt_service_schedule(par, interest_rate, start_year, term)
     
     # Check that we have the expected number of entries
     assert len(schedule) == term
@@ -91,7 +91,7 @@ def test_generate_debt_service_schedule_different_params():
     ]
     
     for case in test_cases:
-        schedule = Debt._generate_debt_service_schedule(
+        schedule = Debt.generate_debt_service_schedule(
             case["par"], case["interest_rate"], case["start_year"], case["term"]
         )
         
@@ -120,7 +120,7 @@ def test_generate_debt_service_schedule_amortization_calculation():
     start_year = 2025
     term = 10
     
-    schedule = Debt._generate_debt_service_schedule(par, interest_rate, start_year, term)
+    schedule = Debt.generate_debt_service_schedule(par, interest_rate, start_year, term)
     
     # Calculate expected annual payment using the formula
     expected_annual_payment = (par * interest_rate) / (1 - (1 + interest_rate) ** -term)
