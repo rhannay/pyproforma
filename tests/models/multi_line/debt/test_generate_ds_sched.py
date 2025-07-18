@@ -1,4 +1,4 @@
-from pyproforma.models.multi_line.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 import pytest
 import math
 
