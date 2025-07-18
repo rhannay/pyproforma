@@ -295,7 +295,7 @@ class Debt(MultiLineItemABC):
                 par_amount_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][par_amount_name]
                 if value is None:
-                    raise ValueError(f"Par amount '{par_amount_name}' for year {year} is None")
+                    return 0.0
                 return float(value)
             else:
                 raise ValueError(f"Could not find par amount '{par_amount_name}' for year {year} in interim values")
