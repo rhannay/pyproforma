@@ -1,5 +1,6 @@
 from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
+# from pyproforma.models.line_item_generator import LineItemGeneratorABC
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
