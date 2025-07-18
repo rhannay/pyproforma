@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
-class MultiLineItemABC(ABC):
+class LineItemGeneratorABC(ABC):
     """
     Abstract base class for components that define and generate multiple line items.
     
@@ -30,7 +30,7 @@ class MultiLineItemABC(ABC):
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]], 
                   year: int) -> Dict[str, Optional[float]]:
         """
-        Get all values for this multi-line component for a specific year.
+        Get all values for this line item generator for a specific year.
         
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
