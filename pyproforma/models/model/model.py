@@ -255,7 +255,6 @@ class Model(SerializationMixin):
                 for generator in remaining_generators:
                     try:
                         # Try to calculate values for this line item generator
-                        # All LineItemGenerators now expect a 'years' parameter in their get_values method
                         generated_values = generator.get_values(value_matrix, self.years, year)
                         
                         # Update value matrix with the generated values
