@@ -161,3 +161,103 @@ class TestDebtParamsFromValueMatrix:
         assert _is_close(model.get_value('test_all_params.interest', 2022), i1 + i2)
         assert model.get_value('test_all_params.bond_proceeds', 2022) == 0
 
+    def test_debt_par_amounts_from_value_matrix_multi_layer(self):
+        """
+        Test debt where par_amount is a string reference to a multi-layered chain of formulas in the model.
+        
+        This test creates a Model with a line item 'par_amount' and then multiple layers of LineItems
+        with formulas that reference each other (par_amount_2 references par_amount, par_amount_3 references
+        par_amount_2, etc.). The Debt line item generator references the last LineItem in the chain (par_amount_4).
+        
+        This tests the model's ability to correctly resolve multi-level dependencies during value matrix iterations
+        and calculate debt values accurately. Initially, the debt cannot be calculated because the chain of values
+        needs to be resolved through multiple iterations of the value matrix calculation.
+        """
+        # Define years for our model
+        years = [2020, 2021, 2022]
+        
+        # Create a debt generator that references the last layer in our formula chain
+        debt = Debt(
+            name='test_from_matrix',
+            par_amount='par_amount_4',  # Reference to the final line item in the chain
+            interest_rate=0.05,
+            term=30
+        )
+        
+        # Create a model with line items and the debt generator
+        model = Model(
+            line_items=[
+                # Base line item with actual values
+                LineItem(
+                    name="par_amount",
+                    category="debt_params",
+                    values={
+                        2020: 1_000_000,
+                        2021: 1_500_000, 
+                        2022: 0  # No new issuance in 2022
+                    }
+                ),
+                # First formula layer - references the base value
+                LineItem(
+                    name="par_amount_2",
+                    category="debt_params",
+                    formula="par_amount"  # Formula that simply returns par_amount's value
+                ),
+                # Second formula layer - references the first formula layer
+                LineItem(
+                    name="par_amount_3",
+                    category="debt_params",
+                    formula="par_amount_2"  # Formula that references the first formula layer
+                ),
+                # Third formula layer - references the second formula layer
+                LineItem(
+                    name="par_amount_4",
+                    category="debt_params",
+                    formula="par_amount_3"  # Formula that references the second formula layer
+                )
+            ],
+            years=years,
+            line_item_generators=[debt]  # Add the debt generator directly to the model
+        )
+        
+        # Verify the chain of reference values are calculated correctly
+        assert model.get_value('par_amount', 2020) == 1_000_000
+        assert model.get_value('par_amount_2', 2020) == 1_000_000
+        assert model.get_value('par_amount_3', 2020) == 1_000_000
+        assert model.get_value('par_amount_4', 2020) == 1_000_000
+        
+        assert model.get_value('par_amount', 2021) == 1_500_000
+        assert model.get_value('par_amount_2', 2021) == 1_500_000
+        assert model.get_value('par_amount_3', 2021) == 1_500_000
+        assert model.get_value('par_amount_4', 2021) == 1_500_000
+        
+        assert model.get_value('par_amount', 2022) == 0
+        assert model.get_value('par_amount_2', 2022) == 0
+        assert model.get_value('par_amount_3', 2022) == 0
+        assert model.get_value('par_amount_4', 2022) == 0
+        
+        # Test first year (2020)
+        p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
+        assert _is_close(model.get_value('test_from_matrix.principal', 2020), p1)
+        assert _is_close(model.get_value('test_from_matrix.interest', 2020), i1)
+        assert model.get_value('test_from_matrix.bond_proceeds', 2020) == 1_000_000
+        
+        # Test second year (2021) - both issuances exist
+        # Values from first issuance (2020)
+        p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
+        # Values from second issuance (2021)
+        p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
+        # Total values should be sum of both issuances
+        assert _is_close(model.get_value('test_from_matrix.principal', 2021), p1 + p2)
+        assert _is_close(model.get_value('test_from_matrix.interest', 2021), i1 + i2)
+        assert model.get_value('test_from_matrix.bond_proceeds', 2021) == 1_500_000
+        
+        # Test third year (2022) - both previous issuances exist but no new bond proceeds
+        # Values from first issuance (2020)
+        p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
+        # Values from second issuance (2021)
+        p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
+        # Total values should be sum of both issuances, with no new bond proceeds
+        assert _is_close(model.get_value('test_from_matrix.principal', 2022), p1 + p2)
+        assert _is_close(model.get_value('test_from_matrix.interest', 2022), i1 + i2)
+        assert model.get_value('test_from_matrix.bond_proceeds', 2022) == 0
