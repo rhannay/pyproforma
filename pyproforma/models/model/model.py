@@ -1,6 +1,6 @@
 from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
-# from pyproforma.models.line_item_generator import LineItemGeneratorABC
+from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
@@ -68,7 +68,8 @@ class Model(SerializationMixin):
         years: list[int] = None,
         categories: list[Category] = None,
         generators: list[Generator] = None,
-        constraints: list[Constraint] = None
+        constraints: list[Constraint] = None,
+        line_item_generators: list[LineItemGenerator] = None
     ):
         
         if years is None:
@@ -91,10 +92,12 @@ class Model(SerializationMixin):
 
         self.generators = generators if generators is not None else []
         self.constraints = constraints if constraints is not None else []
+        self.line_item_generators = line_item_generators if line_item_generators is not None else []
 
         self._validate_categories()
         self._validate_generators()
         self._validate_constraints()
+        self._validate_line_item_generators()
 
         self.defined_names = self._gather_defined_names()
 
@@ -159,6 +162,22 @@ class Model(SerializationMixin):
         for constraint in self.constraints:
             if constraint.line_item_name not in line_item_names:
                 raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
+
+    def _validate_line_item_generators(self):
+        """
+        Validates that all line item generators have unique names.
+
+        Raises:
+            ValueError: If two or more line item generators have the same name.
+        """
+        if not self.line_item_generators:
+            return
+            
+        generator_names = [generator.name for generator in self.line_item_generators]
+        duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
+        
+        if duplicates:
+            raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
 
     def _gather_defined_names(self) -> list[dict]:
         """
@@ -288,6 +307,7 @@ class Model(SerializationMixin):
         self._validate_categories()
         self._validate_generators()
         self._validate_constraints()
+        self._validate_line_item_generators()
         self.defined_names = self._gather_defined_names()
         self._value_matrix = self._generate_value_matrix()
 
