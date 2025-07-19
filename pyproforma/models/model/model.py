@@ -253,7 +253,7 @@ class Model(SerializationMixin):
                 for generator in remaining_generators:
                     try:
                         # Try to calculate values for this line item generator
-                        generated_values = generator.get_values(value_matrix, self.years, year)
+                        generated_values = generator.get_values(value_matrix, year)
                         
                         # Update value matrix with the generated values
                         value_matrix[year].update(generated_values)

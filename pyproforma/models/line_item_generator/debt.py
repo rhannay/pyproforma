@@ -63,7 +63,6 @@ class Debt(LineItemGenerator):
         return [self._principal_name, self._interest_name, self._bond_proceeds_name]
 
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
-                  years: List[int],
                   year: int) -> Dict[str, Optional[float]]:
         """
         Get all values for this debt component for a specific year.
@@ -71,7 +70,7 @@ class Debt(LineItemGenerator):
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
                 by year, used to prevent circular references and for formula calculations.
-            years (List[int]): List of all years in the model.
+                The keys of this dictionary represent all years in the model.
             year (int): The year for which to get the values.
             
         Returns:
@@ -83,15 +82,12 @@ class Debt(LineItemGenerator):
         """
         result = {}
         
-        # Check for circular references
-        for name in self.defined_names:
-            if (year in interim_values_by_year and 
-                name in interim_values_by_year[year]):
-                raise ValueError(f"Circular reference detected for '{name}' in year {year}.")
-
         # Build up bond issues
         # Start by clearing out self.debt_service_schedules
         self.ds_schedules = {}
+        
+        # Extract years from interim_values_by_year keys
+        years = sorted([y for y in interim_values_by_year.keys()])
 
         for _year in [y for y in years if y <= year]:
             # Gather interest rate, par amount, and term for this year bond issue

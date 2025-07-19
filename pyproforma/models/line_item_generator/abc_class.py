@@ -28,7 +28,6 @@ class LineItemGenerator(ABC):
     
     @abstractmethod
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
-                  years: List[int],
                   year: int) -> Dict[str, Optional[float]]:
         """
         Get all values for this line item generator for a specific year.
@@ -36,7 +35,7 @@ class LineItemGenerator(ABC):
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
                 by year, used to prevent circular references and for formula calculations.
-            years (List[int]): List of all years in the model.
+                The keys of this dictionary represent all years in the model.
             year (int): The year for which to get the values.
             
         Returns:
