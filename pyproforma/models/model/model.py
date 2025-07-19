@@ -243,9 +243,33 @@ class Model(SerializationMixin):
             max_iterations = len(self._line_item_definitions) + 1  # Safety valve
             iteration = 0
             
-            while remaining_items and iteration < max_iterations:
+            # Track which line item generators have been successfully calculated
+            remaining_generators = self.line_item_generators.copy() if self.line_item_generators else []
+            
+            while (remaining_items or remaining_generators) and iteration < max_iterations:
                 iteration += 1
                 items_calculated_this_round = []
+                generators_calculated_this_round = []
+                
+                # Try to calculate line item generators for this year
+                for generator in remaining_generators:
+                    try:
+                        # Try to calculate values for this line item generator
+                        generated_values = generator.get_values(value_matrix, year)
+                        
+                        # Update value matrix with the generated values
+                        value_matrix[year].update(generated_values)
+                        
+                        # Mark this generator as calculated
+                        generators_calculated_this_round.append(generator)
+                    except (KeyError, ValueError):
+                        # Skip if dependencies are not yet met
+                        # Will try again in the next iteration
+                        continue
+                
+                # Remove successfully calculated generators from remaining list
+                for generator in generators_calculated_this_round:
+                    remaining_generators.remove(generator)
                 
                 for item in remaining_items:
                     try:
@@ -291,13 +315,21 @@ class Model(SerializationMixin):
                             value_matrix[year][total_name] = category_total
                 
                 # If no progress was made this round, we have circular dependencies
-                if not items_calculated_this_round:
+                if not items_calculated_this_round and not generators_calculated_this_round:
                     break
             
-            # Check if all items were calculated
+            # Check if all items and generators were calculated
+            errors = []
             if remaining_items:
                 failed_items = [item.name for item in remaining_items]
-                raise ValueError(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
+                errors.append(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
+                
+            if remaining_generators:
+                failed_generators = [generator.name for generator in remaining_generators]
+                errors.append(f"Could not calculate line item generators due to missing dependencies or circular references: {failed_generators}")
+                
+            if errors:
+                raise ValueError("\n".join(errors))
         
             # Ensure all defined names are present in the value matrix
             for name in self.defined_names:
