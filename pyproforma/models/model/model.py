@@ -184,14 +184,14 @@ class Model(SerializationMixin):
         Collects all defined names across the model to create a comprehensive namespace.
         
         This method aggregates identifiers from all model components including 
-        line items, category totals, and generators to 
+        line items, category totals, generators, and line item generators to 
         build a unified namespace for value lookups and validation.
         
         Returns:
             list[dict]: A list of dictionaries, each containing:
                 - 'name' (str): The identifier name used for lookups
                 - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'generator')
+                  ('line_item', 'category', 'generator', 'line_item_generator')
                 - 'source_name' (str): The original source object's name
                 
         Raises:
@@ -216,6 +216,9 @@ class Model(SerializationMixin):
         for generator in self.generators:
             for gen_name in generator.defined_names:
                 defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'generator', 'source_name': generator.name})
+        for generator in self.line_item_generators:
+            for gen_name in generator.defined_names:
+                defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'line_item_generator', 'source_name': generator.name})
         
         # Check for duplicate names in defined_names
         # and raise ValueError if any duplicates are found.

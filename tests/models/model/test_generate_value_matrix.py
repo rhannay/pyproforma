@@ -98,6 +98,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.generators = []
+        model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -132,6 +133,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.generators = []
+        model.line_item_generators = []        
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -158,6 +160,8 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.generators = []
+        model.line_item_generators = []
+
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -183,6 +187,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.generators = []
+        model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -208,6 +213,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.generators = []
+        model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -325,6 +331,7 @@ class TestGenerateValueMatrix:
         model._category_definitions = basic_categories
         model.assumptions = []
         model.generators = []
+        model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
         with pytest.raises(ValueError) as exc_info:
@@ -351,6 +358,7 @@ class TestGenerateValueMatrix:
         model._category_definitions = basic_categories
         model.assumptions = []
         model.generators = []
+        model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
 
         with pytest.raises(ValueError) as exc_info:
