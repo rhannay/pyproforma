@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
-class LineItemGeneratorABC(ABC):
+class LineItemGenerator(ABC):
     """
     Abstract base class for components that define and generate multiple line items.
     

@@ -1,10 +1,10 @@
 from typing import List, Dict, Optional, Any
 
-from pyproforma.models.line_item_generator.abc_class import LineItemGeneratorABC
+from pyproforma.models.line_item_generator.abc_class import LineItemGenerator
 from pyproforma.models._utils import check_name
 
 
-class Debt(LineItemGeneratorABC):
+class Debt(LineItemGenerator):
     """
     Debt class for modeling debt related line items.
     Inherits from LineItemGeneratorABC.
