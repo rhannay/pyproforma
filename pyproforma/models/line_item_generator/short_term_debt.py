@@ -74,7 +74,7 @@ class ShortTermDebt(LineItemGenerator):
         self._start_year = start_year
         
         # Validate interest rate is not negative if it's a number
-        if isinstance(interest_rate, (int, float)) and interest_rate < 0:
+        if isinstance(interest_rate, (float, int)) and interest_rate < 0:
             raise ValueError("Interest rate cannot be negative")
         
         # Validate draws and paydown values are not negative if they're dicts
@@ -161,7 +161,7 @@ class ShortTermDebt(LineItemGenerator):
     
     def _get_begin_balance(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int = None) -> float:
         """Get the begin balance, either from a fixed value or interim_values_by_year lookup."""
-        if isinstance(self._begin_balance, (int, float)):
+        if isinstance(self._begin_balance, (float, int)):
             return float(self._begin_balance)
         elif isinstance(self._begin_balance, str):
             begin_balance_name = self._begin_balance
@@ -186,7 +186,7 @@ class ShortTermDebt(LineItemGenerator):
     
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the interest rate, either from a fixed value or interim_values_by_year lookup."""
-        if isinstance(self._interest_rate, (int, float)):
+        if isinstance(self._interest_rate, (float, int)):
             return float(self._interest_rate)
         elif isinstance(self._interest_rate, str):
             interest_rate_name = self._interest_rate
