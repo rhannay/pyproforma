@@ -196,10 +196,11 @@ class TestShortTermDebtFixedParameters:
         assert _is_close(values_2022['mixed_debt.interest'], 80000)  # 1.6M * 0.05
 
     def test_year_before_start_year(self):
-        """Test that accessing years before start_year behaves correctly."""
-        debt = ShortTermDebt(
-            name='future_debt',
-            draws={2022: 500000},
+        """Test validation that draws and paydowns cannot be prior to start year."""
+        # Test that draws prior to start year raise error
+        debt1 = ShortTermDebt(
+            name='early_draws_debt',
+            draws={2018: 500000},  # Before start year (2020)
             paydown={},
             begin_balance=0,
             interest_rate=0.05
@@ -207,16 +208,35 @@ class TestShortTermDebtFixedParameters:
         
         interim_values = {2020: {}, 2021: {}, 2022: {}, 2023: {}}
         
-        # Test year before start_year - 1 should raise error for debt_outstanding
-        with pytest.raises(ValueError, match="Cannot calculate debt outstanding for year .* as it is before the start year"):
-            debt.get_values(interim_values, 2020)
+        with pytest.raises(ValueError, match="Draw year .* is prior to start year"):
+            debt1.get_values(interim_values, 2020)
         
-        # Test year start_year - 1 should raise error for interest (so get_values will fail)
-        with pytest.raises(ValueError, match="Cannot calculate interest for year .* as it is before the start year"):
-            debt.get_values(interim_values, 2021)
+        # Test that paydowns prior to start year raise error
+        debt2 = ShortTermDebt(
+            name='early_paydown_debt',
+            draws={},
+            paydown={2019: 100000},  # Before start year (2020)
+            begin_balance=500000,
+            interest_rate=0.05
+        )
         
-        # Test that debt_outstanding works for start_year - 1 when called directly
-        assert debt._get_debt_outstanding(interim_values, 2021) == 0  # begin_balance
+        with pytest.raises(ValueError, match="Paydown year .* is prior to start year"):
+            debt2.get_values(interim_values, 2020)
+        
+        # Test that draws/paydowns at or after start year work correctly
+        debt3 = ShortTermDebt(
+            name='valid_debt',
+            draws={2020: 300000, 2022: 500000},  # At and after start year
+            paydown={2021: 100000},  # After start year
+            begin_balance=1000000,
+            interest_rate=0.05
+        )
+        
+        # This should work without errors
+        values_2020 = debt3.get_values(interim_values, 2020)
+        assert values_2020['valid_debt.debt_outstanding'] == 1300000  # 1000k + 300k
+        assert values_2020['valid_debt.draw'] == 300000
+        assert values_2020['valid_debt.principal'] == 0.0
 
 
 class TestShortTermDebtDynamicParameters:

@@ -139,11 +139,13 @@ class ShortTermDebt(LineItemGenerator):
                              
         Raises:
             ValueError: If value already exists in interim_values_by_year to prevent circular references.
+            ValueError: If draws or paydowns are prior to the start year.
         """
         result = {}
         
-        # Get dynamic parameters for this calculation
+        # Get start year and validate draws/paydowns are not before it
         start_year = self._get_start_year(interim_values_by_year, year)
+        self._validate_years_not_before_start(start_year)
         
         result[self._debt_outstanding_name] = self._get_debt_outstanding(interim_values_by_year, year)
         result[self._draw_name] = self._get_draw(interim_values_by_year, year)
@@ -157,45 +159,34 @@ class ShortTermDebt(LineItemGenerator):
     # ----------------------------------
     
     def _get_start_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> int:
-        """Get the start year based on when activity begins or data becomes available."""
+        """Get the start year - just the first year in interim_values_by_year."""
         if not interim_values_by_year:
             raise ValueError("No years available in interim_values_by_year to determine start year")
         
-        available_years = sorted(interim_values_by_year.keys())
+        # Simply return the first year in the dictionary (assume years are in order, don't sort)
+        return list(interim_values_by_year.keys())[0]
+    
+    def _validate_years_not_before_start(self, start_year: int) -> None:
+        """
+        Validate that draws and paydowns are not prior to the start year.
         
-        # If we have fixed draws/paydowns (dicts), find the minimum year with activity
-        activity_years = set()
-        if isinstance(self._draws, dict):
-            activity_years.update(self._draws.keys())
-        if isinstance(self._paydown, dict):
-            activity_years.update(self._paydown.keys())
-        
-        if activity_years:
-            # Use the minimum year with activity, but not before the available data
-            activity_start = min(activity_years)
-            data_start = min(available_years)
-            return max(activity_start, data_start)
-        
-        # If we have dynamic draws/paydowns (strings), find the first year with valid data
-        if isinstance(self._draws, str) or isinstance(self._paydown, str):
-            for check_year in available_years:
-                year_data = interim_values_by_year[check_year]
-                
-                # Check if the required dynamic parameters exist in this year
-                draws_available = (not isinstance(self._draws, str) or 
-                                 self._draws in year_data)
-                paydown_available = (not isinstance(self._paydown, str) or 
-                                   self._paydown in year_data)
-                
-                if draws_available and paydown_available:
-                    return check_year
+        Args:
+            start_year (int): The start year for the model.
             
-            # If we can't find a year with all required data, use minimum available year
-            # The actual lookup will fail later with a proper error message
-            return min(available_years)
+        Raises:
+            ValueError: If any draws or paydowns are prior to the start year.
+        """
+        # Check draws if they are specified as a dict
+        if isinstance(self._draws, dict):
+            for year in self._draws.keys():
+                if year < start_year:
+                    raise ValueError(f"Draw year {year} is prior to start year {start_year}")
         
-        # Default: use minimum available year
-        return min(available_years)
+        # Check paydowns if they are specified as a dict
+        if isinstance(self._paydown, dict):
+            for year in self._paydown.keys():
+                if year < start_year:
+                    raise ValueError(f"Paydown year {year} is prior to start year {start_year}")
     
     def _get_begin_balance(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int = None) -> float:
         """Get the begin balance, either from a fixed value or interim_values_by_year lookup."""
@@ -310,10 +301,27 @@ class ShortTermDebt(LineItemGenerator):
         
         all_years = draws_years | paydown_years
         
-        # For dynamic parameters (strings), we don't know the years in advance
-        # so we use start_year as the minimum year
+        # For dynamic parameters (strings), find the first year with available data
         if isinstance(self._draws, str) or isinstance(self._paydown, str):
-            min_year = start_year
+            available_years = sorted(interim_values_by_year.keys())
+            min_year = None
+            for check_year in available_years:
+                year_data = interim_values_by_year[check_year]
+                
+                # Check if the required dynamic parameters exist in this year
+                draws_available = (not isinstance(self._draws, str) or 
+                                 self._draws in year_data)
+                paydown_available = (not isinstance(self._paydown, str) or 
+                                   self._paydown in year_data)
+                
+                if draws_available and paydown_available:
+                    min_year = check_year
+                    break
+            
+            if min_year is None:
+                # If we can't find a year with all required data, use start_year
+                # The actual lookup will fail later with a proper error message
+                min_year = start_year
         elif not all_years:
             return begin_balance
         else:
