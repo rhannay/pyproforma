@@ -28,8 +28,7 @@ class ShortTermDebt(LineItemGenerator):
         paydown (dict | str): Dictionary mapping years (int) to paydown amounts (float), or string 
             representing a line item name to look up in interim_values_by_year. Represents 
             principal payments in each year. Empty dict if no paydowns.
-        begin_balance (float | str): Initial outstanding debt balance at the start of the model,
-            or string representing a line item name to look up in interim_values_by_year.
+        begin_balance (float): Initial outstanding debt balance at the start of the model.
         interest_rate (float | dict | str): Annual interest rate. Can be:
             - float: Fixed rate for all years (e.g., 0.05 for 5%)
             - dict: Dictionary mapping years (int) to rates (float) for year-specific rates
@@ -69,7 +68,7 @@ class ShortTermDebt(LineItemGenerator):
             name: str,
             draws: dict | str = None, 
             paydown: dict | str = None, 
-            begin_balance: float | str = 0.0,
+            begin_balance: float = 0.0,
             interest_rate: float | dict | str = 0.0):
         
         if not check_name(name):
@@ -194,29 +193,11 @@ class ShortTermDebt(LineItemGenerator):
                     raise ValueError(f"Paydown year {year} is prior to start year {start_year}")
     
     def _get_begin_balance(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int = None) -> float:
-        """Get the begin balance, either from a fixed value or interim_values_by_year lookup."""
+        """Get the begin balance from the fixed value."""
         if isinstance(self._begin_balance, (float, int)):
             return float(self._begin_balance)
-        elif isinstance(self._begin_balance, str):
-            begin_balance_name = self._begin_balance
-            # For dynamic begin balance, find the first year that contains this key
-            available_years = sorted(interim_values_by_year.keys())
-            if not available_years:
-                raise ValueError(f"No years available in interim_values_by_year to lookup begin balance '{begin_balance_name}'")
-            
-            # Find the first year that contains the begin balance key
-            for lookup_year in available_years:
-                if (lookup_year in interim_values_by_year and 
-                    begin_balance_name in interim_values_by_year[lookup_year]):
-                    value = interim_values_by_year[lookup_year][begin_balance_name]
-                    if value is None:
-                        return 0.0
-                    return float(value)
-            
-            # If we get here, the key wasn't found in any year
-            raise ValueError(f"Could not find begin balance '{begin_balance_name}' in any year in interim values")
         else:
-            raise TypeError(f"Begin balance must be a float or string, not {type(self._begin_balance)}")
+            raise TypeError(f"Begin balance must be a float, not {type(self._begin_balance)}")
     
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the interest rate, from a fixed value, dict lookup by year, or interim_values_by_year lookup."""

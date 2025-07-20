@@ -130,7 +130,7 @@ class TestShortTermDebtInModel:
             name='flexible_debt',
             draws='annual_draws',      # Reference to line item
             paydown='annual_paydown',  # Reference to line item
-            begin_balance='initial_debt',  # Reference to line item
+            begin_balance=750000,      # Fixed value
             interest_rate=0.04
         )
         

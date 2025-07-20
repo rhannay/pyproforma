@@ -268,25 +268,24 @@ class TestShortTermDebtDynamicParameters:
         assert values_2021['variable_debt.debt_outstanding'] == 1000000
         assert _is_close(values_2021['variable_debt.interest'], 45000)  # 1M * 0.045
 
-    def test_dynamic_begin_balance(self):
-        """Test debt with begin balance looked up from interim_values_by_year."""
+    def test_fixed_begin_balance(self):
+        """Test debt with fixed begin balance."""
         debt = ShortTermDebt(
-            name='dynamic_debt',
+            name='fixed_debt',
             draws={},
             paydown={},
-            begin_balance='initial_balance',  # String to lookup
+            begin_balance=750000,  # Fixed value
             interest_rate=0.05
         )
         
         interim_values = {
-            # 2019: {},
-            2020: {'initial_balance': 750000},
-            2021: {'initial_balance': 750000}
+            2020: {},
+            2021: {}
         }
         
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020['dynamic_debt.debt_outstanding'] == 750000
-        assert _is_close(values_2020['dynamic_debt.interest'], 37500)  # 750k * 0.05
+        assert values_2020['fixed_debt.debt_outstanding'] == 750000
+        assert _is_close(values_2020['fixed_debt.interest'], 37500)  # 750k * 0.05
 
     def test_dynamic_draws_and_paydown(self):
         """Test debt with draws and paydown looked up from interim_values_by_year."""
@@ -299,7 +298,7 @@ class TestShortTermDebtDynamicParameters:
         )
         
         interim_values = {
-            2019: {},
+            2019: {'annual_draws': 0, 'annual_paydown': 0},
             2020: {'annual_draws': 200000, 'annual_paydown': 0},
             2021: {'annual_draws': 100000, 'annual_paydown': 150000}
         }
