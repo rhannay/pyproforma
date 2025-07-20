@@ -13,8 +13,7 @@ class TestShortTermDebtBasic:
             draws={2020: 100000},
             paydown={2021: 50000},
             begin_balance=500000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         expected_names = [
@@ -34,8 +33,7 @@ class TestShortTermDebtBasic:
                 draws={},
                 paydown={},
                 begin_balance=0,
-                interest_rate=0.05,
-                start_year=2020
+                interest_rate=0.05
             )
 
     def test_negative_interest_rate_validation(self):
@@ -46,8 +44,18 @@ class TestShortTermDebtBasic:
                 draws={},
                 paydown={},
                 begin_balance=0,
-                interest_rate=-0.01,
-                start_year=2020
+                interest_rate=-0.01
+            )
+
+    def test_negative_interest_rate_dict_validation(self):
+        """Test that negative interest rates in dict raise ValueError."""
+        with pytest.raises(ValueError, match="Interest rate for year .* cannot be negative"):
+            ShortTermDebt(
+                name='test_debt',
+                draws={},
+                paydown={},
+                begin_balance=0,
+                interest_rate={2020: 0.05, 2021: -0.01}
             )
 
     def test_negative_draw_validation(self):
@@ -58,8 +66,7 @@ class TestShortTermDebtBasic:
                 draws={2020: -100000},
                 paydown={},
                 begin_balance=0,
-                interest_rate=0.05,
-                start_year=2020
+                interest_rate=0.05
             )
 
     def test_negative_paydown_validation(self):
@@ -70,8 +77,7 @@ class TestShortTermDebtBasic:
                 draws={},
                 paydown={2020: -50000},
                 begin_balance=0,
-                interest_rate=0.05,
-                start_year=2020
+                interest_rate=0.05
             )
 
 
@@ -85,8 +91,7 @@ class TestShortTermDebtFixedParameters:
             draws={},
             paydown={},
             begin_balance=1000000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         interim_values = {2019: {}, 2020: {}, 2021: {}}
@@ -112,8 +117,7 @@ class TestShortTermDebtFixedParameters:
             draws={2020: 200000, 2021: 300000},
             paydown={},
             begin_balance=500000,
-            interest_rate=0.06,
-            start_year=2020
+            interest_rate=0.06
         )
         
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
@@ -139,8 +143,7 @@ class TestShortTermDebtFixedParameters:
             draws={},
             paydown={2020: 100000, 2021: 150000},
             begin_balance=1000000,
-            interest_rate=0.04,
-            start_year=2020
+            interest_rate=0.04
         )
         
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
@@ -166,8 +169,7 @@ class TestShortTermDebtFixedParameters:
             draws={2020: 500000, 2021: 300000},
             paydown={2021: 200000, 2022: 600000},
             begin_balance=1000000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
@@ -200,8 +202,7 @@ class TestShortTermDebtFixedParameters:
             draws={2022: 500000},
             paydown={},
             begin_balance=0,
-            interest_rate=0.05,
-            start_year=2022
+            interest_rate=0.05
         )
         
         interim_values = {2020: {}, 2021: {}, 2022: {}, 2023: {}}
@@ -229,7 +230,6 @@ class TestShortTermDebtDynamicParameters:
             paydown={},
             begin_balance=1000000,
             interest_rate='prime_rate',  # String to lookup
-            start_year=2020
         )
         
         interim_values = {
@@ -255,8 +255,7 @@ class TestShortTermDebtDynamicParameters:
             draws={},
             paydown={},
             begin_balance='initial_balance',  # String to lookup
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         interim_values = {
@@ -276,8 +275,7 @@ class TestShortTermDebtDynamicParameters:
             draws='annual_draws',  # String to lookup
             paydown='annual_paydown',  # String to lookup
             begin_balance=500000,
-            interest_rate=0.04,
-            start_year=2020
+            interest_rate=0.04
         )
         
         interim_values = {
@@ -300,6 +298,67 @@ class TestShortTermDebtDynamicParameters:
         assert values_2021['flex_debt.principal'] == 150000
         assert _is_close(values_2021['flex_debt.interest'], 28000)  # 700k * 0.04
 
+    def test_interest_rate_dict(self):
+        """Test debt with year-specific interest rates provided as dict."""
+        debt = ShortTermDebt(
+            name='variable_rate_debt',
+            draws={2020: 100000, 2021: 50000},
+            paydown={2021: 30000, 2022: 120000},
+            begin_balance=500000,
+            interest_rate={2020: 0.04, 2021: 0.05, 2022: 0.06}  # Year-specific rates
+        )
+        
+        interim_values = {
+            2020: {},
+            2021: {},
+            2022: {}
+        }
+        
+        # Test year 2020 - should use 4% rate
+        values_2020 = debt.get_values(interim_values, 2020)
+        assert values_2020['variable_rate_debt.debt_outstanding'] == 600000  # 500k + 100k
+        assert values_2020['variable_rate_debt.draw'] == 100000
+        assert values_2020['variable_rate_debt.principal'] == 0.0
+        assert _is_close(values_2020['variable_rate_debt.interest'], 20000)  # 500k * 0.04
+        
+        # Test year 2021 - should use 5% rate
+        values_2021 = debt.get_values(interim_values, 2021)
+        assert values_2021['variable_rate_debt.debt_outstanding'] == 620000  # 600k + 50k - 30k
+        assert values_2021['variable_rate_debt.draw'] == 50000
+        assert values_2021['variable_rate_debt.principal'] == 30000
+        assert _is_close(values_2021['variable_rate_debt.interest'], 30000)  # 600k * 0.05
+        
+        # Test year 2022 - should use 6% rate
+        values_2022 = debt.get_values(interim_values, 2022)
+        assert values_2022['variable_rate_debt.debt_outstanding'] == 500000  # 620k + 0 - 120k
+        assert values_2022['variable_rate_debt.draw'] == 0.0
+        assert values_2022['variable_rate_debt.principal'] == 120000
+        assert _is_close(values_2022['variable_rate_debt.interest'], 37200)  # 620k * 0.06
+
+    def test_interest_rate_dict_missing_year_error(self):
+        """Test that missing year in interest rate dict raises proper error."""
+        debt = ShortTermDebt(
+            name='incomplete_rate_debt',
+            draws={2020: 100000},
+            paydown={},
+            begin_balance=500000,
+            interest_rate={2020: 0.04, 2022: 0.06}  # Missing 2021
+        )
+        
+        interim_values = {
+            2020: {},
+            2021: {},
+            2022: {}
+        }
+        
+        # Test year 2020 - should work
+        values_2020 = debt.get_values(interim_values, 2020)
+        assert _is_close(values_2020['incomplete_rate_debt.interest'], 20000)  # 500k * 0.04
+        
+        # Test year 2021 - should raise error for missing interest rate
+        with pytest.raises(ValueError, match="Interest rate for year 2021 not found in interest rate dictionary"):
+            debt.get_values(interim_values, 2021)
+
     def test_missing_dynamic_parameter_error(self):
         """Test that missing dynamic parameters raise appropriate errors."""
         debt = ShortTermDebt(
@@ -307,8 +366,7 @@ class TestShortTermDebtDynamicParameters:
             draws={},
             paydown={},
             begin_balance=1000000,
-            interest_rate='missing_rate',
-            start_year=2020
+            interest_rate='missing_rate'
         )
         
         interim_values = {2020: {}}  # missing_rate not provided
@@ -323,8 +381,7 @@ class TestShortTermDebtDynamicParameters:
             draws={},
             paydown={},
             begin_balance=1000000,
-            interest_rate='none_rate',
-            start_year=2020
+            interest_rate='none_rate'
         )
         
         interim_values = {2020: {'none_rate': None}}
@@ -355,8 +412,7 @@ class TestShortTermDebtDefaults:
             draws=None,
             paydown=None,
             begin_balance=100000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         interim_values = {2019: {}, 2020: {}}

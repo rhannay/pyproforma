@@ -30,8 +30,7 @@ class TestShortTermDebtInModel:
             draws={2020: 500000, 2021: 300000},
             paydown={2021: 200000, 2022: 600000},
             begin_balance=1000000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         # Create a model with the short-term debt generator
@@ -77,7 +76,6 @@ class TestShortTermDebtInModel:
             paydown={},
             begin_balance=1000000,
             interest_rate='prime_rate',  # Reference to the line item we'll create
-            start_year=2020
         )
         
         # Create a model with line items and the debt generator
@@ -133,8 +131,7 @@ class TestShortTermDebtInModel:
             draws='annual_draws',      # Reference to line item
             paydown='annual_paydown',  # Reference to line item
             begin_balance='initial_debt',  # Reference to line item
-            interest_rate=0.04,
-            start_year=2020
+            interest_rate=0.04
         )
         
         # Create a model with line items and the debt generator
@@ -202,8 +199,7 @@ class TestShortTermDebtInModel:
             draws={},
             paydown={},
             begin_balance=100000,
-            interest_rate=0.05,
-            start_year=2020
+            interest_rate=0.05
         )
         
         # Create a model with the generator

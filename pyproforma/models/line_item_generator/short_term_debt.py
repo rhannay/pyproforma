@@ -16,6 +16,9 @@ class ShortTermDebt(LineItemGenerator):
     expenses over time based on specified draw and paydown schedules. It supports flexible 
     modeling of debt facilities where the outstanding balance can vary based on business needs.
     
+    The start year is automatically determined from the minimum year in interim_values_by_year
+    when get_values() is called.
+    
     Args:
         name (str): Unique identifier for the debt instrument. Must contain only letters, 
             numbers, underscores, or hyphens (no spaces or special characters).
@@ -27,10 +30,10 @@ class ShortTermDebt(LineItemGenerator):
             principal payments in each year. Empty dict if no paydowns.
         begin_balance (float | str): Initial outstanding debt balance at the start of the model,
             or string representing a line item name to look up in interim_values_by_year.
-        interest_rate (float | str): Annual interest rate as a decimal (e.g., 0.05 for 5%),
-            or string representing a line item name to look up in interim_values_by_year.
-        start_year (int | str): First year for which calculations are valid. Queries before this 
-            year will raise ValueError. Can be string representing a line item name to look up.
+        interest_rate (float | dict | str): Annual interest rate. Can be:
+            - float: Fixed rate for all years (e.g., 0.05 for 5%)
+            - dict: Dictionary mapping years (int) to rates (float) for year-specific rates
+            - str: String representing a line item name to look up in interim_values_by_year
     
     Examples:
         >>> # Credit line with fixed parameters
@@ -39,18 +42,25 @@ class ShortTermDebt(LineItemGenerator):
         ...     draws={2024: 500000, 2025: 300000},
         ...     paydown={2025: 200000, 2026: 600000},
         ...     begin_balance=1000000,
-        ...     interest_rate=0.06,
-        ...     start_year=2024
+        ...     interest_rate=0.06
         ... )
         >>> 
-        >>> # Credit line with dynamic interest rate
+        >>> # Credit line with year-specific interest rates
         >>> credit_line = ShortTermDebt(
         ...     name='variable_line',
         ...     draws={2024: 500000},
         ...     paydown={2025: 200000},
         ...     begin_balance=1000000,
-        ...     interest_rate='prime_rate',  # Look up from interim_values_by_year
-        ...     start_year=2024
+        ...     interest_rate={2024: 0.05, 2025: 0.06, 2026: 0.065}
+        ... )
+        >>> 
+        >>> # Credit line with dynamic interest rate lookup
+        >>> credit_line = ShortTermDebt(
+        ...     name='dynamic_line',
+        ...     draws={2024: 500000},
+        ...     paydown={2025: 200000},
+        ...     begin_balance=1000000,
+        ...     interest_rate='prime_rate'  # Look up from interim_values_by_year
         ... )
     """
     
@@ -60,8 +70,7 @@ class ShortTermDebt(LineItemGenerator):
             draws: dict | str = None, 
             paydown: dict | str = None, 
             begin_balance: float | str = 0.0,
-            interest_rate: float | str = 0.0,
-            start_year: int | str = 2024):
+            interest_rate: float | dict | str = 0.0):
         
         if not check_name(name):
             raise ValueError("Short term debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters).")
@@ -71,11 +80,16 @@ class ShortTermDebt(LineItemGenerator):
         self._paydown = paydown if paydown is not None else {}
         self._begin_balance = begin_balance
         self._interest_rate = interest_rate
-        self._start_year = start_year
         
         # Validate interest rate is not negative if it's a number
         if isinstance(interest_rate, (float, int)) and interest_rate < 0:
             raise ValueError("Interest rate cannot be negative")
+        
+        # Validate interest rate dict values are not negative if it's a dict
+        if isinstance(interest_rate, dict):
+            for year, rate in interest_rate.items():
+                if rate < 0:
+                    raise ValueError(f"Interest rate for year {year} cannot be negative")
         
         # Validate draws and paydown values are not negative if they're dicts
         if isinstance(draws, dict):
@@ -143,21 +157,45 @@ class ShortTermDebt(LineItemGenerator):
     # ----------------------------------
     
     def _get_start_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> int:
-        """Get the start year, either from a fixed value or interim_values_by_year lookup."""
-        if isinstance(self._start_year, int):
-            return self._start_year
-        elif isinstance(self._start_year, str):
-            start_year_name = self._start_year
-            if (year in interim_values_by_year and 
-                start_year_name in interim_values_by_year[year]):
-                value = interim_values_by_year[year][start_year_name]
-                if value is None:
-                    raise ValueError(f"Start year '{start_year_name}' for year {year} is None")
-                return int(value)
-            else:
-                raise ValueError(f"Could not find start year '{start_year_name}' for year {year} in interim values")
-        else:
-            raise TypeError(f"Start year must be an int or string, not {type(self._start_year)}")
+        """Get the start year based on when activity begins or data becomes available."""
+        if not interim_values_by_year:
+            raise ValueError("No years available in interim_values_by_year to determine start year")
+        
+        available_years = sorted(interim_values_by_year.keys())
+        
+        # If we have fixed draws/paydowns (dicts), find the minimum year with activity
+        activity_years = set()
+        if isinstance(self._draws, dict):
+            activity_years.update(self._draws.keys())
+        if isinstance(self._paydown, dict):
+            activity_years.update(self._paydown.keys())
+        
+        if activity_years:
+            # Use the minimum year with activity, but not before the available data
+            activity_start = min(activity_years)
+            data_start = min(available_years)
+            return max(activity_start, data_start)
+        
+        # If we have dynamic draws/paydowns (strings), find the first year with valid data
+        if isinstance(self._draws, str) or isinstance(self._paydown, str):
+            for check_year in available_years:
+                year_data = interim_values_by_year[check_year]
+                
+                # Check if the required dynamic parameters exist in this year
+                draws_available = (not isinstance(self._draws, str) or 
+                                 self._draws in year_data)
+                paydown_available = (not isinstance(self._paydown, str) or 
+                                   self._paydown in year_data)
+                
+                if draws_available and paydown_available:
+                    return check_year
+            
+            # If we can't find a year with all required data, use minimum available year
+            # The actual lookup will fail later with a proper error message
+            return min(available_years)
+        
+        # Default: use minimum available year
+        return min(available_years)
     
     def _get_begin_balance(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int = None) -> float:
         """Get the begin balance, either from a fixed value or interim_values_by_year lookup."""
@@ -185,9 +223,15 @@ class ShortTermDebt(LineItemGenerator):
             raise TypeError(f"Begin balance must be a float or string, not {type(self._begin_balance)}")
     
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
-        """Get the interest rate, either from a fixed value or interim_values_by_year lookup."""
+        """Get the interest rate, from a fixed value, dict lookup by year, or interim_values_by_year lookup."""
         if isinstance(self._interest_rate, (float, int)):
             return float(self._interest_rate)
+        elif isinstance(self._interest_rate, dict):
+            # Look up interest rate by year in the provided dict
+            if year in self._interest_rate:
+                return float(self._interest_rate[year])
+            else:
+                raise ValueError(f"Interest rate for year {year} not found in interest rate dictionary")
         elif isinstance(self._interest_rate, str):
             interest_rate_name = self._interest_rate
             if (year in interim_values_by_year and 
@@ -199,7 +243,7 @@ class ShortTermDebt(LineItemGenerator):
             else:
                 raise ValueError(f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values")
         else:
-            raise TypeError(f"Interest rate must be a float or string, not {type(self._interest_rate)}")
+            raise TypeError(f"Interest rate must be a float, dict, or string, not {type(self._interest_rate)}")
     
     def _get_draws_for_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the draws for a specific year, either from dict or interim_values_by_year lookup."""
