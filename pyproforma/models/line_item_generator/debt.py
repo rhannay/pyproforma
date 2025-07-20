@@ -76,9 +76,6 @@ class Debt(LineItemGenerator):
         Returns:
             Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
                                         component for the specified year, with line item names as keys.
-                             
-        Raises:
-            ValueError: If value already exists in interim_values_by_year to prevent circular references.
         """
         result = {}
         
