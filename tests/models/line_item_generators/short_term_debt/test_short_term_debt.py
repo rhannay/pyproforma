@@ -253,7 +253,7 @@ class TestShortTermDebtDynamicParameters:
         )
         
         interim_values = {
-            2019: {},
+            # 2019: {},
             2020: {'prime_rate': 0.03},
             2021: {'prime_rate': 0.045}
         }
@@ -279,7 +279,7 @@ class TestShortTermDebtDynamicParameters:
         )
         
         interim_values = {
-            2019: {},
+            # 2019: {},
             2020: {'initial_balance': 750000},
             2021: {'initial_balance': 750000}
         }

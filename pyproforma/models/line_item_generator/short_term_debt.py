@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Any
 
 from pyproforma.models.line_item_generator.abc_class import LineItemGenerator
-from pyproforma.models._utils import check_name
+from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
 class ShortTermDebt(LineItemGenerator):
@@ -141,6 +141,11 @@ class ShortTermDebt(LineItemGenerator):
             ValueError: If value already exists in interim_values_by_year to prevent circular references.
             ValueError: If draws or paydowns are prior to the start year.
         """
+        # Validate interim values by year
+        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
+        if not is_valid:
+            raise ValueError(f"Invalid interim values by year: {error_msg}")
+
         result = {}
         
         # Get start year and validate draws/paydowns are not before it
