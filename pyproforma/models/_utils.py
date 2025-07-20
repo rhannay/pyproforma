@@ -7,7 +7,7 @@ def check_name(name) -> bool:
     return True
 
 
-def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> bool:
+def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> tuple[bool, str | None]:
     """
     Validates a dictionary of interim values organized by year.
     
@@ -21,27 +21,30 @@ def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> b
         values_by_year (Dict[int, Dict[str, Any]]): Dictionary mapping years to value dictionaries
         
     Returns:
-        bool: True if the structure is valid, False otherwise
+        tuple[bool, str | None]: A tuple containing:
+            - bool: True if the structure is valid, False otherwise
+            - str | None: Error message if invalid, None if valid
     """
     if not values_by_year:
-        return True  # Empty dict is valid
+        return True, None  # Empty dict is valid
         
     # Check if keys are years and in ascending order
     years = list(values_by_year.keys())
     if not all(isinstance(year, int) for year in years):
-        return False
+        return False, "All keys must be integers representing years"
         
     sorted_years = sorted(years)
     if sorted_years != years:
-        return False
+        return False, "Years must be in ascending order"
         
     # Check if all values are dictionaries
-    if not all(isinstance(values_by_year[year], dict) for year in years):
-        return False
+    non_dict_years = [year for year in years if not isinstance(values_by_year[year], dict)]
+    if non_dict_years:
+        return False, f"Values for years {non_dict_years} must be dictionaries"
         
     # If there's only one year, nothing more to check
     if len(years) <= 1:
-        return True
+        return True, None
         
     # Get the set of variable names from the first year
     reference_year = years[0]
@@ -51,14 +54,22 @@ def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> b
     for year in years[1:-1]:
         current_names = set(values_by_year[year].keys())
         if current_names != reference_names:
-            return False
+            missing = reference_names - current_names
+            extra = current_names - reference_names
+            error_msg = f"Year {year} has inconsistent variable names with the first year ({reference_year})"
+            if missing:
+                error_msg += f", missing: {', '.join(missing)}"
+            if extra:
+                error_msg += f", extra: {', '.join(extra)}"
+            return False, error_msg
             
     # Check that the last year only has keys that are within the reference set
     last_year = years[-1]
     last_year_names = set(values_by_year[last_year].keys())
-    if not last_year_names.issubset(reference_names):
-        return False
+    extra_keys = last_year_names - reference_names
+    if extra_keys:
+        return False, f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}"
         
-    return True
+    return True, None
 
 

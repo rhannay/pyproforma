@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Any
 
 from pyproforma.models.line_item_generator.abc_class import LineItemGenerator
-from pyproforma.models._utils import check_name
+from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
 class Debt(LineItemGenerator):
@@ -77,6 +77,11 @@ class Debt(LineItemGenerator):
             Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
                                         component for the specified year, with line item names as keys.
         """
+        # Validate interim values by year
+        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
+        if not is_valid:
+            raise ValueError(f"Invalid interim values by year: {error_msg}")
+
         result = {}
         
         # Build up bond issues
