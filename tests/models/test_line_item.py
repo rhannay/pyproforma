@@ -164,6 +164,130 @@ class TestGetValue:
         assert "has None value for year 2022" in str(excinfo.value)
         assert "Cannot use None values in formulas" in str(excinfo.value)
 
+class TestGetValueValidation:
+    """Test validation of interim_values_by_year parameter in get_value method."""
+    
+    def test_get_value_validates_interim_values_by_year_non_integer_keys(self):
+        """Test that get_value validates interim_values_by_year has integer keys."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Invalid: non-integer keys
+        invalid_interim_values = {"2020": {"other_item": 50.0}}
+        
+        with pytest.raises(ValueError) as excinfo:
+            item.get_value(invalid_interim_values, 2020)
+        assert "Invalid interim values by year" in str(excinfo.value)
+        assert "All keys must be integers representing years" in str(excinfo.value)
+    
+    def test_get_value_validates_interim_values_by_year_unordered_years(self):
+        """Test that get_value validates interim_values_by_year has years in ascending order."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Invalid: years not in ascending order
+        invalid_interim_values = {2022: {"other_item": 50.0}, 2020: {"another_item": 25.0}}
+        
+        with pytest.raises(ValueError) as excinfo:
+            item.get_value(invalid_interim_values, 2020)
+        assert "Invalid interim values by year" in str(excinfo.value)
+        assert "Years must be in ascending order" in str(excinfo.value)
+    
+    def test_get_value_validates_interim_values_by_year_non_dict_values(self):
+        """Test that get_value validates interim_values_by_year has dict values."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Invalid: values are not dictionaries
+        invalid_interim_values = {2020: "not_a_dict"}
+        
+        with pytest.raises(ValueError) as excinfo:
+            item.get_value(invalid_interim_values, 2020)
+        assert "Invalid interim values by year" in str(excinfo.value)
+        assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
+    
+    def test_get_value_validates_interim_values_by_year_inconsistent_keys(self):
+        """Test that get_value validates consistent variable names across years."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Invalid: inconsistent variable names between years
+        invalid_interim_values = {
+            2020: {"var1": 10.0, "var2": 20.0},
+            2021: {"var1": 15.0, "var3": 25.0},  # var2 missing, var3 extra
+            2022: {"var1": 20.0}  # last year can be subset
+        }
+        
+        with pytest.raises(ValueError) as excinfo:
+            item.get_value(invalid_interim_values, 2020)
+        assert "Invalid interim values by year" in str(excinfo.value)
+        assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
+    
+    def test_get_value_validates_interim_values_by_year_extra_keys_in_last_year(self):
+        """Test that get_value validates last year doesn't have extra variables."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Invalid: last year has extra variables not in previous years
+        invalid_interim_values = {
+            2020: {"var1": 10.0},
+            2021: {"var1": 15.0, "var2": 25.0}  # var2 is extra
+        }
+        
+        with pytest.raises(ValueError) as excinfo:
+            item.get_value(invalid_interim_values, 2020)
+        assert "Invalid interim values by year" in str(excinfo.value)
+        assert "Last year (2021) contains extra variables" in str(excinfo.value)
+    
+    def test_get_value_accepts_valid_interim_values_by_year(self):
+        """Test that get_value accepts valid interim_values_by_year."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Valid interim values
+        valid_interim_values = {
+            2020: {"var1": 10.0, "var2": 20.0},
+            2021: {"var1": 15.0, "var2": 25.0},
+            2022: {"var1": 20.0}  # last year can be subset
+        }
+        
+        # Should not raise an error
+        result = item.get_value(valid_interim_values, 2020)
+        assert result == 100.0
+    
+    def test_get_value_accepts_empty_interim_values_by_year(self):
+        """Test that get_value accepts empty interim_values_by_year."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Empty interim values should be valid
+        empty_interim_values = {}
+        
+        # Should not raise an error
+        result = item.get_value(empty_interim_values, 2020)
+        assert result == 100.0
+
 class TestLineItemMisc:
 
     def test_validate_sorted_and_sequential_accepts_sequential_years(self, sample_line_item: LineItem):

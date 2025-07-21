@@ -1,6 +1,6 @@
 from typing import List, Union
 import pandas as pd
-from ._utils import check_name
+from ._utils import check_name, check_interim_values_by_year
 from .formula import calculate_formula
 from ..constants import VALUE_FORMATS, ValueFormat
 
@@ -90,8 +90,12 @@ class LineItem:
             float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
             
         Raises:
-            ValueError: If value already exists in interim_values_by_year.
+            ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
         """
+        # Validate interim values by year
+        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
+        if not is_valid:
+            raise ValueError(f"Invalid interim values by year: {error_msg}")
 
         # If interim_values_by_year[year][self.name] already exists, raise an error
         if year in interim_values_by_year and self.name in interim_values_by_year[year]:
