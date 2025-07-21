@@ -3,7 +3,7 @@ from pyproforma import LineItem, Model
 from pyproforma.models.line_item import Category
 
 @pytest.fixture
-def sample_line_item():
+def sample_line_item() -> LineItem:
     return LineItem(
         name="test_item",
         label="Test Item",
@@ -12,14 +12,14 @@ def sample_line_item():
     )
 
 class TestLineItemInit:
-    def test_line_item_init(self, sample_line_item):
+    def test_line_item_init(self, sample_line_item: LineItem):
         item = sample_line_item
         assert item.name == "test_item"
         assert item.label == "Test Item"
         assert item.category == "revenue"
         assert item.values == {2020: 1.0, 2021: 2.0}
 
-    def test_line_item_init_with_label(self, sample_line_item):
+    def test_line_item_init_with_label(self, sample_line_item: LineItem):
         item = sample_line_item
         assert item.name == "test_item"
         assert item.label == "Test Item"
@@ -166,7 +166,7 @@ class TestGetValue:
 
 class TestLineItemMisc:
 
-    def test_validate_sorted_and_sequential_accepts_sequential_years(self, sample_line_item):
+    def test_validate_sorted_and_sequential_accepts_sequential_years(self, sample_line_item: LineItem):
         item = LineItem(
             name="test",
             label="Test",
