@@ -4,6 +4,7 @@ from pyproforma.models.line_item_generator.abc_class import LineItemGenerator
 from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
+@LineItemGenerator.register("short_term_debt")
 class ShortTermDebt(LineItemGenerator):
     """
     ShortTermDebt class for modeling short-term debt line items.
@@ -106,6 +107,28 @@ class ShortTermDebt(LineItemGenerator):
         self._draw_name = f'{self.name}.draw'
         self._principal_name = f'{self.name}.principal'
         self._interest_name = f'{self.name}.interest'
+
+    @classmethod
+    def from_config(cls, config: Dict[str, Any]) -> 'ShortTermDebt':
+        """Create a ShortTermDebt instance from a configuration dictionary."""
+        return cls(
+            name=config['name'],
+            draws=config.get('draws'),
+            paydown=config.get('paydown'),
+            begin_balance=config.get('begin_balance', 0.0),
+            interest_rate=config.get('interest_rate', 0.0)
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the ShortTermDebt instance to a dictionary representation."""
+        return {
+            'type': 'short_term_debt',
+            'name': self.name,
+            'draws': self._draws,
+            'paydown': self._paydown,
+            'begin_balance': self._begin_balance,
+            'interest_rate': self._interest_rate
+        }
 
     # ----------------------------------
     # MAIN PUBLIC API METHODS (LineItemGenerator ABC)

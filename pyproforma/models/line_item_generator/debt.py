@@ -4,6 +4,7 @@ from pyproforma.models.line_item_generator.abc_class import LineItemGenerator
 from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
+@LineItemGenerator.register("debt")
 class Debt(LineItemGenerator):
     """
     Debt class for modeling debt related line items.
@@ -47,6 +48,28 @@ class Debt(LineItemGenerator):
         self.ds_schedules = {}
         
         self.existing_debt_service = existing_debt_service or []
+    
+    @classmethod
+    def from_config(cls, config: Dict[str, Any]) -> 'Debt':
+        """Create a Debt instance from a configuration dictionary."""
+        return cls(
+            name=config['name'],
+            par_amount=config['par_amount'],
+            interest_rate=config['interest_rate'],
+            term=config['term'],
+            existing_debt_service=config.get('existing_debt_service')
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the Debt instance to a dictionary representation."""
+        return {
+            'type': 'debt',
+            'name': self.name,
+            'par_amount': self._par_amount,
+            'interest_rate': self._interest_rate,
+            'term': self._term,
+            'existing_debt_service': self.existing_debt_service if self.existing_debt_service else None
+        }
     
     # ----------------------------------
     # MAIN PUBLIC API METHODS
