@@ -1,11 +1,10 @@
 from ..line_item import LineItem, Category
 from pyproforma.generators.generator_class import Generator
+from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
-import pandas as pd
 import copy
-from pathlib import Path
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -67,7 +66,8 @@ class Model(SerializationMixin):
         years: list[int] = None,
         categories: list[Category] = None,
         generators: list[Generator] = None,
-        constraints: list[Constraint] = None
+        constraints: list[Constraint] = None,
+        line_item_generators: list[LineItemGenerator] = None
     ):
         
         if years is None:
@@ -90,10 +90,12 @@ class Model(SerializationMixin):
 
         self.generators = generators if generators is not None else []
         self.constraints = constraints if constraints is not None else []
+        self.line_item_generators = line_item_generators if line_item_generators is not None else []
 
         self._validate_categories()
         self._validate_generators()
         self._validate_constraints()
+        self._validate_line_item_generators()
 
         self.defined_names = self._gather_defined_names()
 
@@ -159,19 +161,35 @@ class Model(SerializationMixin):
             if constraint.line_item_name not in line_item_names:
                 raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
 
+    def _validate_line_item_generators(self):
+        """
+        Validates that all line item generators have unique names.
+
+        Raises:
+            ValueError: If two or more line item generators have the same name.
+        """
+        if not self.line_item_generators:
+            return
+            
+        generator_names = [generator.name for generator in self.line_item_generators]
+        duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
+        
+        if duplicates:
+            raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
+
     def _gather_defined_names(self) -> list[dict]:
         """
         Collects all defined names across the model to create a comprehensive namespace.
         
         This method aggregates identifiers from all model components including 
-        line items, category totals, and generators to 
+        line items, category totals, generators, and line item generators to 
         build a unified namespace for value lookups and validation.
         
         Returns:
             list[dict]: A list of dictionaries, each containing:
                 - 'name' (str): The identifier name used for lookups
                 - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'generator')
+                  ('line_item', 'category', 'generator', 'line_item_generator')
                 - 'source_name' (str): The original source object's name
                 
         Raises:
@@ -196,6 +214,9 @@ class Model(SerializationMixin):
         for generator in self.generators:
             for gen_name in generator.defined_names:
                 defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'generator', 'source_name': generator.name})
+        for generator in self.line_item_generators:
+            for gen_name in generator.defined_names:
+                defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'line_item_generator', 'source_name': generator.name})
         
         # Check for duplicate names in defined_names
         # and raise ValueError if any duplicates are found.
@@ -220,9 +241,33 @@ class Model(SerializationMixin):
             max_iterations = len(self._line_item_definitions) + 1  # Safety valve
             iteration = 0
             
-            while remaining_items and iteration < max_iterations:
+            # Track which line item generators have been successfully calculated
+            remaining_generators = self.line_item_generators.copy() if self.line_item_generators else []
+            
+            while (remaining_items or remaining_generators) and iteration < max_iterations:
                 iteration += 1
                 items_calculated_this_round = []
+                generators_calculated_this_round = []
+                
+                # Try to calculate line item generators for this year
+                for generator in remaining_generators:
+                    try:
+                        # Try to calculate values for this line item generator
+                        generated_values = generator.get_values(value_matrix, year)
+                        
+                        # Update value matrix with the generated values
+                        value_matrix[year].update(generated_values)
+                        
+                        # Mark this generator as calculated
+                        generators_calculated_this_round.append(generator)
+                    except (KeyError, ValueError):
+                        # Skip if dependencies are not yet met
+                        # Will try again in the next iteration
+                        continue
+                
+                # Remove successfully calculated generators from remaining list
+                for generator in generators_calculated_this_round:
+                    remaining_generators.remove(generator)
                 
                 for item in remaining_items:
                     try:
@@ -268,13 +313,21 @@ class Model(SerializationMixin):
                             value_matrix[year][total_name] = category_total
                 
                 # If no progress was made this round, we have circular dependencies
-                if not items_calculated_this_round:
+                if not items_calculated_this_round and not generators_calculated_this_round:
                     break
             
-            # Check if all items were calculated
+            # Check if all items and generators were calculated
+            errors = []
             if remaining_items:
                 failed_items = [item.name for item in remaining_items]
-                raise ValueError(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
+                errors.append(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
+                
+            if remaining_generators:
+                failed_generators = [generator.name for generator in remaining_generators]
+                errors.append(f"Could not calculate line item generators due to missing dependencies or circular references: {failed_generators}")
+                
+            if errors:
+                raise ValueError("\n".join(errors))
         
             # Ensure all defined names are present in the value matrix
             for name in self.defined_names:
@@ -287,6 +340,7 @@ class Model(SerializationMixin):
         self._validate_categories()
         self._validate_generators()
         self._validate_constraints()
+        self._validate_line_item_generators()
         self.defined_names = self._gather_defined_names()
         self._value_matrix = self._generate_value_matrix()
 
