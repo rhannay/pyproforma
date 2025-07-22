@@ -31,11 +31,12 @@ class Tables:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
             for cat_def in non_assumption_categories:
                 rows.extend(self._category_rows(cat_def.name))
-        # Generator items
-        rows.append(rt.LabelRow(label='GENERATOR ITEMS', bold=True))
-        for generator in self._model.generators:
-            for gen_name in generator.defined_names:
-                rows.append(rt.ItemRow(name=gen_name))
+        # Line Item Generator items
+        if self._model.line_item_generators:
+            rows.append(rt.LabelRow(label='LINE ITEM GENERATOR ITEMS', bold=True))
+            for generator in self._model.line_item_generators:
+                for gen_name in generator.defined_names:
+                    rows.append(rt.ItemRow(name=gen_name))
         return generate_table(self._model, rows, include_name=True)
        
     def line_items(self):

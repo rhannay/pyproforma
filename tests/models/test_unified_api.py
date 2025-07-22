@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestUnifiedAddFunctionality:
@@ -22,70 +22,6 @@ class TestUnifiedAddFunctionality:
             years=[2023, 2024, 2025],
             categories=categories
         )
-
-    def test_add_generator_basic(self, sample_model: Model):
-        """Test adding a basic generator."""
-        initial_count = len(sample_model.generators)
-        
-        # Create a debt generator
-        debt_generator = Debt(
-            name="test_debt",
-            par_amounts={2023: 100000},
-            interest_rate=0.05,
-            term=5
-        )
-        
-        sample_model.update.add_generator(debt_generator)
-        
-        assert len(sample_model.generators) == initial_count + 1
-        assert sample_model.generators[-1].name == "test_debt"
-
-    def test_add_generator_updates_defined_names(self, sample_model: Model):
-        """Test that adding a generator updates defined names."""
-        initial_names = [name['name'] for name in sample_model.defined_names]
-        
-        debt_generator = Debt(
-            name="test_debt",
-            par_amounts={2023: 100000},
-            interest_rate=0.05,
-            term=5
-        )
-        
-        sample_model.update.add_generator(debt_generator)
-        
-        # Check that new names were added
-        current_names = [name['name'] for name in sample_model.defined_names]
-        assert len(current_names) > len(initial_names)
-        
-        # Check that debt-related names are present
-        debt_names = [name for name in current_names if 'test_debt' in name]
-        assert len(debt_names) > 0
-
-    def test_add_generator_values_accessible(self, sample_model: Model):
-        """Test that generator values are accessible after adding."""
-        debt_generator = Debt(
-            name="test_debt",
-            par_amounts={2023: 100000},
-            interest_rate=0.05,
-            term=5
-        )
-        
-        sample_model.update.add_generator(debt_generator)
-        
-        # Check that we can access generator values
-        # The exact names depend on the Debt generator implementation
-        debt_names = [name['name'] for name in sample_model.defined_names if 'test_debt' in name['name']]
-        assert len(debt_names) > 0
-        
-        # Try to get values for the debt-related names
-        for debt_name in debt_names:
-            value = sample_model.get_value(debt_name, 2023)
-            assert isinstance(value, (int, float))
-
-    def test_add_generator_not_instance_fails(self, sample_model: Model):
-        """Test that adding a non-Generator instance fails."""
-        with pytest.raises(TypeError, match="Must provide a Generator instance"):
-            sample_model.update.add_generator("not_a_generator")
 
     def test_add_category_basic(self, sample_model: Model):
         """Test adding a basic category."""
@@ -222,7 +158,7 @@ class TestUnifiedDeleteFunctionality:
         
         debt1 = Debt(
             name="loan1",
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
@@ -233,16 +169,8 @@ class TestUnifiedDeleteFunctionality:
             line_items=[revenue],
             years=[2023, 2024, 2025],
             categories=categories,
-            generators=[debt1]
+            line_item_generators=[debt1]
         )
-
-    def test_delete_generator_basic(self, sample_model_with_generators: Model):
-        """Test deleting a generator."""
-        initial_count = len(sample_model_with_generators.generators)
-        
-        sample_model_with_generators.update.delete_generator("loan1")
-        
-        assert len(sample_model_with_generators.generators) == initial_count - 1
 
     def test_delete_line_item_basic(self, sample_model_with_generators: Model):
         """Test deleting a line item."""

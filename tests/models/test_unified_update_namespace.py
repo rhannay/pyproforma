@@ -1,7 +1,7 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.model.model_update import UpdateNamespace
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestUnifiedUpdateNamespace:
@@ -55,18 +55,15 @@ class TestUnifiedUpdateNamespace:
         # Add methods
         assert hasattr(update, 'add_category')
         assert hasattr(update, 'add_line_item')
-        assert hasattr(update, 'add_generator')
         
         # Update methods
         assert hasattr(update, 'update_category')
         assert hasattr(update, 'update_line_item')
-        assert hasattr(update, 'update_generator')
         assert hasattr(update, 'update_years')
         
         # Delete methods
         assert hasattr(update, 'delete_category')
         assert hasattr(update, 'delete_line_item')
-        assert hasattr(update, 'delete_generator')
 
     def test_add_category_functionality(self, sample_model: Model):
         """Test that add_category works correctly."""
@@ -90,22 +87,6 @@ class TestUnifiedUpdateNamespace:
         
         assert len(sample_model.line_item_definitions) == initial_count + 1
         assert sample_model.get_value("rent", 2023) == 24000
-
-    def test_add_generator_functionality(self, sample_model: Model):
-        """Test that add_generator works correctly."""
-        initial_count = len(sample_model.generators)
-        
-        debt_generator = Debt(
-            name="test_debt",
-            par_amounts={2023: 100000},
-            interest_rate=0.05,
-            term=5
-        )
-        
-        sample_model.update.add_generator(debt_generator)
-        
-        assert len(sample_model.generators) == initial_count + 1
-        assert sample_model.generators[-1].name == "test_debt"
 
     def test_update_category_functionality(self, sample_model: Model):
         """Test that update_category works correctly."""
@@ -153,22 +134,7 @@ class TestUnifiedUpdateNamespace:
         with pytest.raises(ValueError, match="Cannot delete category 'income' because it is used by line items"):
             sample_model.update.delete_category("income")
 
-    def test_delete_generator_functionality(self, sample_model: Model):
-        """Test that delete_generator works correctly."""
-        # First add a generator
-        debt_generator = Debt(
-            name="deletable_debt",
-            par_amounts={2023: 100000},
-            interest_rate=0.05,
-            term=5
-        )
-        sample_model.update.add_generator(debt_generator)
-        initial_count = len(sample_model.generators)
-        
-        sample_model.update.delete_generator("deletable_debt")
-        
-        assert len(sample_model.generators) == initial_count - 1
-        assert "deletable_debt" not in [gen.name for gen in sample_model.generators]
+
 
     def test_error_handling_preserved(self, sample_model: Model):
         """Test that error handling is preserved across all methods."""

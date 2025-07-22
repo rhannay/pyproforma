@@ -1,7 +1,7 @@
 import pytest
-from pyproforma import LineItem, Model, Category, Debt
+from pyproforma import LineItem, Model, Category
 from pyproforma.models.constraint import Constraint
-from pyproforma.generators.debt import generate_debt_service_schedule
+from pyproforma.models.line_item_generator.debt import Debt
 
 class TestItemTypeValidation:
 
@@ -139,19 +139,19 @@ class TestSetWithAssumptions:
 class TestModelWithGenerators:
     @pytest.fixture
     def sample_line_item_set_with_generators(self) -> Model:
-        # Create a sample Model with LineItems and Generators
+        # Create a sample Model with LineItems and LineItemGenerators
         p = LineItem(name="principal", category="debt_service", values={2020: 300.0}, formula='debt.principal')
         i = LineItem(name="interest", category="debt_service", values={2020: 100.0}, formula='debt.interest')
-        debt = Debt(name='debt', par_amounts={2021: 1000.0}, interest_rate=0.05, term=30)
+        debt = Debt(name='debt', par_amount={2021: 1000.0}, interest_rate=0.05, term=30)
         return Model(
             line_items=[p, i],
             years=[2020, 2021, 2022],
-            generators=[debt]
+            line_item_generators=[debt]
         )
     
     def test_line_item_set_with_generators(self, sample_line_item_set_with_generators: Model):
         lis = sample_line_item_set_with_generators
-        ds_schedule = generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
+        ds_schedule = Debt.generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
         
         assert isinstance(lis, Model)
         assert lis['debt.principal', 2020] == 0

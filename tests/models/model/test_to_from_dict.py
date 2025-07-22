@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestModelToFromDict:
@@ -67,13 +67,13 @@ class TestModelToFromDict:
         assert "years" in result
         assert "line_items" in result
         assert "categories" in result
-        assert "generators" in result
+        assert "line_item_generators" in result
         
         # Check basic types
         assert isinstance(result["years"], list)
         assert isinstance(result["line_items"], list)
         assert isinstance(result["categories"], list)
-        assert isinstance(result["generators"], list)
+        assert isinstance(result["line_item_generators"], list)
 
     def test_to_dict_preserves_years(self, simple_model):
         """Test that to_dict() preserves the years."""
@@ -255,16 +255,16 @@ class TestModelToFromDict:
             assert current_model.get_value("growth_rate", 2023) == 0.1
             assert current_model.get_value("growth_rate", 2024) == 0.15
 
-    def test_to_dict_with_empty_generators(self, simple_model):
-        """Test that to_dict() handles empty generators list."""
+    def test_to_dict_with_empty_line_item_generators(self, simple_model):
+        """Test that to_dict() handles empty line item generators list."""
         result = simple_model.to_dict()
-        assert result["generators"] == []
+        assert result["line_item_generators"] == []
 
-    def test_from_dict_with_empty_generators(self, simple_model):
-        """Test that from_dict() handles empty generators list."""
+    def test_from_dict_with_empty_line_item_generators(self, simple_model):
+        """Test that from_dict() handles empty line item generators list."""
         model_dict = simple_model.to_dict()
         recreated_model = Model.from_dict(model_dict)
-        assert len(recreated_model.generators) == 0
+        assert len(recreated_model.line_item_generators) == 0
 
     def test_model_with_generators_round_trip(self):
         """Test that models with generators can be serialized and deserialized successfully."""
@@ -275,7 +275,7 @@ class TestModelToFromDict:
         
         debt_generator = Debt(
             name="loan",
-            par_amounts={2023: 50000},
+            par_amount={2023: 50000},
             interest_rate=0.05,
             term=5
         )
@@ -286,20 +286,20 @@ class TestModelToFromDict:
             line_items=line_items,
             years=[2023],
             categories=categories,
-            generators=[debt_generator]
+            line_item_generators=[debt_generator]
         )
         
         # to_dict should work
         result = model.to_dict()
-        assert "generators" in result
-        assert len(result["generators"]) == 1
+        assert "line_item_generators" in result
+        assert len(result["line_item_generators"]) == 1
         
         # from_dict should now work successfully
         recreated_model = Model.from_dict(result)
         
         # Verify the recreated model has the same structure
-        assert len(recreated_model.generators) == 1
-        assert recreated_model.generators[0].name == "loan"
+        assert len(recreated_model.line_item_generators) == 1
+        assert recreated_model.line_item_generators[0].name == "loan"
         
         # Verify the values match
         original_value = model.get_value("loan.principal", 2023)
@@ -343,7 +343,7 @@ class TestModelToFromDict:
         # Test basic functionality
         assert recreated_model.get_value("item1", 2023) == 100.0
         assert len(recreated_model._category_definitions) == 1  # Auto-generated
-        assert len(recreated_model.generators) == 0
+        assert len(recreated_model.line_item_generators) == 0
 
     def test_dict_structure_completeness(self, complex_model):
         """Test that the dictionary structure contains all necessary information."""
