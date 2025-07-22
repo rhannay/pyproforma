@@ -9,8 +9,6 @@ import copy
 # Namespace imports
 from pyproforma.tables import Tables
 from pyproforma.charts import Charts
-from .model_add import AddNamespace
-from .model_delete import DeleteNamespace
 from .model_update import UpdateNamespace
 
 class Model(SerializationMixin):
@@ -377,18 +375,8 @@ class Model(SerializationMixin):
         return Charts(self)
     
     @property
-    def add(self):
-        """Add namespace for extending model functionality"""
-        return AddNamespace(self)
-
-    @property
-    def delete(self):
-        """Delete namespace for removing model components"""
-        return DeleteNamespace(self)
-
-    @property
     def update(self):
-        """Update namespace for modifying model components"""
+        """Update namespace for adding, updating, and deleting model components"""
         return UpdateNamespace(self)
 
     @property

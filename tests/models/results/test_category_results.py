@@ -87,7 +87,7 @@ class TestCategoryResultsInitialization:
             values={2023: 0.15, 2024: 0.18, 2025: 0.20},
             value_format="percent"
         )
-        model_with_categories.add.line_item(metrics_item)
+        model_with_categories.update.add_line_item(metrics_item)
         
         category_results = CategoryResults(model_with_categories, "metrics")
         
@@ -173,7 +173,7 @@ class TestCategoryResultsTotalsMethod:
             values={2023: 0.15, 2024: 0.18, 2025: 0.20},
             value_format="percent"
         )
-        model_with_categories.add.line_item(metrics_item)
+        model_with_categories.update.add_line_item(metrics_item)
         return CategoryResults(model_with_categories, "metrics")
     
     def test_totals_method_returns_correct_values(self, category_results_with_total):
