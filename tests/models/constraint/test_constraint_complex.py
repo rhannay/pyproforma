@@ -1,14 +1,14 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.constraint import Constraint
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestConstraintsWithComplexModels:
-    """Test that constraints work correctly with complex models including generators."""
+    """Test that constraints work correctly with complex models including line item generators."""
     
-    def test_constraints_with_generators(self):
-        """Test that constraints work with models that include generators."""
+    def test_constraints_with_line_item_generators(self):
+        """Test that constraints work with models that include line item generators."""
         line_items = [
             LineItem(
                 name="revenue",
@@ -27,10 +27,10 @@ class TestConstraintsWithComplexModels:
             Category(name="expenses", label="Expenses")
         ]
         
-        generators = [
+        line_item_generators = [
             Debt(
                 name="debt",
-                par_amounts={2023: 50000},
+                par_amount={2023: 50000},
                 interest_rate=0.05,
                 term=10
             )
@@ -55,13 +55,13 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            generators=generators,
+            line_item_generators=line_item_generators,
             constraints=constraints
         )
         
         # Test that model functions correctly
         assert len(model.constraints) == 2
-        assert len(model.generators) == 1
+        assert len(model.line_item_generators) == 1
         assert len(model._line_item_definitions) == 2
         
         # Test that values can be accessed
@@ -156,10 +156,10 @@ class TestConstraintsWithComplexModels:
             Category(name="costs", label="Costs", include_total=True)
         ]
         
-        generators = [
+        line_item_generators = [
             Debt(
                 name="loan",
-                par_amounts={2023: 25000},
+                par_amount={2023: 25000},
                 interest_rate=0.04,
                 term=5
             )
@@ -184,7 +184,7 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            generators=generators,
+            line_item_generators=line_item_generators,
             constraints=constraints
         )
         
@@ -194,7 +194,7 @@ class TestConstraintsWithComplexModels:
         
         # Verify all components are preserved
         assert len(reconstructed_model.constraints) == 2
-        assert len(reconstructed_model.generators) == 1
+        assert len(reconstructed_model.line_item_generators) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
         assert len(reconstructed_model._category_definitions) == 2
         
