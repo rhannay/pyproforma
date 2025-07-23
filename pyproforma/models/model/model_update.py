@@ -4,7 +4,6 @@ if TYPE_CHECKING:
     from .model import Model 
 
 from ..line_item import LineItem, Category
-from pyproforma.generators.generator_class import Generator
 from ...constants import ValueFormat
 
 
@@ -17,51 +16,7 @@ class UpdateNamespace:
     # ADD METHODS (formerly AddNamespace methods)
     # ============================================================================
 
-    def add_generator(self, generator: Generator):
-        """
-        Add a new generator to the model.
-        
-        This method accepts a Generator instance (must be a subclass of Generator).
-        It validates the addition by first testing it on a copy of the model,
-        then applies the change to the actual model if successful.
-        
-        Note: Generators are complex objects that are always passed as instances
-        since they are subclasses with varying constructor arguments.
-        
-        Usage:
-            # Create and add a generator instance
-            debt_generator = Debt(name="loan", par_amounts={2023: 100000}, 
-                                interest_rate=0.05, term=5)
-            model.update.add_generator(debt_generator)
-        
-        Args:
-            generator (Generator): A Generator instance to add to the model
-            
-        Returns:
-            None
-            
-        Raises:
-            ValueError: If the generator cannot be added (validation fails)
-            TypeError: If the provided object is not a Generator instance
-        """
-        # Validate that a Generator instance is provided
-        if not isinstance(generator, Generator):
-            raise TypeError("Must provide a Generator instance")
-        
-        # Test on a copy of the model first
-        try:
-            model_copy = self._model.copy()
-            model_copy.generators.append(generator)
-            model_copy._reclalculate()
-            
-            # If we get here, the addition was successful on the copy
-            # Now apply it to the actual model
-            self._model.generators.append(generator)
-            self._model._reclalculate()
-            
-        except Exception as e:
-            # If validation fails, raise an informative error
-            raise ValueError(f"Failed to add generator '{generator.name}': {str(e)}") from e
+
 
     def add_category(
         self,
@@ -429,69 +384,7 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line item '{name}': {str(e)}") from e
 
-    def update_generator(
-        self,
-        name: str,
-        *,
-        generator: Generator
-    ):
-        """
-        Update a generator in the model by name.
-        
-        This method replaces an existing generator entirely with a new Generator 
-        instance. Unlike other update methods, this only supports full replacement
-        and does not allow updating individual properties.
-        
-        It validates the update by first testing it on a copy of the model, 
-        then applies the change to the actual model if successful.
-        
-        Usage:
-            # Replace with a new Generator instance
-            model.update.update_generator("debt_service", generator=new_debt_generator)
-        
-        Args:
-            name (str): Name of the existing generator to update
-            generator (Generator): New Generator instance to replace the existing one
-            
-        Returns:
-            None
-            
-        Raises:
-            ValueError: If the generator cannot be updated (validation fails)
-            KeyError: If the generator with the given name is not found
-            TypeError: If generator is not a Generator instance
-        """
-        # Validate that generator is a Generator instance
-        if not isinstance(generator, Generator):
-            raise TypeError(f"Expected Generator instance, got {type(generator).__name__}")
-        
-        # Find the existing generator
-        existing_generator = None
-        generator_index = None
-        for i, gen in enumerate(self._model.generators):
-            if gen.name == name:
-                existing_generator = gen
-                generator_index = i
-                break
-        
-        if existing_generator is None:
-            raise KeyError(f"Generator '{name}' not found in model")
-        
-        # Test on a copy of the model first
-        try:
-            model_copy = self._model.copy()
-            # Replace the generator in the copy
-            model_copy.generators[generator_index] = generator
-            model_copy._reclalculate()
-            
-            # If we get here, the update was successful on the copy
-            # Now apply it to the actual model
-            self._model.generators[generator_index] = generator
-            self._model._reclalculate()
-            
-        except Exception as e:
-            # If validation fails, raise an informative error
-            raise ValueError(f"Failed to update generator '{name}': {str(e)}") from e
+
 
     def update_years(self, new_years: list[int]):
         """
@@ -551,54 +444,7 @@ class UpdateNamespace:
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
 
-    def delete_generator(self, name: str):
-        """
-        Delete a generator from the model by name.
-        
-        This method validates the deletion by first testing it on a copy of 
-        the model, then applies the change to the actual model if successful.
-        Note that deleting a generator will fail if there are formulas that 
-        reference any of the variables this generator provides.
-        
-        Usage:
-            model.update.delete_generator("debt_generator")
-        
-        Args:
-            name (str): Name of the generator to delete
-            
-        Returns:
-            None
-            
-        Raises:
-            ValueError: If the generator cannot be deleted (validation fails),
-                       such as when formulas reference variables from this generator
-            KeyError: If the generator with the given name is not found
-        """
-        # Verify the generator exists
-        generator_to_delete = None
-        for generator in self._model.generators:
-            if generator.name == name:
-                generator_to_delete = generator
-                break
-        
-        if generator_to_delete is None:
-            raise KeyError(f"Generator '{name}' not found in model")
-        
-        # Test on a copy of the model first
-        try:
-            model_copy = self._model.copy()
-            # Remove the generator from the copy
-            model_copy.generators = [generator for generator in model_copy.generators if generator.name != name]
-            model_copy._reclalculate()
-            
-            # If we get here, the deletion was successful on the copy
-            # Now apply it to the actual model
-            self._model.generators = [generator for generator in self._model.generators if generator.name != name]
-            self._model._reclalculate()
-            
-        except Exception as e:
-            # If validation fails, raise an informative error
-            raise ValueError(f"Failed to delete generator '{name}': {str(e)}") from e
+
 
     def delete_category(self, name: str):
         """

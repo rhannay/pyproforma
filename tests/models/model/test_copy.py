@@ -1,6 +1,5 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.generators.generator_class import Generator
 
 
 class TestModelCopy:

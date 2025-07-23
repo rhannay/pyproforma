@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category, Constraint
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestModelInitWithDuplicateGenerators:
@@ -42,14 +42,14 @@ class TestModelInitWithDuplicateGenerators:
         # Create two debt generators with the same name but different configurations
         debt_generator_1 = Debt(
             name="company_debt",
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
         
         debt_generator_2 = Debt(
             name="company_debt",  # Same name as first generator - should not be allowed
-            par_amounts={2023: 200000},
+            par_amount={2023: 200000},
             interest_rate=0.06,
             term=10
         )
@@ -58,12 +58,12 @@ class TestModelInitWithDuplicateGenerators:
         
         # This SHOULD raise a ValueError for duplicate generator names
         # but currently it will raise a ValueError for duplicate defined_names instead
-        with pytest.raises(ValueError, match="Duplicate generator names not allowed"):
+        with pytest.raises(ValueError, match="Duplicate line item generator names not allowed"):
             Model(
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=basic_categories,
-                generators=generators
+                line_item_generators=generators
             )
     
     def test_generator_name_same_as_line_item_is_allowed(self, basic_line_items, basic_categories):
@@ -71,7 +71,7 @@ class TestModelInitWithDuplicateGenerators:
         # Create a generator with the same name as a line item
         debt_generator = Debt(
             name="revenue",  # Same name as line item
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
@@ -82,13 +82,13 @@ class TestModelInitWithDuplicateGenerators:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=basic_categories,
-            generators=[debt_generator]
+            line_item_generators=[debt_generator]
         )
         
         # Verify both the line item and generator are present
         assert len(model._line_item_definitions) == 2
-        assert len(model.generators) == 1
-        assert model.generators[0].name == "revenue"
+        assert len(model.line_item_generators) == 1
+        assert model.line_item_generators[0].name == "revenue"
         
         # Verify defined names include both line item and generator variables
         defined_names = [item['name'] for item in model.defined_names]
@@ -102,14 +102,14 @@ class TestModelInitWithDuplicateGenerators:
         # Create two debt generators with different names
         debt_generator_1 = Debt(
             name="company_debt",
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
         
         debt_generator_2 = Debt(
             name="equipment_debt",
-            par_amounts={2023: 50000},
+            par_amount={2023: 50000},
             interest_rate=0.04,
             term=3
         )
@@ -121,13 +121,13 @@ class TestModelInitWithDuplicateGenerators:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=basic_categories,
-            generators=generators
+            line_item_generators=generators
         )
         
         # Verify both generators are present
-        assert len(model.generators) == 2
-        assert model.generators[0].name == "company_debt"
-        assert model.generators[1].name == "equipment_debt"
+        assert len(model.line_item_generators) == 2
+        assert model.line_item_generators[0].name == "company_debt"
+        assert model.line_item_generators[1].name == "equipment_debt"
         
         # Verify defined names include both generators' variables
         defined_names = [item['name'] for item in model.defined_names]
@@ -144,12 +144,12 @@ class TestModelInitWithDuplicateGenerators:
         
         Currently this test WILL FAIL because the code doesn't validate generator names directly.
         """
-        from pyproforma.generators.short_term_debt import ShortTermDebt
+        from pyproforma.models.line_item_generator.short_term_debt import ShortTermDebt
         
         # Create a debt generator
         debt_generator = Debt(
             name="facility",
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
@@ -160,20 +160,19 @@ class TestModelInitWithDuplicateGenerators:
             draws={2023: 50000},
             paydown={2024: 25000},
             begin_balance=0,
-            interest_rate=0.04,
-            start_year=2023
+            interest_rate=0.04
         )
         
         generators = [debt_generator, short_term_debt_generator]
         
         # This SHOULD raise a ValueError for duplicate generator names
         # but currently it may pass or raise for different reasons
-        with pytest.raises(ValueError, match="Duplicate generator names not allowed"):
+        with pytest.raises(ValueError, match="Duplicate line item generator names not allowed"):
             Model(
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=basic_categories,
-                generators=generators
+                line_item_generators=generators
             )
 
 
@@ -217,7 +216,7 @@ class TestModelInitWithDuplicateCategories:
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=duplicate_categories,
-                generators=[]
+                line_item_generators=[]
             )
 
     def test_different_category_names_work_correctly(self, basic_line_items):
@@ -234,7 +233,7 @@ class TestModelInitWithDuplicateCategories:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=unique_categories,
-            generators=[]
+            line_item_generators=[]
         )
         
         # Verify all categories are present

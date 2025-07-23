@@ -1,5 +1,4 @@
 from ..line_item import LineItem, Category
-from pyproforma.generators.generator_class import Generator
 from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
@@ -15,15 +14,15 @@ class Model(SerializationMixin):
     """
     Core financial modeling framework for building pro forma financial statements.
     
-    Creates structured financial models with line items, categories, generators, and constraints.
+    Creates structured financial models with line items, categories, line item generators, and constraints.
     Supports multi-year modeling, automatic dependency resolution, and rich output formatting.
     
     Args:
         line_items (list[LineItem]): LineItem objects defining the model structure
         years (list[int]): Years for the model time horizon (required)
         categories (list[Category], optional): Category definitions (auto-inferred if None)
-        generators (list[Generator], optional): Automated value generators
         constraints (list[Constraint], optional): Validation constraints
+        line_item_generators (list[LineItemGenerator], optional): Components that generate multiple line items
     
     Examples:
         >>> from pyproforma import Model, LineItem
@@ -63,7 +62,6 @@ class Model(SerializationMixin):
         line_items: list[LineItem],
         years: list[int] = None,
         categories: list[Category] = None,
-        generators: list[Generator] = None,
         constraints: list[Constraint] = None,
         line_item_generators: list[LineItemGenerator] = None
     ):
@@ -86,12 +84,10 @@ class Model(SerializationMixin):
         else:
             self._category_definitions = categories
 
-        self.generators = generators if generators is not None else []
         self.constraints = constraints if constraints is not None else []
         self.line_item_generators = line_item_generators if line_item_generators is not None else []
 
         self._validate_categories()
-        self._validate_generators()
         self._validate_constraints()
         self._validate_line_item_generators()
 
@@ -120,21 +116,6 @@ class Model(SerializationMixin):
             if item.category not in category_names:
                 raise ValueError(f"Category '{item.category}' for LineItem '{item.name}' is not defined category.")
 
-    def _validate_generators(self):
-        """
-        Validates that all generators have unique names.
-
-        Raises:
-            ValueError: If two or more generators have the same name.
-        """
-        if not self.generators:
-            return
-            
-        generator_names = [generator.name for generator in self.generators]
-        duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate generator names not allowed: {', '.join(sorted(duplicates))}")
 
     def _validate_constraints(self):
         """
@@ -180,14 +161,14 @@ class Model(SerializationMixin):
         Collects all defined names across the model to create a comprehensive namespace.
         
         This method aggregates identifiers from all model components including 
-        line items, category totals, generators, and line item generators to 
+        line items, category totals, and line item generators to 
         build a unified namespace for value lookups and validation.
         
         Returns:
             list[dict]: A list of dictionaries, each containing:
                 - 'name' (str): The identifier name used for lookups
                 - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'generator', 'line_item_generator')
+                  ('line_item', 'category', 'line_item_generator')
                 - 'source_name' (str): The original source object's name
                 
         Raises:
@@ -209,9 +190,6 @@ class Model(SerializationMixin):
                 items_in_category = [item for item in self._line_item_definitions if item.category == category.name]
                 if items_in_category:  # Only add total if category has items
                     defined_names.append({'name': category.total_name, 'label': category.total_label, 'value_format': 'no_decimals', 'source_type': 'category', 'source_name': category.name})
-        for generator in self.generators:
-            for gen_name in generator.defined_names:
-                defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'generator', 'source_name': generator.name})
         for generator in self.line_item_generators:
             for gen_name in generator.defined_names:
                 defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'line_item_generator', 'source_name': generator.name})
@@ -228,10 +206,6 @@ class Model(SerializationMixin):
         value_matrix = {}
         for year in self.years:
             value_matrix[year] = {}
-            
-            # Add generator values first (they have no dependencies)
-            for generator in self.generators:
-                value_matrix[year].update(generator.get_values(year))
         
             # Calculate line items in dependency order
             calculated_items = set()
@@ -336,7 +310,6 @@ class Model(SerializationMixin):
 
     def _reclalculate(self):
         self._validate_categories()
-        self._validate_generators()
         self._validate_constraints()
         self._validate_line_item_generators()
         self.defined_names = self._gather_defined_names()
@@ -842,10 +815,10 @@ class Model(SerializationMixin):
                 - years: List of years in the model
                 - line_items_count: Number of line items
                 - categories_count: Number of categories  
-                - generators_count: Number of generators
+                - line_item_generators_count: Number of line item generators
                 - constraints_count: Number of constraints
                 - line_items_by_category: Dictionary mapping category names to lists of line item names
-                - generator_names: List of generator names
+                - line_item_generator_names: List of line item generator names
                 - constraint_names: List of constraint names
                 - defined_names_count: Total number of defined names (items that can be referenced)
         """
@@ -862,10 +835,10 @@ class Model(SerializationMixin):
             'year_range': f"{min(self.years)} - {max(self.years)}" if self.years else "None",
             'line_items_count': len(self._line_item_definitions),
             'categories_count': len(self._category_definitions),
-            'generators_count': len(self.generators),
+            'line_item_generators_count': len(self.line_item_generators),
             'constraints_count': len(self.constraints),
             'line_items_by_category': line_items_by_category,
-            'generator_names': [gen.name for gen in self.generators],
+            'line_item_generator_names': [gen.name for gen in self.line_item_generators],
             'constraint_names': [const.name for const in self.constraints],
             'defined_names_count': len(self.defined_names),
             'category_totals': [item['name'] for item in self.defined_names if item['source_type'] == 'category']
@@ -894,7 +867,7 @@ class Model(SerializationMixin):
                     <span style="color: #666; font-size: 0.9em;">Across {categories_count} categories</span>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
-                    <strong>Generators:</strong> {generators_count}<br>
+                    <strong>Line Item Generators:</strong> {line_item_generators_count}<br>
                     <strong>Constraints:</strong> {constraints_count}
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #6f42c1;">
@@ -934,14 +907,14 @@ class Model(SerializationMixin):
             </div>
             """
         
-        # Add generators if any
-        if summary['generator_names']:
+        # Add line item generators if any
+        if summary['line_item_generator_names']:
             html += """
             <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Generators</h4>
+                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Line Item Generators</h4>
                 <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
             """
-            for gen_name in summary['generator_names']:
+            for gen_name in summary['line_item_generator_names']:
                 html += f'<span style="display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{gen_name}</span>'
             html += """
                 </div>
@@ -1002,7 +975,7 @@ class Model(SerializationMixin):
         Create a deep copy of the Model instance.
         
         This method creates a completely independent copy of the model, including
-        deep copies of all line items, categories, generators, constraints, and
+        deep copies of all line items, categories, line item generators, constraints, and
         the value matrix. Changes to the copy will not affect the original model.
         
         Returns:
@@ -1016,7 +989,7 @@ class Model(SerializationMixin):
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
         copied_categories = copy.deepcopy(self._category_definitions)
-        copied_generators = copy.deepcopy(self.generators)
+        copied_line_item_generators = copy.deepcopy(self.line_item_generators)
         copied_constraints = copy.deepcopy(self.constraints)
         copied_years = copy.deepcopy(self.years)
         
@@ -1025,7 +998,7 @@ class Model(SerializationMixin):
             line_items=copied_line_items,
             years=copied_years,
             categories=copied_categories,
-            generators=copied_generators,
+            line_item_generators=copied_line_item_generators,
             constraints=copied_constraints
         )
         

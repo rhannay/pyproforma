@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.generators.debt import Debt
+from pyproforma.models.line_item_generator.debt import Debt
 
 
 class TestGenerateValueMatrix:
@@ -97,7 +97,6 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [revenue, invalid_item]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.generators = []
         model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
@@ -132,7 +131,6 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.generators = []
         model.line_item_generators = []        
         model.defined_names = model._gather_defined_names()
         
@@ -159,7 +157,6 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b, item_c, item_d]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.generators = []
         model.line_item_generators = []
 
         model.defined_names = model._gather_defined_names()
@@ -186,7 +183,6 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [self_ref]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.generators = []
         model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
@@ -212,7 +208,6 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [good_item1, good_item2, bad_item1, bad_item2]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.generators = []
         model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
@@ -226,21 +221,21 @@ class TestGenerateValueMatrix:
         assert "good1" not in error_msg
         assert "good2" not in error_msg
     
-    def test_generate_value_matrix_with_generators(self, basic_categories):
-        """Test that generators are included in the value matrix and order doesn't matter."""
-        # Create a debt generator
+    def test_generate_value_matrix_with_line_item_generators(self, basic_categories):
+        """Test that line item generators are included in the value matrix and order doesn't matter."""
+        # Create a debt line item generator
         debt_generator = Debt(
             name="loan",
-            par_amounts={2023: 100000},
+            par_amount={2023: 100000},
             interest_rate=0.05,
             term=5
         )
         
-        # Create line items that depend on generator values
+        # Create line items that depend on line item generator values
         revenue = LineItem(name="revenue", category="revenue", values={2023: 150000})
-        # Use the first defined name from the generator
+        # Use the first defined name from the line item generator
         debt_names = debt_generator.defined_names
-        debt_payment_var = debt_names[0]  # Usually something like "loan.payment"
+        debt_payment_var = debt_names[0]  # Usually something like "loan.principal"
         
         net_income = LineItem(
             name="net_income", 
@@ -253,14 +248,14 @@ class TestGenerateValueMatrix:
             line_items=[revenue, net_income],
             years=[2023],
             categories=basic_categories,
-            generators=[debt_generator]
+            line_item_generators=[debt_generator]
         )
         
         model2 = Model(
             line_items=[net_income, revenue],  # Different order
             years=[2023],
             categories=basic_categories,
-            generators=[debt_generator]
+            line_item_generators=[debt_generator]
         )
         
         matrix1 = model1._generate_value_matrix()
@@ -269,7 +264,7 @@ class TestGenerateValueMatrix:
         # Both should produce the same result
         assert matrix1[2023] == matrix2[2023]
         
-        # Verify generator values are included
+        # Verify line item generator values are included
         for debt_name in debt_names:
             assert debt_name in matrix1[2023]
             assert isinstance(matrix1[2023][debt_name], (int, float))
@@ -330,7 +325,6 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.generators = []
         model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
         
@@ -357,7 +351,6 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.generators = []
         model.line_item_generators = []
         model.defined_names = model._gather_defined_names()
 
