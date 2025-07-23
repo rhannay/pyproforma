@@ -135,6 +135,12 @@ model.save_yaml("model.yaml")
 model = Model.load_yaml("model.yaml")
 ```
 
+## Examples
+
+For comprehensive examples demonstrating the full capabilities of PyProforma, see the `examples/` folder:
+
+- **[revenues_and_expenses_example.ipynb](examples/revenues_and_expenses_example.ipynb)**: Complete financial model with multiple revenue streams, expense categories, charts, and analysis
+
 ## Development
 
 Install in development mode with testing dependencies:
