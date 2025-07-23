@@ -65,6 +65,7 @@ htmlcov/
 # Environment variables
 .env
 .env.*
+.pypirc
 
 # Virtual environments
 venv/
