@@ -67,5 +67,4 @@ nav:
     - Models: api/models.md
     - Tables: api/tables.md
     - Charts: api/charts.md
-  - Development: development.md
-  - Changelog: changelog.md
+  
