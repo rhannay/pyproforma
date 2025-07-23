@@ -33,10 +33,4 @@ model.add_formula("profit", "revenue - costs")
 # Display results
 results = model.calculate()
 print(results)
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+```
