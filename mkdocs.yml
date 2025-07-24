@@ -74,6 +74,9 @@ nav:
   - User Guide:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
+  - Examples:
+    - examples/index.md
+    - Revenues and Expenses Model: examples/revenues_and_expenses_example.md
   - API Reference:
     - Models: api/models.md
   
