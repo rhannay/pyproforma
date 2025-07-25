@@ -326,6 +326,36 @@ class Model(SerializationMixin):
         raise KeyError("Key must be a tuple of (item_name, year).")
     
     def get_value(self, name: str, year: int) -> float:
+        """
+        Retrieve a specific value from the model for a given item name and year.
+        
+        This is the primary method for accessing calculated values in the model. It returns
+        the value for any defined name (line item, category total, or line item generator output)
+        for a specific year in the model.
+        
+        Args:
+            name (str): The name of the item to retrieve (must be a defined name in the model)
+            year (int): The year to retrieve the value for (must be within the model's time horizon)
+            
+        Returns:
+            float: The calculated value for the specified item and year
+            
+        Raises:
+            KeyError: If the name is not found in the model's defined names or the year is not in the model's time horizon
+            
+        Examples:
+            >>> model.get_value("revenue", 2023)  # Get revenue for 2023
+            1000.0
+            >>> model.get_value("profit_margin", 2024)  # Get profit margin for 2024
+            0.15
+            
+        Notes:
+            Dictionary-style lookup is also supported:
+            
+            ```python
+            model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
+            ```
+        """
         name_lookup = {item['name']: item for item in self.defined_names}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")

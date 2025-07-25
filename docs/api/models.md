@@ -25,13 +25,8 @@ results = model.calculate()
 
 ### Model Class
 
-::: pyproforma.models.model.model.Model
+#### Model.get_value
 
-### LineItem Class
+::: pyproforma.models.model.model.Model.get_value
 
-::: pyproforma.models.line_item.LineItem
-
-### Constraint Class
-
-::: pyproforma.models.constraint.Constraint
 
