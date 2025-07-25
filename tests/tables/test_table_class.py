@@ -94,33 +94,33 @@ class TestTableClass:
         else:
             assert False, "Expected ValueError was not raised."
 
-    def test_table_to_df_simple(self):
+    def test_table_to_dataframe_simple(self):
         columns = [Column(label="A"), Column(label="B")]
         rows = [
             Row(cells=[Cell(1), Cell(2)]),
             Row(cells=[Cell(3), Cell(4)]),
         ]
         table = Table(columns=columns, rows=rows)
-        df = table.to_df()
+        df = table.to_dataframe()
         expected = pd.DataFrame({"A": [1, 3], "B": [2, 4]})
         pd.testing.assert_frame_equal(df, expected)
 
-    def test_table_to_df_with_none(self):
+    def test_table_to_dataframe_with_none(self):
         columns = [Column(label="X"), Column(label="Y")]
         rows = [
             Row(cells=[Cell(None), Cell(5)]),
             Row(cells=[Cell(7), Cell(None)]),
         ]
         table = Table(columns=columns, rows=rows)
-        df = table.to_df()
+        df = table.to_dataframe()
         expected = pd.DataFrame({"X": [None, 7], "Y": [5, None]})
         pd.testing.assert_frame_equal(df, expected)
 
-    def test_table_to_df_empty(self):
+    def test_table_to_dataframe_empty(self):
         columns = []
         rows = []
         table = Table(columns=columns, rows=rows)
-        df = table.to_df()
+        df = table.to_dataframe()
         expected = pd.DataFrame()
         pd.testing.assert_frame_equal(df, expected)
 
