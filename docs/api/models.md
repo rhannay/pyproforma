@@ -23,10 +23,24 @@ results = model.calculate()
 
 ## API Reference
 
-### Model Class
+## Model Class
 
-#### Model.get_value
+### Model.get_value
 
 ::: pyproforma.models.model.model.Model.get_value
 
+### Model.line_item_definitions
 
+::: pyproforma.models.model.model.Model.line_item_definitions
+
+### Model.line_item_names
+
+::: pyproforma.models.model.model.Model.line_item_names
+
+### Model.category_definitions
+
+::: pyproforma.models.model.model.Model.category_definitions
+
+### Model.category_names
+
+::: pyproforma.models.model.model.Model.category_names
