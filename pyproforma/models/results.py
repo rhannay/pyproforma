@@ -438,34 +438,42 @@ class ConstraintResults:
             ValueError: If year or line item is not found in the model, or no target available
         """
         return self.constraint_definition.evaluate(self.model._value_matrix, year)
+        
+    def failing_years(self) -> list[int]:
+        """
+        Return a list of years where the constraint is not satisfied.
+        
+        Returns:
+            list[int]: List of years where the constraint fails
+        """
+        failing = []
+        for year in self.model.years:
+            try:
+                if not self.evaluate(year):
+                    failing.append(year)
+            except ValueError:
+                # Skip years that can't be evaluated
+                pass
+        
+        return failing
 
     def _repr_html_(self) -> str:
         """
         Return HTML representation for Jupyter notebooks.
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
-        summary_text = self.summary()
-        html_summary = summary_text.replace('\n', '<br>')
-        return f'<pre>{html_summary}</pre>'
+        return self.summary(html=True)
     
-    def summary(self) -> str:
+    def summary(self, html: bool = False) -> str:
         """
         Return a summary string with key information about the constraint.
+        
+        Args:
+            html (bool, optional): If True, returns HTML formatted output. Defaults to False.
         
         Returns:
             str: Formatted summary of the constraint
         """
-        # Get value for first year if available
-        value_info = ""
-        if self.model.years:
-            first_year = self.model.years[0]
-            try:
-                value = self.model.get_value(self.line_item_name, first_year)
-                formatted_value = format_value(value, self.value_format)
-                value_info = f"\nValue ({first_year}): {formatted_value}"
-            except KeyError:
-                value_info = "\nValue: Not available"
-        
         # Format the target using the line item's value format
         target_info = ""
         try:
@@ -481,12 +489,27 @@ class ConstraintResults:
         except (KeyError, AttributeError):
             target_info = "\nTarget: Not available"
         
-        # Get constraint formula/expression
-        formula_info = ""
-        if hasattr(self.constraint_definition, 'expression') and self.constraint_definition.expression:
-            formula_info = f"\nExpression: {self.constraint_definition.expression}"
+        # Get list of failing years
+        failing_years_list = self.failing_years()
+        failing_info = ""
+        if failing_years_list:
+            if html:
+                failing_info = f"\n<span style='color: red;'>Failing Years: {', '.join(map(str, failing_years_list))}</span>"
+            else:
+                failing_info = f"\nFailing Years: {', '.join(map(str, failing_years_list))}"
+        else:
+            if html:
+                failing_info = f"\n<span style='color: green;'>Status: All years pass constraint check</span>"
+            else:
+                failing_info = "\nStatus: All years pass constraint check"
         
-        return (f"ConstraintResults('{self.constraint_name}')\n"
+        summary_text = (f"ConstraintResults('{self.constraint_name}')\n"
                 f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"
-                f"Line Item: {self.line_item_name}\n"
-                f"Type: {getattr(self.constraint_definition, 'constraint_type', 'Unknown')}{target_info}{formula_info}{value_info}")
+                f"Line Item: {self.line_item_name}"
+                f"{target_info}{failing_info}")
+        
+        if html:
+            html_summary = summary_text.replace('\n', '<br>')
+            return f'<pre>{html_summary}</pre>'
+        else:
+            return summary_text
