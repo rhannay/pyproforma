@@ -47,6 +47,23 @@ def test_update_multiple_line_items_basic(basic_model):
     assert basic_model["profit", 2023] == 80
     assert basic_model["margin", 2023] == 0.4  # 80/200 = 0.4
 
+def test_update_certaint_values(basic_model):
+    """Test updating specific years for multiple line items."""
+    # Update specific years
+    basic_model.update.update_multiple_line_items([
+        ("revenue", {"updated_values": {2023: 250}}),
+        ("costs", {"updated_values": {2024: 150}})
+    ])
+    
+    # Check that only specified years were updated
+    assert basic_model["revenue", 2023] == 250
+    assert basic_model["revenue", 2024] == 110  # Unchanged
+    assert basic_model["costs", 2024] == 150
+    assert basic_model["costs", 2023] == 70  # Unchanged
+
+    # # Check that formulas were recalculated
+    # assert basic_model["profit", 2023] == 250 - 70
+    # assert basic_model["margin", 2023] == (250 - 70) / 250  # Updated profit and margin)
 
 def test_update_multiple_line_items_empty_list(basic_model):
     """Test that passing an empty list does nothing."""
