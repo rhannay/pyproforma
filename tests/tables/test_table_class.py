@@ -33,6 +33,7 @@ class TestFormatValue:
         assert format_value(123, 'two_decimals') == "123.00"
         assert format_value(0, 'two_decimals') == "0.00"
         assert format_value(-123.456, 'two_decimals') == "-123.46"
+        assert format_value(1234.56, 'two_decimals') == "1,234.56"  # Test with commas for larger numbers
 
     def test_format_value_percent(self):
         """Test percent formatting - should round to nearest whole percent."""

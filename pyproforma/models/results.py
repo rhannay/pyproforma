@@ -489,6 +489,17 @@ class ConstraintResults:
         except (KeyError, AttributeError):
             target_info = "\nTarget: Not available"
         
+        # Get value for first year if available
+        value_info = ""
+        if self.model.years:
+            first_year = self.model.years[0]
+            try:
+                value = self.model.get_value(self.line_item_name, first_year)
+                formatted_value = format_value(value, self.value_format)
+                value_info = f"\nValue ({first_year}): {formatted_value}"
+            except KeyError:
+                value_info = "\nValue: Not available"
+        
         # Get list of failing years
         failing_years_list = self.failing_years()
         failing_info = ""
@@ -506,7 +517,7 @@ class ConstraintResults:
         summary_text = (f"ConstraintResults('{self.constraint_name}')\n"
                 f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"
                 f"Line Item: {self.line_item_name}"
-                f"{target_info}{failing_info}")
+                f"{target_info}{value_info}{failing_info}")
         
         if html:
             html_summary = summary_text.replace('\n', '<br>')
