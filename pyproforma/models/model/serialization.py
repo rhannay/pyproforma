@@ -30,7 +30,7 @@ class SerializationMixin:
             'constraints': [constraint.to_dict() for constraint in self.constraints]
         }
     
-    def to_yaml(self, file_path: str = None) -> str:
+    def to_yaml(self, file_path: str = None) -> str | None:
         """
         Export model configuration to YAML format.
         
@@ -38,13 +38,14 @@ class SerializationMixin:
             file_path (str, optional): Path to save YAML file. If None, returns YAML string.
             
         Returns:
-            str: YAML string representation of the model
+            str: YAML string representation of the model if file_path is None, otherwise None
         """
         config_dict = self.to_dict()
         yaml_str = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
         
         if file_path:
             Path(file_path).write_text(yaml_str)
+            return None
         
         return yaml_str
     
