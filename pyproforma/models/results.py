@@ -356,6 +356,9 @@ class ConstraintResults:
         self.constraint_name = constraint_name
         self.constraint_definition = model.get_constraint_definition(constraint_name)
         self.line_item_name = self.constraint_definition.line_item_name
+        
+        line_item_definition = model.get_line_item_definition(self.line_item_name)
+        self.value_format = line_item_definition.value_format
     
     def __str__(self) -> str:
         """Return a string representation showing key information about the constraint."""
@@ -458,9 +461,25 @@ class ConstraintResults:
             first_year = self.model.years[0]
             try:
                 value = self.model.get_value(self.line_item_name, first_year)
-                value_info = f"\nValue ({first_year}): {value:,.2f}"
+                formatted_value = format_value(value, self.value_format)
+                value_info = f"\nValue ({first_year}): {formatted_value}"
             except KeyError:
                 value_info = "\nValue: Not available"
+        
+        # Format the target using the line item's value format
+        target_info = ""
+        try:
+            target = self.constraint_definition.target
+            operator_symbol = self.constraint_definition.get_operator_symbol()
+            
+            if isinstance(target, dict):
+                target_str = str({year: format_value(value, self.value_format) for year, value in target.items()})
+                target_info = f"\nTarget: {operator_symbol} {target_str}"
+            else:
+                formatted_target = format_value(target, self.value_format)
+                target_info = f"\nTarget: {operator_symbol} {formatted_target}"
+        except (KeyError, AttributeError):
+            target_info = "\nTarget: Not available"
         
         # Get constraint formula/expression
         formula_info = ""
@@ -469,4 +488,5 @@ class ConstraintResults:
         
         return (f"ConstraintResults('{self.constraint_name}')\n"
                 f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"
-                f"Type: {getattr(self.constraint_definition, 'constraint_type', 'Unknown')}{formula_info}{value_info}")
+                f"Line Item: {self.line_item_name}\n"
+                f"Type: {getattr(self.constraint_definition, 'constraint_type', 'Unknown')}{target_info}{formula_info}{value_info}")
