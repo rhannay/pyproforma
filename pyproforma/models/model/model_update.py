@@ -384,9 +384,108 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line item '{name}': {str(e)}") from e
 
+    def update_multiple_line_items(
+        self,
+        item_updates: list[tuple[str, dict]],
+    ):
+        """
+        Update multiple line items in a single operation.
+        
+        This method takes a list of tuples, where each tuple contains a line item name
+        and a dictionary of parameters to update for that line item. It applies all updates
+        in a single transaction, validating the entire set of changes before applying them.
+        
+        Usage:
+            model.update.update_multiple_line_items([
+                ("revenue", {"values": {2023: 150000}, "label": "New Revenue"}),
+                ("expenses", {"formula": "revenue * 0.7"}),
+                ("profit", {"value_format": "percentage"})
+            ])
+        
+        Args:
+            item_updates (list[tuple[str, dict]]): List of (name, update_params) tuples.
+                Each tuple's first element is the line item name to update.
+                Each tuple's second element is a dictionary of parameters to update, 
+                which can include: new_name, category, label, values, formula, value_format.
+                
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If any of the updates would result in an invalid model
+            KeyError: If any line item name is not found in model
+        """
+        if not item_updates:
+            return
+            
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            
+            # Apply each update to the copy
+            for item_name, update_params in item_updates:
+                # Find the existing line item
+                existing_item = None
+                for i, item in enumerate(model_copy._line_item_definitions):
+                    if item.name == item_name:
+                        existing_item = item
+                        item_index = i
+                        break
+                
+                if existing_item is None:
+                    raise KeyError(f"Line item '{item_name}' not found in model")
+                
+                # Create updated line item
+                updated_item = LineItem(
+                    name=update_params.get('new_name', existing_item.name),
+                    category=update_params.get('category', existing_item.category),
+                    label=update_params.get('label', existing_item.label),
+                    values=update_params.get('values', existing_item.values),
+                    formula=update_params.get('formula', existing_item.formula),
+                    value_format=update_params.get('value_format', existing_item.value_format)
+                )
+                
+                # Replace the existing item
+                model_copy._line_item_definitions[item_index] = updated_item
+            
+            # Recalculate to ensure all updates together create a valid model
+            model_copy._reclalculate()
+            
+            # If we get here, all updates were successful on the copy
+            # Now apply them to the actual model
+            for item_name, update_params in item_updates:
+                # Find the existing line item
+                existing_item = None
+                for i, item in enumerate(self._model._line_item_definitions):
+                    if item.name == item_name:
+                        existing_item = item
+                        item_index = i
+                        break
+                
+                # Create updated line item
+                updated_item = LineItem(
+                    name=update_params.get('new_name', existing_item.name),
+                    category=update_params.get('category', existing_item.category),
+                    label=update_params.get('label', existing_item.label),
+                    values=update_params.get('values', existing_item.values),
+                    formula=update_params.get('formula', existing_item.formula),
+                    value_format=update_params.get('value_format', existing_item.value_format)
+                )
+                
+                # Replace the existing item
+                self._model._line_item_definitions[item_index] = updated_item
+            
+            # Recalculate the actual model with all changes
+            self._model._reclalculate()
+            
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to update line items: {str(e)}") from e
 
-
-    def update_years(self, new_years: list[int]):
+    def update_years(
+        self,
+        new_years: list[int]
+    ):
         """
         Update the years in the model.
         
