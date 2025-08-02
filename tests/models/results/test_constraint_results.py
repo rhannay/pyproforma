@@ -113,7 +113,9 @@ class TestConstraintResultsStringRepresentation:
         
         assert "ConstraintResults('min_revenue')" in str_result
         assert "Label: Minimum Revenue" in str_result
-        assert "Value (2023):" in str_result
+        assert "Line Item: revenue" in str_result
+        assert "Target: > 80,000" in str_result
+        assert "Status: All years pass constraint check" in str_result
         
     def test_repr_method(self, constraint_results):
         """Test __repr__ method returns expected format."""
