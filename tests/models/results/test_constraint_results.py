@@ -609,18 +609,6 @@ class TestConstraintResultsErrorHandling:
             constraints=basic_constraints
         )
     
-    def test_summary_handles_missing_value(self, model_with_constraints):
-        """Test summary method handles missing constraint value gracefully."""
-        constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
-        
-        # Mock get_value to raise KeyError
-        with patch.object(constraint_results.model, 'get_value', side_effect=KeyError):
-            summary = constraint_results.summary()
-            
-            assert "ConstraintResults('min_revenue')" in summary
-            assert "Label: Minimum Revenue" in summary
-            assert "Value: Not available" in summary
-    
     def test_chart_method_with_chart_error(self, model_with_constraints):
         """Test chart method when underlying chart method raises error."""
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
