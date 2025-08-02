@@ -53,7 +53,13 @@ class Table:
         self._check_column_and_cell_counts()
     
     # Public API - Conversion and Export methods
-    def to_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the Table to a pandas DataFrame.
+        
+        Returns:
+            pd.DataFrame: A DataFrame containing the table data with column labels 
+                         as column names and cell values as the data.
+        """
         data = []
         for row in self.rows:
             row_data = {col.label: cell.value for col, cell in zip(self.columns, row.cells)}
