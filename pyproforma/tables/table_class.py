@@ -127,7 +127,7 @@ def format_value(value: Any, value_format: Optional[ValueFormat], none_returns='
     elif value_format == 'no_decimals':
         return f"{int(round(value)):,}"  # Format as rounded number with commas, no decimals
     elif value_format == 'two_decimals':
-        return f"{value:.2f}"
+        return f"{value:,.2f}"
     elif value_format == 'percent':
         return f"{int(round(value * 100))}%"  
     elif value_format == 'percent_one_decimal':
