@@ -1065,6 +1065,63 @@ class Model(SerializationMixin):
         
         return scenario_model
 
+    def compare(self, other_model):
+        """
+        Create a comparison analysis between this model and another model.
+        
+        This method returns a Compare instance that provides comprehensive methods
+        for analyzing differences between two models. The comparison includes value
+        differences, structural changes, and analytical tools for understanding
+        the impact of changes.
+        
+        Args:
+            other_model (Model): The model to compare against this one
+            
+        Returns:
+            Compare: A Compare instance with methods for analyzing differences
+            
+        Raises:
+            ValueError: If models have no overlapping years for comparison
+            
+        Examples:
+            >>> # Compare base model with scenario
+            >>> base_model = Model(line_items, years=[2023, 2024])
+            >>> scenario_model = base_model.scenario([("revenue", {"formula": "1200"})])
+            >>> comparison = base_model.compare(scenario_model)
+            >>> 
+            >>> # Analyze differences
+            >>> comparison.difference("revenue", 2023)  # Absolute difference
+            >>> comparison.percent_difference("revenue", 2023)  # Percentage difference
+            >>> comparison.largest_changes(5)  # Top 5 changes
+            >>> 
+            >>> # Structural analysis
+            >>> comparison.structural_changes()  # What changed structurally
+            >>> comparison.summary_stats()  # Overall comparison statistics
+            >>> 
+            >>> # Export and reporting
+            >>> comparison.to_dataframe()  # DataFrame of all differences
+            >>> comparison.report()  # Text summary
+            >>> 
+            >>> # Financial impact analysis
+            >>> comparison.net_impact(2023)  # Total impact in 2023
+            >>> comparison.category_difference("revenue")  # Category-level changes
+            
+        Available Compare Methods:
+            - difference(item, year): Absolute difference for specific item/year
+            - percent_difference(item, year): Percentage difference
+            - ratio(item, year): Ratio between models
+            - all_differences(): DataFrame of all differences
+            - structural_changes(): Added/removed items and formula changes
+            - largest_changes(n): Top N items with biggest changes
+            - category_difference(category): Category-level differences
+            - summary_stats(): Overall comparison statistics
+            - net_impact(year): Total financial impact for a year
+            - to_dataframe(): Export to structured DataFrame
+            - report(): Formatted text summary
+        """
+        from .compare import Compare
+        return Compare(self, other_model)
+
     # ============================================================================
     # SERIALIZATION METHODS
     # ============================================================================
