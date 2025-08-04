@@ -47,37 +47,58 @@ class Compare:
         self.base_only_items = sorted(list(base_items - compare_items))
         self.compare_only_items = sorted(list(compare_items - base_items))
     
-    def difference(self, item_name: str, year: int) -> float:
+    def difference(self, item_name: str, year: Optional[int] = None) -> Union[float, Dict[int, float]]:
         """
         Calculate absolute difference between models for a specific item and year.
         
         Args:
             item_name (str): Name of the item to compare
-            year (int): Year to compare
+            year (int, optional): Year to compare. If None, returns differences for all common years.
             
         Returns:
-            float: Absolute difference (compare_model - base_model)
+            float: Absolute difference (compare_model - base_model) if year is specified
+            dict: Dictionary of year:difference pairs if year is None
             
         Raises:
-            KeyError: If item or year not found in both models
+            KeyError: If item not found in both models, or if year specified but not found in both models
         """
         if item_name not in self.common_items:
             raise KeyError(f"Item '{item_name}' not found in both models")
-        if year not in self.common_years:
-            raise KeyError(f"Year {year} not found in both models")
+        
+        if year is None:
+            # Return differences for all common years
+            result = {}
+            for y in self.common_years:
+                base_value = self.base_model.get_value(item_name, y)
+                compare_value = self.compare_model.get_value(item_name, y)
+                
+                # Handle None values
+                if base_value is None and compare_value is None:
+                    result[y] = 0
+                elif base_value is None:
+                    result[y] = compare_value
+                elif compare_value is None:
+                    result[y] = -base_value
+                else:
+                    result[y] = compare_value - base_value
+            return result
+        else:
+            # Return difference for specific year
+            if year not in self.common_years:
+                raise KeyError(f"Year {year} not found in both models")
+                
+            base_value = self.base_model.get_value(item_name, year)
+            compare_value = self.compare_model.get_value(item_name, year)
             
-        base_value = self.base_model.get_value(item_name, year)
-        compare_value = self.compare_model.get_value(item_name, year)
-        
-        # Handle None values
-        if base_value is None and compare_value is None:
-            return 0
-        elif base_value is None:
-            return compare_value
-        elif compare_value is None:
-            return -base_value
-        
-        return compare_value - base_value
+            # Handle None values
+            if base_value is None and compare_value is None:
+                return 0
+            elif base_value is None:
+                return compare_value
+            elif compare_value is None:
+                return -base_value
+            
+            return compare_value - base_value
     
     def percent_difference(self, item_name: str, year: int) -> Optional[float]:
         """
