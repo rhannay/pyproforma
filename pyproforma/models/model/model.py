@@ -1119,7 +1119,7 @@ class Model(SerializationMixin):
             - to_dataframe(): Export to structured DataFrame
             - report(): Formatted text summary
         """
-        from .compare import Compare
+        from ..compare import Compare
         return Compare(self, other_model)
 
     # ============================================================================
