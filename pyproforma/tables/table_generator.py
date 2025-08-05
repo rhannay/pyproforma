@@ -42,3 +42,41 @@ def generate_table(model: 'Model', template: list[Union[dict, BaseRow]], include
             rows.append(result)
     
     return Table(columns=columns, rows=rows)
+
+def generate_multi_model_table(model_row_pairs: list[tuple['Model', BaseRow]]) -> Table:
+    """Generate a table from multiple models using BaseRow configurations.
+    
+    Args:
+        model_row_pairs: List of tuples containing (Model, BaseRow) pairs
+        
+    Returns:
+        Table: A formatted table ready for display or export
+    """
+    if not model_row_pairs:
+        return Table(columns=[], rows=[])
+    
+    # Collect all unique years from all models and sort them
+    all_years = set()
+    for model, _ in model_row_pairs:
+        all_years.update(model.years)
+    sorted_years = sorted(all_years)
+    
+    # Create columns - "Year" as first column, then each year
+    columns = [Column(label="Year")]
+    for year in sorted_years:
+        columns.append(Column(label=str(year)))
+    
+    # Create rows
+    rows = []
+    for model, row_config in model_row_pairs:
+        # # Set include_name to False on the config
+        # row_config.include_name = False
+        
+        # Generate row(s)
+        result = row_config.generate_row(model)
+        if isinstance(result, list):
+            rows.extend(result)
+        else:
+            rows.append(result)
+    
+    return Table(columns=columns, rows=rows)

@@ -4,6 +4,9 @@ Model comparison functionality for analyzing differences between two Model insta
 
 import pandas as pd
 from typing import Dict, List, Tuple, Optional, Union
+from pyproforma.tables import row_types as rt
+from pyproforma.tables.table_generator import generate_multi_model_table
+from pyproforma.tables.table_class import Table
 
 
 class Compare:
@@ -428,6 +431,48 @@ Top Changes:
         
         return report
     
+    def difference_table(self, item_name: str) -> Table:
+        """
+        Generate a table comparing base and compare model values for a specific item.
+        
+        Args:
+            item_name (str): Name of the item to compare
+            
+        Returns:
+            Table: A formatted table with two rows - base model values and compare model values
+            
+        Raises:
+            KeyError: If item not found in both models
+        """
+        if item_name not in self.common_items:
+            raise KeyError(f"Item '{item_name}' not found in both models")
+        
+        item_label = self.base_model.line_item(item_name).label
+        label_row = rt.LabelRow(label=item_label, bold=True)
+
+        # Create row configurations for base and compare models
+        base_row = rt.ItemRow(name=item_name, label="Base Model", bold=False)
+        compare_row = rt.ItemRow(name=item_name, label="Compare Model", bold=False)
+
+        # Create model-row pairs for generate_multi_model_table
+        model_row_pairs = [
+            (self.base_model, label_row),
+            (self.base_model, base_row),
+            (self.compare_model, compare_row)
+        ]
+        
+        # Generate the table using the multi-model table generator
+        table = generate_multi_model_table(model_row_pairs)
+        
+        # # Update the first cell of each row to show model labels
+        # if len(table.rows) >= 2:
+        #     # Update base model row label
+        #     table.rows[0].cells[0].value = f"Base: {table.rows[0].cells[0].value}"
+        #     # Update compare model row label  
+        #     table.rows[1].cells[0].value = f"Compare: {table.rows[1].cells[0].value}"
+        
+        return table
+
     def __repr__(self) -> str:
         """String representation of the comparison."""
         return f"Compare({len(self.common_items)} common items, {len(self.common_years)} common years)"

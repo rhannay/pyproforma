@@ -31,6 +31,7 @@ class BaseRow(ABC):
 class ItemRow(BaseRow):
     """Configuration for item row generation."""
     name: str
+    label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
@@ -38,7 +39,7 @@ class ItemRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row for a line item with its label and values across all years."""
         # Get label and value format from model if not specified
-        label = model.line_item(self.name).label
+        label = self.label if self.label is not None else model.line_item(self.name).label
         value_format = self.value_format or model.line_item(self.name).value_format
         
         # Create cells for this row
