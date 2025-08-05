@@ -307,16 +307,8 @@ class Debt(LineItemGenerator):
         if not self.existing_debt_service:
             return 0.0
         
-        # Find the total original principal from existing debt
-        # We'll assume the original principal is the sum of all future principal payments
-        # from the earliest year in the existing debt service schedule
-        total_original_principal = sum(entry['principal'] for entry in self.existing_debt_service)
-        
-        # Calculate total principal payments made through the end of this year
-        principal_paid = sum(entry['principal'] for entry in self.existing_debt_service if entry['year'] <= year)
-        
-        # Outstanding is original principal minus principal paid
-        return total_original_principal - principal_paid
+        # Outstanding principal is just the sum of all principal payments due after this year
+        return sum(entry['principal'] for entry in self.existing_debt_service if entry['year'] > year)
         
     # ----------------------------------
     # DEBT SCHEDULE MANAGEMENT
