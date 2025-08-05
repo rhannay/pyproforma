@@ -197,8 +197,9 @@ class Debt(LineItemGenerator):
             par_amount = self._get_par_amount(interim_values_by_year, _year)
             term = self._get_term(interim_values_by_year, _year)
 
-            # Add it to the schedules
-            self._add_bond_issue(par_amount, interest_rate, _year, term)
+            # Only add debt service schedule if par amount is greater than zero
+            if par_amount > 0:
+                self._add_bond_issue(par_amount, interest_rate, _year, term)
 
         # Principal and interest payments for this year
         result[self._principal_name] = self.get_principal(year)
@@ -276,39 +277,34 @@ class Debt(LineItemGenerator):
         total_outstanding = 0.0
         
         # Calculate outstanding balance from existing debt service
-        existing_outstanding = self._calculate_existing_debt_outstanding(year)
+        existing_outstanding = self._calculate_debt_outstanding_for_issue(self.existing_debt_service, year)
         total_outstanding += existing_outstanding
         
         # Calculate outstanding balance from scheduled debt issues
         for start_year, schedule in self.ds_schedules.items():
             if start_year <= year:  # Only consider debt issued by the end of this year
-                # Get the original par amount for this debt issue
-                original_par = sum(entry['principal'] for entry in schedule)
-                
-                # Calculate total principal payments made through the end of this year
-                principal_paid = sum(entry['principal'] for entry in schedule if entry['year'] <= year)
-                
-                # Outstanding is original par minus principal paid
-                outstanding = original_par - principal_paid
+                outstanding = self._calculate_debt_outstanding_for_issue(schedule, year)
                 total_outstanding += outstanding
         
         return total_outstanding
     
-    def _calculate_existing_debt_outstanding(self, year: int) -> float:
+    @classmethod
+    def _calculate_debt_outstanding_for_issue(cls, debt_service_schedule: list[dict], year: int) -> float:
         """
-        Calculate the outstanding principal from existing debt service at the end of a specific year.
+        Calculate the outstanding principal for a debt service schedule at the end of a specific year.
         
         Args:
+            debt_service_schedule (list[dict]): The debt service schedule containing payment entries.
             year (int): The year for which to calculate the outstanding principal.
             
         Returns:
-            float: The outstanding principal from existing debt service.
+            float: The outstanding principal from the debt service schedule.
         """
-        if not self.existing_debt_service:
+        if not debt_service_schedule:
             return 0.0
         
         # Outstanding principal is just the sum of all principal payments due after this year
-        return sum(entry['principal'] for entry in self.existing_debt_service if entry['year'] > year)
+        return sum(entry['principal'] for entry in debt_service_schedule if entry['year'] > year)
         
     # ----------------------------------
     # DEBT SCHEDULE MANAGEMENT
