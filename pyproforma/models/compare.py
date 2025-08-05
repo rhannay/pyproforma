@@ -103,6 +103,43 @@ class Compare:
             
             return compare_value - base_value
     
+    def cumulative_difference(self, item_name: str, year: int) -> float:
+        """
+        Calculate cumulative difference between models for a specific item up through the specified year.
+        
+        Args:
+            item_name (str): Name of the item to compare
+            year (int): Year up through which to sum differences (inclusive)
+            
+        Returns:
+            float: Cumulative difference (sum of all differences from first common year through specified year)
+            
+        Raises:
+            KeyError: If item not found in both models, or if year is before the first common year
+        """
+        if item_name not in self.common_items:
+            raise KeyError(f"Item '{item_name}' not found in both models")
+        
+        if year < min(self.common_years):
+            raise KeyError(f"Year {year} is before the first common year ({min(self.common_years)})")
+        
+        # Sum differences from first common year through specified year
+        cumulative_diff = 0
+        for y in self.common_years:
+            if y <= year:
+                try:
+                    diff = self.difference(item_name, y)
+                    if diff is not None:
+                        cumulative_diff += diff
+                except (KeyError, ValueError):
+                    # Skip years where we can't calculate difference
+                    continue
+            else:
+                # We've passed the target year, stop summing
+                break
+        
+        return cumulative_diff
+
     def percent_difference(self, item_name: str, year: int) -> Optional[float]:
         """
         Calculate percentage difference between models for a specific item and year.
@@ -315,33 +352,6 @@ class Compare:
             'structural_changes': self.structural_changes()
         }
     
-    def net_impact(self, year: int, items: Optional[List[str]] = None) -> float:
-        """
-        Calculate the net financial impact across specified items for a given year.
-        
-        Args:
-            year (int): Year to calculate impact for
-            items (list, optional): List of items to include. If None, uses all common items.
-            
-        Returns:
-            float: Net impact (sum of all differences)
-        """
-        if year not in self.common_years:
-            raise KeyError(f"Year {year} not found in both models")
-        
-        items_to_check = items if items is not None else self.common_items
-        total_impact = 0
-        
-        for item in items_to_check:
-            if item in self.common_items:
-                try:
-                    diff = self.difference(item, year)
-                    if diff is not None:
-                        total_impact += diff
-                except (KeyError, ValueError):
-                    continue
-        
-        return total_impact
     
     def to_dataframe(self, metric: str = 'difference') -> pd.DataFrame:
         """
@@ -431,12 +441,13 @@ Top Changes:
         
         return report
     
-    def difference_table(self, item_name: Union[str, List[str]]) -> Table:
+    def difference_table(self, item_name: Union[str, List[str]], include_cumulative: bool = False) -> Table:
         """
         Generate a table comparing base and compare model values for specific item(s).
         
         Args:
             item_name (str or list): Name of the item to compare, or list of item names
+            include_cumulative (bool): If True, includes a row showing cumulative differences
             
         Returns:
             Table: A formatted table with rows for each item showing base model values, 
@@ -489,13 +500,36 @@ Top Changes:
                 bold=True
             )
 
+            # Create cumulative difference row if requested
+            cumulative_row = None
+            if include_cumulative:
+                cumulative_dict = {}
+                for year in self.common_years:
+                    try:
+                        cumulative_diff = self.cumulative_difference(name, year)
+                        cumulative_dict[year] = cumulative_diff
+                    except (KeyError, ValueError):
+                        cumulative_dict[year] = None
+                
+                cumulative_row = rt.CustomRow(
+                    label="Cumulative", 
+                    values=cumulative_dict, 
+                    value_format=item_value_format,
+                    bold=True
+                )
+
             # Add rows for this item
-            model_row_pairs.extend([
+            rows_to_add = [
                 (self.base_model, label_row),
                 (self.base_model, base_row),
                 (self.compare_model, compare_row),
                 (self.base_model, difference_row)  # Use base_model for years structure
-            ])
+            ]
+            
+            if include_cumulative and cumulative_row:
+                rows_to_add.append((self.base_model, cumulative_row))
+            
+            model_row_pairs.extend(rows_to_add)
         
         # Generate the table using the multi-model table generator
         table = generate_multi_model_table(model_row_pairs)
