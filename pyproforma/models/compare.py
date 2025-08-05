@@ -431,54 +431,71 @@ Top Changes:
         
         return report
     
-    def difference_table(self, item_name: str) -> Table:
+    def difference_table(self, item_name: Union[str, List[str]]) -> Table:
         """
-        Generate a table comparing base and compare model values for a specific item.
+        Generate a table comparing base and compare model values for specific item(s).
         
         Args:
-            item_name (str): Name of the item to compare
+            item_name (str or list): Name of the item to compare, or list of item names
             
         Returns:
-            Table: A formatted table with three rows - base model values, compare model values, and differences
+            Table: A formatted table with rows for each item showing base model values, 
+                   compare model values, and differences
             
         Raises:
-            KeyError: If item not found in both models
+            KeyError: If any item not found in both models
         """
-        if item_name not in self.common_items:
-            raise KeyError(f"Item '{item_name}' not found in both models")
+        # Handle both single item and list of items
+        if isinstance(item_name, str):
+            item_names = [item_name]
+        else:
+            item_names = item_name
         
-        item_label = self.base_model.line_item(item_name).label
-        item_value_format = self.base_model.line_item(item_name).value_format
-        label_row = rt.LabelRow(label=item_label, bold=True)
+        # Validate all items exist in both models
+        for name in item_names:
+            if name not in self.common_items:
+                raise KeyError(f"Item '{name}' not found in both models")
+        
+        model_row_pairs = []
+        
+        for i, name in enumerate(item_names):
+            # Add blank row between items (except before the first item)
+            if i > 0:
+                blank_row = rt.BlankRow()
+                model_row_pairs.append((self.base_model, blank_row))
+            
+            item_label = self.base_model.line_item(name).label
+            item_value_format = self.base_model.line_item(name).value_format
+            label_row = rt.LabelRow(label=item_label, bold=True)
 
-        # Create row configurations for base and compare models
-        base_row = rt.ItemRow(name=item_name, label="Base Model", bold=False)
-        compare_row = rt.ItemRow(name=item_name, label="Compare Model", bold=False)
-        
-        # Calculate differences for all common years
-        differences_dict = {}
-        for year in self.common_years:
-            try:
-                diff = self.difference(item_name, year)
-                differences_dict[year] = diff
-            except (KeyError, ValueError):
-                differences_dict[year] = None
-        
-        # Create custom row for differences
-        difference_row = rt.CustomRow(
-            label="Difference", 
-            values=differences_dict, 
-            value_format=item_value_format,
-            bold=True
-        )
+            # Create row configurations for base and compare models
+            base_row = rt.ItemRow(name=name, label="Base Model", bold=False)
+            compare_row = rt.ItemRow(name=name, label="Compare Model", bold=False)
+            
+            # Calculate differences for all common years
+            differences_dict = {}
+            for year in self.common_years:
+                try:
+                    diff = self.difference(name, year)
+                    differences_dict[year] = diff
+                except (KeyError, ValueError):
+                    differences_dict[year] = None
+            
+            # Create custom row for differences
+            difference_row = rt.CustomRow(
+                label="Difference", 
+                values=differences_dict, 
+                value_format=item_value_format,
+                bold=True
+            )
 
-        # Create model-row pairs for generate_multi_model_table
-        model_row_pairs = [
-            (self.base_model, label_row),
-            (self.base_model, base_row),
-            (self.compare_model, compare_row),
-            (self.base_model, difference_row)  # Use base_model for years structure
-        ]
+            # Add rows for this item
+            model_row_pairs.extend([
+                (self.base_model, label_row),
+                (self.base_model, base_row),
+                (self.compare_model, compare_row),
+                (self.base_model, difference_row)  # Use base_model for years structure
+            ])
         
         # Generate the table using the multi-model table generator
         table = generate_multi_model_table(model_row_pairs)
