@@ -72,12 +72,13 @@ class Tables:
         rows = self._category_rows(category_name)
         return self.generate_table(rows, include_name=True)
     
-    def line_item(self, name: str):
+    def line_item(self, name: str, include_name: bool = False):
         """
         Generate a table for a specific line item showing its label and values by year.
         
         Args:
             name (str): The name of the line item to generate the table for.
+            include_name (bool, optional): Whether to include the name column. Defaults to False.
         
         Returns:
             Table: A Table object containing the line item's label and values across years.
@@ -88,7 +89,7 @@ class Tables:
             rt.CumulativeChangeRow(name=name, label='Cumulative Change'),
             rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')
         ]
-        return self.generate_table(rows, include_name=True)
+        return self.generate_table(rows, include_name=include_name)
     
     def constraint(self, constraint_name: str, color_code: bool = True):
         """
