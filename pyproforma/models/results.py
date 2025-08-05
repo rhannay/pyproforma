@@ -103,7 +103,7 @@ class LineItemResults:
         Returns:
             Table: A Table object containing the item formatted for display
         """
-        return self.model.tables.line_item(self.item_name)
+        return self.model.tables.line_item(self.item_name, include_name=False)
 
     def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line'):
         """

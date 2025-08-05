@@ -31,6 +31,7 @@ class BaseRow(ABC):
 class ItemRow(BaseRow):
     """Configuration for item row generation."""
     name: str
+    label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
@@ -38,7 +39,7 @@ class ItemRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row for a line item with its label and values across all years."""
         # Get label and value format from model if not specified
-        label = model.line_item(self.name).label
+        label = self.label if self.label is not None else model.line_item(self.name).label
         value_format = self.value_format or model.line_item(self.name).value_format
         
         # Create cells for this row
@@ -366,6 +367,31 @@ class BlankRow(BaseRow):
         return Row(cells=cells)
 
 
+@dataclass
+class CustomRow(BaseRow):
+    """Configuration for custom row generation with user-defined values."""
+    label: str
+    values: dict  # dict of year: float
+    value_format: Optional[ValueFormat] = None
+    include_name: bool = False
+    bold: bool = False
+    
+    def generate_row(self, model: 'Model') -> Row:
+        """Create a row with custom label and values for specified years."""
+        # Create cells for this row
+        cells = []
+        if self.include_name:
+            cells.append(Cell(value="", bold=self.bold, align='left'))
+        cells.append(Cell(value=self.label, bold=self.bold, align='left'))
+        
+        # Add a cell for each year with the custom value if available
+        for year in model.years:
+            value = self.values.get(year, None)
+            cells.append(Cell(value=value, bold=self.bold, value_format=self.value_format))
+        
+        return Row(cells=cells)
+
+
 # Type alias for all row config types
 RowConfig = Union[
     ItemRow,
@@ -377,7 +403,8 @@ RowConfig = Union[
     ConstraintVarianceRow,
     ConstraintTargetRow,
     LabelRow,
-    BlankRow
+    BlankRow,
+    CustomRow
 ]
 
 
@@ -406,5 +433,7 @@ def dict_to_row_config(data: dict) -> RowConfig:
         return LabelRow(**config_data)
     elif row_type == 'blank':
         return BlankRow(**config_data)
+    elif row_type == 'custom':
+        return CustomRow(**config_data)
     else:
         raise ValueError(f"Unknown row type: {row_type}")

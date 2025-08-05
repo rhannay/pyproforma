@@ -4,6 +4,9 @@ Model comparison functionality for analyzing differences between two Model insta
 
 import pandas as pd
 from typing import Dict, List, Tuple, Optional, Union
+from pyproforma.tables import row_types as rt
+from pyproforma.tables.table_generator import generate_multi_model_table
+from pyproforma.tables.table_class import Table
 
 
 class Compare:
@@ -47,38 +50,96 @@ class Compare:
         self.base_only_items = sorted(list(base_items - compare_items))
         self.compare_only_items = sorted(list(compare_items - base_items))
     
-    def difference(self, item_name: str, year: int) -> float:
+    def difference(self, item_name: str, year: Optional[int] = None) -> Union[float, Dict[int, float]]:
         """
         Calculate absolute difference between models for a specific item and year.
         
         Args:
             item_name (str): Name of the item to compare
-            year (int): Year to compare
+            year (int, optional): Year to compare. If None, returns differences for all common years.
             
         Returns:
-            float: Absolute difference (compare_model - base_model)
+            float: Absolute difference (compare_model - base_model) if year is specified
+            dict: Dictionary of year:difference pairs if year is None
             
         Raises:
-            KeyError: If item or year not found in both models
+            KeyError: If item not found in both models, or if year specified but not found in both models
         """
         if item_name not in self.common_items:
             raise KeyError(f"Item '{item_name}' not found in both models")
-        if year not in self.common_years:
-            raise KeyError(f"Year {year} not found in both models")
+        
+        if year is None:
+            # Return differences for all common years
+            result = {}
+            for y in self.common_years:
+                base_value = self.base_model.get_value(item_name, y)
+                compare_value = self.compare_model.get_value(item_name, y)
+                
+                # Handle None values
+                if base_value is None and compare_value is None:
+                    result[y] = 0
+                elif base_value is None:
+                    result[y] = compare_value
+                elif compare_value is None:
+                    result[y] = -base_value
+                else:
+                    result[y] = compare_value - base_value
+            return result
+        else:
+            # Return difference for specific year
+            if year not in self.common_years:
+                raise KeyError(f"Year {year} not found in both models")
+                
+            base_value = self.base_model.get_value(item_name, year)
+            compare_value = self.compare_model.get_value(item_name, year)
             
-        base_value = self.base_model.get_value(item_name, year)
-        compare_value = self.compare_model.get_value(item_name, year)
-        
-        # Handle None values
-        if base_value is None and compare_value is None:
-            return 0
-        elif base_value is None:
-            return compare_value
-        elif compare_value is None:
-            return -base_value
-        
-        return compare_value - base_value
+            # Handle None values
+            if base_value is None and compare_value is None:
+                return 0
+            elif base_value is None:
+                return compare_value
+            elif compare_value is None:
+                return -base_value
+            
+            return compare_value - base_value
     
+    def cumulative_difference(self, item_name: str, year: int) -> float:
+        """
+        Calculate cumulative difference between models for a specific item up through the specified year.
+        
+        Args:
+            item_name (str): Name of the item to compare
+            year (int): Year up through which to sum differences (inclusive)
+            
+        Returns:
+            float: Cumulative difference (sum of all differences from first common year through specified year)
+            
+        Raises:
+            KeyError: If item not found in both models, or if year is before the first common year
+        """
+        if item_name not in self.common_items:
+            raise KeyError(f"Item '{item_name}' not found in both models")
+        
+        if year < min(self.common_years):
+            raise KeyError(f"Year {year} is before the first common year ({min(self.common_years)})")
+        
+        # Sum differences from first common year through specified year
+        cumulative_diff = 0
+        for y in self.common_years:
+            if y <= year:
+                try:
+                    diff = self.difference(item_name, y)
+                    if diff is not None:
+                        cumulative_diff += diff
+                except (KeyError, ValueError):
+                    # Skip years where we can't calculate difference
+                    continue
+            else:
+                # We've passed the target year, stop summing
+                break
+        
+        return cumulative_diff
+
     def percent_difference(self, item_name: str, year: int) -> Optional[float]:
         """
         Calculate percentage difference between models for a specific item and year.
@@ -291,33 +352,6 @@ class Compare:
             'structural_changes': self.structural_changes()
         }
     
-    def net_impact(self, year: int, items: Optional[List[str]] = None) -> float:
-        """
-        Calculate the net financial impact across specified items for a given year.
-        
-        Args:
-            year (int): Year to calculate impact for
-            items (list, optional): List of items to include. If None, uses all common items.
-            
-        Returns:
-            float: Net impact (sum of all differences)
-        """
-        if year not in self.common_years:
-            raise KeyError(f"Year {year} not found in both models")
-        
-        items_to_check = items if items is not None else self.common_items
-        total_impact = 0
-        
-        for item in items_to_check:
-            if item in self.common_items:
-                try:
-                    diff = self.difference(item, year)
-                    if diff is not None:
-                        total_impact += diff
-                except (KeyError, ValueError):
-                    continue
-        
-        return total_impact
     
     def to_dataframe(self, metric: str = 'difference') -> pd.DataFrame:
         """
@@ -407,6 +441,101 @@ Top Changes:
         
         return report
     
+    def difference_table(self, item_name: Union[str, List[str]], include_cumulative: bool = False) -> Table:
+        """
+        Generate a table comparing base and compare model values for specific item(s).
+        
+        Args:
+            item_name (str or list): Name of the item to compare, or list of item names
+            include_cumulative (bool): If True, includes a row showing cumulative differences
+            
+        Returns:
+            Table: A formatted table with rows for each item showing base model values, 
+                   compare model values, and differences
+            
+        Raises:
+            KeyError: If any item not found in both models
+        """
+        # Handle both single item and list of items
+        if isinstance(item_name, str):
+            item_names = [item_name]
+        else:
+            item_names = item_name
+        
+        # Validate all items exist in both models
+        for name in item_names:
+            if name not in self.common_items:
+                raise KeyError(f"Item '{name}' not found in both models")
+        
+        model_row_pairs = []
+        
+        for i, name in enumerate(item_names):
+            # Add blank row between items (except before the first item)
+            if i > 0:
+                blank_row = rt.BlankRow()
+                model_row_pairs.append((self.base_model, blank_row))
+            
+            item_label = self.base_model.line_item(name).label
+            item_value_format = self.base_model.line_item(name).value_format
+            label_row = rt.LabelRow(label=item_label, bold=True)
+
+            # Create row configurations for base and compare models
+            base_row = rt.ItemRow(name=name, label="Base Model", bold=False)
+            compare_row = rt.ItemRow(name=name, label="Compare Model", bold=False)
+            
+            # Calculate differences for all common years
+            differences_dict = {}
+            for year in self.common_years:
+                try:
+                    diff = self.difference(name, year)
+                    differences_dict[year] = diff
+                except (KeyError, ValueError):
+                    differences_dict[year] = None
+            
+            # Create custom row for differences
+            difference_row = rt.CustomRow(
+                label="Difference", 
+                values=differences_dict, 
+                value_format=item_value_format,
+                bold=True
+            )
+
+            # Create cumulative difference row if requested
+            cumulative_row = None
+            if include_cumulative:
+                cumulative_dict = {}
+                for year in self.common_years:
+                    try:
+                        cumulative_diff = self.cumulative_difference(name, year)
+                        cumulative_dict[year] = cumulative_diff
+                    except (KeyError, ValueError):
+                        cumulative_dict[year] = None
+                
+                cumulative_row = rt.CustomRow(
+                    label="Cumulative", 
+                    values=cumulative_dict, 
+                    value_format=item_value_format,
+                    bold=True
+                )
+
+            # Add rows for this item
+            rows_to_add = [
+                (self.base_model, label_row),
+                (self.base_model, base_row),
+                (self.compare_model, compare_row),
+                (self.base_model, difference_row)  # Use base_model for years structure
+            ]
+            
+            if include_cumulative and cumulative_row:
+                rows_to_add.append((self.base_model, cumulative_row))
+            
+            model_row_pairs.extend(rows_to_add)
+        
+        # Generate the table using the multi-model table generator
+        table = generate_multi_model_table(model_row_pairs)
+        
+        return table
+
     def __repr__(self) -> str:
         """String representation of the comparison."""
         return f"Compare({len(self.common_items)} common items, {len(self.common_years)} common years)"
