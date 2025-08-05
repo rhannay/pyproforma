@@ -52,6 +52,7 @@ class Debt(LineItemGenerator):
         self._principal_name = f'{self.name}.principal'
         self._interest_name = f'{self.name}.interest'
         self._bond_proceeds_name = f'{self.name}.bond_proceeds'
+        self._debt_outstanding_name = f'{self.name}.debt_outstanding'
 
         self.ds_schedules = {}
         
@@ -160,7 +161,7 @@ class Debt(LineItemGenerator):
         Returns:
             List[str]: The names of all line items this component can generate values for.
         """
-        return [self._principal_name, self._interest_name, self._bond_proceeds_name]
+        return [self._principal_name, self._interest_name, self._bond_proceeds_name, self._debt_outstanding_name]
 
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
                   year: int) -> Dict[str, Optional[float]]:
@@ -207,6 +208,9 @@ class Debt(LineItemGenerator):
 
         # Bond proceeds (par amounts for new debt issues in this year)
         result[self._bond_proceeds_name] = self._get_par_amount(interim_values_by_year, year)
+        
+        # Outstanding debt at the end of this year
+        result[self._debt_outstanding_name] = self.get_debt_outstanding(year)
             
         return result
     
