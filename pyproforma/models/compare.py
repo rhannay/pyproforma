@@ -439,7 +439,7 @@ Top Changes:
             item_name (str): Name of the item to compare
             
         Returns:
-            Table: A formatted table with two rows - base model values and compare model values
+            Table: A formatted table with three rows - base model values, compare model values, and differences
             
         Raises:
             KeyError: If item not found in both models
@@ -448,28 +448,40 @@ Top Changes:
             raise KeyError(f"Item '{item_name}' not found in both models")
         
         item_label = self.base_model.line_item(item_name).label
+        item_value_format = self.base_model.line_item(item_name).value_format
         label_row = rt.LabelRow(label=item_label, bold=True)
 
         # Create row configurations for base and compare models
         base_row = rt.ItemRow(name=item_name, label="Base Model", bold=False)
         compare_row = rt.ItemRow(name=item_name, label="Compare Model", bold=False)
+        
+        # Calculate differences for all common years
+        differences_dict = {}
+        for year in self.common_years:
+            try:
+                diff = self.difference(item_name, year)
+                differences_dict[year] = diff
+            except (KeyError, ValueError):
+                differences_dict[year] = None
+        
+        # Create custom row for differences
+        difference_row = rt.CustomRow(
+            label="Difference", 
+            values=differences_dict, 
+            value_format=item_value_format,
+            bold=True
+        )
 
         # Create model-row pairs for generate_multi_model_table
         model_row_pairs = [
             (self.base_model, label_row),
             (self.base_model, base_row),
-            (self.compare_model, compare_row)
+            (self.compare_model, compare_row),
+            (self.base_model, difference_row)  # Use base_model for years structure
         ]
         
         # Generate the table using the multi-model table generator
         table = generate_multi_model_table(model_row_pairs)
-        
-        # # Update the first cell of each row to show model labels
-        # if len(table.rows) >= 2:
-        #     # Update base model row label
-        #     table.rows[0].cells[0].value = f"Base: {table.rows[0].cells[0].value}"
-        #     # Update compare model row label  
-        #     table.rows[1].cells[0].value = f"Compare: {table.rows[1].cells[0].value}"
         
         return table
 
