@@ -107,20 +107,20 @@ class Debt(LineItemGenerator):
                 raise ValueError(f"existing_debt_service entry {i}: 'interest' must be non-negative")
         
         # Check for sequential years with no gaps
-        years = sorted([entry['year'] for entry in existing_debt_service])
+        years = [entry['year'] for entry in existing_debt_service]
         
-        # Remove duplicates and check for them
-        unique_years = list(set(years))
-        if len(unique_years) != len(years):
-            duplicate_years = [year for year in years if years.count(year) > 1]
-            raise ValueError(f"existing_debt_service contains duplicate years: {set(duplicate_years)}")
+        # Check that years are provided in ascending order
+        if len(years) > 1:
+            for i in range(1, len(years)):
+                if years[i] <= years[i-1]:
+                    raise ValueError("existing_debt_service years must be provided in ascending order")
         
-        # Check for sequential years with no gaps
-        if len(unique_years) > 1:
-            for i in range(1, len(unique_years)):
-                if unique_years[i] != unique_years[i-1] + 1:
+        # Check for sequential years with no gaps (years are already in order and no duplicates)
+        if len(years) > 1:
+            for i in range(1, len(years)):
+                if years[i] != years[i-1] + 1:
                     raise ValueError(f"existing_debt_service years must be sequential with no gaps. "
-                                   f"Gap found between {unique_years[i-1]} and {unique_years[i]}")
+                                   f"Gap found between {years[i-1]} and {years[i]}")
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'Debt':
