@@ -79,4 +79,5 @@ nav:
   - API Reference:
     - Models: api/models.md
     - LineItem: api/line_item.md
+    - Category: api/category.md
   
