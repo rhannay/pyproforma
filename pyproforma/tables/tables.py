@@ -1,5 +1,5 @@
 from .table_class import Table, Cell, Row, Column
-from .table_generator import generate_table
+from .table_generator import from_template
 from typing import TYPE_CHECKING
 from . import row_types as rt
 
@@ -14,7 +14,7 @@ class Tables:
     
     def generate_table(self, template: list[dict], include_name: bool=False) -> Table:
         """Generate a table for the specified items."""
-        table = generate_table(self._model, template, include_name=include_name)
+        table = from_template(self._model, template, include_name=include_name)
         return table
     
     def all(self):
@@ -37,7 +37,7 @@ class Tables:
             for generator in self._model.line_item_generators:
                 for gen_name in generator.defined_names:
                     rows.append(rt.ItemRow(name=gen_name))
-        return generate_table(self._model, rows, include_name=True)
+        return from_template(self._model, rows, include_name=True)
        
     def line_items(self):
         rows = self._line_item_rows()
@@ -111,6 +111,6 @@ class Tables:
             rt.ConstraintVarianceRow(constraint_name=constraint_name, label='Variance'),
             rt.ConstraintPassRow(constraint_name=constraint_name, label='Pass/Fail', color_code=color_code)
         ]
-        return generate_table(self._model, rows, include_name=False)
+        return from_template(self._model, rows, include_name=False)
 
 

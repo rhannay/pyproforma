@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from pyproforma import Model 
 
 
-def generate_table(model: 'Model', template: list[Union[dict, BaseRow]], include_name: bool=False) -> Table:
+def from_template(model: 'Model', template: list[Union[dict, BaseRow]], include_name: bool=False) -> Table:
     """Generate a table from a model using a template specification.
     
     Args:
