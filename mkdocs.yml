@@ -81,4 +81,5 @@ nav:
     - LineItem: api/line_item.md
     - Category: api/category.md
     - LineItemResults: api/line_item_results.md
+    - CategoryResults: api/category_results.md
   

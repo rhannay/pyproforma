@@ -288,7 +288,7 @@ class CategoryResults:
         
         return df
     
-    def table(self):
+    def table(self) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
         
