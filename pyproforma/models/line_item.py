@@ -7,10 +7,13 @@ from ..constants import VALUE_FORMATS, ValueFormat
 
 class LineItem:
     """
-    Represents a line item in a financial model with values across multiple years.
+    Defines a line item specification for a financial model with values across multiple years.
     
-    A LineItem can store explicit values for specific years or use formulas to calculate
-    values dynamically. It's a core component of the pyproforma financial modeling system.
+    A LineItem defines the structure and calculation logic for a line item, storing explicit 
+    values for specific years or using formulas to calculate values dynamically. Once a 
+    LineItem is part of a model, the calculated results are available in 
+    [LineItemResults][pyproforma.models.results.LineItemResults] instances. It's a core 
+    component of the pyproforma financial modeling system.
     
     Args:
         name (str): Unique identifier for the line item. Must contain only letters, 
