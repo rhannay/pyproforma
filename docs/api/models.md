@@ -1,7 +1,7 @@
 <!-- # Models API
 The Models API is the core of PyProforma, providing classes for creating and manipulating financial models. -->
 
-# Model Class (new)
+# Model Class
 
 ::: pyproforma.models.model.model.Model
     options:

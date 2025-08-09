@@ -78,4 +78,5 @@ nav:
     - Basic Usage: user-guide/basic-usage.md
   - API Reference:
     - Models: api/models.md
+    - LineItem: api/line_item.md
   
