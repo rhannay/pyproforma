@@ -4,7 +4,7 @@ from pyproforma import Model
 from pyproforma.tables.row_types import (
     ItemRow, LabelRow, BlankRow, dict_to_row_config
 )
-from pyproforma.tables.table_generator import generate_table
+from pyproforma.tables.table_generator import from_template
 
 
 def test_dataclass_row_config_creation():
@@ -96,7 +96,7 @@ def test_mixed_template_types(sample_line_item_set: Model):
         {"type": "item", "name": "item2", "bold": False},  # dict
     ]
     
-    table = generate_table(sample_line_item_set, template)
+    table = from_template(sample_line_item_set, template)
     
     # Should have 4 rows (label, item, blank, item)
     assert len(table.rows) == 4

@@ -456,10 +456,6 @@ class Model(SerializationMixin):
         self.get_category_definition(category_name)  # This will raise KeyError if not found
         return CategoryResults(self, category_name)
     
-    def c(self, category_name: str = None) -> CategoryResults:
-        """Shorthand for category() - see category() for full documentation."""
-        return self.category(category_name)
-    
     def constraint(self, constraint_name: str = None) -> ConstraintResults:
         """
         Get a ConstraintResults object for exploring and analyzing a specific constraint.
