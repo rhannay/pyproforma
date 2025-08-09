@@ -59,18 +59,19 @@ class Tables:
             rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
         return rows
     
-    def category(self, category_name: str):
+    def category(self, category_name: str, include_name: bool = False):
         """
         Generate a table for a specific category.
         
         Args:
             category_name (str): The name of the category to generate the table for.
+            include_name (bool, optional): Whether to include the name column. Defaults to False.
         
         Returns:
             Table: A Table object containing the category items.
         """
         rows = self._category_rows(category_name)
-        return self.generate_table(rows, include_name=True)
+        return self.generate_table(rows, include_name=include_name)
     
     def line_item(self, name: str, include_name: bool = False):
         """
