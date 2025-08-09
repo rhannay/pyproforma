@@ -31,7 +31,15 @@ class Debt(LineItemGenerator):
                                       or a string representing a line item name to look up in the value matrix.
             term (int | str): The term of the debt in years. Can be an integer or a string representing
                            a line item name to look up in the value matrix.
-            existing_debt_service (list[dict], optional): Pre-existing debt service schedule.
+            existing_debt_service (list[dict], optional): Pre-existing debt service schedule for debts that
+                                                        were issued before the model period. Each dictionary
+                                                        in the list should contain the following keys:
+                                                        - 'year' (int): The year of the payment
+                                                        - 'principal' (float): The principal payment amount
+                                                        - 'interest' (float): The interest payment amount
+                                                        Example: [{'year': 2024, 'principal': 1000.0, 'interest': 50.0},
+                                                                 {'year': 2025, 'principal': 1000.0, 'interest': 40.0}]
+                                                        Defaults to None (empty list).
         """
         if not check_name(name):
             raise ValueError("Debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters).")
@@ -44,10 +52,75 @@ class Debt(LineItemGenerator):
         self._principal_name = f'{self.name}.principal'
         self._interest_name = f'{self.name}.interest'
         self._bond_proceeds_name = f'{self.name}.bond_proceeds'
+        self._debt_outstanding_name = f'{self.name}.debt_outstanding'
 
         self.ds_schedules = {}
         
         self.existing_debt_service = existing_debt_service or []
+        # Validate the existing debt service structure
+        self._validate_existing_debt_service(self.existing_debt_service)
+    
+    @classmethod
+    def _validate_existing_debt_service(cls, existing_debt_service: list[dict]):
+        """
+        Validate the existing_debt_service structure to ensure it's correctly formatted.
+        
+        Args:
+            existing_debt_service (list[dict]): The existing debt service schedule to validate.
+        
+        Raises:
+            ValueError: If the existing_debt_service is not properly structured or has gaps in years.
+        """
+        if not existing_debt_service:
+            return  # Empty list or None is valid
+        
+        # Check that it's a list
+        if not isinstance(existing_debt_service, list):
+            raise ValueError("existing_debt_service must be a list of dictionaries")
+        
+        # Check each entry is a dictionary with required keys
+        required_keys = {'year', 'principal', 'interest'}
+        for i, entry in enumerate(existing_debt_service):
+            if not isinstance(entry, dict):
+                raise ValueError(f"existing_debt_service entry {i} must be a dictionary")
+            
+            # Check required keys
+            if not required_keys.issubset(entry.keys()):
+                missing_keys = required_keys - entry.keys()
+                raise ValueError(f"existing_debt_service entry {i} is missing required keys: {missing_keys}")
+            
+            # Validate data types
+            if not isinstance(entry['year'], int):
+                raise ValueError(f"existing_debt_service entry {i}: 'year' must be an integer")
+            
+            if not isinstance(entry['principal'], (int, float)):
+                raise ValueError(f"existing_debt_service entry {i}: 'principal' must be a number")
+            
+            if not isinstance(entry['interest'], (int, float)):
+                raise ValueError(f"existing_debt_service entry {i}: 'interest' must be a number")
+            
+            # Validate non-negative values
+            if entry['principal'] < 0:
+                raise ValueError(f"existing_debt_service entry {i}: 'principal' must be non-negative")
+            
+            if entry['interest'] < 0:
+                raise ValueError(f"existing_debt_service entry {i}: 'interest' must be non-negative")
+        
+        # Check for sequential years with no gaps
+        years = [entry['year'] for entry in existing_debt_service]
+        
+        # Check that years are provided in ascending order
+        if len(years) > 1:
+            for i in range(1, len(years)):
+                if years[i] <= years[i-1]:
+                    raise ValueError("existing_debt_service years must be provided in ascending order")
+        
+        # Check for sequential years with no gaps (years are already in order and no duplicates)
+        if len(years) > 1:
+            for i in range(1, len(years)):
+                if years[i] != years[i-1] + 1:
+                    raise ValueError(f"existing_debt_service years must be sequential with no gaps. "
+                                   f"Gap found between {years[i-1]} and {years[i]}")
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'Debt':
@@ -88,7 +161,7 @@ class Debt(LineItemGenerator):
         Returns:
             List[str]: The names of all line items this component can generate values for.
         """
-        return [self._principal_name, self._interest_name, self._bond_proceeds_name]
+        return [self._principal_name, self._interest_name, self._bond_proceeds_name, self._debt_outstanding_name]
 
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
                   year: int) -> Dict[str, Optional[float]]:
@@ -125,8 +198,9 @@ class Debt(LineItemGenerator):
             par_amount = self._get_par_amount(interim_values_by_year, _year)
             term = self._get_term(interim_values_by_year, _year)
 
-            # Add it to the schedules
-            self._add_bond_issue(par_amount, interest_rate, _year, term)
+            # Only add debt service schedule if par amount is greater than zero
+            if par_amount > 0:
+                self._add_bond_issue(par_amount, interest_rate, _year, term)
 
         # Principal and interest payments for this year
         result[self._principal_name] = self.get_principal(year)
@@ -134,6 +208,9 @@ class Debt(LineItemGenerator):
 
         # Bond proceeds (par amounts for new debt issues in this year)
         result[self._bond_proceeds_name] = self._get_par_amount(interim_values_by_year, year)
+        
+        # Outstanding debt at the end of this year
+        result[self._debt_outstanding_name] = self.get_debt_outstanding(year)
             
         return result
     
@@ -190,6 +267,48 @@ class Debt(LineItemGenerator):
                     total_interest += entry['interest']
         
         return total_interest
+        
+    def get_debt_outstanding(self, year: int) -> float:
+        """
+        Get the total outstanding principal at the end of a specific year across all debt issues.
+        
+        Args:
+            year (int): The year for which to calculate the outstanding principal.
+            
+        Returns:
+            float: The total outstanding principal at the end of the specified year.
+        """
+        total_outstanding = 0.0
+        
+        # Calculate outstanding balance from existing debt service
+        existing_outstanding = self._calculate_debt_outstanding_for_issue(self.existing_debt_service, year)
+        total_outstanding += existing_outstanding
+        
+        # Calculate outstanding balance from scheduled debt issues
+        for start_year, schedule in self.ds_schedules.items():
+            if start_year <= year:  # Only consider debt issued by the end of this year
+                outstanding = self._calculate_debt_outstanding_for_issue(schedule, year)
+                total_outstanding += outstanding
+        
+        return total_outstanding
+    
+    @classmethod
+    def _calculate_debt_outstanding_for_issue(cls, debt_service_schedule: list[dict], year: int) -> float:
+        """
+        Calculate the outstanding principal for a debt service schedule at the end of a specific year.
+        
+        Args:
+            debt_service_schedule (list[dict]): The debt service schedule containing payment entries.
+            year (int): The year for which to calculate the outstanding principal.
+            
+        Returns:
+            float: The outstanding principal from the debt service schedule.
+        """
+        if not debt_service_schedule:
+            return 0.0
+        
+        # Outstanding principal is just the sum of all principal payments due after this year
+        return sum(entry['principal'] for entry in debt_service_schedule if entry['year'] > year)
         
     # ----------------------------------
     # DEBT SCHEDULE MANAGEMENT

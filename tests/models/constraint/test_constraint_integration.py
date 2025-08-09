@@ -101,6 +101,33 @@ class TestConstraintSerialization:
         assert 'line_item_name: revenue' in yaml_str
         assert 'target: 80000.0' in yaml_str
         assert 'operator: gt' in yaml_str
+
+    def test_to_yaml_returns_none_when_file_path_provided(self, sample_model_with_constraints: Model):
+        """Test that to_yaml returns None when file_path is provided."""
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            temp_path = f.name
+        
+        try:
+            # Test that it returns None when file path is provided
+            result = sample_model_with_constraints.to_yaml(temp_path)
+            assert result is None
+            
+            # Test that the file was still written correctly
+            with open(temp_path, 'r') as f:
+                file_content = f.read()
+            
+            assert len(file_content) > 0
+            assert 'constraints:' in file_content
+            assert 'min_revenue' in file_content
+            assert 'max_expenses' in file_content
+            
+        finally:
+            # Clean up
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
     
     def test_from_yaml_reconstructs_constraints(self, sample_model_with_constraints: Model):
         """Test that from_yaml properly reconstructs constraints."""

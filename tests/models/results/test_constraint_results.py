@@ -13,12 +13,14 @@ def basic_line_items():
         LineItem(
             name="revenue",
             category="income",
-            values={2023: 100000, 2024: 120000, 2025: 140000}
+            values={2023: 100000, 2024: 120000, 2025: 140000},
+            value_format="two_decimals"
         ),
         LineItem(
             name="expenses",
             category="costs",
-            values={2023: 50000, 2024: 60000, 2025: 70000}
+            values={2023: 50000, 2024: 60000, 2025: 70000},
+            value_format="two_decimals"
         )
     ]
 
@@ -113,7 +115,9 @@ class TestConstraintResultsStringRepresentation:
         
         assert "ConstraintResults('min_revenue')" in str_result
         assert "Label: Minimum Revenue" in str_result
-        assert "Value (2023):" in str_result
+        assert "Line Item: revenue" in str_result
+        assert "Target: > 80,000" in str_result
+        assert "Status: All years pass constraint check" in str_result
         
     def test_repr_method(self, constraint_results):
         """Test __repr__ method returns expected format."""
@@ -609,18 +613,6 @@ class TestConstraintResultsErrorHandling:
             constraints=basic_constraints
         )
     
-    def test_summary_handles_missing_value(self, model_with_constraints):
-        """Test summary method handles missing constraint value gracefully."""
-        constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
-        
-        # Mock get_value to raise KeyError
-        with patch.object(constraint_results.model, 'get_value', side_effect=KeyError):
-            summary = constraint_results.summary()
-            
-            assert "ConstraintResults('min_revenue')" in summary
-            assert "Label: Minimum Revenue" in summary
-            assert "Value: Not available" in summary
-    
     def test_chart_method_with_chart_error(self, model_with_constraints):
         """Test chart method when underlying chart method raises error."""
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
@@ -648,12 +640,14 @@ class TestConstraintResultsIntegration:
             LineItem(
                 name="revenue",
                 category="income",
-                values={2023: 100000, 2024: 120000}
+                values={2023: 100000, 2024: 120000},
+                value_format="two_decimals"
             ),
             LineItem(
                 name="expenses",
                 category="costs",
-                values={2023: 50000, 2024: 60000}
+                values={2023: 50000, 2024: 60000},
+                value_format="two_decimals"
             )
         ]
         
@@ -752,7 +746,8 @@ class TestConstraintResultsEdgeCases:
             LineItem(
                 name="revenue_2024",
                 category="income",
-                values={2024: 100000}
+                values={2024: 100000},
+                value_format="two_decimals"
             )
         ]
         

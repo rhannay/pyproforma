@@ -61,7 +61,7 @@ class Constraint:
     
     VALID_OPERATORS = {'eq', 'lt', 'le', 'gt', 'ge', 'ne'}
     OPERATOR_SYMBOLS = {
-        'eq': '==',
+        'eq': '=',
         'lt': '<',
         'le': '<=',
         'gt': '>',
@@ -186,6 +186,15 @@ class Constraint:
         actual_value = value_matrix[year][self.line_item_name]
         return actual_value - target_value
 
+    def get_operator_symbol(self) -> str:
+        """
+        Returns the symbol representation of the constraint's operator.
+        
+        Returns:
+            str: The symbol corresponding to the operator (e.g., '=', '>', '<=')
+        """
+        return self.OPERATOR_SYMBOLS.get(self.operator, self.operator)
+        
     def to_dict(self) -> dict:
         """Convert Constraint to dictionary representation."""
         return {
@@ -210,7 +219,7 @@ class Constraint:
         )
 
     def __str__(self):
-        operator_symbol = self.OPERATOR_SYMBOLS.get(self.operator, self.operator)
+        operator_symbol = self.get_operator_symbol()
         if isinstance(self.target, dict):
             target_str = str(self.target)
         else:

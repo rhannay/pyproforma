@@ -53,7 +53,13 @@ class Table:
         self._check_column_and_cell_counts()
     
     # Public API - Conversion and Export methods
-    def to_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the Table to a pandas DataFrame.
+        
+        Returns:
+            pd.DataFrame: A DataFrame containing the table data with column labels 
+                         as column names and cell values as the data.
+        """
         data = []
         for row in self.rows:
             row_data = {col.label: cell.value for col, cell in zip(self.columns, row.cells)}
@@ -121,7 +127,7 @@ def format_value(value: Any, value_format: Optional[ValueFormat], none_returns='
     elif value_format == 'no_decimals':
         return f"{int(round(value)):,}"  # Format as rounded number with commas, no decimals
     elif value_format == 'two_decimals':
-        return f"{value:.2f}"
+        return f"{value:,.2f}"
     elif value_format == 'percent':
         return f"{int(round(value * 100))}%"  
     elif value_format == 'percent_one_decimal':
