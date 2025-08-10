@@ -86,6 +86,8 @@ nav:
       - LineItemResults: api/line_item_results.md
       - CategoryResults: api/category_results.md
       - ConstraintResults: api/constraint_results.md
+    - Tables:
+      - Tables: api/tables.md
     - Model Comparisons:
       - Compare: api/compare.md
   
