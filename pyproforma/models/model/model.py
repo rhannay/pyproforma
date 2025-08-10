@@ -4,6 +4,7 @@ from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
+from ..compare import Compare
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -576,7 +577,7 @@ class Model(SerializationMixin):
         valid_line_items = [item.name for item in self._line_item_definitions]
         raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
     
-    def get_category_definition(self, name: str):
+    def get_category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
         
@@ -1028,7 +1029,7 @@ class Model(SerializationMixin):
     # CLASS METHODS & ALTERNATIVE CONSTRUCTORS
     # ============================================================================
 
-    def copy(self):
+    def copy(self) -> "Model":
         """
         Create a deep copy of the Model instance.
         
@@ -1039,10 +1040,9 @@ class Model(SerializationMixin):
         Returns:
             Model: A deep copy of the current Model instance
             
-        Example:
+        Examples:
             >>> original_model = Model(line_items, years=[2023, 2024])
-            >>> copied_model = original_model.copy()
-            >>> # Changes to copied_model won't affect original_model
+            >>> copied_model = original_model.copy()  # Changes won't affect original
         """
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
@@ -1062,7 +1062,7 @@ class Model(SerializationMixin):
         
         return copied_model
 
-    def scenario(self, item_updates: list[tuple[str, dict]]):
+    def scenario(self, item_updates: list[tuple[str, dict]]) -> "Model":
         """
         Create a new Model instance with the specified changes applied as a scenario.
         
@@ -1117,7 +1117,7 @@ class Model(SerializationMixin):
         
         return scenario_model
 
-    def compare(self, other_model):
+    def compare(self, other_model) -> Compare:
         """
         Create a comparison analysis between this model and another model.
         
