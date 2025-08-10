@@ -523,7 +523,7 @@ class Model(SerializationMixin):
         """
         Get a LineItemResults object for exploring and analyzing a specific named item.
         
-        This method returns a LineItemResults instance that provides convenient methods
+        This method returns a [`LineItemResults`][pyproforma.models.results.LineItemResults] instance that provides convenient methods
         for notebook exploration of individual items including line items,
         category totals, and generator outputs.
         
@@ -557,6 +557,19 @@ class Model(SerializationMixin):
         return self.line_item(item_name)
     
     def get_line_item_definition(self, name: str) -> LineItem:
+        """
+        Get a line item definition by name.
+        
+        This method retrieves the [`LineItem`][pyproforma.models.line_item.LineItem] object that defines
+        a specific line item in the model. This is useful for accessing the line item's
+        properties such as formula, category, label, and value format.
+        
+        Args:
+            name (str): The name of the line item to retrieve
+            
+        Returns:
+            LineItem: The LineItem object with the specified name
+        """
         for item in self._line_item_definitions:
             if item.name == name:
                 return item
@@ -564,6 +577,19 @@ class Model(SerializationMixin):
         raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
     
     def get_category_definition(self, name: str):
+        """
+        Get a category definition by name.
+        
+        This method retrieves the [`Category`][pyproforma.models.line_item.Category] object that defines
+        a specific category in the model. This is useful for accessing the category's
+        properties such as label, total name, and whether it includes totals.
+        
+        Args:
+            name (str): The name of the category to retrieve
+            
+        Returns:
+            Category: The Category object with the specified name
+        """
         for category in self._category_definitions:
             if category.name == name:
                 return category

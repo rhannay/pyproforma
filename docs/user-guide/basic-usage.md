@@ -112,4 +112,4 @@ chart.save("revenue_expenses_chart.html")
 
 ## Next Steps
 
-Explore the [API Reference](../api/models.md) for detailed information on all available classes and methods.
+Explore the [API Reference](../api/model.md) for detailed information on all available classes and methods.
