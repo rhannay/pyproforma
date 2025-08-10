@@ -77,7 +77,7 @@ nav:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
   - API Reference:
-    - Defining Models:
+    - Model:
       - Model: api/model.md
       - LineItem: api/line_item.md
       - Category: api/category.md
