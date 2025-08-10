@@ -7,7 +7,7 @@ from .row_types import (
     ConstraintPassRow, ConstraintVarianceRow, ConstraintTargetRow,
     LabelRow, BlankRow
 )
-from .table_generator import from_template
+from .table_generator import generate_table_from_template
 
 # For easy access pattern: import row_types as rt
 from . import row_types

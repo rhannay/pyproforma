@@ -1,5 +1,5 @@
 from .table_class import Table, Cell, Row, Column
-from .table_generator import from_template
+from .table_generator import generate_table_from_template
 from typing import TYPE_CHECKING
 from . import row_types as rt
 
@@ -12,9 +12,29 @@ class Tables:
         """Initialize the main tables namespace with a Model."""
         self._model = model
     
-    def generate_table(self, template: list[dict], include_name: bool=False) -> Table:
-        """Generate a table for the specified items."""
-        table = from_template(self._model, template, include_name=include_name)
+    def from_template(self, template: list[dict], include_name: bool=False) -> Table:
+        """
+        Generate a table from a template of row configurations.
+        
+        Args:
+            template (list[dict]): A list of row configuration dictionaries that define
+                the structure and content of the table. Each dictionary should specify
+                the row type and its parameters (e.g., ItemRow, LabelRow, etc.).
+            include_name (bool, optional): Whether to include a name column in the 
+                generated table. Defaults to False.
+        
+        Returns:
+            Table: A Table object containing the rows and data as specified by the template.
+        
+        Example:
+            >>> template = [
+            ...     rt.LabelRow(label='Revenue', bold=True),
+            ...     rt.ItemRow(name='sales_revenue'),
+            ...     rt.ItemRow(name='other_revenue')
+            ... ]
+            >>> table = tables.from_template(template, include_name=True)
+        """
+        table = generate_table_from_template(self._model, template, include_name=include_name)
         return table
     
     def all(self):
@@ -37,11 +57,11 @@ class Tables:
             for generator in self._model.line_item_generators:
                 for gen_name in generator.defined_names:
                     rows.append(rt.ItemRow(name=gen_name))
-        return from_template(self._model, rows, include_name=True)
+        return generate_table_from_template(self._model, rows, include_name=True)
        
     def line_items(self):
         rows = self._line_item_rows()
-        return self.generate_table(rows)
+        return self.from_template(rows)
     
     def _line_item_rows(self):
         rows = []
@@ -71,7 +91,7 @@ class Tables:
             Table: A Table object containing the category items.
         """
         rows = self._category_rows(category_name)
-        return self.generate_table(rows, include_name=include_name)
+        return self.from_template(rows, include_name=include_name)
     
     def line_item(self, name: str, include_name: bool = False):
         """
@@ -90,7 +110,7 @@ class Tables:
             rt.CumulativeChangeRow(name=name, label='Cumulative Change'),
             rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')
         ]
-        return self.generate_table(rows, include_name=include_name)
+        return self.from_template(rows, include_name=include_name)
     
     def constraint(self, constraint_name: str, color_code: bool = True):
         """
@@ -111,6 +131,6 @@ class Tables:
             rt.ConstraintVarianceRow(constraint_name=constraint_name, label='Variance'),
             rt.ConstraintPassRow(constraint_name=constraint_name, label='Pass/Fail', color_code=color_code)
         ]
-        return from_template(self._model, rows, include_name=False)
+        return generate_table_from_template(self._model, rows, include_name=False)
 
 
