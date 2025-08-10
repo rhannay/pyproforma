@@ -85,7 +85,7 @@ class Constraint:
         if tolerance < 0:
             raise ValueError("Tolerance must be non-negative")
         self.name = name
-        self._label = label
+        self.label = label if label is not None else name
         self.line_item_name = line_item_name
         self.tolerance = tolerance
         if isinstance(target, dict):
@@ -101,13 +101,6 @@ class Constraint:
             except Exception:
                 raise ValueError("Target must be convertible to float or a dict of year:float.")
         self.operator = operator
-
-    @property
-    def label(self) -> str:
-        """
-        Returns the label for the constraint. If no label was provided, returns the name.
-        """
-        return self._label if self._label is not None else self.name
 
     def get_target(self, year: int) -> Union[float, None]:
         """
@@ -199,7 +192,7 @@ class Constraint:
         """Convert Constraint to dictionary representation."""
         return {
             'name': self.name,
-            'label': self._label,
+            'label': self.label,
             'line_item_name': self.line_item_name,
             'target': self.target,
             'operator': self.operator,
