@@ -88,6 +88,7 @@ nav:
       - ConstraintResults: api/constraint_results.md
     - Tables:
       - Tables: api/tables.md
+      - Table Class: api/table.md
     - Model Comparisons:
       - Compare: api/compare.md
   
