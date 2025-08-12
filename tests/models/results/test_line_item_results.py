@@ -802,24 +802,22 @@ class TestLineItemResultsCalculationMethods:
             revenue_item.cumulative_percent_change(2021, start_year=2025)
         assert "Start year 2025 not found in model years" in str(excinfo.value)
     
-    def test_calculation_methods_consistency_with_model(self, calculation_model):
-        """Test that LineItemResults methods return same values as Model methods."""
+    def test_calculation_methods_basic_functionality(self, calculation_model):
+        """Test that LineItemResults calculation methods work correctly."""
         revenue_item = calculation_model.line_item("revenue")
         
-        # Test that new API returns same values as old API
-        for year in calculation_model.years:
-            model_result = calculation_model.percent_change("revenue", year)
-            item_result = revenue_item.percent_change(year)
-            assert model_result == item_result
-            
-            model_result = calculation_model.cumulative_percent_change("revenue", year)
-            item_result = revenue_item.cumulative_percent_change(year)
-            assert model_result == item_result
-            
-            model_result = calculation_model.cumulative_change("revenue", year)
-            item_result = revenue_item.cumulative_change(year)
-            assert model_result == item_result
-            
-            model_result = calculation_model.index_to_year("revenue", year)
-            item_result = revenue_item.index_to_year(year)
-            assert model_result == item_result
+        # Test percent_change
+        assert revenue_item.percent_change(2020) is None  # First year
+        assert revenue_item.percent_change(2021) == 0.2   # 20% increase
+        
+        # Test cumulative_percent_change  
+        assert revenue_item.cumulative_percent_change(2020) == 0  # Base year
+        assert revenue_item.cumulative_percent_change(2022) == 0.5  # 50% increase from base
+        
+        # Test cumulative_change
+        assert revenue_item.cumulative_change(2020) == 0   # Base year
+        assert revenue_item.cumulative_change(2022) == 50  # 50 increase from base
+        
+        # Test index_to_year
+        assert revenue_item.index_to_year(2020) == 100.0  # Base year = 100
+        assert revenue_item.index_to_year(2022) == 150.0  # 150% of base

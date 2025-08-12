@@ -39,7 +39,7 @@ class Model(SerializationMixin):
         >>> # Analysis
         >>> model.category("income").total()  # Category totals by year
         >>> model.line_item("revenue").to_series()  # Pandas Series
-        >>> model.percent_change("revenue", 2024)  # Growth rates
+        >>> model.line_item("revenue").percent_change(2024)  # Growth rates
         >>> 
         >>> # Output
         >>> model.tables.financial_statement()  # Formatted tables
@@ -52,7 +52,7 @@ class Model(SerializationMixin):
     Key Methods:
         - get_value(name, year): Get value for any item/year
         - category(name)/line_item(name): Get analysis objects  
-        - percent_change(), index_to_year(): Calculate metrics
+        - line_item(name).percent_change(), .index_to_year(): Calculate metrics
         - scenario(item_updates): Create what-if scenarios
         - copy(): Create independent model copies
         - summary(): Model structure overview
@@ -643,77 +643,7 @@ class Model(SerializationMixin):
                     total += value
         return total
 
-    def percent_change(self, name: str, year: int) -> float:
-        """
-        Calculate the percent change of a line item from the previous year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate percent change for
-            year (int): The year to calculate percent change for
-            
-        Returns:
-            float: The percent change as a decimal (e.g., 0.1 for 10% increase)
-                   None if calculation is not possible (first year, zero previous value, or None values)
-                   
-        Raises:
-            KeyError: If the name or year is not found in the model
-        """
-        return self.line_item(name).percent_change(year)
 
-    def cumulative_percent_change(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate the cumulative percent change of an item from a base year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate cumulative change for
-            year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
-        Returns:
-            float: The cumulative percent change as a decimal (e.g., 0.1 for 10% increase)
-                   None if calculation is not possible (same as start year, zero start year value, or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        return self.line_item(name).cumulative_percent_change(year, start_year)
-
-    def cumulative_change(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate the cumulative absolute change of an item from a base year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate cumulative change for
-            year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
-        Returns:
-            float: The cumulative absolute change (current value - base year value)
-                   None if calculation is not possible (same as start year or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        return self.line_item(name).cumulative_change(year, start_year)
-
-    def index_to_year(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate an indexed value where the start year is set to 100 and other years are indexed from there.
-        
-        Args:
-            name (str): The name of the item to calculate indexed value for
-            year (int): The year to calculate indexed value for
-            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.
-            
-        Returns:
-            float: The indexed value (e.g., 110 for 10% increase from base year, 90 for 10% decrease)
-                   100 if same as start year
-                   None if calculation is not possible (zero start year value or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        return self.line_item(name).index_to_year(year, start_year)
 
     # ============================================================================
     # HELPER/UTILITY METHODS
