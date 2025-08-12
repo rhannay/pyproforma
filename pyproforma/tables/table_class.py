@@ -21,6 +21,7 @@ class Cell:
         bold (bool): Whether the cell text should be displayed in bold. Defaults to False.
         align (str): Text alignment for the cell ('left', 'center', 'right'). Defaults to 'right'.
         value_format (Optional[ValueFormat]): Formatting type for the value display.
+            Options: 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
         background_color (Optional[str]): CSS color string for cell background.
     
     Examples:
