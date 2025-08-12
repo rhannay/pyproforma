@@ -378,7 +378,7 @@ class TestPercentChange:
         
         with pytest.raises(KeyError) as excinfo:
             model.percent_change("nonexistent_item", 2021)
-        assert "not found in defined names" in str(excinfo.value)
+        assert "not found in model" in str(excinfo.value)
     
     def test_percent_change_invalid_year(self, sample_model_for_percent_change: Model):
         """Test percent change with invalid year."""
@@ -520,7 +520,7 @@ class TestCumulativePercentChange:
         
         with pytest.raises(KeyError) as excinfo:
             model.cumulative_percent_change("nonexistent_item", 2021)
-        assert "not found in defined names" in str(excinfo.value)
+        assert "not found in model" in str(excinfo.value)
     
     def test_cumulative_percent_change_invalid_year(self, sample_model_for_cumulative_percent_change: Model):
         """Test cumulative percent change with invalid year."""
@@ -868,7 +868,7 @@ class TestCumulativeChange:
         
         with pytest.raises(KeyError) as excinfo:
             model.cumulative_change("nonexistent_item", 2021)
-        assert "not found in defined names" in str(excinfo.value)
+        assert "not found in model" in str(excinfo.value)
 
     def test_cumulative_change_invalid_year(self, sample_model_for_cumulative_change: Model):
         """Test cumulative change with invalid year."""

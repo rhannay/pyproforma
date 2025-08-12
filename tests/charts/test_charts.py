@@ -16,7 +16,7 @@ class TestCharts:
         model = Mock(spec=Model)
         model.years = [2020, 2021, 2022]
         
-        # Mock li() method responses
+        # Mock li() method responses with LineItemResults calculation methods
         def mock_li(name):
             line_item_map = {
                 'revenue': Mock(label='Revenue', value_format='no_decimals'),
@@ -24,11 +24,60 @@ class TestCharts:
                 'growth_rate': Mock(label='Growth Rate', value_format='percent')
             }
             if name in line_item_map:
-                return line_item_map[name]
+                line_item_result = line_item_map[name]
+                
+                # Add calculation methods to the mock
+                def mock_cumulative_percent_change(year, start_year=None):
+                    if start_year is None:
+                        start_year = 2020
+                    if year == start_year:
+                        return None
+                    
+                    cumulative_map = {
+                        ('revenue', 2021): 0.5,  # 50% increase from 2020
+                        ('revenue', 2022): 1.0,  # 100% increase from 2020
+                        ('expenses', 2021): 0.5,
+                        ('expenses', 2022): 1.0
+                    }
+                    return cumulative_map.get((name, year), 0.0)
+                
+                def mock_cumulative_change(year, start_year=None):
+                    if start_year is None:
+                        start_year = 2020
+                    if year == start_year:
+                        return 0
+                    
+                    change_map = {
+                        ('revenue', 2021): 50.0,  # 150 - 100
+                        ('revenue', 2022): 100.0,  # 200 - 100
+                        ('expenses', 2021): 25.0,  # 75 - 50
+                        ('expenses', 2022): 50.0   # 100 - 50
+                    }
+                    return change_map.get((name, year), 0.0)
+                
+                def mock_index_to_year(year, start_year=None):
+                    if start_year is None:
+                        start_year = 2020
+                    if year == start_year:
+                        return 100.0
+                    
+                    index_map = {
+                        ('revenue', 2021): 150.0,  # 50% increase from base year
+                        ('revenue', 2022): 200.0,  # 100% increase from base year
+                        ('expenses', 2021): 150.0,  # 50% increase from base year
+                        ('expenses', 2022): 200.0,  # 100% increase from base year
+                    }
+                    return index_map.get((name, year), 100.0)
+                
+                line_item_result.cumulative_percent_change.side_effect = mock_cumulative_percent_change
+                line_item_result.cumulative_change.side_effect = mock_cumulative_change
+                line_item_result.index_to_year.side_effect = mock_index_to_year
+                
+                return line_item_result
             raise KeyError(f"Name '{name}' not found in model defined names.")
         
         model.li.side_effect = mock_li
-        
+        model.line_item.side_effect = mock_li  # Also support the full method name
         
         # Mock get_value responses
         def mock_get_value(name, year):
@@ -49,7 +98,7 @@ class TestCharts:
         
         model.get_value.side_effect = mock_get_value
         
-        # Mock cumulative_percent_change responses
+        # Keep old method mocks for backward compatibility in tests
         def mock_cumulative_percent_change(name, year, start_year=None):
             if start_year is None:
                 start_year = 2020
@@ -163,9 +212,8 @@ class TestCharts:
             mock_to_plotly.assert_called_once_with(width=700, height=450, template='ggplot2')
             assert result is mock_fig
             
-            # Verify model interactions
-            mock_model.li.assert_called_with('revenue')
-            assert mock_model.cumulative_percent_change.call_count == 3  # Called for each year
+            # Verify model interactions - using new API
+            mock_model.line_item.assert_called_with('revenue')
 
     def test_cumulative_percent_change_multiple_items(self, charts, mock_model):
         """Test cumulative percent change chart for multiple items."""
@@ -179,9 +227,8 @@ class TestCharts:
             mock_to_plotly.assert_called_once()
             assert result is mock_fig
             
-            # Verify model interactions - should be called for both items
-            assert mock_model.li.call_count == 2
-            assert mock_model.cumulative_percent_change.call_count == 6  # 2 items × 3 years
+            # Verify model interactions - should be called for both items using new API
+            assert mock_model.line_item.call_count >= 2  # At least once per item
 
     def test_cumulative_percent_change_string_input(self, charts, mock_model):
         """Test cumulative percent change chart with string input converts to list."""
@@ -208,8 +255,13 @@ class TestCharts:
 
     def test_cumulative_percent_change_with_model_error(self, charts, mock_model):
         """Test cumulative percent change when model raises an error."""
-        # Make the model raise a ValueError when called
-        mock_model.cumulative_percent_change.side_effect = ValueError("Test error")
+        # Make the line item result raise a ValueError when called  
+        def mock_li_with_error(name):
+            line_item_result = Mock(label='Revenue', value_format='no_decimals')
+            line_item_result.cumulative_percent_change.side_effect = ValueError("Test error")
+            return line_item_result
+        
+        mock_model.line_item.side_effect = mock_li_with_error
         
         with pytest.raises(ValueError) as excinfo:
             charts.cumulative_percent_change('revenue')

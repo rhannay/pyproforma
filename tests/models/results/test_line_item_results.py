@@ -620,3 +620,206 @@ class TestLineItemResultsEdgeCases:
         # Test decimal format
         decimal_results = LineItemResults(model, "decimal_item")
         assert decimal_results.value_format == "two_decimals"
+
+
+class TestLineItemResultsCalculationMethods:
+    """Test the calculation methods added to LineItemResults."""
+    
+    @pytest.fixture
+    def calculation_model(self):
+        """Create a model for testing calculation methods."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2020: 100, 2021: 120, 2022: 150, 2023: 120},
+                value_format="no_decimals"
+            ),
+            LineItem(
+                name="expense",
+                category="costs",
+                values={2020: 50, 2021: 50, 2022: 75, 2023: 0},
+                value_format="no_decimals"
+            ),
+            LineItem(
+                name="zero_item",
+                category="other",
+                values={2020: 0, 2021: 10, 2022: 0, 2023: 5},
+                value_format="no_decimals"
+            )
+        ]
+        
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+            Category(name="other", label="Other")
+        ]
+        
+        return Model(
+            line_items=line_items,
+            years=[2020, 2021, 2022, 2023],
+            categories=categories
+        )
+    
+    def test_percent_change_method(self, calculation_model):
+        """Test percent_change method on LineItemResults."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Revenue: 100 -> 120 = 20% increase = 0.2
+        assert revenue_item.percent_change(2021) == 0.2
+        
+        # Revenue: 120 -> 150 = 25% increase = 0.25  
+        assert revenue_item.percent_change(2022) == 0.25
+        
+        # Revenue: 150 -> 120 = -20% decrease = -0.2
+        assert revenue_item.percent_change(2023) == -0.2
+        
+        # First year should return None
+        assert revenue_item.percent_change(2020) is None
+    
+    def test_percent_change_with_zero_previous_value(self, calculation_model):
+        """Test percent_change when previous value is zero."""
+        zero_item = calculation_model.line_item("zero_item")
+        
+        # zero_item: 0 -> 10, can't calculate percent change from zero
+        assert zero_item.percent_change(2021) is None
+        
+        # zero_item: 0 -> 5, can't calculate percent change from zero  
+        assert zero_item.percent_change(2023) is None
+    
+    def test_cumulative_percent_change_method(self, calculation_model):
+        """Test cumulative_percent_change method on LineItemResults."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Base year (2020) should return 0
+        assert revenue_item.cumulative_percent_change(2020) == 0
+        
+        # 2021: (120 - 100) / 100 = 0.2
+        assert revenue_item.cumulative_percent_change(2021) == 0.2
+        
+        # 2022: (150 - 100) / 100 = 0.5
+        assert revenue_item.cumulative_percent_change(2022) == 0.5
+        
+        # 2023: (120 - 100) / 100 = 0.2
+        assert revenue_item.cumulative_percent_change(2023) == 0.2
+    
+    def test_cumulative_percent_change_with_start_year(self, calculation_model):
+        """Test cumulative_percent_change with custom start year."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Using 2021 as start year (120 as base)
+        assert revenue_item.cumulative_percent_change(2021, start_year=2021) == 0
+        # 2022: (150 - 120) / 120 = 0.25
+        assert revenue_item.cumulative_percent_change(2022, start_year=2021) == 0.25
+        # 2023: (120 - 120) / 120 = 0.0
+        assert revenue_item.cumulative_percent_change(2023, start_year=2021) == 0.0
+    
+    def test_cumulative_change_method(self, calculation_model):
+        """Test cumulative_change method on LineItemResults."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Base year (2020) should return 0
+        assert revenue_item.cumulative_change(2020) == 0
+        
+        # 2021: 120 - 100 = 20
+        assert revenue_item.cumulative_change(2021) == 20
+        
+        # 2022: 150 - 100 = 50
+        assert revenue_item.cumulative_change(2022) == 50
+        
+        # 2023: 120 - 100 = 20
+        assert revenue_item.cumulative_change(2023) == 20
+    
+    def test_cumulative_change_with_start_year(self, calculation_model):
+        """Test cumulative_change with custom start year."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Using 2021 as start year (120 as base)
+        assert revenue_item.cumulative_change(2021, start_year=2021) == 0
+        # 2022: 150 - 120 = 30
+        assert revenue_item.cumulative_change(2022, start_year=2021) == 30
+        # 2023: 120 - 120 = 0
+        assert revenue_item.cumulative_change(2023, start_year=2021) == 0
+    
+    def test_index_to_year_method(self, calculation_model):
+        """Test index_to_year method on LineItemResults."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Base year (2020) should return 100
+        assert revenue_item.index_to_year(2020) == 100.0
+        
+        # 2021: (120 / 100) * 100 = 120.0
+        assert revenue_item.index_to_year(2021) == 120.0
+        
+        # 2022: (150 / 100) * 100 = 150.0
+        assert revenue_item.index_to_year(2022) == 150.0
+        
+        # 2023: (120 / 100) * 100 = 120.0
+        assert revenue_item.index_to_year(2023) == 120.0
+    
+    def test_index_to_year_with_start_year(self, calculation_model):
+        """Test index_to_year with custom start year."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Using 2021 as start year (120 as base)
+        assert revenue_item.index_to_year(2021, start_year=2021) == 100.0
+        # 2022: (150 / 120) * 100 = 125.0
+        assert revenue_item.index_to_year(2022, start_year=2021) == 125.0
+        # 2023: (120 / 120) * 100 = 100.0
+        assert revenue_item.index_to_year(2023, start_year=2021) == 100.0
+    
+    def test_index_to_year_with_zero_base_value(self, calculation_model):
+        """Test index_to_year when base year value is zero."""
+        zero_item = calculation_model.line_item("zero_item")
+        
+        # zero_start has 0 in 2020, so indexed calculation should return None
+        assert zero_item.index_to_year(2021) is None
+        assert zero_item.index_to_year(2022) is None
+    
+    def test_calculation_methods_error_handling(self, calculation_model):
+        """Test error handling for calculation methods."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Test invalid year
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.percent_change(2025)
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.cumulative_percent_change(2025)
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.cumulative_change(2025)
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.index_to_year(2025)
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        # Test invalid start year
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.cumulative_percent_change(2021, start_year=2025)
+        assert "Start year 2025 not found in model years" in str(excinfo.value)
+    
+    def test_calculation_methods_consistency_with_model(self, calculation_model):
+        """Test that LineItemResults methods return same values as Model methods."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Test that new API returns same values as old API
+        for year in calculation_model.years:
+            model_result = calculation_model.percent_change("revenue", year)
+            item_result = revenue_item.percent_change(year)
+            assert model_result == item_result
+            
+            model_result = calculation_model.cumulative_percent_change("revenue", year)
+            item_result = revenue_item.cumulative_percent_change(year)
+            assert model_result == item_result
+            
+            model_result = calculation_model.cumulative_change("revenue", year)
+            item_result = revenue_item.cumulative_change(year)
+            assert model_result == item_result
+            
+            model_result = calculation_model.index_to_year("revenue", year)
+            item_result = revenue_item.index_to_year(year)
+            assert model_result == item_result

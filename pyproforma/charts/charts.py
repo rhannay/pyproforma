@@ -189,7 +189,7 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    cum_pct_change = self._model.cumulative_percent_change(name, year, start_year=start_year)
+                    cum_pct_change = self._model.line_item(name).cumulative_percent_change(year, start_year=start_year)
                     # Convert to percentage (multiply by 100) for better chart readability
                     if cum_pct_change is not None:
                         values.append(cum_pct_change)
@@ -272,7 +272,7 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    cum_change = self._model.cumulative_change(name, year, start_year=start_year)
+                    cum_change = self._model.line_item(name).cumulative_change(year, start_year=start_year)
                     # Handle None values (like first year or when calculation not possible)
                     if cum_change is not None:
                         values.append(cum_change)
@@ -357,7 +357,7 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    indexed_value = self._model.index_to_year(name, year, start_year=start_year)
+                    indexed_value = self._model.line_item(name).index_to_year(year, start_year=start_year)
                     # Handle None values (like when base year is zero or None values)
                     if indexed_value is not None:
                         values.append(indexed_value)

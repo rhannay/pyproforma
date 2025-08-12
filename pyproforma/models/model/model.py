@@ -658,30 +658,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the name or year is not found in the model
         """
-        # Check if this is the first year
-        if year == self.years[0]:
-            return None
-            
-        # Get the index of the current year to find the previous year
-        try:
-            year_index = self.years.index(year)
-        except ValueError:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-            
-        previous_year = self.years[year_index - 1]
-        
-        # Get values for current and previous years
-        current_value = self.get_value(name, year)
-        previous_value = self.get_value(name, previous_year)
-        
-        # Handle None values or zero previous value
-        if previous_value is None or current_value is None:
-            return None
-        if previous_value == 0:
-            return None
-            
-        # Calculate percent change: (current - previous) / previous
-        return (current_value - previous_value) / previous_value
+        return self.line_item(name).percent_change(year)
 
     def cumulative_percent_change(self, name: str, year: int, start_year: int = None) -> float:
         """
@@ -699,31 +676,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the name, year, or start_year is not found in the model
         """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Check if this is the same as the base year
-        if year == base_year:
-            return 0
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values or zero base year value
-        if base_year_value is None or current_value is None:
-            return None
-        if base_year_value == 0:
-            return None
-            
-        # Calculate percent change: (current - base) / base
-        return (current_value - base_year_value) / base_year_value
+        return self.line_item(name).cumulative_percent_change(year, start_year)
 
     def cumulative_change(self, name: str, year: int, start_year: int = None) -> float:
         """
@@ -741,29 +694,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the name, year, or start_year is not found in the model
         """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values
-        if base_year_value is None or current_value is None:
-            return None
-            
-        # Check if this is the same as the base year
-        if year == base_year:
-            return 0
-            
-        # Calculate absolute change: current - base
-        return current_value - base_year_value
+        return self.line_item(name).cumulative_change(year, start_year)
 
     def index_to_year(self, name: str, year: int, start_year: int = None) -> float:
         """
@@ -782,27 +713,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the name, year, or start_year is not found in the model
         """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values or zero base year value
-        if base_year_value is None or current_value is None:
-            return None
-        if base_year_value == 0:
-            return None
-            
-        # Calculate indexed value: (current / base) * 100
-        return (current_value / base_year_value) * 100.0
+        return self.line_item(name).index_to_year(year, start_year)
 
     # ============================================================================
     # HELPER/UTILITY METHODS
