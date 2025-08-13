@@ -27,6 +27,8 @@ class LineItemResults:
         >>> print(revenue_item)  # Shows summary info
         >>> revenue_item.values()  # Returns dict of year: value
         >>> revenue_item.to_series()  # Returns pandas Series
+        >>> revenue_item.table()  # Returns Table object
+        >>> revenue_item.chart()  # Returns Plotly chart
     """
     
     def __init__(self, model: 'Model', item_name: str):
