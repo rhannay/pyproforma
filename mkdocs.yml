@@ -62,7 +62,7 @@ plugins:
         python:
           paths: [pyproforma]
           options:
-            show_source: true
+            show_source: false
             show_bases: true
             heading_level: 2
             members_order: source
@@ -89,6 +89,8 @@ nav:
     - Tables:
       - Tables: api/tables.md
       - Table Class: api/table.md
+    - Charts:
+      - Charts: api/charts.md
     - Model Comparisons:
       - Compare: api/compare.md
   
