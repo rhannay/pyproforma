@@ -72,7 +72,6 @@ plugins:
 # Navigation structure
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
   - User Guide:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
