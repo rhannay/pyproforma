@@ -108,7 +108,7 @@ class PercentChangeRow(BaseRow):
         
         # Add cells for each year with percent change calculation
         for year in model.years:
-            percent_change = model.percent_change(self.name, year)
+            percent_change = model.line_item(self.name).percent_change(year)
             cells.append(Cell(value=percent_change, bold=self.bold, value_format=value_format))
         
         return Row(cells=cells)

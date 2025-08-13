@@ -40,7 +40,7 @@ class Model(SerializationMixin):
         >>> # Analysis
         >>> model.category("income").total()  # Category totals by year
         >>> model.line_item("revenue").to_series()  # Pandas Series
-        >>> model.percent_change("revenue", 2024)  # Growth rates
+        >>> model.line_item("revenue").percent_change(2024)  # Growth rates
         >>> 
         >>> # Output
         >>> model.tables.financial_statement()  # Formatted tables
@@ -53,7 +53,7 @@ class Model(SerializationMixin):
     Key Methods:
         - get_value(name, year): Get value for any item/year
         - category(name)/line_item(name): Get analysis objects  
-        - percent_change(), index_to_year(): Calculate metrics
+        - line_item(name).percent_change(), .index_to_year(): Calculate metrics
         - scenario(item_updates): Create what-if scenarios
         - copy(): Create independent model copies
         - summary(): Model structure overview
@@ -700,166 +700,7 @@ class Model(SerializationMixin):
                     total += value
         return total
 
-    def percent_change(self, name: str, year: int) -> float:
-        """
-        Calculate the percent change of a line item from the previous year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate percent change for
-            year (int): The year to calculate percent change for
-            
-        Returns:
-            float: The percent change as a decimal (e.g., 0.1 for 10% increase)
-                   None if calculation is not possible (first year, zero previous value, or None values)
-                   
-        Raises:
-            KeyError: If the name or year is not found in the model
-        """
-        # Check if this is the first year
-        if year == self.years[0]:
-            return None
-            
-        # Get the index of the current year to find the previous year
-        try:
-            year_index = self.years.index(year)
-        except ValueError:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-            
-        previous_year = self.years[year_index - 1]
-        
-        # Get values for current and previous years
-        current_value = self.get_value(name, year)
-        previous_value = self.get_value(name, previous_year)
-        
-        # Handle None values or zero previous value
-        if previous_value is None or current_value is None:
-            return None
-        if previous_value == 0:
-            return None
-            
-        # Calculate percent change: (current - previous) / previous
-        return (current_value - previous_value) / previous_value
 
-    def cumulative_percent_change(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate the cumulative percent change of an item from a base year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate cumulative change for
-            year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
-        Returns:
-            float: The cumulative percent change as a decimal (e.g., 0.1 for 10% increase)
-                   None if calculation is not possible (same as start year, zero start year value, or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Check if this is the same as the base year
-        if year == base_year:
-            return 0
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values or zero base year value
-        if base_year_value is None or current_value is None:
-            return None
-        if base_year_value == 0:
-            return None
-            
-        # Calculate percent change: (current - base) / base
-        return (current_value - base_year_value) / base_year_value
-
-    def cumulative_change(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate the cumulative absolute change of an item from a base year to the given year.
-        
-        Args:
-            name (str): The name of the item to calculate cumulative change for
-            year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
-        Returns:
-            float: The cumulative absolute change (current value - base year value)
-                   None if calculation is not possible (same as start year or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values
-        if base_year_value is None or current_value is None:
-            return None
-            
-        # Check if this is the same as the base year
-        if year == base_year:
-            return 0
-            
-        # Calculate absolute change: current - base
-        return current_value - base_year_value
-
-    def index_to_year(self, name: str, year: int, start_year: int = None) -> float:
-        """
-        Calculate an indexed value where the start year is set to 100 and other years are indexed from there.
-        
-        Args:
-            name (str): The name of the item to calculate indexed value for
-            year (int): The year to calculate indexed value for
-            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.
-            
-        Returns:
-            float: The indexed value (e.g., 110 for 10% increase from base year, 90 for 10% decrease)
-                   100 if same as start year
-                   None if calculation is not possible (zero start year value or None values)
-                   
-        Raises:
-            KeyError: If the name, year, or start_year is not found in the model
-        """
-        # Determine the base year
-        base_year = start_year if start_year is not None else self.years[0]
-        
-        # Validate years exist
-        if year not in self.years:
-            raise KeyError(f"Year {year} not found in model years: {self.years}")
-        if base_year not in self.years:
-            raise KeyError(f"Start year {base_year} not found in model years: {self.years}")
-            
-        # Get values for current and base years
-        current_value = self.get_value(name, year)
-        base_year_value = self.get_value(name, base_year)
-        
-        # Handle None values or zero base year value
-        if base_year_value is None or current_value is None:
-            return None
-        if base_year_value == 0:
-            return None
-            
-        # Calculate indexed value: (current / base) * 100
-        return (current_value / base_year_value) * 100.0
 
     # ============================================================================
     # HELPER/UTILITY METHODS
