@@ -25,6 +25,30 @@
       show_root_full_path: false
       heading_level: 3
 
+::: pyproforma.models.results.LineItemResults.percent_change
+    options:
+      show_root_heading: true
+      show_root_full_path: false
+      heading_level: 3
+
+::: pyproforma.models.results.LineItemResults.cumulative_percent_change
+    options:
+      show_root_heading: true
+      show_root_full_path: false
+      heading_level: 3
+
+::: pyproforma.models.results.LineItemResults.cumulative_change
+    options:
+      show_root_heading: true
+      show_root_full_path: false
+      heading_level: 3
+
+::: pyproforma.models.results.LineItemResults.index_to_year
+    options:
+      show_root_heading: true
+      show_root_full_path: false
+      heading_level: 3
+
 ::: pyproforma.models.results.LineItemResults.table
     options:
       show_root_heading: true
@@ -54,3 +78,4 @@
       show_root_heading: true
       show_root_full_path: false
       heading_level: 3
+

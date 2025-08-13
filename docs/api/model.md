@@ -60,30 +60,6 @@
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.percent_change
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
-::: pyproforma.models.model.model.Model.cumulative_percent_change
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
-::: pyproforma.models.model.model.Model.cumulative_change
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
-::: pyproforma.models.model.model.Model.index_to_year
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
 ::: pyproforma.models.model.model.Model.copy
     options:
       show_root_heading: true
