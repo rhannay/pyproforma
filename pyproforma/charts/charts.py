@@ -94,16 +94,18 @@ class Charts:
     def items(
         self, 
         item_names: list[str], 
+        title: str = None,
         width: int = 800, 
         height: int = 600, 
         template: str = 'plotly_white', 
-        value_format: ValueFormat = None
+        value_format: ValueFormat = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the values for multiple items over years.
         
         Args:
             item_names (list[str]): List of item names to chart (line items, assumptions, etc.)
+            title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -158,10 +160,11 @@ class Charts:
             datasets.append(dataset)
         
         # Create chart configuration
+        chart_title = title if title is not None else "Multiple Line Items"
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=datasets,
-            title="Multiple Items Over Time",
+            title=chart_title,
             value_format=value_format
         )
         
