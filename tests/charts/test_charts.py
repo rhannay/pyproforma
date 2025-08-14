@@ -299,7 +299,7 @@ class TestCharts:
         mock_chart_class.assert_called_once_with(
             labels=['2020', '2021', '2022'],
             data_sets=[mock_dataset],
-            title='Revenue Over Time',
+            title='Revenue',
             value_format='no_decimals'
         )
         
@@ -344,7 +344,7 @@ class TestCharts:
         mock_chart_class.assert_called_once_with(
             labels=['2020', '2021', '2022'],
             data_sets=[mock_dataset1, mock_dataset2],
-            title='Multiple Items Over Time',
+            title='Multiple Line Items',
             value_format='no_decimals'  # From first item
         )
         
@@ -451,7 +451,7 @@ class TestChartsIntegration:
         fig = charts.item('revenue')
         
         assert isinstance(fig, go.Figure)
-        assert fig.layout.title.text == 'Revenue Over Time'
+        assert fig.layout.title.text == 'Revenue'
         
         # Check that data is present
         assert len(fig.data) == 1
@@ -464,8 +464,8 @@ class TestChartsIntegration:
         fig = charts.items(['revenue', 'expenses'])
         
         assert isinstance(fig, go.Figure)
-        assert fig.layout.title.text == 'Multiple Items Over Time'
-        
+        assert fig.layout.title.text == 'Multiple Line Items'
+
         # Check that both datasets are present
         assert len(fig.data) == 2
         assert list(fig.data[0].y) == [100.0, 150.0, 200.0]  # Revenue

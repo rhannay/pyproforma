@@ -28,6 +28,7 @@ class Charts:
     def item(
         self, 
         name: str, 
+        title: str = None,
         width: int = 800, 
         height: int = 600, 
         template: str = 'plotly_white', 
@@ -38,6 +39,7 @@ class Charts:
         
         Args:
             name (str): The name of the item to chart (line item, assumption, etc.)
+            title (str, optional): Custom chart title. If None, uses default title "{label}".
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -75,10 +77,11 @@ class Charts:
         )
         
         # Create chart configuration
+        chart_title = title if title is not None else f"{label}"
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=[dataset],
-            title=f"{label} Over Time",
+            title=chart_title,
             value_format=value_format
         )
         
