@@ -125,7 +125,7 @@ class LineItemResults:
         Raises:
             KeyError: If the item name is not found in the model
         """
-        return self.model.charts.item(self.item_name, width=width, height=height, template=template, chart_type=chart_type)
+        return self.model.charts.line_item(self.item_name, width=width, height=height, template=template, chart_type=chart_type)
     
     def cumulative_percent_change_chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white') -> go.Figure:
         """

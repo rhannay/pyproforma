@@ -25,7 +25,7 @@ class Charts:
         """
         self._model = model
     
-    def item(
+    def line_item(
         self, 
         name: str, 
         title: str = None,
@@ -94,7 +94,7 @@ class Charts:
                 
         return fig
     
-    def items(
+    def line_items(
         self, 
         item_names: list[str], 
         title: str = None,

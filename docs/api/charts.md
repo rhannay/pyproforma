@@ -6,13 +6,13 @@
       show_root_heading: true
       show_root_full_path: false
 
-::: pyproforma.charts.charts.Charts.item
+::: pyproforma.charts.charts.Charts.line_item
     options:
       show_root_heading: true
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.charts.charts.Charts.items
+::: pyproforma.charts.charts.Charts.line_items
     options:
       show_root_heading: true
       show_root_full_path: false

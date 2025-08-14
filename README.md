@@ -121,7 +121,7 @@ table = model.tables.generate_table([
 table.to_excel("financial_report.xlsx")
 
 # Create interactive charts
-chart = model.charts.item("revenue", chart_type="line")
+chart = model.charts.line_item("revenue", chart_type="line")
 chart.show()
 ```
 

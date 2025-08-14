@@ -110,13 +110,13 @@ class TestCharts:
         charts = Charts(mock_model)
         assert charts._model is mock_model
 
-    def test_item_single_chart(self, charts, mock_model):
+    def test_line_item_single_chart(self, charts, mock_model):
         """Test creating a chart for a single item."""
         with patch.object(Chart, 'to_plotly') as mock_to_plotly:
             mock_fig = Mock(spec=go.Figure)
             mock_to_plotly.return_value = mock_fig
             
-            result = charts.item('revenue', width=600, height=400, template='plotly_dark', chart_type='bar')
+            result = charts.line_item('revenue', width=600, height=400, template='plotly_dark', chart_type='bar')
             
             # Verify the chart was created correctly
             mock_to_plotly.assert_called_once_with(width=600, height=400, template='plotly_dark')
@@ -126,13 +126,13 @@ class TestCharts:
             # mock_model.get_item_info.assert_called_with('revenue')
             assert mock_model.get_value.call_count == 3  # Called for each year
 
-    def test_item_with_missing_name(self, charts, mock_model):
+    def test_line_item_with_missing_name(self, charts, mock_model):
         """Test item method with non-existent name raises KeyError."""
         with pytest.raises(KeyError) as excinfo:
-            charts.item('non_existent')
+            charts.line_item('non_existent')
         assert "Name 'non_existent' not found in model defined names" in str(excinfo.value)
 
-    def test_item_with_missing_values(self, charts, mock_model):
+    def test_line_item_with_missing_values(self, charts, mock_model):
         """Test item method handles missing values gracefully."""
         # Modify mock to raise KeyError for certain years
         def mock_get_value_with_missing(name, year):
@@ -150,18 +150,18 @@ class TestCharts:
             mock_fig = Mock(spec=go.Figure)
             mock_to_plotly.return_value = mock_fig
             
-            result = charts.item('revenue')
+            result = charts.line_item('revenue')
             
             # Should not raise error, missing values should be replaced with 0.0
             assert result is mock_fig
 
-    def test_items_multiple_chart(self, charts, mock_model):
+    def test_line_items_multiple_chart(self, charts, mock_model):
         """Test creating a chart for multiple items."""
         with patch.object(Chart, 'to_plotly') as mock_to_plotly:
             mock_fig = Mock(spec=go.Figure)
             mock_to_plotly.return_value = mock_fig
             
-            result = charts.items(['revenue', 'expenses'], width=900, height=500, template='plotly')
+            result = charts.line_items(['revenue', 'expenses'], width=900, height=500, template='plotly')
             
             # Verify the chart was created correctly
             mock_to_plotly.assert_called_once_with(width=900, height=500, template='plotly')
@@ -171,16 +171,16 @@ class TestCharts:
             assert mock_model.li.call_count == 3  # 1 for value_format + 2 for items
         assert mock_model.get_value.call_count == 6  # 2 items × 3 years
 
-    def test_items_empty_list(self, charts):
+    def test_line_items_empty_list(self, charts):
         """Test items method with empty list raises ValueError."""
         with pytest.raises(ValueError) as excinfo:
-            charts.items([])
+            charts.line_items([])
         assert "item_names list cannot be empty" in str(excinfo.value)
 
-    def test_items_with_missing_name(self, charts, mock_model):
+    def test_line_items_with_missing_name(self, charts, mock_model):
         """Test items method with non-existent name raises KeyError."""
         with pytest.raises(KeyError) as excinfo:
-            charts.items(['revenue', 'non_existent'])
+            charts.line_items(['revenue', 'non_existent'])
         assert "Name 'non_existent' not found in model defined names" in str(excinfo.value)
 
     def test_cumulative_percent_change_single_item(self, charts, mock_model):
@@ -285,7 +285,7 @@ class TestCharts:
         mock_chart_class.return_value = mock_chart
         mock_chart.to_plotly.return_value = mock_fig
         
-        result = charts.item('revenue', chart_type='bar')
+        result = charts.line_item('revenue', chart_type='bar')
         
         # Verify ChartDataSet creation
         mock_dataset_class.assert_called_once_with(
@@ -325,7 +325,7 @@ class TestCharts:
         mock_chart_class.return_value = mock_chart
         mock_chart.to_plotly.return_value = mock_fig
         
-        result = charts.items(['revenue', 'expenses'])
+        result = charts.line_items(['revenue', 'expenses'])
         
         # Verify ChartDataSet creation for both items
         assert mock_dataset_class.call_count == 2
@@ -405,7 +405,7 @@ class TestCharts:
             mock_chart.to_plotly.return_value = mock_fig
             
             with patch('pyproforma.charts.charts.ChartDataSet') as mock_dataset_class:
-                charts.items(item_names)
+                charts.line_items(item_names)
                 
                 # Verify that ChartDataSet objects are created without color parameter
                 # (colors are now assigned by the Chart class)
@@ -443,12 +443,12 @@ class TestChartsIntegration:
         
         return Model(line_items=line_items, years=[2020, 2021, 2022])
     
-    def test_real_model_item_chart(self, real_model):
+    def test_real_model_line_item_chart(self, real_model):
         """Test item chart with real model."""
         charts = Charts(real_model)
         
         # This should create a real plotly figure
-        fig = charts.item('revenue')
+        fig = charts.line_item('revenue')
         
         assert isinstance(fig, go.Figure)
         assert fig.layout.title.text == 'Revenue'
@@ -457,11 +457,11 @@ class TestChartsIntegration:
         assert len(fig.data) == 1
         assert list(fig.data[0].y) == [100.0, 150.0, 200.0]
 
-    def test_real_model_items_chart(self, real_model):
+    def test_real_model_line_items_chart(self, real_model):
         """Test items chart with real model."""
         charts = Charts(real_model)
         
-        fig = charts.items(['revenue', 'expenses'])
+        fig = charts.line_items(['revenue', 'expenses'])
         
         assert isinstance(fig, go.Figure)
         assert fig.layout.title.text == 'Multiple Line Items'
@@ -493,4 +493,4 @@ class TestChartsIntegration:
         charts = Charts(real_model)
         
         with pytest.raises(KeyError):
-            charts.item('non_existent_item')
+            charts.line_item('non_existent_item')
