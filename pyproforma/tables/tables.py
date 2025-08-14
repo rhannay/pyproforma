@@ -64,32 +64,24 @@ class Tables:
         """
         Generate a comprehensive table containing all model items.
         
-        Creates a complete overview table that includes all assumptions, line items
+        Creates a complete overview table that includes all line items
         organized by category, and any line item generator items. The table is
         structured with clear section headers and includes a name column for
         easy identification of each item.
         
         Returns:
             Table: A Table object containing all model items organized by type:
-                - ASSUMPTIONS: All line items with category 'assumptions'
-                - LINE ITEMS: All other line items organized by category
+                - LINE ITEMS: All line items organized by category
                 - LINE ITEM GENERATOR ITEMS: All generated line items
         
         Examples:
             >>> table = model.tables.all()  # Returns a comprehensive table with all model components
         """
         rows = []
-        # Assumptions (now as line items with category 'assumptions')
-        assumption_items = [item for item in self._model._line_item_definitions if item.category == 'assumptions']
-        if assumption_items:
-            rows.append(rt.LabelRow(label='ASSUMPTIONS', bold=True))
-            for a_def in assumption_items:
-                rows.append(rt.ItemRow(name=a_def.name))
-        # Line Items (excluding assumptions to avoid duplication)
-        non_assumption_categories = [cat for cat in self._model._category_definitions if cat.name != 'assumptions']
-        if non_assumption_categories:
+        # Line Items (including all categories)
+        if self._model._category_definitions:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
-            for cat_def in non_assumption_categories:
+            for cat_def in self._model._category_definitions:
                 rows.extend(self._category_rows(cat_def.name))
         # Line Item Generator items
         if self._model.line_item_generators:
