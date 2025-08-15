@@ -57,6 +57,9 @@ markdown_extensions:
 plugins:
   - search
   - autorefs
+  - mkdocs-jupyter:
+      execute: true
+      allow_errors: false
   - mkdocstrings:
       handlers:
         python:
@@ -75,6 +78,8 @@ nav:
   - User Guide:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
+  - Examples:
+    - Basic Usage: examples/basic-usage.ipynb
   - API Reference:
     - Model:
       - Model: api/model.md
