@@ -1,8 +1,60 @@
 import re
 import numexpr as ne
-from typing import Dict
+from typing import Dict, List
 
     
+def validate_formula(formula: str, variables: List[str]) -> None:
+    """
+    Validate that all variable names in a formula are included in the provided list of variables.
+    
+    This function checks both regular variable references (e.g., 'revenue') and time-offset 
+    references (e.g., 'revenue[-1]') to ensure all variables exist in the model.
+    
+    Args:
+        formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
+        variables (List[str]): List of valid variable names available in the model
+        
+    Raises:
+        ValueError: If any variable referenced in the formula is not found in the variables list
+        
+    Examples:
+        >>> validate_formula("revenue - expenses", ["revenue", "expenses", "profit"])
+        # No error - all variables found
+        >>> validate_formula("revenue[-1] * growth_rate", ["revenue", "expenses"])
+        # Raises ValueError - 'growth_rate' not found
+    """
+    # Strip whitespace from the formula
+    formula = formula.strip()
+    
+    # Extract variables from time-offset patterns like revenue[-1], cost[-2], etc.
+    offset_vars = re.findall(r'([\w.]+)\[(-?\d+)\]', formula)
+    offset_var_names = [var for var, offset in offset_vars]
+    
+    # Extract all potential variable names from the formula
+    all_potential_vars = re.findall(r'\b[\w.]+\b', formula)
+    
+    # Filter to only include valid identifiers that aren't Python keywords or built-ins
+    # and exclude numeric literals
+    import keyword
+    formula_vars = set()
+    for var in all_potential_vars:
+        if (var.isidentifier() and 
+            not keyword.iskeyword(var) and 
+            var not in ['True', 'False', 'None'] and
+            not var.replace('.', '').replace('_', '').isdigit()):
+            formula_vars.add(var)
+    
+    # Add variables from offset patterns
+    formula_vars.update(offset_var_names)
+    
+    # Check if all formula variables are in the provided variables list
+    missing_vars = formula_vars - set(variables)
+    
+    if missing_vars:
+        missing_list = sorted(missing_vars)
+        raise ValueError(f"Formula contains undefined line item names: {', '.join(missing_list)}")
+
+
 def calculate_formula(formula: str, value_matrix: Dict[int, Dict[str, float]], year: int) -> float:
     """
     Calculate the result of a formula string using variable values from a matrix.

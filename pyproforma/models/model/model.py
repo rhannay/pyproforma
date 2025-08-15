@@ -270,8 +270,8 @@ class Model(SerializationMixin):
                                 # Check if this variable exists in our defined names
                                 all_defined_names = [name['name'] for name in self.defined_names_metadata]
                                 if var_name not in all_defined_names:
-                                    # Variable truly doesn't exist, re-raise the error
-                                    raise e
+                                    # Variable truly doesn't exist, create enhanced error message
+                                    raise ValueError(f"Error calculating line item '{item.name}' for year {year}. Formula: '{item.formula}'. Line item '{var_name}' not found in model.") from e
                         # Item depends on something not yet calculated, skip for now
                         continue
             
