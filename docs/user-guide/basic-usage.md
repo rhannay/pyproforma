@@ -45,7 +45,7 @@ model = Model(
 
 ## Creating Tables
 
-PyProforma makes it easy to generate formatted tables from your model data. Use the `tables` namespace to create various types of tables:
+PyProforma makes it easy to generate formatted tables from your model data. Use the [`tables`](../api/tables.md) namespace to create various types of tables:
 
 ```python
 from pyproforma import row_types as rt
@@ -59,7 +59,7 @@ template = [
 model.tables.from_template(template)
 ```
 
-This will display a formatted table like this:
+This returns a [`Table`](../api/table.md) object that can be viewed directly in a notebook, converted to a pandas DataFrame, or exported to Excel. When displayed in a notebook, it will show a formatted table like this:
 
 <style type="text/css">
 #T_ad88c_row0_col0, #T_ad88c_row1_col0 {
