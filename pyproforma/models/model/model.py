@@ -34,7 +34,7 @@ class Model(SerializationMixin):
         >>> model = Model(line_items=[revenue, expenses], years=[2023, 2024, 2025])
         >>> 
         >>> # Access values
-        >>> model.get_value("revenue", 2023)  # 1000
+        >>> model.value("revenue", 2023)  # 1000
         >>> model["expenses", 2024]  # 800
         >>> 
         >>> # Analysis
@@ -51,7 +51,7 @@ class Model(SerializationMixin):
         >>> scenario["revenue", 2023]  # 1200 in scenario, original unchanged
     
     Key Methods:
-        - get_value(name, year): Get value for any item/year
+        - value(name, year): Get value for any item/year
         - category(name)/line_item(name): Get analysis objects  
         - line_item(name).percent_change(), .index_to_year(): Calculate metrics
         - scenario(item_updates): Create what-if scenarios
@@ -329,10 +329,10 @@ class Model(SerializationMixin):
     def __getitem__(self, key: tuple) -> float:
         if isinstance(key, tuple):
             key_name, year = key
-            return self.get_value(key_name, year)
+            return self.value(key_name, year)
         raise KeyError("Key must be a tuple of (item_name, year).")
     
-    def get_value(self, name: str, year: int) -> float:
+    def value(self, name: str, year: int) -> float:
         """
         Retrieve a specific value from the model for a given item name and year.
         
@@ -351,16 +351,16 @@ class Model(SerializationMixin):
             KeyError: If the name is not found in the model's defined names or the year is not in the model's time horizon
             
         Examples:
-            >>> model.get_value("revenue", 2023)  # Get revenue for 2023
+            >>> model.value("revenue", 2023)  # Get revenue for 2023
             1000.0
-            >>> model.get_value("profit_margin", 2024)  # Get profit margin for 2024
+            >>> model.value("profit_margin", 2024)  # Get profit margin for 2024
             0.15
             
         Notes:
             Dictionary-style lookup is also supported:
             
             ```python
-            model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
+            model["revenue", 2023]  # Equivalent to model.value("revenue", 2023)
             ```
         """
         name_lookup = {item['name']: item for item in self.defined_names_metadata}
@@ -369,6 +369,29 @@ class Model(SerializationMixin):
         if year not in self.years:
             raise KeyError(f"Year {year} not found in years. Available years: {self.years}")
         return self._value_matrix[year][name]
+
+    def get_value(self, name: str, year: int) -> float:
+        """
+        Deprecated: Use value() instead.
+        
+        Retrieve a specific value from the model for a given item name and year.
+        This method is deprecated and will be removed in a future version.
+        Please use value() instead.
+        
+        Args:
+            name (str): The name of the item to retrieve
+            year (int): The year to retrieve the value for
+            
+        Returns:
+            float: The calculated value for the specified item and year
+        """
+        import warnings
+        warnings.warn(
+            "get_value() is deprecated and will be removed in a future version. Use value() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.value(name, year)
 
     # ============================================================================
     # NAMESPACE PROPERTIES
@@ -673,7 +696,7 @@ class Model(SerializationMixin):
         # find category total name
         total_name_lookup = {x['source_name']: x['name'] for x in self.defined_names_metadata if x['source_type'] == 'category'}
         total_name = total_name_lookup[category]
-        return self.get_value(total_name, year)
+        return self.value(total_name, year)
 
     def _category_total(self, value_matrix, category: str, year: int) -> float:
         """

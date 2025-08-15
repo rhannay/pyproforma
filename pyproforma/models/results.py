@@ -55,7 +55,7 @@ class LineItemResults:
         """
         values = {}
         for year in self.model.years:
-            values[year] = self.model.get_value(self.item_name, year)
+            values[year] = self.model.value(self.item_name, year)
         return values
     
     def value(self, year: int) -> float:
@@ -71,7 +71,7 @@ class LineItemResults:
         Raises:
             KeyError: If the year is not in the model's years
         """
-        return self.model.get_value(self.item_name, year)
+        return self.model.value(self.item_name, year)
     
     def __getitem__(self, year: int) -> float:
         """
@@ -177,8 +177,8 @@ class LineItemResults:
         previous_year = self.model.years[year_index - 1]
         
         # Get values for current and previous years
-        current_value = self.model.get_value(self.item_name, year)
-        previous_value = self.model.get_value(self.item_name, previous_year)
+        current_value = self.model.value(self.item_name, year)
+        previous_value = self.model.value(self.item_name, previous_year)
         
         # Handle None values or zero previous value
         if previous_value is None or current_value is None:
@@ -218,8 +218,8 @@ class LineItemResults:
             return 0
             
         # Get values for current and base years
-        current_value = self.model.get_value(self.item_name, year)
-        base_year_value = self.model.get_value(self.item_name, base_year)
+        current_value = self.model.value(self.item_name, year)
+        base_year_value = self.model.value(self.item_name, base_year)
         
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -255,8 +255,8 @@ class LineItemResults:
             raise KeyError(f"Start year {base_year} not found in model years: {self.model.years}")
             
         # Get values for current and base years
-        current_value = self.model.get_value(self.item_name, year)
-        base_year_value = self.model.get_value(self.item_name, base_year)
+        current_value = self.model.value(self.item_name, year)
+        base_year_value = self.model.value(self.item_name, base_year)
         
         # Handle None values
         if base_year_value is None or current_value is None:
@@ -295,8 +295,8 @@ class LineItemResults:
             raise KeyError(f"Start year {base_year} not found in model years: {self.model.years}")
             
         # Get values for current and base years
-        current_value = self.model.get_value(self.item_name, year)
-        base_year_value = self.model.get_value(self.item_name, base_year)
+        current_value = self.model.value(self.item_name, year)
+        base_year_value = self.model.value(self.item_name, base_year)
         
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -319,7 +319,7 @@ class LineItemResults:
         if self.model.years:
             first_year = self.model.years[0]
             try:
-                value = self.model.get_value(self.item_name, first_year)
+                value = self.model.value(self.item_name, first_year)
                 formatted_value = format_value(value, self.value_format)
                 value_info = f"\nValue ({first_year}): {formatted_value}"
             except KeyError:
@@ -415,7 +415,7 @@ class CategoryResults:
             values[item.name] = {}
             for year in self.model.years:
                 try:
-                    values[item.name][year] = self.model.get_value(item.name, year)
+                    values[item.name][year] = self.model.value(item.name, year)
                 except KeyError:
                     values[item.name][year] = 0.0
         
@@ -541,7 +541,7 @@ class ConstraintResults:
         Raises:
             KeyError: If the year is not in the model's years
         """
-        return self.model.get_value(self.line_item_name, year)
+        return self.model.value(self.line_item_name, year)
     
     def target(self, year: int) -> float:
         """
@@ -655,7 +655,7 @@ class ConstraintResults:
         if self.model.years:
             first_year = self.model.years[0]
             try:
-                value = self.model.get_value(self.line_item_name, first_year)
+                value = self.model.value(self.line_item_name, first_year)
                 formatted_value = format_value(value, self.value_format)
                 value_info = f"\nValue ({first_year}): {formatted_value}"
             except KeyError:

@@ -53,8 +53,8 @@ class TestUnifiedAddFunctionality:
             values={2023: 80000, 2024: 85000, 2025: 90000}
         )
         
-        assert sample_model.get_value("expenses", 2023) == 80000
-        assert sample_model.get_value("expenses", 2024) == 85000
+        assert sample_model.value("expenses", 2023) == 80000
+        assert sample_model.value("expenses", 2024) == 85000
 
     def test_add_line_item_with_formula(self, sample_model: Model):
         """Test adding a line item with a formula."""
@@ -65,8 +65,8 @@ class TestUnifiedAddFunctionality:
         )
         
         # Should calculate 20% of revenue
-        assert sample_model.get_value("profit", 2023) == 20000  # 100000 * 0.2
-        assert sample_model.get_value("profit", 2024) == 24000  # 120000 * 0.2
+        assert sample_model.value("profit", 2023) == 20000  # 100000 * 0.2
+        assert sample_model.value("profit", 2024) == 24000  # 120000 * 0.2
 
     def test_add_line_item_duplicate_name_fails(self, sample_model: Model):
         """Test that adding a line item with duplicate name fails."""
@@ -133,8 +133,8 @@ class TestUnifiedUpdateFunctionality:
             values={2023: 150000, 2024: 160000, 2025: 170000}
         )
         
-        assert sample_model_with_categories.get_value("revenue", 2023) == 150000
-        assert sample_model_with_categories.get_value("revenue", 2024) == 160000
+        assert sample_model_with_categories.value("revenue", 2023) == 150000
+        assert sample_model_with_categories.value("revenue", 2024) == 160000
 
     def test_update_years_basic(self, sample_model_with_categories: Model):
         """Test updating years."""

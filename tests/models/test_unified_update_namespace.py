@@ -86,7 +86,7 @@ class TestUnifiedUpdateNamespace:
         )
         
         assert len(sample_model.line_item_definitions) == initial_count + 1
-        assert sample_model.get_value("rent", 2023) == 24000
+        assert sample_model.value("rent", 2023) == 24000
 
     def test_update_category_functionality(self, sample_model: Model):
         """Test that update_category works correctly."""
@@ -99,8 +99,8 @@ class TestUnifiedUpdateNamespace:
         """Test that update_line_item works correctly."""
         sample_model.update.update_line_item("revenue", values={2023: 150000, 2024: 160000, 2025: 170000})
         
-        assert sample_model.get_value("revenue", 2023) == 150000
-        assert sample_model.get_value("revenue", 2024) == 160000
+        assert sample_model.value("revenue", 2023) == 150000
+        assert sample_model.value("revenue", 2024) == 160000
 
     def test_update_years_functionality(self, sample_model: Model):
         """Test that update_years works correctly."""

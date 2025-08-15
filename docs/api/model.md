@@ -6,7 +6,7 @@
       show_root_heading: true
       show_root_full_path: false
 
-::: pyproforma.models.model.model.Model.get_value
+::: pyproforma.models.model.model.Model.value
     options:
       show_root_heading: true
       show_root_full_path: false

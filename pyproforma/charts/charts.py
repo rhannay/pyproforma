@@ -63,7 +63,7 @@ class Charts:
         values = []
         for year in years:
             try:
-                value = self._model.get_value(name, year)
+                value = self._model.value(name, year)
                 values.append(value)
             except KeyError:
                 values.append(0.0)
@@ -148,7 +148,7 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    value = self._model.get_value(name, year)
+                    value = self._model.value(name, year)
                     values.append(value)
                 except KeyError:
                     values.append(0.0)
@@ -504,7 +504,7 @@ class Charts:
             
             # Get value for the specified year
             try:
-                value = self._model.get_value(name, year)
+                value = self._model.value(name, year)
                 # Only include positive values in pie chart
                 if value > 0:
                     values.append(value)
@@ -589,7 +589,7 @@ class Charts:
         line_item_values = []
         for year in years:
             try:
-                value = self._model.get_value(line_item_name, year)
+                value = self._model.value(line_item_name, year)
                 line_item_values.append(value)
             except KeyError:
                 line_item_values.append(0.0)
