@@ -73,6 +73,27 @@ def test_formula_points_to_itself():
     assert "Circular reference detected: formula for 'b' references itself without a time offset" in str(excinfo.value)
 
 
+def test_formula_points_to_itself_with_zero_offset():
+    """Test that a formula referencing itself with [0] time offset raises a circular reference error."""
+    a = LineItem(
+        name='a',
+        category='test',
+        values={2023: 10, 2024: 20}
+    )
+    b = LineItem(
+        name='b',
+        category='test',
+        formula='b[0] + 5',
+        values={2023: 10}
+    )
+    with pytest.raises(ValueError) as excinfo:
+        Model(
+            line_items=[a, b],
+            years=[2023, 2024]
+        )
+    assert "Circular reference detected: formula for 'b' references itself with [0] time offset" in str(excinfo.value)
+
+
 def test_formula_error_raises_with_two_undefined_line_items():
     """Test that a formula referencing two undefined line items raises an error with the correct message."""
     a = LineItem(

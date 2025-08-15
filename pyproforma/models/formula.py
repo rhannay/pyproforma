@@ -71,13 +71,18 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     # Add variables from offset patterns
     formula_vars.update(offset_var_names)
     
-    # Check for circular reference (formula referencing its own name without time offset)
+    # Check for circular reference (formula referencing its own name without time offset or with [0] offset)
     if name in formula_vars:
         # Check if the name appears without a time offset
         # We need to check if 'name' appears in the formula but not as part of name[offset]
         pattern = rf'\b{re.escape(name)}\b(?!\[)'
         if re.search(pattern, formula):
             raise ValueError(f"Circular reference detected: formula for '{name}' references itself without a time offset")
+    
+    # Check for circular reference with [0] time offset (which is equivalent to no offset)
+    pattern_with_zero_offset = rf'\b{re.escape(name)}\[0\]'
+    if re.search(pattern_with_zero_offset, formula):
+        raise ValueError(f"Circular reference detected: formula for '{name}' references itself with [0] time offset, which is equivalent to no time offset")
     
     # Check if all formula variables are in the provided valid_names list
     missing_vars = formula_vars - set(valid_names)

@@ -68,6 +68,24 @@ class TestValidateFormula:
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
+    def test_valid_self_reference_with_positive_offset(self):
+        """Test that self-reference with positive time offset is allowed."""
+        formula = "profit[1] + profit[2]"
+        name = "profit"
+        valid_names = ["profit"]
+        
+        # Should not raise any exception
+        validate_formula(formula, name, valid_names)
+
+    def test_circular_reference_with_zero_offset(self):
+        """Test that circular reference with [0] time offset raises error."""
+        formula = "profit[0] + expenses"
+        name = "profit"
+        valid_names = ["profit", "expenses"]
+        
+        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
+            validate_formula(formula, name, valid_names)
+
     def test_invalid_single_missing_variable(self):
         """Test formula with one missing variable raises ValueError."""
         formula = "revenue - missing_var"
@@ -264,6 +282,15 @@ class TestValidateFormula:
         # Should not raise any exception - profit_margin and profit_tax are different from profit
         validate_formula(formula, name, valid_names)
     
+    def test_circular_reference_with_zero_offset(self):
+        """Test that circular reference with [0] time offset raises error."""
+        formula = "profit[0] + expenses"
+        name = "profit"
+        valid_names = ["profit", "expenses"]
+        
+        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
+            validate_formula(formula, name, valid_names)
+
     def test_circular_reference_with_dots(self):
         """Test circular reference detection with dotted names."""
         formula = "company.profit + revenue"
