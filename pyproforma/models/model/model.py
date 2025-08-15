@@ -98,7 +98,7 @@ class Model(SerializationMixin):
         self._validate_constraints()
         self._validate_line_item_generators()
 
-        self.defined_names = self._gather_defined_names()
+        self.defined_names_metadata = self._gather_defined_names()
 
         self._value_matrix = self._generate_value_matrix()
 
@@ -268,7 +268,7 @@ class Model(SerializationMixin):
                             if match:
                                 var_name = match.group(1)
                                 # Check if this variable exists in our defined names
-                                all_defined_names = [name['name'] for name in self.defined_names]
+                                all_defined_names = [name['name'] for name in self.defined_names_metadata]
                                 if var_name not in all_defined_names:
                                     # Variable truly doesn't exist, re-raise the error
                                     raise e
@@ -309,7 +309,7 @@ class Model(SerializationMixin):
                 raise ValueError("\n".join(errors))
         
             # Ensure all defined names are present in the value matrix
-            for name in self.defined_names:
+            for name in self.defined_names_metadata:
                 if name['name'] not in value_matrix[year]:
                     raise KeyError(f"Defined name '{name['name']}' not found in value matrix for year {year}.")
     
@@ -319,7 +319,7 @@ class Model(SerializationMixin):
         self._validate_categories()
         self._validate_constraints()
         self._validate_line_item_generators()
-        self.defined_names = self._gather_defined_names()
+        self.defined_names_metadata = self._gather_defined_names()
         self._value_matrix = self._generate_value_matrix()
 
     # ============================================================================
@@ -363,7 +363,7 @@ class Model(SerializationMixin):
             model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
             ```
         """
-        name_lookup = {item['name']: item for item in self.defined_names}
+        name_lookup = {item['name']: item for item in self.defined_names_metadata}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
         if year not in self.years:
@@ -447,7 +447,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the item name is not found in defined names
         """
-        for defined_name in self.defined_names:
+        for defined_name in self.defined_names_metadata:
             if defined_name['name'] == item_name:
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
@@ -545,7 +545,7 @@ class Model(SerializationMixin):
             >>> revenue_item.to_series()  # Returns pandas Series
         """
         if item_name is None or item_name == "":
-            available_items = sorted([item['name'] for item in self.defined_names])
+            available_items = sorted([item['name'] for item in self.defined_names_metadata])
             if available_items:
                 raise ValueError(f"Item name is required. Available item names are: {available_items}")
             else:
@@ -671,7 +671,7 @@ class Model(SerializationMixin):
             KeyError: If the category total is not found in defined names or value matrix
         """
         # find category total name
-        total_name_lookup = {x['source_name']: x['name'] for x in self.defined_names if x['source_type'] == 'category'}
+        total_name_lookup = {x['source_name']: x['name'] for x in self.defined_names_metadata if x['source_type'] == 'category'}
         total_name = total_name_lookup[category]
         return self.get_value(total_name, year)
 
@@ -740,8 +740,8 @@ class Model(SerializationMixin):
             'line_items_by_category': line_items_by_category,
             'line_item_generator_names': [gen.name for gen in self.line_item_generators],
             'constraint_names': [const.name for const in self.constraints],
-            'defined_names_count': len(self.defined_names),
-            'category_totals': [item['name'] for item in self.defined_names if item['source_type'] == 'category']
+            'defined_names_count': len(self.defined_names_metadata),
+            'category_totals': [item['name'] for item in self.defined_names_metadata if item['source_type'] == 'category']
         }
 
     def _repr_html_(self) -> str:

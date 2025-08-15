@@ -132,14 +132,14 @@ class TestModelCopy:
         copied = simple_model.copy()
         
         # Should be different objects
-        assert copied.defined_names is not simple_model.defined_names
+        assert copied.defined_names_metadata is not simple_model.defined_names_metadata
         
         # Should have same content
-        assert len(copied.defined_names) == len(simple_model.defined_names)
+        assert len(copied.defined_names_metadata) == len(simple_model.defined_names_metadata)
         
         # Check each defined name entry
-        original_names = {item['name']: item for item in simple_model.defined_names}
-        copied_names = {item['name']: item for item in copied.defined_names}
+        original_names = {item['name']: item for item in simple_model.defined_names_metadata}
+        copied_names = {item['name']: item for item in copied.defined_names_metadata}
         
         assert set(original_names.keys()) == set(copied_names.keys())
         for name in original_names:

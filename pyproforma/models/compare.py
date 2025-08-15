@@ -43,8 +43,8 @@ class Compare:
         self.common_years = sorted(list(base_years.intersection(compare_years)))
         
         # Get common line items that exist in both models
-        base_items = set([item['name'] for item in self.base_model.defined_names])
-        compare_items = set([item['name'] for item in self.compare_model.defined_names])
+        base_items = set([item['name'] for item in self.base_model.defined_names_metadata])
+        compare_items = set([item['name'] for item in self.compare_model.defined_names_metadata])
         
         self.common_items = sorted(list(base_items.intersection(compare_items)))
         self.base_only_items = sorted(list(base_items - compare_items))

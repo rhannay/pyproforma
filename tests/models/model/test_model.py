@@ -104,7 +104,7 @@ class TestSetWithAssumptions:
             years=[2020, 2021]
         )
         assert isinstance(liset, Model)
-        defined_names = [x['name'] for x in liset.defined_names]
+        defined_names = [x['name'] for x in liset.defined_names_metadata]
         assert 'rate_increase' in defined_names
 
     def test_assumption_in_value_matrix(self):
