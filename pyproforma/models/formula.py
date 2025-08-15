@@ -3,26 +3,37 @@ import numexpr as ne
 from typing import Dict, List
 
     
-def validate_formula(formula: str, variables: List[str]) -> None:
+def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     """
-    Validate that all variable names in a formula are included in the provided list of variables.
+    Validate that all variable names in a formula are included in the provided list of valid names.
     
     This function checks both regular variable references (e.g., 'revenue') and time-offset 
-    references (e.g., 'revenue[-1]') to ensure all variables exist in the model.
+    references (e.g., 'revenue[-1]') to ensure all variables exist in the model. It also
+    validates that the line item name itself is in the valid names and checks for circular
+    references (i.e., a formula referencing its own name without a time offset).
     
     Args:
         formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
-        variables (List[str]): List of valid variable names available in the model
+        name (str): The name of the line item this formula belongs to
+        valid_names (List[str]): List of valid variable names available in the model
         
     Raises:
-        ValueError: If any variable referenced in the formula is not found in the variables list
+        ValueError: If the line item name is not in valid_names, if any variable referenced 
+                   in the formula is not found in the valid_names list, or if the formula
+                   contains a circular reference to its own name without a time offset
         
     Examples:
-        >>> validate_formula("revenue - expenses", ["revenue", "expenses", "profit"])
-        # No error - all variables found
-        >>> validate_formula("revenue[-1] * growth_rate", ["revenue", "expenses"])
-        # Raises ValueError - 'growth_rate' not found
+        >>> validate_formula("revenue - expenses", "profit", ["revenue", "expenses", "profit"])
+        # No error - all variables found and no circular reference
+        >>> validate_formula("revenue[-1] * 1.1", "revenue", ["revenue", "expenses"])
+        # No error - time offset reference is allowed
+        >>> validate_formula("profit + expenses", "profit", ["profit", "expenses"])
+        # Raises ValueError - circular reference without time offset
     """
+    # Check that the line item name is in valid_names
+    if name not in valid_names:
+        raise ValueError(f"Line item name '{name}' is not found in valid names")
+    
     # Strip whitespace from the formula
     formula = formula.strip()
     
@@ -34,21 +45,42 @@ def validate_formula(formula: str, variables: List[str]) -> None:
     all_potential_vars = re.findall(r'\b[\w.]+\b', formula)
     
     # Filter to only include valid identifiers that aren't Python keywords or built-ins
-    # and exclude numeric literals
+    # and exclude numeric literals. For dotted names, check if they're valid variable names
     import keyword
     formula_vars = set()
     for var in all_potential_vars:
-        if (var.isidentifier() and 
-            not keyword.iskeyword(var) and 
-            var not in ['True', 'False', 'None'] and
-            not var.replace('.', '').replace('_', '').isdigit()):
+        # Check if it's a simple identifier or a dotted name
+        is_valid_var = False
+        if var.isidentifier():
+            # Simple identifier
+            is_valid_var = (not keyword.iskeyword(var) and 
+                          var not in ['True', 'False', 'None'] and
+                          not var.replace('_', '').isdigit())
+        elif '.' in var:
+            # Dotted name - check each part is a valid identifier
+            parts = var.split('.')
+            is_valid_var = all(part.isidentifier() and 
+                             not keyword.iskeyword(part) and 
+                             part not in ['True', 'False', 'None'] and
+                             not part.replace('_', '').isdigit()
+                             for part in parts)
+        
+        if is_valid_var:
             formula_vars.add(var)
     
     # Add variables from offset patterns
     formula_vars.update(offset_var_names)
     
-    # Check if all formula variables are in the provided variables list
-    missing_vars = formula_vars - set(variables)
+    # Check for circular reference (formula referencing its own name without time offset)
+    if name in formula_vars:
+        # Check if the name appears without a time offset
+        # We need to check if 'name' appears in the formula but not as part of name[offset]
+        pattern = rf'\b{re.escape(name)}\b(?!\[)'
+        if re.search(pattern, formula):
+            raise ValueError(f"Circular reference detected: formula for '{name}' references itself without a time offset")
+    
+    # Check if all formula variables are in the provided valid_names list
+    missing_vars = formula_vars - set(valid_names)
     
     if missing_vars:
         missing_list = sorted(missing_vars)

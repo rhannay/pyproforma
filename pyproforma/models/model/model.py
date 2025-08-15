@@ -186,7 +186,7 @@ class Model(SerializationMixin):
         for line_item in self._line_item_definitions:
             if line_item.formula is not None and line_item.formula.strip():
                 try:
-                    validate_formula(line_item.formula, defined_variable_names)
+                    validate_formula(line_item.formula, line_item.name, defined_variable_names)
                 except ValueError as e:
                     # Enhance the error message to include the line item name
                     raise ValueError(f"Error in formula for line item '{line_item.name}': {str(e)}") from e
