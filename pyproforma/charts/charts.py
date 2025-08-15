@@ -1,22 +1,45 @@
 from typing import TYPE_CHECKING, Union
 from .chart_class import Chart, ChartDataSet
 from ..constants import ValueFormat
+import plotly.graph_objects as go
 
 if TYPE_CHECKING:
     from pyproforma import Model 
 
 
 class Charts:
+    """Charts namespace for a PyProforma model.
+    
+    Charts is the namespace for chart functions for a PyProforma model. It provides
+    various methods to create interactive Plotly charts from model data, including
+    line charts, bar charts, pie charts, and specialized charts for financial analysis
+    like cumulative changes and indexed values. All charts are generated using Plotly
+    and return Plotly Figure objects for display in Jupyter notebooks or web applications.
+    """
+    
     def __init__(self, model: 'Model'):
-        """Initialize the main charts namespace with a Model."""
+        """Initialize the Charts namespace with a PyProforma model.
+        
+        Args:
+            model (Model): The PyProforma model instance to create charts from.
+        """
         self._model = model
     
-    def item(self, name: str, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line'):
+    def line_item(
+        self, 
+        name: str, 
+        title: str = None,
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        chart_type: str = 'line'
+    ) -> go.Figure:
         """
         Create a chart using Plotly showing the values for a given name over years.
         
         Args:
             name (str): The name of the item to chart (line item, assumption, etc.)
+            title (str, optional): Custom chart title. If None, uses default title "{label}".
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -54,10 +77,11 @@ class Charts:
         )
         
         # Create chart configuration
+        chart_title = title if title is not None else f"{label}"
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=[dataset],
-            title=f"{label} Over Time",
+            title=chart_title,
             value_format=value_format
         )
         
@@ -70,12 +94,21 @@ class Charts:
                 
         return fig
     
-    def items(self, item_names: list[str], width: int = 800, height: int = 600, template: str = 'plotly_white', value_format: ValueFormat = None):
+    def line_items(
+        self, 
+        item_names: list[str], 
+        title: str = None,
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        value_format: ValueFormat = None,
+    ) -> go.Figure:
         """
         Create a line chart using Plotly showing the values for multiple items over years.
         
         Args:
             item_names (list[str]): List of item names to chart (line items, assumptions, etc.)
+            title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -130,10 +163,11 @@ class Charts:
             datasets.append(dataset)
         
         # Create chart configuration
+        chart_title = title if title is not None else "Multiple Line Items"
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=datasets,
-            title="Multiple Items Over Time",
+            title=chart_title,
             value_format=value_format
         )
         
@@ -146,7 +180,14 @@ class Charts:
                 
         return fig
     
-    def cumulative_percent_change(self, item_names: Union[str, list[str]], width: int = 800, height: int = 600, template: str = 'plotly_white', start_year: int = None):
+    def cumulative_percent_change(
+        self, 
+        item_names: Union[str, list[str]], 
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        start_year: int = None
+    ) -> go.Figure:
         """
         Create a line chart using Plotly showing the cumulative percent change for one or more items over years.
         
@@ -229,7 +270,14 @@ class Charts:
                 
         return fig
     
-    def cumulative_change(self, item_names: Union[str, list[str]], width: int = 800, height: int = 600, template: str = 'plotly_white', start_year: int = None):
+    def cumulative_change(
+        self, 
+        item_names: Union[str, list[str]], 
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        start_year: int = None
+    ) -> go.Figure:
         """
         Create a line chart using Plotly showing the cumulative absolute change for one or more items over years.
         
@@ -312,7 +360,14 @@ class Charts:
                 
         return fig
     
-    def index_to_year(self, item_names: Union[str, list[str]], width: int = 800, height: int = 600, template: str = 'plotly_white', start_year: int = None):
+    def index_to_year(
+        self, 
+        item_names: Union[str, list[str]], 
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        start_year: int = None
+    ) -> go.Figure:
         """
         Create a line chart using Plotly showing the indexed values for one or more items over years.
         
@@ -397,7 +452,14 @@ class Charts:
                 
         return fig
     
-    def line_items_pie(self, item_names: list[str], year: int, width: int = 800, height: int = 600, template: str = 'plotly_white'):
+    def line_items_pie(
+        self, 
+        item_names: list[str], 
+        year: int, 
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white'
+    ) -> go.Figure:
         """
         Create a pie chart using Plotly showing the values for multiple line items at a specific year.
         
@@ -479,7 +541,15 @@ class Charts:
                 
         return fig
     
-    def constraint(self, constraint_name: str, width: int = 800, height: int = 600, template: str = 'plotly_white', line_item_type: str = 'bar', constraint_type: str = 'line'):
+    def constraint(
+        self, 
+        constraint_name: str, 
+        width: int = 800, 
+        height: int = 600, 
+        template: str = 'plotly_white', 
+        line_item_type: str = 'bar', 
+        constraint_type: str = 'line'
+    ) -> go.Figure:
         """
         Create a chart using Plotly showing both the line item values and constraint target values over years.
         

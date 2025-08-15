@@ -4,6 +4,7 @@ from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
+from ..compare import Compare
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -332,6 +333,36 @@ class Model(SerializationMixin):
         raise KeyError("Key must be a tuple of (item_name, year).")
     
     def get_value(self, name: str, year: int) -> float:
+        """
+        Retrieve a specific value from the model for a given item name and year.
+        
+        This is the primary method for accessing calculated values in the model. It returns
+        the value for any defined name (line item, category total, or line item generator output)
+        for a specific year in the model.
+        
+        Args:
+            name (str): The name of the item to retrieve (must be a defined name in the model)
+            year (int): The year to retrieve the value for (must be within the model's time horizon)
+            
+        Returns:
+            float: The calculated value for the specified item and year
+            
+        Raises:
+            KeyError: If the name is not found in the model's defined names or the year is not in the model's time horizon
+            
+        Examples:
+            >>> model.get_value("revenue", 2023)  # Get revenue for 2023
+            1000.0
+            >>> model.get_value("profit_margin", 2024)  # Get profit margin for 2024
+            0.15
+            
+        Notes:
+            Dictionary-style lookup is also supported:
+            
+            ```python
+            model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
+            ```
+        """
         name_lookup = {item['name']: item for item in self.defined_names_metadata}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
@@ -493,7 +524,7 @@ class Model(SerializationMixin):
         """
         Get a LineItemResults object for exploring and analyzing a specific named item.
         
-        This method returns a LineItemResults instance that provides convenient methods
+        This method returns a [`LineItemResults`][pyproforma.models.results.LineItemResults] instance that provides convenient methods
         for notebook exploration of individual items including line items,
         category totals, and generator outputs.
         
@@ -527,13 +558,39 @@ class Model(SerializationMixin):
         return self.line_item(item_name)
     
     def get_line_item_definition(self, name: str) -> LineItem:
+        """
+        Get a line item definition by name.
+        
+        This method retrieves the [`LineItem`][pyproforma.models.line_item.LineItem] object that defines
+        a specific line item in the model. This is useful for accessing the line item's
+        properties such as formula, category, label, and value format.
+        
+        Args:
+            name (str): The name of the line item to retrieve
+            
+        Returns:
+            LineItem: The LineItem object with the specified name
+        """
         for item in self._line_item_definitions:
             if item.name == name:
                 return item
         valid_line_items = [item.name for item in self._line_item_definitions]
         raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
     
-    def get_category_definition(self, name: str):
+    def get_category_definition(self, name: str) -> Category:
+        """
+        Get a category definition by name.
+        
+        This method retrieves the [`Category`][pyproforma.models.line_item.Category] object that defines
+        a specific category in the model. This is useful for accessing the category's
+        properties such as label, total name, and whether it includes totals.
+        
+        Args:
+            name (str): The name of the category to retrieve
+            
+        Returns:
+            Category: The Category object with the specified name
+        """
         for category in self._category_definitions:
             if category.name == name:
                 return category
@@ -813,7 +870,7 @@ class Model(SerializationMixin):
     # CLASS METHODS & ALTERNATIVE CONSTRUCTORS
     # ============================================================================
 
-    def copy(self):
+    def copy(self) -> "Model":
         """
         Create a deep copy of the Model instance.
         
@@ -824,10 +881,9 @@ class Model(SerializationMixin):
         Returns:
             Model: A deep copy of the current Model instance
             
-        Example:
+        Examples:
             >>> original_model = Model(line_items, years=[2023, 2024])
-            >>> copied_model = original_model.copy()
-            >>> # Changes to copied_model won't affect original_model
+            >>> copied_model = original_model.copy()  # Changes won't affect original
         """
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
@@ -847,7 +903,7 @@ class Model(SerializationMixin):
         
         return copied_model
 
-    def scenario(self, item_updates: list[tuple[str, dict]]):
+    def scenario(self, item_updates: list[tuple[str, dict]]) -> "Model":
         """
         Create a new Model instance with the specified changes applied as a scenario.
         
@@ -902,7 +958,7 @@ class Model(SerializationMixin):
         
         return scenario_model
 
-    def compare(self, other_model):
+    def compare(self, other_model) -> Compare:
         """
         Create a comparison analysis between this model and another model.
         

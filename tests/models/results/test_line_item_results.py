@@ -281,13 +281,13 @@ class TestLineItemResultsChartMethods:
     
     def test_chart_method_default_parameters(self, line_item_results):
         """Test chart method with default parameters."""
-        with patch('pyproforma.charts.charts.Charts.item') as mock_item:
+        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
             mock_fig = Mock()
-            mock_item.return_value = mock_fig
+            mock_line_item.return_value = mock_fig
             
             result = line_item_results.chart()
             
-            mock_item.assert_called_once_with(
+            mock_line_item.assert_called_once_with(
                 "revenue",
                 width=800,
                 height=600,
@@ -298,9 +298,9 @@ class TestLineItemResultsChartMethods:
     
     def test_chart_method_custom_parameters(self, line_item_results):
         """Test chart method with custom parameters."""
-        with patch('pyproforma.charts.charts.Charts.item') as mock_item:
+        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
             mock_fig = Mock()
-            mock_item.return_value = mock_fig
+            mock_line_item.return_value = mock_fig
             
             result = line_item_results.chart(
                 width=1000,
@@ -309,7 +309,7 @@ class TestLineItemResultsChartMethods:
                 chart_type='bar'
             )
             
-            mock_item.assert_called_once_with(
+            mock_line_item.assert_called_once_with(
                 "revenue",
                 width=1000,
                 height=800,
@@ -320,9 +320,9 @@ class TestLineItemResultsChartMethods:
     
     def test_chart_method_passes_item_name(self, line_item_results):
         """Test chart method passes correct item name."""
-        with patch('pyproforma.charts.charts.Charts.item') as mock_item:
+        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
             line_item_results.chart()
-            mock_item.assert_called_once_with(
+            mock_line_item.assert_called_once_with(
                 "revenue",
                 width=800,
                 height=600,
@@ -423,7 +423,7 @@ class TestLineItemResultsErrorHandling:
         """Test chart method when underlying chart method raises error."""
         line_item_results = LineItemResults(model_with_line_items_basic, "revenue")
         
-        with patch('pyproforma.charts.charts.Charts.item', side_effect=KeyError("Chart error")):
+        with patch('pyproforma.charts.charts.Charts.line_item', side_effect=KeyError("Chart error")):
             with pytest.raises(KeyError, match="Chart error"):
                 line_item_results.chart()
     
