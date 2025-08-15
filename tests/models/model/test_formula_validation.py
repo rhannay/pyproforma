@@ -52,23 +52,25 @@ def test_formula_error_raises_with_undefined_line_item():
         )
     assert "Formula contains undefined line item names: c" in str(excinfo.value)
 
-# def test_formula_points_to_itself():
-    
-#     a = LineItem(
-#         name='a',
-#         category='test',
-#         values={2023: 10, 2024: 20}
-#     )
-#     b = LineItem(
-#         name='b',
-#         category='test',
-#         formula='b[0]',
-#         values={2023: 10}
-#     )
-#     model = Model(
-#         line_items=[a, b],
-#         years=[2023, 2024]
-#     )
+def test_formula_points_to_itself():
+    """Test that a formula referencing itself without time offset raises a circular reference error."""
+    a = LineItem(
+        name='a',
+        category='test',
+        values={2023: 10, 2024: 20}
+    )
+    b = LineItem(
+        name='b',
+        category='test',
+        formula='b',
+        values={2023: 10}
+    )
+    with pytest.raises(ValueError) as excinfo:
+        Model(
+            line_items=[a, b],
+            years=[2023, 2024]
+        )
+    assert "Circular reference detected: formula for 'b' references itself without a time offset" in str(excinfo.value)
 
 
 def test_formula_error_raises_with_two_undefined_line_items():
