@@ -69,13 +69,32 @@ class TestValidateFormula:
         validate_formula(formula, name, valid_names)
 
     def test_valid_self_reference_with_positive_offset(self):
-        """Test that self-reference with positive time offset is allowed."""
+        """Test that self-reference with positive time offset is not allowed."""
         formula = "profit[1] + profit[2]"
         name = "profit"
         valid_names = ["profit"]
         
-        # Should not raise any exception
-        validate_formula(formula, name, valid_names)
+        # Should raise an exception for positive offsets
+        with pytest.raises(ValueError, match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]"):
+            validate_formula(formula, name, valid_names)
+
+    def test_invalid_positive_offset_single(self):
+        """Test that positive time offset raises error for single reference."""
+        formula = "revenue[1] + expenses"
+        name = "projected_revenue"
+        valid_names = ["revenue", "expenses", "projected_revenue"]
+        
+        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\]"):
+            validate_formula(formula, name, valid_names)
+
+    def test_invalid_positive_offset_multiple(self):
+        """Test that multiple positive time offsets are all reported."""
+        formula = "revenue[1] + expenses[2] + costs[3]"
+        name = "projection"
+        valid_names = ["revenue", "expenses", "costs", "projection"]
+        
+        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]"):
+            validate_formula(formula, name, valid_names)
 
     def test_circular_reference_with_zero_offset(self):
         """Test that circular reference with [0] time offset raises error."""
@@ -182,13 +201,14 @@ class TestValidateFormula:
         validate_formula(formula, name, valid_names)
 
     def test_formula_with_positive_time_offsets(self):
-        """Test formula with positive time offsets."""
+        """Test formula with positive time offsets raises error."""
         formula = "revenue[1] + revenue[2]"
         name = "future_projection"
         valid_names = ["revenue", "future_projection"]
         
-        # Should not raise any exception
-        validate_formula(formula, name, valid_names)
+        # Should raise an exception for positive time offsets
+        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]"):
+            validate_formula(formula, name, valid_names)
 
     def test_formula_with_underscore_variables(self):
         """Test formula with variable names containing underscores."""
