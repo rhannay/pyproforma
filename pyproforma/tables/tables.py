@@ -8,6 +8,29 @@ if TYPE_CHECKING:
 
 
 class Tables:
+    """
+    A namespace for table creation methods within a Pyproforma model.
+    
+    The Tables class provides a comprehensive interface for generating various types
+    of tables from a Pyproforma Model. It serves as the primary entry point for
+    creating formatted tables that display model data, including line items,
+    categories, constraints, and custom templates.
+    
+    This class is typically accessed through a Model instance's `tables` attribute
+    and provides methods to generate tables for different aspects of the financial
+    model, such as individual line items, category summaries, constraint analysis,
+    and comprehensive model overviews.
+    
+    Attributes:
+        _model (Model): The underlying Pyproforma model containing the data
+            and definitions used for table generation.
+    
+    Examples:
+        >>> model = Model(...)  # Initialize with required parameters
+        >>> table = model.tables.category('revenue')
+        >>> all_items_table = model.tables.all()
+    """
+    
     def __init__(self, model: 'Model'):
         """Initialize the main tables namespace with a Model."""
         self._model = model
@@ -37,19 +60,28 @@ class Tables:
         table = generate_table_from_template(self._model, template, include_name=include_name)
         return table
     
-    def all(self):
+    def all(self) -> Table:
+        """
+        Generate a comprehensive table containing all model items.
+        
+        Creates a complete overview table that includes all line items
+        organized by category, and any line item generator items. The table is
+        structured with clear section headers and includes a name column for
+        easy identification of each item.
+        
+        Returns:
+            Table: A Table object containing all model items organized by type:
+                - LINE ITEMS: All line items organized by category
+                - LINE ITEM GENERATOR ITEMS: All generated line items
+        
+        Examples:
+            >>> table = model.tables.all()  # Returns a comprehensive table with all model components
+        """
         rows = []
-        # Assumptions (now as line items with category 'assumptions')
-        assumption_items = [item for item in self._model._line_item_definitions if item.category == 'assumptions']
-        if assumption_items:
-            rows.append(rt.LabelRow(label='ASSUMPTIONS', bold=True))
-            for a_def in assumption_items:
-                rows.append(rt.ItemRow(name=a_def.name))
-        # Line Items (excluding assumptions to avoid duplication)
-        non_assumption_categories = [cat for cat in self._model._category_definitions if cat.name != 'assumptions']
-        if non_assumption_categories:
+        # Line Items (including all categories)
+        if self._model._category_definitions:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
-            for cat_def in non_assumption_categories:
+            for cat_def in self._model._category_definitions:
                 rows.extend(self._category_rows(cat_def.name))
         # Line Item Generator items
         if self._model.line_item_generators:
@@ -58,8 +90,21 @@ class Tables:
                 for gen_name in generator.defined_names:
                     rows.append(rt.ItemRow(name=gen_name))
         return generate_table_from_template(self._model, rows, include_name=True)
-       
-    def line_items(self):
+
+    def line_items(self) -> Table:
+        """
+        Generate a table containing all line items organized by category.
+        
+        Creates a table that displays all line items from the model, organized
+        by their respective categories. Each category is shown with a bold header
+        followed by its line items, and includes category totals if configured.
+        
+        Returns:
+            Table: A Table object containing all line items grouped by category.
+        
+        Examples:
+            >>> table = model.tables.line_items()
+        """
         rows = self._line_item_rows()
         return self.from_template(rows)
     
@@ -78,8 +123,8 @@ class Tables:
         if category.category_obj.include_total:
             rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
         return rows
-    
-    def category(self, category_name: str, include_name: bool = False):
+
+    def category(self, category_name: str, include_name: bool = False) -> Table:
         """
         Generate a table for a specific category.
         
@@ -92,8 +137,8 @@ class Tables:
         """
         rows = self._category_rows(category_name)
         return self.from_template(rows, include_name=include_name)
-    
-    def line_item(self, name: str, include_name: bool = False):
+
+    def line_item(self, name: str, include_name: bool = False) -> Table:
         """
         Generate a table for a specific line item showing its label and values by year.
         
@@ -111,8 +156,8 @@ class Tables:
             rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')
         ]
         return self.from_template(rows, include_name=include_name)
-    
-    def constraint(self, constraint_name: str, color_code: bool = True):
+
+    def constraint(self, constraint_name: str, color_code: bool = True) -> Table:
         """
         Generate a table for a specific constraint showing its line item, target, variance, and pass/fail status.
         

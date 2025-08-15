@@ -73,6 +73,9 @@ ENV/
 env/
 .venv/
 
+# MkDocs generated files
+site/
+
 # Logs
 *.log
 *.out

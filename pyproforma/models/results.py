@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 import pandas as pd
-from pyproforma.tables.table_class import format_value
+import plotly.graph_objects as go
+from pyproforma.tables.table_class import format_value, Table
+
 
 if TYPE_CHECKING:
     from .model import Model
@@ -21,10 +23,12 @@ class LineItemResults:
         item_name: The name of the item to analyze
         
     Examples:
-        >>> revenue_item = model.item('revenue')
+        >>> revenue_item = model.line_item('revenue')
         >>> print(revenue_item)  # Shows summary info
         >>> revenue_item.values()  # Returns dict of year: value
         >>> revenue_item.to_series()  # Returns pandas Series
+        >>> revenue_item.table()  # Returns Table object
+        >>> revenue_item.chart()  # Returns Plotly chart
     """
     
     def __init__(self, model: 'Model', item_name: str):
@@ -96,7 +100,7 @@ class LineItemResults:
         values_dict = self.values()
         return pd.DataFrame([values_dict], index=[self.item_name])
     
-    def table(self):
+    def table(self) -> Table:
         """
         Return a Table object for this item using the tables.item() function.
         
@@ -105,7 +109,7 @@ class LineItemResults:
         """
         return self.model.tables.line_item(self.item_name, include_name=False)
 
-    def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line'):
+    def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line') -> go.Figure:
         """
         Create a chart using Plotly showing the values for this item over years.
         
@@ -116,14 +120,14 @@ class LineItemResults:
             chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
             
         Returns:
-            Chart figure: The Plotly chart figure
+            go.Figure: The Plotly chart figure
             
         Raises:
             KeyError: If the item name is not found in the model
         """
-        return self.model.charts.item(self.item_name, width=width, height=height, template=template, chart_type=chart_type)
+        return self.model.charts.line_item(self.item_name, width=width, height=height, template=template, chart_type=chart_type)
     
-    def cumulative_percent_change_chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white'):
+    def cumulative_percent_change_chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white') -> go.Figure:
         """
         Create a chart showing cumulative percentage change from a base year.
         
@@ -133,7 +137,7 @@ class LineItemResults:
             template (str): Plotly template to use (default: 'plotly_white')
             
         Returns:
-            Chart figure: The Plotly chart figure showing cumulative change percentages
+            go.Figure: The Plotly chart figure showing cumulative change percentages
         """
         return self.model.charts.cumulative_percent_change(self.item_name, width=width, height=height, template=template)
     
@@ -305,10 +309,10 @@ class LineItemResults:
 
     def summary(self) -> str:
         """
-        Return a summary string with key information about the item.
+        Return a summary string with key information about the line item.
         
         Returns:
-            str: Formatted summary of the item
+            str: Formatted summary of the line item
         """
         # Get value for first year if available
         value_info = ""
@@ -443,7 +447,7 @@ class CategoryResults:
         
         return df
     
-    def table(self):
+    def table(self) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
         
@@ -563,7 +567,7 @@ class ConstraintResults:
         """
         return self.model.tables.constraint(self.constraint_name)
 
-    def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', line_item_type: str = 'bar', constraint_type: str = 'line'):
+    def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', line_item_type: str = 'bar', constraint_type: str = 'line') -> go.Figure:
         """
         Create a chart using Plotly showing the values for this constraint over years.
         
@@ -574,7 +578,7 @@ class ConstraintResults:
             chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
             
         Returns:
-            Chart figure: The Plotly chart figure
+            go.Figure: The Plotly chart figure
             
         Raises:
             KeyError: If the constraint name is not found in the model
