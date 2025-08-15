@@ -111,3 +111,25 @@ This returns a [`Table`](../api/table.md) object that can be viewed directly in 
     </tr>
   </tbody>
 </table>
+
+## Creating Charts
+
+PyProforma also provides interactive chart capabilities using the [`charts`](../api/charts.md) namespace. You can create visualizations of your model data:
+
+```python
+# Create a chart comparing multiple line items
+fig = model.charts.line_items(
+    ['revenue', 'expenses'],
+    title="Revenue and Expenses"
+)
+
+# Display the chart
+fig.show()
+
+# Or save it as an image
+fig.write_image('../assets/images/revenue_expenses_chart.png')
+```
+
+This creates an interactive Plotly chart that shows the trend of revenue and expenses over time:
+
+![Revenue and Expenses Chart](../assets/images/basic_usage_chart.png)
