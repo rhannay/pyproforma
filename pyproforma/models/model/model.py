@@ -370,28 +370,7 @@ class Model(SerializationMixin):
             raise KeyError(f"Year {year} not found in years. Available years: {self.years}")
         return self._value_matrix[year][name]
 
-    def get_value(self, name: str, year: int) -> float:
-        """
-        Deprecated: Use value() instead.
-        
-        Retrieve a specific value from the model for a given item name and year.
-        This method is deprecated and will be removed in a future version.
-        Please use value() instead.
-        
-        Args:
-            name (str): The name of the item to retrieve
-            year (int): The year to retrieve the value for
-            
-        Returns:
-            float: The calculated value for the specified item and year
-        """
-        import warnings
-        warnings.warn(
-            "get_value() is deprecated and will be removed in a future version. Use value() instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.value(name, year)
+
 
     # ============================================================================
     # NAMESPACE PROPERTIES
