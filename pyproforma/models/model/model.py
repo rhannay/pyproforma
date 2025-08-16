@@ -5,6 +5,7 @@ from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
+from ..formula import validate_formula
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -99,6 +100,7 @@ class Model(SerializationMixin):
         self._validate_line_item_generators()
 
         self.defined_names_metadata = self._gather_defined_names()
+        self._validate_formulas()
 
         self._value_matrix = self._generate_value_matrix()
 
@@ -162,6 +164,32 @@ class Model(SerializationMixin):
         
         if duplicates:
             raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
+
+    def _validate_formulas(self):
+        """
+        Validates that all line item formulas reference only defined variables.
+        
+        This method checks each line item that has a formula to ensure all variables
+        referenced in the formula exist in the model's defined names. This includes
+        line items, category totals, and line item generator outputs.
+        
+        Raises:
+            ValueError: If any formula contains undefined variable names
+        """
+        if not self._line_item_definitions:
+            return
+            
+        # Get all defined names that can be used in formulas
+        defined_variable_names = [name['name'] for name in self.defined_names_metadata]
+        
+        # Validate each line item's formula
+        for line_item in self._line_item_definitions:
+            if line_item.formula is not None and line_item.formula.strip():
+                try:
+                    validate_formula(line_item.formula, line_item.name, defined_variable_names)
+                except ValueError as e:
+                    # Enhance the error message to include the line item name
+                    raise ValueError(f"Error in formula for line item '{line_item.name}': {str(e)}") from e
 
     def _gather_defined_names(self) -> list[dict]:
         """
@@ -270,8 +298,8 @@ class Model(SerializationMixin):
                                 # Check if this variable exists in our defined names
                                 all_defined_names = [name['name'] for name in self.defined_names_metadata]
                                 if var_name not in all_defined_names:
-                                    # Variable truly doesn't exist, re-raise the error
-                                    raise e
+                                    # Variable truly doesn't exist, create enhanced error message
+                                    raise ValueError(f"Error calculating line item '{item.name}' for year {year}. Formula: '{item.formula}'. Line item '{var_name}' not found in model.") from e
                         # Item depends on something not yet calculated, skip for now
                         continue
             
@@ -320,6 +348,7 @@ class Model(SerializationMixin):
         self._validate_constraints()
         self._validate_line_item_generators()
         self.defined_names_metadata = self._gather_defined_names()
+        self._validate_formulas()
         self._value_matrix = self._generate_value_matrix()
 
     # ============================================================================
