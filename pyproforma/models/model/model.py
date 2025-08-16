@@ -1,3 +1,4 @@
+from typing import Union
 from ..line_item import LineItem, Category
 from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
@@ -355,11 +356,34 @@ class Model(SerializationMixin):
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
     # ============================================================================
 
-    def __getitem__(self, key: tuple) -> float:
+    def __getitem__(self, key: Union[tuple, str]) -> Union[float, LineItemResults]:
+        """
+        Get item values or LineItemResults using dictionary-style access.
+        
+        Supports two access patterns:
+        - Tuple (item_name, year): Returns the float value for that item and year
+        - String item_name: Returns a LineItemResults object for exploring the item
+        
+        Args:
+            key: Either a tuple of (item_name, year) or a string item_name
+            
+        Returns:
+            Union[float, LineItemResults]: Float value for tuple keys, 
+                LineItemResults object for string keys
+                
+        Raises:
+            KeyError: If key format is invalid, item name not found, or year not in model
+            
+        Examples:
+            >>> model["revenue", 2023]  # Returns float value: 1000.0
+            >>> model["revenue"]        # Returns LineItemResults object
+        """
         if isinstance(key, tuple):
             key_name, year = key
             return self.get_value(key_name, year)
-        raise KeyError("Key must be a tuple of (item_name, year).")
+        elif isinstance(key, str):
+            return self.line_item(key)
+        raise KeyError("Key must be a tuple of (item_name, year) or a string item_name.")
     
     def get_value(self, name: str, year: int) -> float:
         """
@@ -390,6 +414,7 @@ class Model(SerializationMixin):
             
             ```python
             model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
+            model["revenue"]        # Returns LineItemResults object (equivalent to model.line_item("revenue"))
             ```
         """
         name_lookup = {item['name']: item for item in self.defined_names_metadata}
