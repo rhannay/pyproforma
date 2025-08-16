@@ -410,11 +410,10 @@ class Model(SerializationMixin):
             0.15
             
         Notes:
-            Dictionary-style lookup is also supported:
+            Dictionary-style lookup at the Model level is also supported:
             
             ```python
             model["revenue", 2023]  # Equivalent to model.value("revenue", 2023)
-            model["revenue"]        # Returns LineItemResults object (equivalent to model.line_item("revenue"))
             ```
         """
         name_lookup = {item['name']: item for item in self.defined_names_metadata}
@@ -599,6 +598,14 @@ class Model(SerializationMixin):
             >>> print(revenue_item)  # Shows summary information
             >>> revenue_item.values()  # Returns dict of year: value
             >>> revenue_item.to_series()  # Returns pandas Series
+
+        Notes:
+            Dictionary-style lookup at the Model level is also supported:
+            
+            ```python
+            model["revenue"]        # Returns LineItemResults object (equivalent to model.line_item("revenue"))
+            ```
+
         """
         if item_name is None or item_name == "":
             available_items = sorted([item['name'] for item in self.defined_names_metadata])
