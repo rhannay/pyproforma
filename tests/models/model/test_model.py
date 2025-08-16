@@ -382,8 +382,8 @@ class TestModelWithConstraints:
         assert model.constraints[1].name == "max_expenses"
         
         # Test that model still functions normally
-        assert model.get_value("revenue", 2023) == 100000
-        assert model.get_value("expenses", 2024) == 60000
+        assert model.value("revenue", 2023) == 100000
+        assert model.value("expenses", 2024) == 60000
     
     def test_constraints_preserved_during_copy(self, sample_model_with_constraints: Model):
         """Test that constraints are preserved when copying a model."""
@@ -474,8 +474,8 @@ class TestModelWithConstraints:
         
         # Test that model still functions normally
         assert len(model.constraints) == 10
-        assert model.get_value("revenue", 2023) == 100000
-        assert model.get_value("expenses", 2024) == 60000
+        assert model.value("revenue", 2023) == 100000
+        assert model.value("expenses", 2024) == 60000
         
         # Test that all constraints are there
         constraint_names = [c.name for c in model.constraints]

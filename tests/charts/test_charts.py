@@ -79,8 +79,8 @@ class TestCharts:
         model.li.side_effect = mock_li
         model.line_item.side_effect = mock_li  # Also support the full method name
         
-        # Mock get_value responses
-        def mock_get_value(name, year):
+        # Mock value responses
+        def mock_value(name, year):
             value_map = {
                 ('revenue', 2020): 100.0,
                 ('revenue', 2021): 150.0,
@@ -96,7 +96,7 @@ class TestCharts:
                 return value_map[(name, year)]
             raise KeyError(f"Value for '{name}' in year {year} not found.")
         
-        model.get_value.side_effect = mock_get_value
+        model.value.side_effect = mock_value
         
         return model
     
@@ -124,7 +124,7 @@ class TestCharts:
             
             # Verify model interactions
             # mock_model.get_item_info.assert_called_with('revenue')
-            assert mock_model.get_value.call_count == 3  # Called for each year
+            assert mock_model.value.call_count == 3  # Called for each year
 
     def test_line_item_with_missing_name(self, charts, mock_model):
         """Test item method with non-existent name raises KeyError."""
@@ -135,7 +135,7 @@ class TestCharts:
     def test_line_item_with_missing_values(self, charts, mock_model):
         """Test item method handles missing values gracefully."""
         # Modify mock to raise KeyError for certain years
-        def mock_get_value_with_missing(name, year):
+        def mock_value_with_missing(name, year):
             if name == 'revenue' and year == 2022:
                 raise KeyError("Value not found")
             value_map = {
@@ -144,7 +144,7 @@ class TestCharts:
             }
             return value_map.get((name, year), 0.0)
         
-        mock_model.get_value.side_effect = mock_get_value_with_missing
+        mock_model.value.side_effect = mock_value_with_missing
         
         with patch.object(Chart, 'to_plotly') as mock_to_plotly:
             mock_fig = Mock(spec=go.Figure)
@@ -169,7 +169,7 @@ class TestCharts:
             
             # Verify model interactions - should be called for both items plus value_format check
             assert mock_model.li.call_count == 3  # 1 for value_format + 2 for items
-        assert mock_model.get_value.call_count == 6  # 2 items × 3 years
+        assert mock_model.value.call_count == 6  # 2 items × 3 years
 
     def test_line_items_empty_list(self, charts):
         """Test items method with empty list raises ValueError."""
@@ -392,11 +392,11 @@ class TestCharts:
         def mock_li_extended(name):
             return Mock(label=f'Label {name}', value_format='no_decimals')
         
-        def mock_get_value_extended(name, year):
+        def mock_value_extended(name, year):
             return 100.0  # Simple value for all
         
         mock_model.li.side_effect = mock_li_extended
-        mock_model.get_value.side_effect = mock_get_value_extended
+        mock_model.value.side_effect = mock_value_extended
         
         with patch('pyproforma.charts.charts.Chart') as mock_chart_class:
             mock_chart = Mock()

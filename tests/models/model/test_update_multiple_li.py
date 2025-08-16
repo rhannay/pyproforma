@@ -130,7 +130,7 @@ def test_update_multiple_line_items_invalid_name(basic_model):
         ])
     
     # Check that no changes were applied (transaction rolled back)
-    assert basic_model.get_value("revenue", 2023) == 100
+    assert basic_model.value("revenue", 2023) == 100
 
 
 def test_update_multiple_line_items_invalid_formula(basic_model):
