@@ -19,9 +19,9 @@ class TestModelValidateFormulas:
         model = Model(line_items=[revenue, expenses, profit], years=[2023])
         
         # Verify the model works correctly
-        assert model.get_value('revenue', 2023) == 1000
-        assert model.get_value('expenses', 2023) == 800.0
-        assert model.get_value('profit', 2023) == 200.0
+        assert model.value('revenue', 2023) == 1000
+        assert model.value('expenses', 2023) == 800.0
+        assert model.value('profit', 2023) == 200.0
 
     def test_invalid_formula_raises_error(self):
         """Test that models with invalid formulas raise ValueError during initialization."""
@@ -88,8 +88,8 @@ class TestModelValidateFormulas:
         )
         
         # Verify it works correctly
-        assert model.get_value('total_revenue', 2023) == 1000
-        assert model.get_value('margin', 2023) == 100.0
+        assert model.value('total_revenue', 2023) == 1000
+        assert model.value('margin', 2023) == 100.0
 
     def test_empty_and_none_formulas_ignored(self):
         """Test that empty and None formulas are not validated."""
@@ -105,10 +105,10 @@ class TestModelValidateFormulas:
         )
         
         # Verify the model works
-        assert model.get_value('revenue', 2023) == 1000
-        assert model.get_value('empty', 2023) == 100
-        assert model.get_value('none_item', 2023) == 50
-        assert model.get_value('whitespace', 2023) == 25
+        assert model.value('revenue', 2023) == 1000
+        assert model.value('empty', 2023) == 100
+        assert model.value('none_item', 2023) == 50
+        assert model.value('whitespace', 2023) == 25
 
     def test_formula_validation_called_in_recalculate(self):
         """Test that _validate_formulas is called during _recalculate."""
@@ -150,4 +150,4 @@ class TestModelValidateFormulas:
         )
         
         # Verify it calculates correctly
-        assert model.get_value('net_income', 2023) == 225.0  # (1000 - 400 - 300) * (1 - 0.25)
+        assert model.value('net_income', 2023) == 225.0  # (1000 - 400 - 300) * (1 - 0.25)
