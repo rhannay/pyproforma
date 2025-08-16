@@ -221,6 +221,36 @@ class TestOtherMisc:
         # get a category total
         assert sample_line_item_set["total_revenue", 2020] == 300.0  
 
+    def test_getitem_string_returns_line_item_results(self, sample_line_item_set: Model):
+        """Test that __getitem__ with string key returns LineItemResults object."""
+        from pyproforma.models.results import LineItemResults
+        
+        # Test string key returns LineItemResults
+        result = sample_line_item_set["item1"]
+        assert isinstance(result, LineItemResults)
+        assert result.item_name == "item1"
+        assert result.source_type == "line_item"
+        
+        # Test that it's equivalent to line_item() method
+        line_item_result = sample_line_item_set.line_item("item1")
+        assert type(result) == type(line_item_result)
+        assert result.item_name == line_item_result.item_name
+        assert result.source_type == line_item_result.source_type
+        
+        # Test with different item
+        result2 = sample_line_item_set["item2"]
+        assert isinstance(result2, LineItemResults)
+        assert result2.item_name == "item2"
+        
+        # Test invalid item name raises KeyError
+        with pytest.raises(KeyError):
+            sample_line_item_set["nonexistent"]
+            
+        # Test invalid key type raises KeyError  
+        with pytest.raises(KeyError) as excinfo:
+            sample_line_item_set[123]
+        assert "Key must be a tuple of (item_name, year) or a string item_name" in str(excinfo.value)
+
     def test_is_last_item_in_category(self):
         sample = Model(
             line_items=[
