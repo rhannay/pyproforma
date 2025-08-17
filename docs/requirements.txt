@@ -8,6 +8,7 @@ mkdocs-material>=9.0.0
 # MkDocs plugins used in mkdocs.yml
 mkdocs-autorefs>=0.4.1
 mkdocstrings[python]>=0.20.0
+mkdocs-jupyter>=0.24.0
 
 # Python dependencies for documentation generation
 # (These may be needed if your code imports are executed during doc generation)
