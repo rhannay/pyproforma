@@ -38,7 +38,11 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -57,6 +61,12 @@ markdown_extensions:
 plugins:
   - search
   - autorefs
+  - mkdocs-jupyter:
+      execute: true
+      allow_errors: false
+      include_source: true
+      execute_ignore: 
+        - "*.py"
   - mkdocstrings:
       handlers:
         python:
@@ -75,6 +85,8 @@ nav:
   - User Guide:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
+  - Examples:
+    - Basic Usage: examples/basic-usage.ipynb
   - API Reference:
     - Model:
       - Model: api/model.md
