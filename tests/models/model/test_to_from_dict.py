@@ -142,10 +142,10 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
         
         # Test that values are preserved
-        assert recreated_model.get_value("revenue", 2023) == simple_model.get_value("revenue", 2023)
-        assert recreated_model.get_value("revenue", 2024) == simple_model.get_value("revenue", 2024)
-        assert recreated_model.get_value("expenses", 2023) == simple_model.get_value("expenses", 2023)
-        assert recreated_model.get_value("expenses", 2024) == simple_model.get_value("expenses", 2024)
+        assert recreated_model.value("revenue", 2023) == simple_model.value("revenue", 2023)
+        assert recreated_model.value("revenue", 2024) == simple_model.value("revenue", 2024)
+        assert recreated_model.value("expenses", 2023) == simple_model.value("expenses", 2023)
+        assert recreated_model.value("expenses", 2024) == simple_model.value("expenses", 2024)
 
     def test_from_dict_preserves_assumption_values(self, simple_model):
         """Test that round trip preserves assumption values (now as line items)."""
@@ -154,8 +154,8 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
         
         # Test that assumption values are preserved
-        assert recreated_model.get_value("growth_rate", 2023) == simple_model.get_value("growth_rate", 2023)
-        assert recreated_model.get_value("growth_rate", 2024) == simple_model.get_value("growth_rate", 2024)
+        assert recreated_model.value("growth_rate", 2023) == simple_model.value("growth_rate", 2023)
+        assert recreated_model.value("growth_rate", 2024) == simple_model.value("growth_rate", 2024)
 
     def test_from_dict_preserves_line_item_attributes(self, simple_model):
         """Test that round trip preserves line item attributes."""
@@ -217,9 +217,9 @@ class TestModelToFromDict:
         
         # Test that calculations work correctly
         for year in complex_model.years:
-            assert recreated_model.get_value("revenue", year) == complex_model.get_value("revenue", year)
-            assert recreated_model.get_value("expenses", year) == complex_model.get_value("expenses", year)
-            assert recreated_model.get_value("profit", year) == complex_model.get_value("profit", year)
+            assert recreated_model.value("revenue", year) == complex_model.value("revenue", year)
+            assert recreated_model.value("expenses", year) == complex_model.value("expenses", year)
+            assert recreated_model.value("profit", year) == complex_model.value("profit", year)
 
     def test_round_trip_with_category_totals(self, complex_model):
         """Test that round trip preserves category totals."""
@@ -231,8 +231,8 @@ class TestModelToFromDict:
         for year in complex_model.years:
             # Test category totals (if they exist)
             try:
-                original_total = complex_model.get_value("total_income", year)
-                recreated_total = recreated_model.get_value("total_income", year)
+                original_total = complex_model.value("total_income", year)
+                recreated_total = recreated_model.value("total_income", year)
                 assert recreated_total == original_total
             except KeyError:
                 # Category total might not exist - that's okay
@@ -248,12 +248,12 @@ class TestModelToFromDict:
             current_model = Model.from_dict(model_dict)
             
             # Verify values are still correct
-            assert current_model.get_value("revenue", 2023) == 100000
-            assert current_model.get_value("revenue", 2024) == 120000
-            assert current_model.get_value("expenses", 2023) == 80000
-            assert current_model.get_value("expenses", 2024) == 90000
-            assert current_model.get_value("growth_rate", 2023) == 0.1
-            assert current_model.get_value("growth_rate", 2024) == 0.15
+            assert current_model.value("revenue", 2023) == 100000
+            assert current_model.value("revenue", 2024) == 120000
+            assert current_model.value("expenses", 2023) == 80000
+            assert current_model.value("expenses", 2024) == 90000
+            assert current_model.value("growth_rate", 2023) == 0.1
+            assert current_model.value("growth_rate", 2024) == 0.15
 
     def test_to_dict_with_empty_line_item_generators(self, simple_model):
         """Test that to_dict() handles empty line item generators list."""
@@ -302,8 +302,8 @@ class TestModelToFromDict:
         assert recreated_model.line_item_generators[0].name == "loan"
         
         # Verify the values match
-        original_value = model.get_value("loan.principal", 2023)
-        recreated_value = recreated_model.get_value("loan.principal", 2023)
+        original_value = model.value("loan.principal", 2023)
+        recreated_value = recreated_model.value("loan.principal", 2023)
         assert original_value == recreated_value
 
     def test_round_trip_preserves_model_functionality(self, simple_model: Model):
@@ -341,7 +341,7 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
         
         # Test basic functionality
-        assert recreated_model.get_value("item1", 2023) == 100.0
+        assert recreated_model.value("item1", 2023) == 100.0
         assert len(recreated_model._category_definitions) == 1  # Auto-generated
         assert len(recreated_model.line_item_generators) == 0
 

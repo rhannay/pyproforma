@@ -407,14 +407,14 @@ class TestConstraintIntegration:
         )
         
         # Test that normal model operations work
-        assert model.get_value("revenue", 2023) == 100000
-        assert model.get_value("expenses", 2024) == 60000
+        assert model.value("revenue", 2023) == 100000
+        assert model.value("expenses", 2024) == 60000
         assert model["revenue", 2023] == 100000
         assert model["expenses", 2024] == 60000
         
         # Test that category totals work
-        assert model.get_value("total_income", 2023) == 100000
-        assert model.get_value("total_costs", 2024) == 60000
+        assert model.value("total_income", 2023) == 100000
+        assert model.value("total_costs", 2024) == 60000
         
         # Test that constraints are still accessible
         assert len(model.constraints) == 2
@@ -447,7 +447,7 @@ class TestConstraintIntegration:
         )
         
         # Check that defined names doesn't include constraint names
-        defined_names = [item['name'] for item in model.defined_names]
+        defined_names = [item['name'] for item in model.defined_names_metadata]
         assert "revenue" in defined_names
         assert "total_income" in defined_names
         assert "revenue_constraint" not in defined_names  # Constraints shouldn't be in defined names

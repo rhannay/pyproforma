@@ -170,10 +170,10 @@ class TestLineItemResultsValueMethods:
         with pytest.raises(KeyError):
             line_item_results[2026]
     
-    def test_values_method_calls_model_get_value(self, line_item_results):
-        """Test that values method calls model.get_value for each year."""
-        with patch.object(line_item_results.model, 'get_value') as mock_get_value:
-            mock_get_value.side_effect = [100000, 120000, 140000]
+    def test_values_method_calls_model_value(self, line_item_results):
+        """Test that values method calls model.value for each year."""
+        with patch.object(line_item_results.model, 'value') as mock_value:
+            mock_value.side_effect = [100000, 120000, 140000]
             
             values = line_item_results.values()
             
@@ -183,18 +183,18 @@ class TestLineItemResultsValueMethods:
                 (('revenue', 2025),)
             ]
             
-            assert mock_get_value.call_count == 3
-            for i, call in enumerate(mock_get_value.call_args_list):
+            assert mock_value.call_count == 3
+            for i, call in enumerate(mock_value.call_args_list):
                 assert call.args == expected_calls[i][0]
     
-    def test_value_method_calls_model_get_value(self, line_item_results):
-        """Test that value method calls model.get_value with correct parameters."""
-        with patch.object(line_item_results.model, 'get_value') as mock_get_value:
-            mock_get_value.return_value = 100000
+    def test_value_method_calls_model_value(self, line_item_results):
+        """Test that value method calls model.value with correct parameters."""
+        with patch.object(line_item_results.model, 'value') as mock_value:
+            mock_value.return_value = 100000
             
             result = line_item_results.value(2023)
             
-            mock_get_value.assert_called_once_with("revenue", 2023)
+            mock_value.assert_called_once_with("revenue", 2023)
             assert result == 100000
 
 
@@ -411,8 +411,8 @@ class TestLineItemResultsErrorHandling:
         """Test summary method handles missing line item value gracefully."""
         line_item_results = LineItemResults(model_with_line_items_basic, "revenue")
         
-        # Mock get_value to raise KeyError
-        with patch.object(line_item_results.model, 'get_value', side_effect=KeyError):
+        # Mock value to raise KeyError
+        with patch.object(line_item_results.model, 'value', side_effect=KeyError):
             summary = line_item_results.summary()
             
             assert "LineItemResults('revenue')" in summary

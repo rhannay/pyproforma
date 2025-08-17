@@ -255,25 +255,25 @@ class TestCategoryResultsValuesMethod:
         
         assert values == expected_values
     
-    def test_values_method_calls_model_get_value(self, category_results):
-        """Test that values method calls model.get_value for each item and year."""
-        with patch.object(category_results.model, 'get_value') as mock_get_value:
-            mock_get_value.side_effect = [
+    def test_values_method_calls_model_value(self, category_results):
+        """Test that values method calls model.value for each item and year."""
+        with patch.object(category_results.model, 'value') as mock_value:
+            mock_value.side_effect = [
                 100000, 120000, 140000,  # product_sales
                 50000, 60000, 70000      # service_revenue
             ]
             
             values = category_results.values()
             
-            assert mock_get_value.call_count == 6
+            assert mock_value.call_count == 6
             # Check some of the calls
-            mock_get_value.assert_any_call("product_sales", 2023)
-            mock_get_value.assert_any_call("service_revenue", 2025)
+            mock_value.assert_any_call("product_sales", 2023)
+            mock_value.assert_any_call("service_revenue", 2025)
     
     def test_values_method_handles_key_error(self, category_results):
         """Test values method handles KeyError gracefully."""
-        with patch.object(category_results.model, 'get_value') as mock_get_value:
-            mock_get_value.side_effect = [
+        with patch.object(category_results.model, 'value') as mock_value:
+            mock_value.side_effect = [
                 100000, KeyError("Error"), 140000,  # product_sales
                 50000, 60000, 70000                 # service_revenue
             ]

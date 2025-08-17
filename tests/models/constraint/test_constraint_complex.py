@@ -65,9 +65,9 @@ class TestConstraintsWithComplexModels:
         assert len(model._line_item_definitions) == 2
         
         # Test that values can be accessed
-        assert model.get_value("revenue", 2023) == 100000
-        assert model.get_value("debt.principal", 2023) > 0
-        assert model.get_value("debt_service", 2023) > 0
+        assert model.value("revenue", 2023) == 100000
+        assert model.value("debt.principal", 2023) > 0
+        assert model.value("debt_service", 2023) > 0
         
         # Test that constraints are preserved
         constraint_names = [c.name for c in model.constraints]
@@ -128,8 +128,8 @@ class TestConstraintsWithComplexModels:
         expected_total_income_2023 = 100000 + expected_projected_revenue_2023
         expected_net_income_2023 = expected_total_income_2023 * 0.8
         
-        assert model.get_value("projected_revenue", 2023) == expected_projected_revenue_2023
-        assert model.get_value("net_income", 2023) == expected_net_income_2023
+        assert model.value("projected_revenue", 2023) == expected_projected_revenue_2023
+        assert model.value("net_income", 2023) == expected_net_income_2023
         
         # Test that constraints are accessible
         assert model.constraints[0].name == "min_net_income"
@@ -204,8 +204,8 @@ class TestConstraintsWithComplexModels:
         assert "expense_ratio" in constraint_names
         
         # Verify model still calculates correctly
-        assert reconstructed_model.get_value("revenue", 2023) == 100000
-        assert reconstructed_model.get_value("expenses", 2023) == 60000
+        assert reconstructed_model.value("revenue", 2023) == 100000
+        assert reconstructed_model.value("expenses", 2023) == 60000
     
     def test_constraint_copy_with_complex_model(self):
         """Test that copying works correctly with complex models including constraints."""

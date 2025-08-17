@@ -43,8 +43,8 @@ class Compare:
         self.common_years = sorted(list(base_years.intersection(compare_years)))
         
         # Get common line items that exist in both models
-        base_items = set([item['name'] for item in self.base_model.defined_names])
-        compare_items = set([item['name'] for item in self.compare_model.defined_names])
+        base_items = set([item['name'] for item in self.base_model.defined_names_metadata])
+        compare_items = set([item['name'] for item in self.compare_model.defined_names_metadata])
         
         self.common_items = sorted(list(base_items.intersection(compare_items)))
         self.base_only_items = sorted(list(base_items - compare_items))
@@ -72,8 +72,8 @@ class Compare:
             # Return differences for all common years
             result = {}
             for y in self.common_years:
-                base_value = self.base_model.get_value(item_name, y)
-                compare_value = self.compare_model.get_value(item_name, y)
+                base_value = self.base_model.value(item_name, y)
+                compare_value = self.compare_model.value(item_name, y)
                 
                 # Handle None values
                 if base_value is None and compare_value is None:
@@ -90,8 +90,8 @@ class Compare:
             if year not in self.common_years:
                 raise KeyError(f"Year {year} not found in both models")
                 
-            base_value = self.base_model.get_value(item_name, year)
-            compare_value = self.compare_model.get_value(item_name, year)
+            base_value = self.base_model.value(item_name, year)
+            compare_value = self.compare_model.value(item_name, year)
             
             # Handle None values
             if base_value is None and compare_value is None:
@@ -160,8 +160,8 @@ class Compare:
         if year not in self.common_years:
             raise KeyError(f"Year {year} not found in both models")
             
-        base_value = self.base_model.get_value(item_name, year)
-        compare_value = self.compare_model.get_value(item_name, year)
+        base_value = self.base_model.value(item_name, year)
+        compare_value = self.compare_model.value(item_name, year)
         
         # Handle None values or zero base value
         if base_value is None or compare_value is None:
@@ -191,8 +191,8 @@ class Compare:
         if year not in self.common_years:
             raise KeyError(f"Year {year} not found in both models")
             
-        base_value = self.base_model.get_value(item_name, year)
-        compare_value = self.compare_model.get_value(item_name, year)
+        base_value = self.base_model.value(item_name, year)
+        compare_value = self.compare_model.value(item_name, year)
         
         # Handle None values or zero base value
         if base_value is None or compare_value is None:

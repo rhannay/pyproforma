@@ -110,9 +110,9 @@ class TestModelCopy:
         
         # Test that all values are accessible and identical
         for year in simple_model.years:
-            assert copied.get_value("revenue", year) == simple_model.get_value("revenue", year)
-            assert copied.get_value("expenses", year) == simple_model.get_value("expenses", year)
-            assert copied.get_value("growth_rate", year) == simple_model.get_value("growth_rate", year)
+            assert copied.value("revenue", year) == simple_model.value("revenue", year)
+            assert copied.value("expenses", year) == simple_model.value("expenses", year)
+            assert copied.value("growth_rate", year) == simple_model.value("growth_rate", year)
 
     def test_copy_preserves_value_matrix(self, simple_model):
         """Test that copy() creates a new value matrix with identical values."""
@@ -132,14 +132,14 @@ class TestModelCopy:
         copied = simple_model.copy()
         
         # Should be different objects
-        assert copied.defined_names is not simple_model.defined_names
+        assert copied.defined_names_metadata is not simple_model.defined_names_metadata
         
         # Should have same content
-        assert len(copied.defined_names) == len(simple_model.defined_names)
+        assert len(copied.defined_names_metadata) == len(simple_model.defined_names_metadata)
         
         # Check each defined name entry
-        original_names = {item['name']: item for item in simple_model.defined_names}
-        copied_names = {item['name']: item for item in copied.defined_names}
+        original_names = {item['name']: item for item in simple_model.defined_names_metadata}
+        copied_names = {item['name']: item for item in copied.defined_names_metadata}
         
         assert set(original_names.keys()) == set(copied_names.keys())
         for name in original_names:
@@ -161,8 +161,8 @@ class TestModelCopy:
         )
         
         # Original should be unchanged
-        assert simple_model.get_value("revenue", 2023) == 100.0
-        assert copied_rebuilt.get_value("revenue", 2023) == 999.0
+        assert simple_model.value("revenue", 2023) == 100.0
+        assert copied_rebuilt.value("revenue", 2023) == 999.0
 
     def test_copy_independence_assumption_modification(self, simple_model):
         """Test that modifying assumption line_items in copy doesn't affect original."""
@@ -180,8 +180,8 @@ class TestModelCopy:
         )
         
         # Original should be unchanged
-        assert simple_model.get_value("growth_rate", 2023) == 0.1
-        assert copied_rebuilt.get_value("growth_rate", 2023) == 0.5
+        assert simple_model.value("growth_rate", 2023) == 0.1
+        assert copied_rebuilt.value("growth_rate", 2023) == 0.5
 
     def test_copy_with_complex_model(self, complex_model):
         """Test copy() with a more complex model including formulas."""
@@ -192,14 +192,14 @@ class TestModelCopy:
         
         # Verify all years work
         for year in complex_model.years:
-            assert copied.get_value("revenue", year) == complex_model.get_value("revenue", year)
-            assert copied.get_value("expenses", year) == complex_model.get_value("expenses", year)
-            assert copied.get_value("profit", year) == complex_model.get_value("profit", year)
+            assert copied.value("revenue", year) == complex_model.value("revenue", year)
+            assert copied.value("expenses", year) == complex_model.value("expenses", year)
+            assert copied.value("profit", year) == complex_model.value("profit", year)
             
             # Test category totals if they exist
             try:
-                assert copied.get_value("total_income", year) == complex_model.get_value("total_income", year)
-                assert copied.get_value("total_costs", year) == complex_model.get_value("total_costs", year)
+                assert copied.value("total_income", year) == complex_model.value("total_income", year)
+                assert copied.value("total_costs", year) == complex_model.value("total_costs", year)
             except KeyError:
                 pass  # Category totals might not exist
 
@@ -234,7 +234,7 @@ class TestModelCopy:
         copied = minimal_model.copy()
         
         assert copied is not minimal_model
-        assert copied.get_value("item1", 2023) == 100.0
+        assert copied.value("item1", 2023) == 100.0
         assert len(copied._category_definitions) == 1  # Auto-generated
 
     def test_copy_preserves_namespace_access(self, simple_model):

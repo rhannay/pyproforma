@@ -1,3 +1,4 @@
+from typing import Union
 from ..line_item import LineItem, Category
 from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
@@ -5,6 +6,7 @@ from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
+from ..formula import validate_formula
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -34,7 +36,7 @@ class Model(SerializationMixin):
         >>> model = Model(line_items=[revenue, expenses], years=[2023, 2024, 2025])
         >>> 
         >>> # Access values
-        >>> model.get_value("revenue", 2023)  # 1000
+        >>> model.value("revenue", 2023)  # 1000
         >>> model["expenses", 2024]  # 800
         >>> 
         >>> # Analysis
@@ -51,7 +53,7 @@ class Model(SerializationMixin):
         >>> scenario["revenue", 2023]  # 1200 in scenario, original unchanged
     
     Key Methods:
-        - get_value(name, year): Get value for any item/year
+        - value(name, year): Get value for any item/year
         - category(name)/line_item(name): Get analysis objects  
         - line_item(name).percent_change(), .index_to_year(): Calculate metrics
         - scenario(item_updates): Create what-if scenarios
@@ -98,7 +100,8 @@ class Model(SerializationMixin):
         self._validate_constraints()
         self._validate_line_item_generators()
 
-        self.defined_names = self._gather_defined_names()
+        self.defined_names_metadata = self._gather_defined_names()
+        self._validate_formulas()
 
         self._value_matrix = self._generate_value_matrix()
 
@@ -162,6 +165,32 @@ class Model(SerializationMixin):
         
         if duplicates:
             raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
+
+    def _validate_formulas(self):
+        """
+        Validates that all line item formulas reference only defined variables.
+        
+        This method checks each line item that has a formula to ensure all variables
+        referenced in the formula exist in the model's defined names. This includes
+        line items, category totals, and line item generator outputs.
+        
+        Raises:
+            ValueError: If any formula contains undefined variable names
+        """
+        if not self._line_item_definitions:
+            return
+            
+        # Get all defined names that can be used in formulas
+        defined_variable_names = [name['name'] for name in self.defined_names_metadata]
+        
+        # Validate each line item's formula
+        for line_item in self._line_item_definitions:
+            if line_item.formula is not None and line_item.formula.strip():
+                try:
+                    validate_formula(line_item.formula, line_item.name, defined_variable_names)
+                except ValueError as e:
+                    # Enhance the error message to include the line item name
+                    raise ValueError(f"Error in formula for line item '{line_item.name}': {str(e)}") from e
 
     def _gather_defined_names(self) -> list[dict]:
         """
@@ -268,10 +297,10 @@ class Model(SerializationMixin):
                             if match:
                                 var_name = match.group(1)
                                 # Check if this variable exists in our defined names
-                                all_defined_names = [name['name'] for name in self.defined_names]
+                                all_defined_names = [name['name'] for name in self.defined_names_metadata]
                                 if var_name not in all_defined_names:
-                                    # Variable truly doesn't exist, re-raise the error
-                                    raise e
+                                    # Variable truly doesn't exist, create enhanced error message
+                                    raise ValueError(f"Error calculating line item '{item.name}' for year {year}. Formula: '{item.formula}'. Line item '{var_name}' not found in model.") from e
                         # Item depends on something not yet calculated, skip for now
                         continue
             
@@ -309,7 +338,7 @@ class Model(SerializationMixin):
                 raise ValueError("\n".join(errors))
         
             # Ensure all defined names are present in the value matrix
-            for name in self.defined_names:
+            for name in self.defined_names_metadata:
                 if name['name'] not in value_matrix[year]:
                     raise KeyError(f"Defined name '{name['name']}' not found in value matrix for year {year}.")
     
@@ -319,20 +348,44 @@ class Model(SerializationMixin):
         self._validate_categories()
         self._validate_constraints()
         self._validate_line_item_generators()
-        self.defined_names = self._gather_defined_names()
+        self.defined_names_metadata = self._gather_defined_names()
+        self._validate_formulas()
         self._value_matrix = self._generate_value_matrix()
 
     # ============================================================================
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
     # ============================================================================
 
-    def __getitem__(self, key: tuple) -> float:
+    def __getitem__(self, key: Union[tuple, str]) -> Union[float, LineItemResults]:
+        """
+        Get item values or LineItemResults using dictionary-style access.
+        
+        Supports two access patterns:
+        - Tuple (item_name, year): Returns the float value for that item and year
+        - String item_name: Returns a LineItemResults object for exploring the item
+        
+        Args:
+            key: Either a tuple of (item_name, year) or a string item_name
+            
+        Returns:
+            Union[float, LineItemResults]: Float value for tuple keys, 
+                LineItemResults object for string keys
+                
+        Raises:
+            KeyError: If key format is invalid, item name not found, or year not in model
+            
+        Examples:
+            >>> model["revenue", 2023]  # Returns float value: 1000.0
+            >>> model["revenue"]        # Returns LineItemResults object
+        """
         if isinstance(key, tuple):
             key_name, year = key
-            return self.get_value(key_name, year)
-        raise KeyError("Key must be a tuple of (item_name, year).")
+            return self.value(key_name, year)
+        elif isinstance(key, str):
+            return self.line_item(key)
+        raise KeyError("Key must be a tuple of (item_name, year) or a string item_name.")
     
-    def get_value(self, name: str, year: int) -> float:
+    def value(self, name: str, year: int) -> float:
         """
         Retrieve a specific value from the model for a given item name and year.
         
@@ -351,24 +404,26 @@ class Model(SerializationMixin):
             KeyError: If the name is not found in the model's defined names or the year is not in the model's time horizon
             
         Examples:
-            >>> model.get_value("revenue", 2023)  # Get revenue for 2023
+            >>> model.value("revenue", 2023)  # Get revenue for 2023
             1000.0
-            >>> model.get_value("profit_margin", 2024)  # Get profit margin for 2024
+            >>> model.value("profit_margin", 2024)  # Get profit margin for 2024
             0.15
             
         Notes:
-            Dictionary-style lookup is also supported:
+            Dictionary-style lookup at the Model level is also supported:
             
             ```python
-            model["revenue", 2023]  # Equivalent to model.get_value("revenue", 2023)
+            model["revenue", 2023]  # Equivalent to model.value("revenue", 2023)
             ```
         """
-        name_lookup = {item['name']: item for item in self.defined_names}
+        name_lookup = {item['name']: item for item in self.defined_names_metadata}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
         if year not in self.years:
             raise KeyError(f"Year {year} not found in years. Available years: {self.years}")
         return self._value_matrix[year][name]
+
+
 
     # ============================================================================
     # NAMESPACE PROPERTIES
@@ -447,7 +502,7 @@ class Model(SerializationMixin):
         Raises:
             KeyError: If the item name is not found in defined names
         """
-        for defined_name in self.defined_names:
+        for defined_name in self.defined_names_metadata:
             if defined_name['name'] == item_name:
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
@@ -543,9 +598,17 @@ class Model(SerializationMixin):
             >>> print(revenue_item)  # Shows summary information
             >>> revenue_item.values()  # Returns dict of year: value
             >>> revenue_item.to_series()  # Returns pandas Series
+
+        Notes:
+            Dictionary-style lookup at the Model level is also supported:
+            
+            ```python
+            model["revenue"]        # Returns LineItemResults object (equivalent to model.line_item("revenue"))
+            ```
+
         """
         if item_name is None or item_name == "":
-            available_items = sorted([item['name'] for item in self.defined_names])
+            available_items = sorted([item['name'] for item in self.defined_names_metadata])
             if available_items:
                 raise ValueError(f"Item name is required. Available item names are: {available_items}")
             else:
@@ -671,9 +734,9 @@ class Model(SerializationMixin):
             KeyError: If the category total is not found in defined names or value matrix
         """
         # find category total name
-        total_name_lookup = {x['source_name']: x['name'] for x in self.defined_names if x['source_type'] == 'category'}
+        total_name_lookup = {x['source_name']: x['name'] for x in self.defined_names_metadata if x['source_type'] == 'category'}
         total_name = total_name_lookup[category]
-        return self.get_value(total_name, year)
+        return self.value(total_name, year)
 
     def _category_total(self, value_matrix, category: str, year: int) -> float:
         """
@@ -740,8 +803,8 @@ class Model(SerializationMixin):
             'line_items_by_category': line_items_by_category,
             'line_item_generator_names': [gen.name for gen in self.line_item_generators],
             'constraint_names': [const.name for const in self.constraints],
-            'defined_names_count': len(self.defined_names),
-            'category_totals': [item['name'] for item in self.defined_names if item['source_type'] == 'category']
+            'defined_names_count': len(self.defined_names_metadata),
+            'category_totals': [item['name'] for item in self.defined_names_metadata if item['source_type'] == 'category']
         }
 
     def _repr_html_(self) -> str:
