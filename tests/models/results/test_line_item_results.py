@@ -821,3 +821,81 @@ class TestLineItemResultsCalculationMethods:
         # Test index_to_year
         assert revenue_item.index_to_year(2020) == 100.0  # Base year = 100
         assert revenue_item.index_to_year(2022) == 150.0  # 150% of base
+        
+        # Test cumulative
+        assert revenue_item.cumulative() == 490  # 100 + 120 + 150 + 120 = 490
+        assert revenue_item.cumulative([2020, 2021]) == 220  # 100 + 120 = 220
+    
+    def test_cumulative_method(self, calculation_model):
+        """Test cumulative method on LineItemResults."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Test with no years specified (should use all years)
+        # Revenue values: 2020=100, 2021=120, 2022=150, 2023=120
+        # Total: 100 + 120 + 150 + 120 = 490
+        assert revenue_item.cumulative() == 490
+        
+        # Test with specific years
+        assert revenue_item.cumulative([2020]) == 100
+        assert revenue_item.cumulative([2020, 2021]) == 220  # 100 + 120
+        assert revenue_item.cumulative([2021, 2022]) == 270  # 120 + 150
+        assert revenue_item.cumulative([2020, 2022, 2023]) == 370  # 100 + 150 + 120
+        
+        # Test with all years explicitly
+        assert revenue_item.cumulative([2020, 2021, 2022, 2023]) == 490
+        
+        # Test with years in different order
+        assert revenue_item.cumulative([2023, 2020, 2022]) == 370  # 120 + 100 + 150
+    
+    def test_cumulative_method_with_zero_values(self, calculation_model):
+        """Test cumulative method with line item that has zero values."""
+        expense_item = calculation_model.line_item("expense")
+        
+        # Expense values: 2020=50, 2021=50, 2022=75, 2023=0
+        # Total: 50 + 50 + 75 + 0 = 175
+        assert expense_item.cumulative() == 175
+        
+        # Test with years including zero
+        assert expense_item.cumulative([2023]) == 0
+        assert expense_item.cumulative([2022, 2023]) == 75  # 75 + 0
+    
+    def test_cumulative_method_error_handling(self, calculation_model):
+        """Test cumulative method error handling."""
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Test with invalid year
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.cumulative([2025])
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        # Test with mix of valid and invalid years
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.cumulative([2020, 2025, 2021])
+        assert "Year 2025 not found in model years" in str(excinfo.value)
+        
+        # Test with empty list (should return 0)
+        assert revenue_item.cumulative([]) == 0
+    
+    def test_cumulative_method_with_none_values(self, calculation_model):
+        """Test cumulative method when line item has None values."""
+        # Create a mock line item that returns None for some years
+        from unittest.mock import patch
+        
+        revenue_item = calculation_model.line_item("revenue")
+        
+        # Mock model.value to return None for 2021
+        with patch.object(revenue_item.model, 'value') as mock_value:
+            def side_effect(item_name, year):
+                if item_name == "revenue" and year == 2021:
+                    return None
+                # Return original values for other years
+                original_values = {2020: 100, 2021: 120, 2022: 150, 2023: 120}
+                return original_values.get(year, 0)
+            
+            mock_value.side_effect = side_effect
+            
+            # Should return None if any value is None
+            assert revenue_item.cumulative([2020, 2021, 2022]) is None
+            
+            # Should work fine with years that don't include the None value
+            assert revenue_item.cumulative([2020, 2022]) == 250
