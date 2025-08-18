@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import plotly.graph_objects as go
 from pyproforma.tables.table_class import format_value, Table
@@ -307,7 +307,7 @@ class LineItemResults:
         # Calculate indexed value: (current / base) * 100
         return (current_value / base_year_value) * 100.0
 
-    def cumulative(self, years: list[int] = None) -> float:
+    def cumulative(self, years: Optional[list[int]] = None) -> Optional[float]:
         """
         Calculate the cumulative sum of this item's values for the specified years.
         
@@ -316,7 +316,7 @@ class LineItemResults:
             
         Returns:
             float: The cumulative sum of values for the specified years
-                   None if any value in the years is None
+            None: If any value in the years is None
                    
         Raises:
             KeyError: If any year in the years list is not found in the model
