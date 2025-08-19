@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from .model import Model 
 
 from ..line_item import LineItem, Category
+from ..constraint import Constraint
 from ...constants import ValueFormat
 
 
@@ -649,3 +650,232 @@ class UpdateNamespace:
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete line item '{name}': {str(e)}") from e
+
+    # ============================================================================
+    # CONSTRAINT METHODS
+    # ============================================================================
+
+    def add_constraint(
+        self,
+        constraint: Constraint = None,
+        *,
+        name: str = None,
+        line_item_name: str = None,
+        target: float = None,
+        operator: str = None,
+        tolerance: float = 0.0,
+        label: str = None
+    ):
+        """
+        Add a new constraint to the model.
+        
+        This method accepts either an already-created Constraint instance or the parameters
+        to create a new one. It validates the addition by first testing it on a copy of 
+        the model, then applies the change to the actual model if successful.
+        
+        Usage:
+            # Method 1: Pass a Constraint instance
+            model.update.add_constraint(existing_constraint)
+            
+            # Method 2: Create from parameters
+            model.update.add_constraint(
+                name="revenue_min",
+                line_item_name="revenue", 
+                target=50000.0,
+                operator="ge"
+            )
+        
+        Args:
+            constraint (Constraint, optional): An already-created Constraint instance to add
+            name (str, optional): Name for new Constraint - required if constraint is None
+            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None
+            target (float, optional): Target value for constraint - required if constraint is None
+            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None
+            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0
+            label (str, optional): Display label for the constraint. Defaults to name if not provided
+            
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If the constraint cannot be added (validation fails)
+            TypeError: If neither constraint instance nor required parameters are provided
+        """
+        if constraint is not None:
+            # Method 1: Add an existing constraint
+            new_constraint = constraint
+        else:
+            # Method 2: Create constraint from parameters
+            if any(param is None for param in [name, line_item_name, target, operator]):
+                raise ValueError("When constraint is None, name, line_item_name, target, and operator are required")
+            
+            new_constraint = Constraint(
+                name=name,
+                line_item_name=line_item_name,
+                target=target,
+                operator=operator,
+                tolerance=tolerance,
+                label=label
+            )
+        
+        # Check if constraint name already exists
+        existing_names = [c.name for c in self._model.constraints]
+        if new_constraint.name in existing_names:
+            raise ValueError(f"Constraint with name '{new_constraint.name}' already exists")
+        
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            model_copy.constraints.append(new_constraint)
+            model_copy._reclalculate()
+            
+            # If we get here, the addition was successful on the copy
+            # Now apply it to the actual model
+            self._model.constraints.append(new_constraint)
+            self._model._reclalculate()
+            
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to add constraint '{new_constraint.name}': {str(e)}") from e
+
+    def update_constraint(
+        self,
+        name: str,
+        *,
+        constraint: Constraint = None,
+        new_name: str = None,
+        line_item_name: str = None,
+        target: float = None,
+        operator: str = None,
+        tolerance: float = None,
+        label: str = None
+    ):
+        """
+        Update an existing constraint in the model.
+        
+        This method allows updating any aspect of an existing constraint. You can either
+        provide a complete Constraint instance to replace the existing one, or provide
+        specific parameters to update while keeping others unchanged.
+        
+        Usage:
+            # Update specific parameters
+            model.update.update_constraint(
+                "revenue_min",
+                target=60000.0,
+                operator="gt"
+            )
+            
+            # Replace with new constraint instance
+            new_constraint = Constraint(name="revenue_min", ...)
+            model.update.update_constraint("revenue_min", constraint=new_constraint)
+        
+        Args:
+            name (str): Name of the existing constraint to update
+            constraint (Constraint, optional): Complete constraint instance to replace existing one
+            new_name (str, optional): New name for the constraint
+            line_item_name (str, optional): New line item name for the constraint
+            target (float, optional): New target value for the constraint
+            operator (str, optional): New comparison operator for the constraint
+            tolerance (float, optional): New tolerance for the constraint
+            label (str, optional): New display label for the constraint
+            
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If the constraint cannot be updated (validation fails)
+            KeyError: If the constraint with the given name is not found
+        """
+        # Find the existing constraint
+        constraint_index = None
+        existing_constraint = None
+        for i, c in enumerate(self._model.constraints):
+            if c.name == name:
+                constraint_index = i
+                existing_constraint = c
+                break
+        
+        if existing_constraint is None:
+            available_constraints = [c.name for c in self._model.constraints]
+            raise KeyError(f"Constraint '{name}' not found. Available constraints: {available_constraints}")
+        
+        if constraint is not None:
+            # Method 1: Replace with provided constraint
+            updated_constraint = constraint
+        else:
+            # Method 2: Update specific parameters
+            updated_constraint = Constraint(
+                name=new_name if new_name is not None else existing_constraint.name,
+                line_item_name=line_item_name if line_item_name is not None else existing_constraint.line_item_name,
+                target=target if target is not None else existing_constraint.target,
+                operator=operator if operator is not None else existing_constraint.operator,
+                tolerance=tolerance if tolerance is not None else existing_constraint.tolerance,
+                label=label if label is not None else existing_constraint.label
+            )
+        
+        # Check if new name conflicts with other constraints (excluding the one being updated)
+        if updated_constraint.name != existing_constraint.name:
+            existing_names = [c.name for c in self._model.constraints if c.name != existing_constraint.name]
+            if updated_constraint.name in existing_names:
+                raise ValueError(f"Constraint with name '{updated_constraint.name}' already exists")
+        
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            model_copy.constraints[constraint_index] = updated_constraint
+            model_copy._reclalculate()
+            
+            # If we get here, the update was successful on the copy
+            # Now apply it to the actual model
+            self._model.constraints[constraint_index] = updated_constraint
+            self._model._reclalculate()
+            
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to update constraint '{name}': {str(e)}") from e
+
+    def delete_constraint(self, name: str):
+        """
+        Delete a constraint from the model by name.
+        
+        This method validates the deletion by first testing it on a copy of 
+        the model, then applies the change to the actual model if successful.
+        
+        Usage:
+            model.update.delete_constraint("revenue_min")
+        
+        Args:
+            name (str): Name of the constraint to delete
+            
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If the constraint cannot be deleted (validation fails)
+            KeyError: If the constraint with the given name is not found
+        """
+        # Verify the constraint exists
+        constraint_exists = False
+        for constraint in self._model.constraints:
+            if constraint.name == name:
+                constraint_exists = True
+                break
+        
+        if not constraint_exists:
+            available_constraints = [c.name for c in self._model.constraints]
+            raise KeyError(f"Constraint '{name}' not found. Available constraints: {available_constraints}")
+        
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            model_copy.constraints = [c for c in model_copy.constraints if c.name != name]
+            model_copy._reclalculate()
+            
+            # If we get here, the deletion was successful on the copy
+            # Now apply it to the actual model
+            self._model.constraints = [c for c in self._model.constraints if c.name != name]
+            self._model._reclalculate()
+            
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to delete constraint '{name}': {str(e)}") from e
