@@ -307,7 +307,7 @@ class LineItemResults:
         # Calculate indexed value: (current / base) * 100
         return (current_value / base_year_value) * 100.0
 
-    def cumulative(self, years: Optional[list[int]] = None) -> Optional[float]:
+    def cumulative(self, years: Optional[list[int]] = None) -> float:
         """
         Calculate the cumulative sum of this item's values for the specified years.
         
@@ -315,8 +315,7 @@ class LineItemResults:
             years (list[int], optional): List of years to sum. If None, uses all years in the model.
             
         Returns:
-            float: The cumulative sum of values for the specified years
-            None: If any value in the years is None
+            float: The cumulative sum of values for the specified years. None values are treated as zero.
                    
         Raises:
             KeyError: If any year in the years list is not found in the model
@@ -334,7 +333,7 @@ class LineItemResults:
         for year in years_to_sum:
             value = self.model.value(self.item_name, year)
             if value is None:
-                return None
+                value = 0  # Treat None values as zero
             cumulative_sum += value
         
         return cumulative_sum

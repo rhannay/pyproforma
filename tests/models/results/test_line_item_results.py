@@ -894,8 +894,9 @@ class TestLineItemResultsCalculationMethods:
             
             mock_value.side_effect = side_effect
             
-            # Should return None if any value is None
-            assert revenue_item.cumulative([2020, 2021, 2022]) is None
+            # Should treat None values as zero and return sum of non-None values
+            # 100 (2020) + 0 (2021 None treated as 0) + 150 (2022) = 250
+            assert revenue_item.cumulative([2020, 2021, 2022]) == 250
             
             # Should work fine with years that don't include the None value
             assert revenue_item.cumulative([2020, 2022]) == 250
