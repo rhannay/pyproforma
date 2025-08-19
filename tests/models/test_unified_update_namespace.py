@@ -55,15 +55,18 @@ class TestUnifiedUpdateNamespace:
         # Add methods
         assert hasattr(update, 'add_category')
         assert hasattr(update, 'add_line_item')
+        assert hasattr(update, 'add_constraint')
         
         # Update methods
         assert hasattr(update, 'update_category')
         assert hasattr(update, 'update_line_item')
         assert hasattr(update, 'update_years')
+        assert hasattr(update, 'update_constraint')
         
         # Delete methods
         assert hasattr(update, 'delete_category')
         assert hasattr(update, 'delete_line_item')
+        assert hasattr(update, 'delete_constraint')
 
     def test_add_category_functionality(self, sample_model: Model):
         """Test that add_category works correctly."""
