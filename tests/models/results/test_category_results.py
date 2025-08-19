@@ -126,7 +126,7 @@ class TestCategoryResultsStringRepresentation:
         assert "Label: Income" in str_result
         assert "Line Items: 2" in str_result
         assert "Items: product_sales, service_revenue" in str_result
-        assert "Total (2023):" in str_result
+        assert "Totals:" in str_result
         
     def test_repr_method(self, category_results_with_total):
         """Test __repr__ method returns expected format."""
@@ -142,7 +142,7 @@ class TestCategoryResultsStringRepresentation:
         assert "Label: Income" in summary
         assert "Line Items: 2" in summary
         assert "Items: product_sales, service_revenue" in summary
-        assert "Total (2023): 150,000" in summary
+        assert "Totals: 150,000, 180,000, 210,000" in summary
     
     def test_summary_method_without_total(self, category_results_without_total):
         """Test summary method with category that doesn't include totals."""
@@ -434,7 +434,7 @@ class TestCategoryResultsErrorHandling:
             
             assert "CategoryResults('income')" in summary
             assert "Label: Income" in summary
-            assert "Total: Not available" in summary
+            assert "Totals: Not available" in summary
     
     def test_table_method_with_table_error(self, model_with_categories_basic):
         """Test table method when underlying table method raises error."""
@@ -506,7 +506,7 @@ class TestCategoryResultsIntegration:
         str_result = str(category_results)
         assert "CategoryResults('income')" in str_result
         assert "Label: Income" in str_result
-        assert "Total (2023): 150,000" in str_result
+        assert "Totals: 150,000, 180,000" in str_result
     
     def test_category_results_html_representation_integration(self, integrated_model):
         """Test HTML representation with real model data."""

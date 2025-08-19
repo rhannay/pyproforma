@@ -103,7 +103,7 @@ class TestLineItemResultsStringRepresentation:
         assert "Label: Revenue" in str_result
         assert "Source Type: line_item" in str_result
         assert "Value Format: no_decimals" in str_result
-        assert "Value (2023):" in str_result
+        assert "Values:" in str_result
         
     def test_repr_method(self, line_item_results):
         """Test __repr__ method returns expected format."""
@@ -119,7 +119,7 @@ class TestLineItemResultsStringRepresentation:
         assert "Label: Revenue" in summary
         assert "Source Type: line_item" in summary
         assert "Value Format: no_decimals" in summary
-        assert "Value (2023): 100,000" in summary
+        assert "Values: 100,000, 120,000, 140,000" in summary
         assert "Formula: None (explicit values)" in summary
     
     def test_summary_method_with_formula(self, line_item_results_with_formula):
@@ -417,7 +417,7 @@ class TestLineItemResultsErrorHandling:
             
             assert "LineItemResults('revenue')" in summary
             assert "Label: Revenue" in summary
-            assert "Value: Not available" in summary
+            assert "Values: Not available" in summary
     
     def test_chart_method_with_chart_error(self, model_with_line_items_basic):
         """Test chart method when underlying chart method raises error."""
@@ -490,7 +490,7 @@ class TestLineItemResultsIntegration:
         str_result = str(line_item_results)
         assert "LineItemResults('revenue')" in str_result
         assert "Label: Revenue" in str_result
-        assert "Value (2023): 100,000" in str_result
+        assert "Values: 100,000, 120,000" in str_result
     
     def test_line_item_results_html_representation_integration(self, integrated_model):
         """Test HTML representation with real model data."""
@@ -558,7 +558,7 @@ class TestLineItemResultsEdgeCases:
         summary = line_item_results.summary()
         assert "LineItemResults('revenue_2024')" in summary
         assert "Label: Revenue 2024" in summary
-        assert "Value (2024): 100,000" in summary
+        assert "Values: 100,000" in summary
     
     def test_line_item_results_with_single_year(self):
         """Test LineItemResults with model containing only one year."""
