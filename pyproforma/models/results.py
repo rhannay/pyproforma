@@ -511,14 +511,19 @@ class CategoryResults:
         
         return df
     
-    def table(self) -> Table:
+    def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
+        
+        Args:
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the category items formatted for display
         """
-        return self.model.tables.category(self.category_name)
+        return self.model.tables.category(self.category_name, hardcoded_color=hardcoded_color)
 
     def _repr_html_(self) -> str:
         """

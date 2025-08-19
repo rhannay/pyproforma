@@ -114,28 +114,31 @@ class Tables:
             rows.extend(self._category_rows(cat_def.name))
         return rows
     
-    def _category_rows(self, category_name: str):
+    def _category_rows(self, category_name: str, hardcoded_color: Optional[str] = None):
         rows = []
         category = self._model.category(category_name)
         rows.append(rt.LabelRow(label=category.category_obj.label, bold=True))
         for item in category.line_items_definitions:
-            rows.append(rt.ItemRow(name=item.name))
+            rows.append(rt.ItemRow(name=item.name, hardcoded_color=hardcoded_color))
         if category.category_obj.include_total:
             rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
         return rows
 
-    def category(self, category_name: str, include_name: bool = False) -> Table:
+    def category(self, category_name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table for a specific category.
         
         Args:
             category_name (str): The name of the category to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the category items.
         """
-        rows = self._category_rows(category_name)
+        rows = self._category_rows(category_name, hardcoded_color=hardcoded_color)
         return self.from_template(rows, include_name=include_name)
 
     def line_item(self, name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
