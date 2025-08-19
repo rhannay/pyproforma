@@ -38,7 +38,11 @@ class LineItemResults:
         self.source_type = self._line_item_metadata['source_type']
         self.label = self._line_item_metadata['label']
         self.value_format = self._line_item_metadata['value_format']
-    
+        if self.source_type == 'line_item':
+            self._line_item_definition = model.get_line_item_definition(item_name)
+        else:
+            self._line_item_definition = None
+
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
         return self.summary()
@@ -73,6 +77,21 @@ class LineItemResults:
         """
         return self.model.value(self.item_name, year)
     
+    def is_hardcoded(self, year: int) -> bool:
+        """
+        Check if the line item has a hardcoded value for a specific year.
+        
+        Args:
+            year (int): The year to check for hardcoded values
+            
+        Returns:
+            bool: True if the year has a hardcoded value, False otherwise.
+                  Returns False if _line_item_definition is None.
+        """
+        if self._line_item_definition is None:
+            return False
+        return self._line_item_definition.is_hardcoded(year)
+    
     def __getitem__(self, year: int) -> float:
         """
         Allow bracket access to item value for a specific year.
@@ -100,14 +119,19 @@ class LineItemResults:
         values_dict = self.values()
         return pd.DataFrame([values_dict], index=[self.item_name])
     
-    def table(self) -> Table:
+    def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
-        Return a Table object for this item using the tables.item() function.
+        Return a Table object for this item using the tables.line_item() function.
+        
+        Args:
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the item formatted for display
         """
-        return self.model.tables.line_item(self.item_name, include_name=False)
+        return self.model.tables.line_item(self.item_name, include_name=False, hardcoded_color=hardcoded_color)
 
     def chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white', chart_type: str = 'line') -> go.Figure:
         """

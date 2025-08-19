@@ -1,6 +1,6 @@
 from .table_class import Table, Cell, Row, Column
 from .table_generator import generate_table_from_template
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from . import row_types as rt
 
 if TYPE_CHECKING:
@@ -138,19 +138,22 @@ class Tables:
         rows = self._category_rows(category_name)
         return self.from_template(rows, include_name=include_name)
 
-    def line_item(self, name: str, include_name: bool = False) -> Table:
+    def line_item(self, name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table for a specific line item showing its label and values by year.
         
         Args:
             name (str): The name of the line item to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the line item's label and values across years.
         """
         rows = [
-            rt.ItemRow(name=name),
+            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label='% Change'),
             rt.CumulativeChangeRow(name=name, label='Cumulative Change'),
             rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')

@@ -35,13 +35,17 @@ class ItemRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     include_name: bool = False
     bold: bool = False
+    hardcoded_color: Optional[str] = None
     
     def generate_row(self, model: 'Model') -> Row:
         """Create a row for a line item with its label and values across all years."""
+        # Get line_item
+        li = model.line_item(self.name)
+
         # Get label and value format from model if not specified
-        label = self.label if self.label is not None else model.line_item(self.name).label
-        value_format = self.value_format or model.line_item(self.name).value_format
-        
+        label = self.label if self.label is not None else li.label
+        value_format = self.value_format or li.value_format
+
         # Create cells for this row
         cells = []
         if self.include_name:
@@ -50,9 +54,10 @@ class ItemRow(BaseRow):
         
         # Add a cell for each year with the item's value for that year
         for year in model.years:
-            value = model[self.name, year]
-            cells.append(Cell(value=value, bold=self.bold, value_format=value_format))
-        
+            value = li[year]
+            font_color = self.hardcoded_color if self.hardcoded_color is not None and li.is_hardcoded(year) else None
+            cells.append(Cell(value=value, bold=self.bold, value_format=value_format, font_color=font_color))
+
         return Row(cells=cells)
 
 
