@@ -13,7 +13,7 @@ class Cell:
     
     The Cell class represents an individual cell within a table, containing both
     the data value and its presentation formatting. Cells support various styling
-    options including bold text, alignment, background colors, and value formatting
+    options including bold text, alignment, background colors, font colors, and value formatting
     for numbers, percentages, and strings.
     
     Attributes:
@@ -23,6 +23,7 @@ class Cell:
         value_format (Optional[ValueFormat]): Formatting type for the value display.
             Options: 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
         background_color (Optional[str]): CSS color string for cell background.
+        font_color (Optional[str]): CSS color string for font color.
     
     Examples:
         >>> cell = Cell(value=1000, bold=True, value_format='no_decimals')
@@ -32,12 +33,17 @@ class Cell:
         >>> cell = Cell(value=0.25, value_format='percent')
         >>> cell.formatted_value
         '25%'
+        
+        >>> cell = Cell(value=1000, font_color='blue', background_color='lightgray')
+        >>> 'color: blue' in cell.df_css
+        True
     """
     value: Optional[Any] = None
     bold: bool = False
     align: str = 'right'
     value_format: Optional[ValueFormat] = None
     background_color: Optional[str] = None
+    font_color: Optional[str] = None
 
     @property
     def df_css(self) -> str:
@@ -49,6 +55,8 @@ class Cell:
             styles.append(f'text-align: {self.align}')
         if self.background_color:
             styles.append(f'background-color: {self.background_color}')
+        if self.font_color:
+            styles.append(f'color: {self.font_color}')
         return '; '.join(styles) + (';' if styles else '')
     
     @property
