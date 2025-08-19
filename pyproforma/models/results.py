@@ -501,14 +501,14 @@ class CategoryResults:
         Return HTML representation for Jupyter notebooks.
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
-        summary_text = self.summary()
-        # Convert newlines to HTML line breaks for proper notebook display
-        html_summary = summary_text.replace('\n', '<br>')
-        return f'<pre>{html_summary}</pre>'
+        return self.summary(html=True)
 
-    def summary(self) -> str:
+    def summary(self, html: bool = False) -> str:
         """
         Return a summary string with key statistics about the category.
+        
+        Args:
+            html (bool, optional): If True, returns HTML formatted output. Defaults to False.
         
         Returns:
             str: Formatted summary of the category
@@ -516,20 +516,29 @@ class CategoryResults:
         num_items = len(self.line_items_definitions)
         item_names = [item.name for item in self.line_items_definitions]
         
-        # Get total for first year if category includes total
+        # Get totals for all years if category includes totals
         total_info = ""
         if self.category_obj.include_total and self.model.years:
-            first_year = self.model.years[0]
             try:
-                total_value = self.model.category_total(self.category_name, first_year)
-                total_info = f"\nTotal ({first_year}): {total_value:,.0f}"
+                totals_list = []
+                for year in self.model.years:
+                    total_value = self.model.category_total(self.category_name, year)
+                    formatted_total = f"{total_value:,.0f}"
+                    totals_list.append(formatted_total)
+                total_info = f"\nTotals: {', '.join(totals_list)}"
             except (KeyError, AttributeError):
-                total_info = "\nTotal: Not available"
+                total_info = "\nTotals: Not available"
         
-        return (f"CategoryResults('{self.category_name}')\n"
+        summary_text = (f"CategoryResults('{self.category_name}')\n"
                 f"Label: {self.category_obj.label}\n"
                 f"Line Items: {num_items}\n"
                 f"Items: {', '.join(item_names)}{total_info}")
+        
+        if html:
+            html_summary = summary_text.replace('\n', '<br>')
+            return f'<pre>{html_summary}</pre>'
+        else:
+            return summary_text
 
 
 class ConstraintResults:
