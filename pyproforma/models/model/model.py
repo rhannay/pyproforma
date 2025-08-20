@@ -212,6 +212,7 @@ class Model(SerializationMixin):
                 - 'source_type' (str): The component type that defines this name
                   ('line_item', 'category', 'line_item_generator')
                 - 'source_name' (str): The original source object's name
+                - 'category' (str): The category name (None for non-line-item types)
                 
         Raises:
             ValueError: If duplicate names are found across different components
@@ -221,10 +222,10 @@ class Model(SerializationMixin):
             [
                 {'name': 'revenue', 'label': 'Revenue', 
                  'value_format': 'no_decimals', 'source_type': 'line_item', 
-                 'source_name': 'revenue'},
+                 'source_name': 'revenue', 'category': 'income'},
                 {'name': 'total_revenue', 'label': 'Total Revenue', 
                  'value_format': 'no_decimals', 'source_type': 'category', 
-                 'source_name': 'revenue'}
+                 'source_name': 'revenue', 'category': None}
             ]
         """
         defined_names = []
@@ -235,6 +236,7 @@ class Model(SerializationMixin):
                 'value_format': item.value_format, 
                 'source_type': 'line_item', 
                 'source_name': item.name,
+                'category': item.category,
             })
         for category in self._category_definitions:
             if category.include_total:
@@ -249,7 +251,8 @@ class Model(SerializationMixin):
                         'label': category.total_label, 
                         'value_format': 'no_decimals', 
                         'source_type': 'category', 
-                        'source_name': category.name
+                        'source_name': category.name,
+                        'category': None,
                     })
         for generator in self.line_item_generators:
             for gen_name in generator.defined_names:
@@ -258,7 +261,8 @@ class Model(SerializationMixin):
                     'label': gen_name, 
                     'value_format': 'no_decimals', 
                     'source_type': 'line_item_generator', 
-                    'source_name': generator.name
+                    'source_name': generator.name,
+                    'category': None,
                 })
         
         # Check for duplicate names in defined_names
