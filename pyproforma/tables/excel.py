@@ -105,12 +105,23 @@ def to_excel(table: 'Table', filename="table.xlsx"):
             if font_kwargs:
                 cell.font = Font(**font_kwargs)
                 
-            # Handle bottom border
+            # Handle borders
+            border_kwargs = {}
             if cell_data.bottom_border is not None:
                 if cell_data.bottom_border == 'single':
-                    cell.border = Border(bottom=Side(style='thin'))
+                    border_kwargs['bottom'] = Side(style='thin')
                 elif cell_data.bottom_border == 'double':
-                    cell.border = Border(bottom=Side(style='double'))
+                    border_kwargs['bottom'] = Side(style='double')
+            
+            if cell_data.top_border is not None:
+                if cell_data.top_border == 'single':
+                    border_kwargs['top'] = Side(style='thin')
+                elif cell_data.top_border == 'double':
+                    border_kwargs['top'] = Side(style='double')
+            
+            # Apply border if any border properties are set
+            if border_kwargs:
+                cell.border = Border(**border_kwargs)
                 
             # Set alignment
             if cell_data.align:

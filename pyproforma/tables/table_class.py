@@ -13,7 +13,7 @@ class Cell:
     
     The Cell class represents an individual cell within a table, containing both
     the data value and its presentation formatting. Cells support various styling
-    options including bold text, alignment, background colors, font colors, bottom borders, and value formatting
+    options including bold text, alignment, background colors, font colors, top borders, bottom borders, and value formatting
     for numbers, percentages, and strings.
     
     Attributes:
@@ -25,6 +25,7 @@ class Cell:
         background_color (Optional[str]): CSS color string for cell background.
         font_color (Optional[str]): CSS color string for font color.
         bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.
+        top_border (Optional[str]): Top border style. Can be None, 'single', or 'double'.
     
     Examples:
         >>> cell = Cell(value=1000, bold=True, value_format='no_decimals')
@@ -42,6 +43,10 @@ class Cell:
         >>> cell = Cell(value="Total", bottom_border='double')
         >>> 'border-bottom: 3px double black' in cell.df_css
         True
+        
+        >>> cell = Cell(value="Header", top_border='single')
+        >>> 'border-top: 1px solid black' in cell.df_css
+        True
     """
     value: Optional[Any] = None
     bold: bool = False
@@ -50,6 +55,7 @@ class Cell:
     background_color: Optional[str] = None
     font_color: Optional[str] = None
     bottom_border: Optional[str] = None
+    top_border: Optional[str] = None
 
     @property
     def df_css(self) -> str:
@@ -70,6 +76,13 @@ class Cell:
                 styles.append('border-bottom: 3px double black')
             else:
                 raise ValueError(f"Invalid bottom_border value: '{self.bottom_border}'. Must be None, 'single', or 'double'.")
+        if self.top_border:
+            if self.top_border == 'single':
+                styles.append('border-top: 1px solid black')
+            elif self.top_border == 'double':
+                styles.append('border-top: 3px double black')
+            else:
+                raise ValueError(f"Invalid top_border value: '{self.top_border}'. Must be None, 'single', or 'double'.")
         return '; '.join(styles) + (';' if styles else '')
     
     @property
