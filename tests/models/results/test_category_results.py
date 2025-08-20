@@ -374,14 +374,14 @@ class TestCategoryResultsTableMethod:
             
             result = category_results.table()
             
-            mock_category.assert_called_once_with("income")
+            mock_category.assert_called_once_with("income", hardcoded_color=None)
             assert result is mock_table
     
     def test_table_method_passes_category_name(self, category_results):
         """Test table method passes correct category name."""
         with patch('pyproforma.tables.tables.Tables.category') as mock_category:
             category_results.table()
-            mock_category.assert_called_once_with("income")
+            mock_category.assert_called_once_with("income", hardcoded_color=None)
 
 
 class TestCategoryResultsHtmlRepr:

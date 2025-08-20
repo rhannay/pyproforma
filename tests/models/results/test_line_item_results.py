@@ -261,14 +261,14 @@ class TestLineItemResultsTableMethod:
             
             result = line_item_results.table()
             
-            mock_line_item.assert_called_once_with("revenue", include_name=False)
+            mock_line_item.assert_called_once_with("revenue", include_name=False, hardcoded_color=None)
             assert result is mock_table
     
     def test_table_method_passes_item_name(self, line_item_results):
         """Test table method passes correct item name."""
         with patch('pyproforma.tables.tables.Tables.line_item') as mock_line_item:
             line_item_results.table()
-            mock_line_item.assert_called_once_with("revenue", include_name=False)
+            mock_line_item.assert_called_once_with("revenue", include_name=False, hardcoded_color=None)
 
 
 class TestLineItemResultsChartMethods:
