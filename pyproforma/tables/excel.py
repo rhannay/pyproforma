@@ -8,6 +8,36 @@ if TYPE_CHECKING:
 
 from ..constants import ValueFormat
 
+# Color name to Excel hex color mapping
+CSS_COLOR_TO_EXCEL = {
+    'red': 'FF0000',
+    'blue': '0000FF', 
+    'green': '008000',
+    'black': '000000',
+    'white': 'FFFFFF',
+    'yellow': 'FFFF00',
+    'orange': 'FFA500',
+    'purple': '800080',
+    'pink': 'FFC0CB',
+    'brown': 'A52A2A',
+    'gray': '808080',
+    'grey': '808080',
+    'darkblue': '00008B',
+    'darkgreen': '006400',
+    'darkred': '8B0000',
+    'lightblue': 'ADD8E6',
+    'lightgreen': '90EE90',
+    'gold': 'FFD700',
+    'silver': 'C0C0C0',
+    'navy': '000080',
+    'maroon': '800000',
+    'olive': '808000',
+    'lime': '00FF00',
+    'aqua': '00FFFF',
+    'teal': '008080',
+    'fuchsia': 'FF00FF'
+}
+
 def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
     """Convert a cell value_format to an Excel number_format."""
     if value_format is None:
@@ -59,8 +89,21 @@ def to_excel(table: 'Table', filename="table.xlsx"):
             cell.number_format = value_format_to_excel_format(cell_data.value_format)
             
             # Apply other formatting
+            font_kwargs = {}
+            
+            # Handle bold
             if cell_data.bold:
-                cell.font = Font(bold=True)
+                font_kwargs['bold'] = True
+                
+            # Handle font color
+            if cell_data.font_color is not None:
+                color_name = cell_data.font_color.lower().strip()
+                if color_name in CSS_COLOR_TO_EXCEL:
+                    font_kwargs['color'] = CSS_COLOR_TO_EXCEL[color_name]
+            
+            # Apply font if any font properties are set
+            if font_kwargs:
+                cell.font = Font(**font_kwargs)
                 
             # Set alignment
             if cell_data.align:
