@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model
-from pyproforma.models.line_item import Category
+from pyproforma.models.category import Category
 
 @pytest.fixture
 def sample_line_item() -> LineItem:

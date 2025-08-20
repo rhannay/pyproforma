@@ -1,5 +1,6 @@
 from typing import Union
-from ..line_item import LineItem, Category
+from ..line_item import LineItem
+from ..category import Category
 from pyproforma.models.line_item_generator import LineItemGenerator
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint

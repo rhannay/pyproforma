@@ -6,7 +6,8 @@ from pyproforma.tables.table_class import format_value, Table
 
 if TYPE_CHECKING:
     from .model import Model
-    from .line_item import LineItem, Category
+    from .line_item import LineItem
+    from .category import Category
     from .constraint import Constraint
 
 
