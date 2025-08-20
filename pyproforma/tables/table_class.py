@@ -13,7 +13,7 @@ class Cell:
     
     The Cell class represents an individual cell within a table, containing both
     the data value and its presentation formatting. Cells support various styling
-    options including bold text, alignment, background colors, font colors, and value formatting
+    options including bold text, alignment, background colors, font colors, bottom borders, and value formatting
     for numbers, percentages, and strings.
     
     Attributes:
@@ -24,6 +24,7 @@ class Cell:
             Options: 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
         background_color (Optional[str]): CSS color string for cell background.
         font_color (Optional[str]): CSS color string for font color.
+        bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.
     
     Examples:
         >>> cell = Cell(value=1000, bold=True, value_format='no_decimals')
@@ -37,6 +38,10 @@ class Cell:
         >>> cell = Cell(value=1000, font_color='blue', background_color='lightgray')
         >>> 'color: blue' in cell.df_css
         True
+        
+        >>> cell = Cell(value="Total", bottom_border='double')
+        >>> 'border-bottom: 3px double black' in cell.df_css
+        True
     """
     value: Optional[Any] = None
     bold: bool = False
@@ -44,6 +49,7 @@ class Cell:
     value_format: Optional[ValueFormat] = None
     background_color: Optional[str] = None
     font_color: Optional[str] = None
+    bottom_border: Optional[str] = None
 
     @property
     def df_css(self) -> str:
@@ -57,6 +63,13 @@ class Cell:
             styles.append(f'background-color: {self.background_color}')
         if self.font_color:
             styles.append(f'color: {self.font_color}')
+        if self.bottom_border:
+            if self.bottom_border == 'single':
+                styles.append('border-bottom: 1px solid black')
+            elif self.bottom_border == 'double':
+                styles.append('border-bottom: 3px double black')
+            else:
+                raise ValueError(f"Invalid bottom_border value: '{self.bottom_border}'. Must be None, 'single', or 'double'.")
         return '; '.join(styles) + (';' if styles else '')
     
     @property

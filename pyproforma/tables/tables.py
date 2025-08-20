@@ -124,8 +124,17 @@ class Tables:
         rows = []
         category = self._model.category(category_name)
         rows.append(rt.LabelRow(label=category.category_obj.label, bold=True))
-        for item in category.line_items_definitions:
-            rows.append(rt.ItemRow(name=item.name, hardcoded_color=hardcoded_color))
+        
+        # Check if we need to add bottom border to the last item
+        has_total = category.category_obj.include_total
+        
+        for i, item in enumerate(category.line_items_definitions):
+            # Add bottom border to the last item if there's a total row coming after
+            is_last_item = (i == len(category.line_items_definitions) - 1)
+            bottom_border = 'single' if has_total and is_last_item else None
+            
+            rows.append(rt.ItemRow(name=item.name, hardcoded_color=hardcoded_color, bottom_border=bottom_border))
+            
         if category.category_obj.include_total:
             rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
         return rows
