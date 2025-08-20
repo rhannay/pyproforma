@@ -91,7 +91,7 @@ class Tables:
                     rows.append(rt.ItemRow(name=gen_name))
         return generate_table_from_template(self._model, rows, include_name=True)
 
-    def line_items(self) -> Table:
+    def line_items(self, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table containing all line items organized by category.
         
@@ -99,19 +99,25 @@ class Tables:
         by their respective categories. Each category is shown with a bold header
         followed by its line items, and includes category totals if configured.
         
+        Args:
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
+        
         Returns:
             Table: A Table object containing all line items grouped by category.
         
         Examples:
             >>> table = model.tables.line_items()
+            >>> table = model.tables.line_items(hardcoded_color='blue')
         """
-        rows = self._line_item_rows()
+        rows = self._line_item_rows(hardcoded_color=hardcoded_color)
         return self.from_template(rows)
     
-    def _line_item_rows(self):
+    def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
         for cat_def in self._model._category_definitions:
-            rows.extend(self._category_rows(cat_def.name))
+            rows.extend(self._category_rows(cat_def.name, hardcoded_color=hardcoded_color))
         return rows
     
     def _category_rows(self, category_name: str, hardcoded_color: Optional[str] = None):
