@@ -1,6 +1,6 @@
 import openpyxl
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Alignment, Font, Border, Side
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -104,6 +104,13 @@ def to_excel(table: 'Table', filename="table.xlsx"):
             # Apply font if any font properties are set
             if font_kwargs:
                 cell.font = Font(**font_kwargs)
+                
+            # Handle bottom border
+            if cell_data.bottom_border is not None:
+                if cell_data.bottom_border == 'single':
+                    cell.border = Border(bottom=Side(style='thin'))
+                elif cell_data.bottom_border == 'double':
+                    cell.border = Border(bottom=Side(style='double'))
                 
             # Set alignment
             if cell_data.align:
