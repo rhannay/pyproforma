@@ -1,6 +1,6 @@
 from .table_class import Table, Cell, Row, Column
 from .table_generator import generate_table_from_template
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from . import row_types as rt
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class Tables:
                     rows.append(rt.ItemRow(name=gen_name))
         return generate_table_from_template(self._model, rows, include_name=True)
 
-    def line_items(self) -> Table:
+    def line_items(self, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table containing all line items organized by category.
         
@@ -99,58 +99,79 @@ class Tables:
         by their respective categories. Each category is shown with a bold header
         followed by its line items, and includes category totals if configured.
         
+        Args:
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
+        
         Returns:
             Table: A Table object containing all line items grouped by category.
         
         Examples:
             >>> table = model.tables.line_items()
+            >>> table = model.tables.line_items(hardcoded_color='blue')
         """
-        rows = self._line_item_rows()
+        rows = self._line_item_rows(hardcoded_color=hardcoded_color)
         return self.from_template(rows)
     
-    def _line_item_rows(self):
+    def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
         for cat_def in self._model._category_definitions:
-            rows.extend(self._category_rows(cat_def.name))
+            rows.extend(self._category_rows(cat_def.name, hardcoded_color=hardcoded_color))
         return rows
     
-    def _category_rows(self, category_name: str):
+    def _category_rows(self, category_name: str, hardcoded_color: Optional[str] = None):
         rows = []
         category = self._model.category(category_name)
         rows.append(rt.LabelRow(label=category.category_obj.label, bold=True))
-        for item in category.line_items_definitions:
-            rows.append(rt.ItemRow(name=item.name))
+        
+        # Check if we need to add bottom border to the last item
+        has_total = category.category_obj.include_total
+        
+        for i, item in enumerate(category.line_items_definitions):
+            # Add bottom border to the last item if there's a total row coming after
+            is_last_item = (i == len(category.line_items_definitions) - 1)
+            bottom_border = 'single' if has_total and is_last_item else None
+            
+            rows.append(rt.ItemRow(name=item.name, hardcoded_color=hardcoded_color, bottom_border=bottom_border))
+            
         if category.category_obj.include_total:
             rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
         return rows
 
-    def category(self, category_name: str, include_name: bool = False) -> Table:
+    def category(self, category_name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table for a specific category.
         
         Args:
             category_name (str): The name of the category to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the category items.
         """
-        rows = self._category_rows(category_name)
+        rows = self._category_rows(category_name, hardcoded_color=hardcoded_color)
         return self.from_template(rows, include_name=include_name)
 
-    def line_item(self, name: str, include_name: bool = False) -> Table:
+    def line_item(self, name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table for a specific line item showing its label and values by year.
         
         Args:
             name (str): The name of the line item to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be 
+                                           displayed in this color. Defaults to None.
         
         Returns:
             Table: A Table object containing the line item's label and values across years.
         """
         rows = [
-            rt.ItemRow(name=name),
+            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label='% Change'),
             rt.CumulativeChangeRow(name=name, label='Cumulative Change'),
             rt.CumulativePercentChangeRow(name=name, label='Cumulative % Change')

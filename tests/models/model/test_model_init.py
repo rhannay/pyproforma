@@ -91,7 +91,7 @@ class TestModelInitWithDuplicateGenerators:
         assert model.line_item_generators[0].name == "revenue"
         
         # Verify defined names include both line item and generator variables
-        defined_names = [item['name'] for item in model.defined_names_metadata]
+        defined_names = [item['name'] for item in model.line_item_metadata]
         assert "revenue" in defined_names  # line item
         assert "revenue.principal" in defined_names  # generator
         assert "revenue.interest" in defined_names  # generator
@@ -130,7 +130,7 @@ class TestModelInitWithDuplicateGenerators:
         assert model.line_item_generators[1].name == "equipment_debt"
         
         # Verify defined names include both generators' variables
-        defined_names = [item['name'] for item in model.defined_names_metadata]
+        defined_names = [item['name'] for item in model.line_item_metadata]
         assert "company_debt.principal" in defined_names
         assert "company_debt.interest" in defined_names
         assert "equipment_debt.principal" in defined_names

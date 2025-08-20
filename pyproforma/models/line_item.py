@@ -73,7 +73,6 @@ class LineItem:
         self.formula = formula
         self.value_format = value_format
 
-
     def get_value(self, interim_values_by_year: dict, year: int) -> float | None:
         """
         Get the value for this line item in a specific year.
@@ -114,6 +113,18 @@ class LineItem:
         # If no formula is defined, return None
         return None
 
+    def is_hardcoded(self, year: int) -> bool:
+        """
+        Check if the line item has a hardcoded value for a specific year.
+        
+        Args:
+            year (int): The year to check for hardcoded values.
+            
+        Returns:
+            bool: True if the year has a hardcoded value in self.values, False otherwise.
+        """
+        return year in self.values
+
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""
         return {
@@ -141,8 +152,6 @@ class LineItem:
             formula=item_dict.get('formula'),
             value_format=item_dict.get('value_format', 'no_decimals')
         )
-
-
 
     def __str__(self):
         years = sorted(self.values.keys())

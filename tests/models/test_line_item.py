@@ -589,6 +589,86 @@ class TestCategory:
         assert reconstructed.total_name is None
         assert reconstructed.include_total == original.include_total
 
+class TestIsHardcoded:
+    """Test class for the is_hardcoded method."""
+
+    def test_is_hardcoded_returns_true_when_year_in_values(self):
+        """Test that is_hardcoded returns True when year exists in values dict."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0, 2021: 200.0, 2022: None}
+        )
+        
+        assert item.is_hardcoded(2020) is True
+        assert item.is_hardcoded(2021) is True
+        assert item.is_hardcoded(2022) is True  # Even None values are considered hardcoded
+
+    def test_is_hardcoded_returns_false_when_year_not_in_values(self):
+        """Test that is_hardcoded returns False when year doesn't exist in values dict."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0, 2021: 200.0}
+        )
+        
+        assert item.is_hardcoded(2019) is False
+        assert item.is_hardcoded(2022) is False
+        assert item.is_hardcoded(2025) is False
+
+    def test_is_hardcoded_with_empty_values(self):
+        """Test that is_hardcoded returns False when values dict is empty."""
+        item = LineItem(
+            name="test_item",
+            category="revenue"
+        )
+        
+        assert item.is_hardcoded(2020) is False
+        assert item.is_hardcoded(2021) is False
+
+    def test_is_hardcoded_with_formula_item(self):
+        """Test that is_hardcoded works correctly for items with formulas."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0},  # Only hardcoded for 2020
+            formula="test_item[-1] * 1.1"
+        )
+        
+        assert item.is_hardcoded(2020) is True   # Has explicit value
+        assert item.is_hardcoded(2021) is False  # Would use formula
+        assert item.is_hardcoded(2022) is False  # Would use formula
+
+    def test_is_hardcoded_with_mixed_none_and_numeric_values(self):
+        """Test is_hardcoded with mixed None and numeric values."""
+        item = LineItem(
+            name="mixed_item",
+            category="revenue",
+            values={2020: 100.0, 2021: None, 2022: 200.0}
+        )
+        
+        assert item.is_hardcoded(2020) is True
+        assert item.is_hardcoded(2021) is True  # None is still considered hardcoded
+        assert item.is_hardcoded(2022) is True
+        assert item.is_hardcoded(2023) is False  # Not in values
+
+    def test_is_hardcoded_different_year_types(self):
+        """Test is_hardcoded with different year value types."""
+        item = LineItem(
+            name="test_item",
+            category="revenue",
+            values={2020: 100.0}
+        )
+        
+        # Test with different integer representations
+        assert item.is_hardcoded(2020) is True
+        assert item.is_hardcoded(int(2020)) is True
+        
+        # Test with years not in values
+        assert item.is_hardcoded(2019) is False
+        assert item.is_hardcoded(2021) is False
+
+
 class TestLineItemNoneValues:
     """Test class specifically for None value functionality in LineItems."""
 
