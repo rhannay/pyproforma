@@ -194,7 +194,8 @@ class Model(SerializationMixin):
 
     def _gather_defined_names(self) -> list[dict]:
         """
-        Collects all defined names across the model to create a comprehensive namespace.
+        Collects all defined names across the model to create a comprehensive 
+        namespace.
         
         This method aggregates identifiers from all model components including 
         line items, category totals, and line item generators to 
@@ -203,6 +204,10 @@ class Model(SerializationMixin):
         Returns:
             list[dict]: A list of dictionaries, each containing:
                 - 'name' (str): The identifier name used for lookups
+                - 'label' (str): The display label for this identifier
+                - 'value_format' (str): The formatting type for values 
+                  (None, 'str', 'no_decimals', 'two_decimals', 'percent', 
+                  'percent_one_decimal', 'percent_two_decimals')
                 - 'source_type' (str): The component type that defines this name
                   ('line_item', 'category', 'line_item_generator')
                 - 'source_name' (str): The original source object's name
@@ -213,29 +218,58 @@ class Model(SerializationMixin):
         Example:
             For a model with revenue line item and revenue category:
             [
-                {'name': 'revenue', 'source_type': 'line_item', 'source_name': 'revenue'},
-                {'name': 'total_revenue', 'source_type': 'category', 'source_name': 'revenue'}
+                {'name': 'revenue', 'label': 'Revenue', 
+                 'value_format': 'no_decimals', 'source_type': 'line_item', 
+                 'source_name': 'revenue'},
+                {'name': 'total_revenue', 'label': 'Total Revenue', 
+                 'value_format': 'no_decimals', 'source_type': 'category', 
+                 'source_name': 'revenue'}
             ]
         """
         defined_names = []
         for item in self._line_item_definitions:
-            defined_names.append({'name': item.name, 'label': item.label, 'value_format': item.value_format, 'source_type': 'line_item', 'source_name': item.name, })
+            defined_names.append({
+                'name': item.name, 
+                'label': item.label, 
+                'value_format': item.value_format, 
+                'source_type': 'line_item', 
+                'source_name': item.name,
+            })
         for category in self._category_definitions:
             if category.include_total:
-                # Only include category total if there are line items in this category
-                items_in_category = [item for item in self._line_item_definitions if item.category == category.name]
+                # Only include category total if there are line items in category
+                items_in_category = [
+                    item for item in self._line_item_definitions 
+                    if item.category == category.name
+                ]
                 if items_in_category:  # Only add total if category has items
-                    defined_names.append({'name': category.total_name, 'label': category.total_label, 'value_format': 'no_decimals', 'source_type': 'category', 'source_name': category.name})
+                    defined_names.append({
+                        'name': category.total_name, 
+                        'label': category.total_label, 
+                        'value_format': 'no_decimals', 
+                        'source_type': 'category', 
+                        'source_name': category.name
+                    })
         for generator in self.line_item_generators:
             for gen_name in generator.defined_names:
-                defined_names.append({'name': gen_name, 'label': gen_name, 'value_format': 'no_decimals', 'source_type': 'line_item_generator', 'source_name': generator.name})
+                defined_names.append({
+                    'name': gen_name, 
+                    'label': gen_name, 
+                    'value_format': 'no_decimals', 
+                    'source_type': 'line_item_generator', 
+                    'source_name': generator.name
+                })
         
         # Check for duplicate names in defined_names
         # and raise ValueError if any duplicates are found.
         names_list = [item['name'] for item in defined_names]
-        duplicates = set([name for name in names_list if names_list.count(name) > 1])
+        duplicates = set([
+            name for name in names_list if names_list.count(name) > 1
+        ])
         if duplicates:
-            raise ValueError(f"Duplicate defined names found in Model: {', '.join(duplicates)}")
+            raise ValueError(
+                f"Duplicate defined names found in Model: {', '.join(duplicates)}"
+            )
         return defined_names
 
     def _generate_value_matrix(self) -> dict[int, dict[str, float]]:
