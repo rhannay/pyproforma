@@ -447,7 +447,7 @@ class TestConstraintIntegration:
         )
         
         # Check that defined names doesn't include constraint names
-        defined_names = [item['name'] for item in model.defined_names_metadata]
+        defined_names = [item['name'] for item in model.line_item_metadata]
         assert "revenue" in defined_names
         assert "total_income" in defined_names
         assert "revenue_constraint" not in defined_names  # Constraints shouldn't be in defined names
