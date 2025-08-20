@@ -682,8 +682,8 @@ class Model(SerializationMixin):
     def get_category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
-        
-        This method retrieves the [`Category`][pyproforma.models.line_item.Category] object that defines
+
+        This method retrieves the Category object that defines
         a specific category in the model. This is useful for accessing the category's
         properties such as label, total name, and whether it includes totals.
         
