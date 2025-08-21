@@ -8,6 +8,7 @@ from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
 from ..formula import validate_formula
+from .value_matrix import generate_value_matrix
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -104,7 +105,13 @@ class Model(SerializationMixin):
         self.line_item_metadata = self._gather_line_item_metadata()
         self._validate_formulas()
 
-        self._value_matrix = self._generate_value_matrix()
+        self._value_matrix = generate_value_matrix(
+            self.years,
+            self._line_item_definitions,
+            self.line_item_generators,
+            self._category_definitions,
+            self.line_item_metadata
+        )
 
     def _validate_categories(self):
         """
@@ -277,119 +284,19 @@ class Model(SerializationMixin):
             )
         return defined_names
 
-    def _generate_value_matrix(self) -> dict[int, dict[str, float]]:
-        value_matrix = {}
-        for year in self.years:
-            value_matrix[year] = {}
-        
-            # Calculate line items in dependency order
-            calculated_items = set()
-            remaining_items = self._line_item_definitions.copy()
-            max_iterations = len(self._line_item_definitions) + 1  # Safety valve
-            iteration = 0
-            
-            # Track which line item generators have been successfully calculated
-            remaining_generators = self.line_item_generators.copy() if self.line_item_generators else []
-            
-            while (remaining_items or remaining_generators) and iteration < max_iterations:
-                iteration += 1
-                items_calculated_this_round = []
-                generators_calculated_this_round = []
-                
-                # Try to calculate line item generators for this year
-                for generator in remaining_generators:
-                    try:
-                        # Try to calculate values for this line item generator
-                        generated_values = generator.get_values(value_matrix, year)
-                        
-                        # Update value matrix with the generated values
-                        value_matrix[year].update(generated_values)
-                        
-                        # Mark this generator as calculated
-                        generators_calculated_this_round.append(generator)
-                    except (KeyError, ValueError):
-                        # Skip if dependencies are not yet met
-                        # Will try again in the next iteration
-                        continue
-                
-                # Remove successfully calculated generators from remaining list
-                for generator in generators_calculated_this_round:
-                    remaining_generators.remove(generator)
-                
-                for item in remaining_items:
-                    try:
-                        # Try to calculate the item
-                        value_matrix[year][item.name] = item.get_value(value_matrix, year)
-                        calculated_items.add(item.name)
-                        items_calculated_this_round.append(item)
-                                
-                    except (KeyError, ValueError) as e:
-                        # Check if this is a None value error - these should be raised immediately
-                        if isinstance(e, ValueError) and "has None value" in str(e) and "Cannot use None values in formulas" in str(e):
-                            raise e
-                        
-                        # Check if this is a missing variable error vs dependency issue
-                        if isinstance(e, ValueError) and "not found for year" in str(e):
-                            # Extract variable name from error message
-                            import re as error_re
-                            match = error_re.search(r"Variable '(\w+)' not found for year", str(e))
-                            if match:
-                                var_name = match.group(1)
-                                # Check if this variable exists in our defined names
-                                all_defined_names = [name['name'] for name in self.line_item_metadata]
-                                if var_name not in all_defined_names:
-                                    # Variable truly doesn't exist, create enhanced error message
-                                    raise ValueError(f"Error calculating line item '{item.name}' for year {year}. Formula: '{item.formula}'. Line item '{var_name}' not found in model.") from e
-                        # Item depends on something not yet calculated, skip for now
-                        continue
-            
-                # Remove successfully calculated items from remaining list
-                for item in items_calculated_this_round:
-                    remaining_items.remove(item)
-                
-                # After each round, check if we can calculate any category totals
-                for category in self._category_definitions:
-                    if category.include_total and category.total_name not in value_matrix[year]:
-                        # Check if all items in this category have been calculated
-                        items_in_category = [item for item in self._line_item_definitions if item.category == category.name]
-                        all_items_calculated = all(item.name in calculated_items for item in items_in_category)
-                        
-                        if all_items_calculated and items_in_category:  # Only if category has items
-                            category_total = self._category_total(value_matrix, category.name, year)
-                            total_name = category.total_name
-                            value_matrix[year][total_name] = category_total
-                
-                # If no progress was made this round, we have circular dependencies
-                if not items_calculated_this_round and not generators_calculated_this_round:
-                    break
-            
-            # Check if all items and generators were calculated
-            errors = []
-            if remaining_items:
-                failed_items = [item.name for item in remaining_items]
-                errors.append(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
-                
-            if remaining_generators:
-                failed_generators = [generator.name for generator in remaining_generators]
-                errors.append(f"Could not calculate line item generators due to missing dependencies or circular references: {failed_generators}")
-                
-            if errors:
-                raise ValueError("\n".join(errors))
-        
-            # Ensure all defined names are present in the value matrix
-            for name in self.line_item_metadata:
-                if name['name'] not in value_matrix[year]:
-                    raise KeyError(f"Defined name '{name['name']}' not found in value matrix for year {year}.")
-    
-        return value_matrix
-
     def _reclalculate(self):
         self._validate_categories()
         self._validate_constraints()
         self._validate_line_item_generators()
         self.line_item_metadata = self._gather_line_item_metadata()
         self._validate_formulas()
-        self._value_matrix = self._generate_value_matrix()
+        self._value_matrix = generate_value_matrix(
+            self.years,
+            self._line_item_definitions,
+            self.line_item_generators,
+            self._category_definitions,
+            self.line_item_metadata
+        )
 
     # ============================================================================
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
