@@ -1,5 +1,5 @@
 import pytest
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestValidateExistingDebtService:

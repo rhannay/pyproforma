@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 from pyproforma.models.model.value_matrix import generate_value_matrix, _calculate_category_total
 
 
@@ -44,15 +44,15 @@ class TestGenerateValueMatrix:
         
         # All models should produce the same value matrix
         matrix1 = generate_value_matrix(
-            model1.years, model1._line_item_definitions + model1.line_item_generators,
+            model1.years, model1._line_item_definitions + model1.multi_line_items,
             model1._category_definitions, model1.line_item_metadata
         )
         matrix2 = generate_value_matrix(
-            model2.years, model2._line_item_definitions + model2.line_item_generators,
+            model2.years, model2._line_item_definitions + model2.multi_line_items,
             model2._category_definitions, model2.line_item_metadata
         )
         matrix3 = generate_value_matrix(
-            model3.years, model3._line_item_definitions + model3.line_item_generators,
+            model3.years, model3._line_item_definitions + model3.multi_line_items,
             model3._category_definitions, model3.line_item_metadata
         )
         
@@ -85,11 +85,11 @@ class TestGenerateValueMatrix:
         )
         
         matrix1 = generate_value_matrix(
-            model1.years, model1._line_item_definitions + model1.line_item_generators,
+            model1.years, model1._line_item_definitions + model1.multi_line_items,
             model1._category_definitions, model1.line_item_metadata
         )
         matrix2 = generate_value_matrix(
-            model2.years, model2._line_item_definitions + model2.line_item_generators,
+            model2.years, model2._line_item_definitions + model2.multi_line_items,
             model2._category_definitions, model2.line_item_metadata
         )
         
@@ -113,11 +113,11 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [revenue, invalid_item]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
+        model.multi_line_items = []
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         # Verify the exception message is useful - should detect invalid variable
         error_msg = str(exc_info.value)
@@ -147,11 +147,11 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []        
+        model.multi_line_items = []        
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -173,12 +173,12 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b, item_c, item_d]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
+        model.multi_line_items = []
 
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -199,11 +199,11 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [self_ref]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
+        model.multi_line_items = []
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -224,11 +224,11 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [good_item1, good_item2, bad_item1, bad_item2]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
+        model.multi_line_items = []
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         # Only the circular items should be mentioned
@@ -264,18 +264,18 @@ class TestGenerateValueMatrix:
             line_items=[revenue, net_income],
             years=[2023],
             categories=basic_categories,
-            line_item_generators=[debt_generator]
+            multi_line_items=[debt_generator]
         )
         
         model2 = Model(
             line_items=[net_income, revenue],  # Different order
             years=[2023],
             categories=basic_categories,
-            line_item_generators=[debt_generator]
+            multi_line_items=[debt_generator]
         )
         
-        matrix1 = generate_value_matrix(model1.years, model1._line_item_definitions + model1.line_item_generators, model1._category_definitions, model1.line_item_metadata)
-        matrix2 = generate_value_matrix(model2.years, model2._line_item_definitions + model2.line_item_generators, model2._category_definitions, model2.line_item_metadata)
+        matrix1 = generate_value_matrix(model1.years, model1._line_item_definitions + model1.multi_line_items, model1._category_definitions, model1.line_item_metadata)
+        matrix2 = generate_value_matrix(model2.years, model2._line_item_definitions + model2.multi_line_items, model2._category_definitions, model2.line_item_metadata)
         
         # Both should produce the same result
         assert matrix1[2023] == matrix2[2023]
@@ -312,7 +312,7 @@ class TestGenerateValueMatrix:
             categories=all_categories
         )
         
-        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         # Verify assumptions are in the matrix
         for year in [2023, 2024]:
@@ -341,11 +341,11 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.line_item_generators = []
+        model.multi_line_items = []
         model.line_item_metadata = model._gather_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "'nonexistent_variable' not found" in error_msg
@@ -367,11 +367,11 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.line_item_generators = []
+        model.multi_line_items = []
         model.line_item_metadata = model._gather_line_item_metadata()
 
         with pytest.raises(ValueError) as exc_info:
-            generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
 
         error_msg = str(exc_info.value)
         # The error should mention that referencing own category total is not allowed or not found
@@ -401,7 +401,7 @@ class TestGenerateValueMatrix:
             categories=basic_categories
         )
 
-        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.line_item_generators, model._category_definitions, model.line_item_metadata)
+        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
 
         for year in [2023, 2024]:
             expected_revenue_total = rev1.values[year] + rev2.values[year]

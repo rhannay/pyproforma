@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Union
 if TYPE_CHECKING:
     from ..line_item import LineItem
     from ..category import Category
-    from pyproforma.models.line_item_generator import LineItemGenerator
+    from pyproforma.models.multi_line_item import MultiLineItem
 
 
 def _calculate_category_total(
@@ -67,20 +67,20 @@ def _calculate_category_total(
 
 def generate_value_matrix(
     years: list[int],
-    line_item_definitions: list[Union["LineItem", "LineItemGenerator"]],
+    line_item_definitions: list[Union["LineItem", "MultiLineItem"]],
     category_definitions: list["Category"],
     line_item_metadata: list[dict]
 ) -> dict[int, dict[str, float]]:
     """
     Generate the value matrix containing all calculated values for the model.
     
-    This function calculates all line item values, line item generator outputs,
+    This function calculates all line item values, multi line item outputs,
     and category totals for each year in the model. It handles dependency resolution
     by calculating items in the correct order based on formula dependencies.
     
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, LineItemGenerator]]): List of line item definitions and generators
+        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
         category_definitions (list[Category]): List of category definitions  
         line_item_metadata (list[dict]): Metadata for all defined names
         
@@ -108,11 +108,11 @@ def generate_value_matrix(
             
             for item in remaining_items:
                 try:
-                    # Check if this is a LineItemGenerator or LineItem
-                    # LineItemGenerators have get_values() and defined_names, LineItems have get_value() and name
+                    # Check if this is a MultiLineItem or LineItem
+                    # MultiLineItems have get_values() and defined_names, LineItems have get_value() and name
                     
                     if hasattr(item, 'get_values') and hasattr(item, 'defined_names'):
-                        # Handle LineItemGenerator - get multiple values
+                        # Handle MultiLineItem - get multiple values
                         generated_values = item.get_values(value_matrix, year)
                         
                         # Update value matrix with the generated values
@@ -162,7 +162,7 @@ def generate_value_matrix(
             for category in category_definitions:
                 if category.include_total and category.total_name not in value_matrix[year]:
                     # Check if all items in this category have been calculated
-                    # Only look at LineItem objects for category totals, not LineItemGenerators
+                    # Only look at LineItem objects for category totals, not MultiLineItems
                     line_items_only = [item for item in line_item_definitions 
                                      if hasattr(item, 'get_value') and hasattr(item, 'name')]
                     items_in_category = [item for item in line_items_only if item.category == category.name]
@@ -184,7 +184,7 @@ def generate_value_matrix(
             failed_items = []
             for item in remaining_items:
                 if hasattr(item, 'get_values') and hasattr(item, 'defined_names'):
-                    # LineItemGenerator
+                    # MultiLineItem
                     failed_items.extend(item.defined_names)  # Add all names from the generator
                 elif hasattr(item, 'get_value') and hasattr(item, 'name'):
                     # LineItem 

@@ -83,10 +83,10 @@ class Tables:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
             for cat_def in self._model._category_definitions:
                 rows.extend(self._category_rows(cat_def.name))
-        # Line Item Generator items
-        if self._model.line_item_generators:
-            rows.append(rt.LabelRow(label='LINE ITEM GENERATOR ITEMS', bold=True))
-            for generator in self._model.line_item_generators:
+        # Multi Line Item items
+        if self._model.multi_line_items:
+            rows.append(rt.LabelRow(label='MULTI LINE ITEM ITEMS', bold=True))
+            for generator in self._model.multi_line_items:
                 for gen_name in generator.defined_names:
                     rows.append(rt.ItemRow(name=gen_name))
         return generate_table_from_template(self._model, rows, include_name=True)

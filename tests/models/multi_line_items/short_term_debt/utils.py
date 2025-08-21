@@ -1,4 +1,4 @@
-from pyproforma.models.line_item_generator import ShortTermDebt
+from pyproforma.models.multi_line_item import ShortTermDebt
 
 
 def _is_close(a, b, tolerance=1e-6):

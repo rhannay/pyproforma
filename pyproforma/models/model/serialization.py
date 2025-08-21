@@ -26,7 +26,7 @@ class SerializationMixin:
             'years': self.years,
             'line_items': [item.to_dict() for item in self._line_item_definitions],
             'categories': [category.to_dict() for category in self._category_definitions],
-            'line_item_generators': [generator.to_dict() for generator in self.line_item_generators],
+            'line_item_generators': [generator.to_dict() for generator in self.multi_line_items],
             'constraints': [constraint.to_dict() for constraint in self.constraints]
         }
     
@@ -81,7 +81,7 @@ class SerializationMixin:
         """
         from ..line_item import LineItem
         from ..category import Category
-        from pyproforma.models.line_item_generator import LineItemGenerator
+        from pyproforma.models.multi_line_item import MultiLineItem
         from ..constraint import Constraint
         
         # Reconstruct line items
@@ -96,9 +96,9 @@ class SerializationMixin:
             for category_dict in config_dict.get('categories', [])
         ]
         
-        # Reconstruct line item generators (basic implementation)
-        line_item_generators = [
-            LineItemGenerator.from_dict(generator_dict)
+        # Reconstruct multi line items (basic implementation)
+        multi_line_items = [
+            MultiLineItem.from_dict(generator_dict)
             for generator_dict in config_dict.get('line_item_generators', [])
         ]
         
@@ -112,7 +112,7 @@ class SerializationMixin:
             line_items=line_items,
             years=config_dict['years'],
             categories=categories,
-            line_item_generators=line_item_generators,
+            multi_line_items=multi_line_items,
             constraints=constraints
         )
     

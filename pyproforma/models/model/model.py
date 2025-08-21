@@ -1,7 +1,7 @@
 from typing import Union
 from ..line_item import LineItem
 from ..category import Category
-from pyproforma.models.line_item_generator import LineItemGenerator
+from pyproforma.models.multi_line_item import MultiLineItem
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
@@ -19,7 +19,7 @@ class Model(SerializationMixin):
     """
     Core financial modeling framework for building pro forma financial statements.
     
-    Creates structured financial models with line items, categories, line item generators, and constraints.
+    Creates structured financial models with line items, categories, multi line items, and constraints.
     Supports multi-year modeling, automatic dependency resolution, and rich output formatting.
     
     Args:
@@ -27,7 +27,7 @@ class Model(SerializationMixin):
         years (list[int]): Years for the model time horizon (required)
         categories (list[Category], optional): Category definitions (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
-        line_item_generators (list[LineItemGenerator], optional): Components that generate multiple line items
+        multi_line_items (list[MultiLineItem], optional): Components that generate multiple line items
     
     Examples:
         >>> from pyproforma import Model, LineItem
@@ -74,7 +74,7 @@ class Model(SerializationMixin):
         years: list[int] = None,
         categories: list[Category] = None,
         constraints: list[Constraint] = None,
-        line_item_generators: list[LineItemGenerator] = None
+        multi_line_items: list[MultiLineItem] = None
     ):
         
         if years is None:
@@ -96,18 +96,18 @@ class Model(SerializationMixin):
             self._category_definitions = categories
 
         self.constraints = constraints if constraints is not None else []
-        self.line_item_generators = line_item_generators if line_item_generators is not None else []
+        self.multi_line_items = multi_line_items if multi_line_items is not None else []
 
         self._validate_categories()
         self._validate_constraints()
-        self._validate_line_item_generators()
+        self._validate_multi_line_items()
 
         self.line_item_metadata = self._gather_line_item_metadata()
         self._validate_formulas()
 
         self._value_matrix = generate_value_matrix(
             self.years,
-            self._line_item_definitions + self.line_item_generators,
+            self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata
         )
@@ -157,21 +157,21 @@ class Model(SerializationMixin):
             if constraint.line_item_name not in line_item_names:
                 raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
 
-    def _validate_line_item_generators(self):
+    def _validate_multi_line_items(self):
         """
-        Validates that all line item generators have unique names.
+        Validates that all multi line items have unique names.
 
         Raises:
-            ValueError: If two or more line item generators have the same name.
+            ValueError: If two or more multi line items have the same name.
         """
-        if not self.line_item_generators:
+        if not self.multi_line_items:
             return
             
-        generator_names = [generator.name for generator in self.line_item_generators]
+        generator_names = [generator.name for generator in self.multi_line_items]
         duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
         
         if duplicates:
-            raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
+            raise ValueError(f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}")
 
     def _validate_formulas(self):
         """
@@ -216,7 +216,7 @@ class Model(SerializationMixin):
                   (None, 'str', 'no_decimals', 'two_decimals', 'percent', 
                   'percent_one_decimal', 'percent_two_decimals')
                 - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'line_item_generator')
+                  ('line_item', 'category', 'multi_line_item')
                 - 'source_name' (str): The original source object's name
                 - 'category' (str): The category name (None for non-line-item types)
                 
@@ -260,13 +260,13 @@ class Model(SerializationMixin):
                         'source_name': category.name,
                         'category': None,
                     })
-        for generator in self.line_item_generators:
+        for generator in self.multi_line_items:
             for gen_name in generator.defined_names:
                 defined_names.append({
                     'name': gen_name, 
                     'label': gen_name, 
                     'value_format': 'no_decimals', 
-                    'source_type': 'line_item_generator', 
+                    'source_type': 'multi_line_item', 
                     'source_name': generator.name,
                     'category': None,
                 })
@@ -286,12 +286,12 @@ class Model(SerializationMixin):
     def _reclalculate(self):
         self._validate_categories()
         self._validate_constraints()
-        self._validate_line_item_generators()
+        self._validate_multi_line_items()
         self.line_item_metadata = self._gather_line_item_metadata()
         self._validate_formulas()
         self._value_matrix = generate_value_matrix(
             self.years,
-            self._line_item_definitions + self.line_item_generators,
+            self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata
         )
@@ -718,10 +718,10 @@ class Model(SerializationMixin):
                 - years: List of years in the model
                 - line_items_count: Number of line items
                 - categories_count: Number of categories  
-                - line_item_generators_count: Number of line item generators
+                - multi_line_items_count: Number of multi line items
                 - constraints_count: Number of constraints
                 - line_items_by_category: Dictionary mapping category names to lists of line item names
-                - line_item_generator_names: List of line item generator names
+                - multi_line_item_names: List of multi line item names
                 - constraint_names: List of constraint names
                 - defined_names_count: Total number of defined names (items that can be referenced)
         """
@@ -738,10 +738,10 @@ class Model(SerializationMixin):
             'year_range': f"{min(self.years)} - {max(self.years)}" if self.years else "None",
             'line_items_count': len(self._line_item_definitions),
             'categories_count': len(self._category_definitions),
-            'line_item_generators_count': len(self.line_item_generators),
+            'multi_line_items_count': len(self.multi_line_items),
             'constraints_count': len(self.constraints),
             'line_items_by_category': line_items_by_category,
-            'line_item_generator_names': [gen.name for gen in self.line_item_generators],
+            'multi_line_item_names': [gen.name for gen in self.multi_line_items],
             'constraint_names': [const.name for const in self.constraints],
             'defined_names_count': len(self.line_item_metadata),
             'category_totals': [item['name'] for item in self.line_item_metadata if item['source_type'] == 'category']
@@ -770,7 +770,7 @@ class Model(SerializationMixin):
                     <span style="color: #666; font-size: 0.9em;">Across {categories_count} categories</span>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
-                    <strong>Line Item Generators:</strong> {line_item_generators_count}<br>
+                    <strong>Multi Line Items:</strong> {multi_line_items_count}<br>
                     <strong>Constraints:</strong> {constraints_count}
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #6f42c1;">
@@ -810,14 +810,14 @@ class Model(SerializationMixin):
             </div>
             """
         
-        # Add line item generators if any
-        if summary['line_item_generator_names']:
+        # Add multi line items if any
+        if summary['multi_line_item_names']:
             html += """
             <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Line Item Generators</h4>
+                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Multi Line Items</h4>
                 <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
             """
-            for gen_name in summary['line_item_generator_names']:
+            for gen_name in summary['multi_line_item_names']:
                 html += f'<span style="display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{gen_name}</span>'
             html += """
                 </div>
@@ -891,7 +891,7 @@ class Model(SerializationMixin):
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
         copied_categories = copy.deepcopy(self._category_definitions)
-        copied_line_item_generators = copy.deepcopy(self.line_item_generators)
+        copied_multi_line_items = copy.deepcopy(self.multi_line_items)
         copied_constraints = copy.deepcopy(self.constraints)
         copied_years = copy.deepcopy(self.years)
         
@@ -900,7 +900,7 @@ class Model(SerializationMixin):
             line_items=copied_line_items,
             years=copied_years,
             categories=copied_categories,
-            line_item_generators=copied_line_item_generators,
+            multi_line_items=copied_multi_line_items,
             constraints=copied_constraints
         )
         
