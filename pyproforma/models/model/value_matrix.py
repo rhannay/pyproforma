@@ -15,46 +15,53 @@ if TYPE_CHECKING:
 
 
 def _calculate_category_total(
-    value_matrix: dict[int, dict[str, float]], 
-    line_item_definitions: list["LineItem"],
-    category_definitions: list["Category"],
-    category_name: str, 
-    year: int
+    values_by_name: dict[str, float], 
+    line_item_metadata: list[dict],
+    category_name: str
 ) -> float:
     """
-    Calculate the sum of all line items in a category for a specific year.
+    Calculate the sum of all line items in a category.
     
     This is an internal calculation method that computes the category total
     by summing all line item values in the specified category. Used during
     model initialization to populate the value matrix. None values are treated as 0.
     
     Args:
-        value_matrix (dict): The value matrix containing calculated line item values
-        line_item_definitions (list[LineItem]): List of line item definitions
-        category_definitions (list[Category]): List of category definitions
-        category_name (str): The category name to calculate the total for
-        year (int): The year to calculate the total for
+        values_by_name (dict): Dictionary mapping item names to their values
+        line_item_metadata (list[dict]): Metadata for all defined names
+        category_name (str): The name of the category to sum
         
     Returns:
         float: The calculated sum of all line items in the category
+        
+    Raises:
+        KeyError: If the category name is not found in metadata or if line items 
+                 in the category are not found in values
     """
-    # Find the category definition
-    category_item = None
-    for category in category_definitions:
-        if category.name == category_name:
-            category_item = category
-            break
+    # Check if the category exists in metadata
+    category_exists = any(
+        metadata.get('source_type') == 'line_item' and metadata.get('category') == category_name
+        for metadata in line_item_metadata
+    )
+    if not category_exists:
+        available_categories = set(
+            metadata.get('category') for metadata in line_item_metadata
+            if metadata.get('source_type') == 'line_item' and metadata.get('category') is not None
+        )
+        raise KeyError(f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}")
     
-    if category_item is None:
-        valid_categories = [category.name for category in category_definitions]
-        raise KeyError(f"Category item '{category_name}' not found. Valid categories are: {valid_categories}")
-    
+    # Find all line items that belong to this category and sum their values
     total = 0
-    for item in line_item_definitions:
-        if item.category == category_item.name:
-            value = value_matrix[year][item.name]
+    for metadata in line_item_metadata:
+        if metadata['source_type'] == 'line_item' and metadata['category'] == category_name:
+            item_name = metadata['name']
+            if item_name not in values_by_name:
+                raise KeyError(f"Line item '{item_name}' in category '{category_name}' not found in values")
+            
+            value = values_by_name[item_name]
             if value is not None:
                 total += value
+    
     return total
 
 
@@ -165,7 +172,7 @@ def generate_value_matrix(
                     
                     if all_items_calculated and items_in_category:  # Only if category has items
                         category_total = _calculate_category_total(
-                            value_matrix, line_item_definitions, category_definitions, category.name, year
+                            value_matrix[year], line_item_metadata, category.name
                         )
                         total_name = category.total_name
                         value_matrix[year][total_name] = category_total

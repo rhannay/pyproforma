@@ -1,7 +1,7 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.line_item_generator.debt import Debt
-from pyproforma.models.model.value_matrix import generate_value_matrix
+from pyproforma.models.model.value_matrix import generate_value_matrix, _calculate_category_total
 
 
 class TestGenerateValueMatrix:
@@ -446,3 +446,174 @@ class TestGenerateValueMatrix:
             assert matrix[year]["total_revenue"] == expected_revenue_total
             assert matrix[year]["total_expenses"] == expected_expenses_total
             assert matrix[year]["net_revenues"] == expected_revenue_total - expected_expenses_total
+
+
+class TestCalculateCategoryTotal:
+    """Test cases for the _calculate_category_total() function."""
+
+    def test_calculate_category_total_basic(self):
+        """Test basic category total calculation with simple values."""
+        values_by_name = {
+            'revenue1': 1000.0,
+            'revenue2': 500.0,
+            'expense1': 300.0
+        }
+        
+        metadata = [
+            {'name': 'revenue1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'revenue2', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'expense1', 'source_type': 'line_item', 'category': 'expenses'}
+        ]
+        
+        # Test income category
+        result = _calculate_category_total(values_by_name, metadata, 'income')
+        assert result == 1500.0
+        
+        # Test expenses category
+        result = _calculate_category_total(values_by_name, metadata, 'expenses')
+        assert result == 300.0
+
+    def test_calculate_category_total_with_none_values(self):
+        """Test that None values are treated as 0 in calculations."""
+        values_by_name = {
+            'item1': 100.0,
+            'item2': None,
+            'item3': 200.0
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'test_category'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'test_category'},
+            {'name': 'item3', 'source_type': 'line_item', 'category': 'test_category'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'test_category')
+        assert result == 300.0  # 100 + 0 + 200
+
+    def test_calculate_category_total_empty_category(self):
+        """Test calculation for a category with no line items."""
+        values_by_name = {
+            'item1': 100.0,
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'total', 'source_type': 'category', 'category': None}
+        ]
+        
+        # Test category that exists in metadata but has no line items
+        with pytest.raises(KeyError, match="Category 'expenses' not found in metadata"):
+            _calculate_category_total(values_by_name, metadata, 'expenses')
+
+    def test_calculate_category_total_invalid_category(self):
+        """Test error handling for non-existent categories."""
+        values_by_name = {'item1': 100.0}
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'}
+        ]
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'nonexistent')
+        
+        assert "Category 'nonexistent' not found in metadata" in str(exc_info.value)
+        assert "Available categories: ['income']" in str(exc_info.value)
+
+    def test_calculate_category_total_missing_item_in_values(self):
+        """Test error handling when line item is missing from values."""
+        values_by_name = {'item1': 100.0}  # item2 is missing
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'income'}
+        ]
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'income')
+        
+        assert "Line item 'item2' in category 'income' not found in values" in str(exc_info.value)
+
+    def test_calculate_category_total_mixed_metadata(self):
+        """Test calculation with mixed metadata containing different source types."""
+        values_by_name = {
+            'revenue': 1000.0,
+            'expenses': 600.0
+        }
+        
+        metadata = [
+            {'name': 'revenue', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'expenses', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'total_income', 'source_type': 'category', 'category': None},
+            {'name': 'assumption1', 'source_type': 'assumption', 'category': 'income'}
+        ]
+        
+        # Should only sum line_item types
+        result = _calculate_category_total(values_by_name, metadata, 'income')
+        assert result == 1600.0  # Only revenue + expenses
+
+    def test_calculate_category_total_multiple_categories(self):
+        """Test calculation with multiple categories in metadata."""
+        values_by_name = {
+            'rev1': 500.0,
+            'rev2': 300.0,
+            'exp1': 100.0,
+            'exp2': 200.0
+        }
+        
+        metadata = [
+            {'name': 'rev1', 'source_type': 'line_item', 'category': 'revenue'},
+            {'name': 'rev2', 'source_type': 'line_item', 'category': 'revenue'},
+            {'name': 'exp1', 'source_type': 'line_item', 'category': 'expenses'},
+            {'name': 'exp2', 'source_type': 'line_item', 'category': 'expenses'}
+        ]
+        
+        # Test revenue category
+        revenue_total = _calculate_category_total(values_by_name, metadata, 'revenue')
+        assert revenue_total == 800.0
+        
+        # Test expenses category
+        expenses_total = _calculate_category_total(values_by_name, metadata, 'expenses')
+        assert expenses_total == 300.0
+
+    def test_calculate_category_total_zero_values(self):
+        """Test calculation with zero values."""
+        values_by_name = {
+            'item1': 0.0,
+            'item2': 100.0,
+            'item3': 0.0
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'test'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'test'},
+            {'name': 'item3', 'source_type': 'line_item', 'category': 'test'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'test')
+        assert result == 100.0
+
+    def test_calculate_category_total_negative_values(self):
+        """Test calculation with negative values."""
+        values_by_name = {
+            'income': 1000.0,
+            'loss': -200.0,
+            'adjustment': -50.0
+        }
+        
+        metadata = [
+            {'name': 'income', 'source_type': 'line_item', 'category': 'net_income'},
+            {'name': 'loss', 'source_type': 'line_item', 'category': 'net_income'},
+            {'name': 'adjustment', 'source_type': 'line_item', 'category': 'net_income'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'net_income')
+        assert result == 750.0  # 1000 + (-200) + (-50)
+
+    def test_calculate_category_total_empty_metadata(self):
+        """Test error handling with empty metadata."""
+        values_by_name = {'item1': 100.0}
+        metadata = []
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'any_category')
+        
+        assert "Category 'any_category' not found in metadata" in str(exc_info.value)
+        assert "Available categories: []" in str(exc_info.value)
