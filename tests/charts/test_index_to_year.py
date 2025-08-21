@@ -45,8 +45,7 @@ class TestIndexToYearChart:
                 return line_item_result
             raise KeyError(f"Name '{name}' not found in model defined names.")
         
-        model.li.side_effect = mock_li
-        model.line_item.side_effect = mock_li  # Also add the full method name
+        model.line_item.side_effect = mock_li  # Add the line_item method
         
         # Keep the old index_to_year for backward compatibility tests 
         def mock_model_index_to_year(name, year, start_year=None):

@@ -53,8 +53,8 @@ class Charts:
         """
         # Get the item info and label for display
         try:
-            label = self._model.li(name).label
-            value_format = self._model.li(name).value_format
+            label = self._model.line_item(name).label
+            value_format = self._model.line_item(name).value_format
         except KeyError:
             raise KeyError(f"Name '{name}' not found in model defined names.")
         
@@ -130,7 +130,7 @@ class Charts:
         # Get value_format from the parameter or first item
         if value_format is None:
             try:
-                value_format = self._model.li(item_names[0]).value_format
+                value_format = self._model.line_item(item_names[0]).value_format
             except KeyError:
                 raise KeyError(f"Name '{item_names[0]}' not found in model defined names.")
         
@@ -140,7 +140,7 @@ class Charts:
         for i, name in enumerate(item_names):
             # Get the item info and label for display
             try:
-                label = self._model.li(name).label
+                label = self._model.line_item(name).label
             except KeyError:
                 raise KeyError(f"Name '{name}' not found in model defined names.")
             
@@ -222,7 +222,7 @@ class Charts:
         for i, name in enumerate(item_names):
             # Get the item info and label for display
             try:
-                label = self._model.li(name).label
+                label = self._model.line_item(name).label
             except KeyError:
                 raise KeyError(f"Name '{name}' not found in model defined names.")
             
@@ -312,7 +312,7 @@ class Charts:
         for i, name in enumerate(item_names):
             # Get the item info and label for display
             try:
-                label = self._model.li(name).label
+                label = self._model.line_item(name).label
             except KeyError:
                 raise KeyError(f"Name '{name}' not found in model defined names.")
             
@@ -404,7 +404,7 @@ class Charts:
         for i, name in enumerate(item_names):
             # Get the item info and label for display
             try:
-                label = self._model.li(name).label
+                label = self._model.line_item(name).label
             except KeyError:
                 raise KeyError(f"Name '{name}' not found in model defined names.")
             
@@ -491,14 +491,14 @@ class Charts:
         
         # Get value_format from the first item (assuming all items have similar format)
         try:
-            value_format = self._model.li(item_names[0]).value_format
+            value_format = self._model.line_item(item_names[0]).value_format
         except KeyError:
             raise KeyError(f"Name '{item_names[0]}' not found in model defined names.")
         
         for name in item_names:
             # Get the item info and label for display
             try:
-                label = self._model.li(name).label
+                label = self._model.line_item(name).label
             except KeyError:
                 raise KeyError(f"Name '{name}' not found in model defined names.")
             
@@ -576,7 +576,7 @@ class Charts:
         # Get the associated line item info
         line_item_name = constraint.line_item_name
         try:
-            line_item = self._model.li(line_item_name)
+            line_item = self._model.line_item(line_item_name)
             line_item_label = line_item.label
             value_format = line_item.value_format
         except KeyError:

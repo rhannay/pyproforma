@@ -655,10 +655,6 @@ class Model(SerializationMixin):
         
         return LineItemResults(self, item_name)
     
-    def li(self, item_name: str = None) -> LineItemResults:
-        """Shorthand for line_item() - see line_item() for full documentation."""
-        return self.line_item(item_name)
-    
     def get_line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
