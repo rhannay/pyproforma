@@ -107,8 +107,7 @@ class Model(SerializationMixin):
 
         self._value_matrix = generate_value_matrix(
             self.years,
-            self._line_item_definitions,
-            self.line_item_generators,
+            self._line_item_definitions + self.line_item_generators,
             self._category_definitions,
             self.line_item_metadata
         )
@@ -292,8 +291,7 @@ class Model(SerializationMixin):
         self._validate_formulas()
         self._value_matrix = generate_value_matrix(
             self.years,
-            self._line_item_definitions,
-            self.line_item_generators,
+            self._line_item_definitions + self.line_item_generators,
             self._category_definitions,
             self.line_item_metadata
         )
