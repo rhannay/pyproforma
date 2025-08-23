@@ -7,7 +7,6 @@ from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
-from ..formula import validate_formula
 from .value_matrix import generate_value_matrix
 from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas
 
