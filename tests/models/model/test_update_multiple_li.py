@@ -112,10 +112,10 @@ def test_update_multiple_line_items_rename(basic_model):
     ])
     
     # Check that names were updated
-    assert "income" in basic_model.line_item_names
-    assert "expenses" in basic_model.line_item_names
-    assert "revenue" not in basic_model.line_item_names
-    assert "costs" not in basic_model.line_item_names
+    assert "income" in basic_model.line_item_names()
+    assert "expenses" in basic_model.line_item_names()
+    assert "revenue" not in basic_model.line_item_names()
+    assert "costs" not in basic_model.line_item_names()
 
     # Check that formulas still work (they should be updated automatically)
     assert basic_model["profit", 2023] == 30

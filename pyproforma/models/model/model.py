@@ -143,7 +143,7 @@ class Model(SerializationMixin):
             existing_category_names = {cat.name for cat in category_definitions}
             for multi_item in multi_line_items:
                 if multi_item.name not in existing_category_names:
-                    category = Category(name=multi_item.name, label=multi_item.name)
+                    category = Category(name=multi_item.name, label=multi_item.name, include_total=False)
                     category._mark_as_system_generated()
                     category_definitions.append(category)
         
