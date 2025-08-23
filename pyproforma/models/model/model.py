@@ -168,7 +168,7 @@ class Model(SerializationMixin):
                 - 'source_type' (str): The component type that defines this name
                   ('line_item', 'category', 'multi_line_item')
                 - 'source_name' (str): The original source object's name
-                - 'category' (str): The category name (None for non-line-item types)
+                - 'category' (str): The category name
                 
         Raises:
             ValueError: If duplicate names are found across different components
@@ -218,7 +218,7 @@ class Model(SerializationMixin):
                     'value_format': 'no_decimals', 
                     'source_type': 'multi_line_item', 
                     'source_name': generator.name,
-                    'category': None,
+                    'category': generator.name,
                 })
         
         # Check for duplicate names in defined_names
@@ -348,15 +348,32 @@ class Model(SerializationMixin):
         """
         return self._line_item_definitions
     
-    @property
-    def line_item_names(self) -> list[str]:
+    def line_item_names(self, category: str = None) -> list[str]:
         """
-        Get list of all line item names.
+        Get list of line item names, optionally filtered by category.
         
+        Args:
+            category (str, optional): Category name to filter by. If None, returns all line item names.
+            
         Returns:
             list[str]: List of line item names
+            
+        Raises:
+            KeyError: If the specified category is not found in the model
         """
-        return [item.name for item in self._line_item_definitions]
+        if category is not None:
+            # Validate that the category exists
+            category_names = {cat.name for cat in self._category_definitions}
+            if category not in category_names:
+                available_categories = sorted(category_names)
+                raise KeyError(f"Category '{category}' not found. Available categories: {available_categories}")
+            
+            # Return line items filtered by category
+            return [item['name'] for item in self.line_item_metadata 
+                   if item['category'] == category]
+        else:
+            # Return all line item names
+            return [item['name'] for item in self.line_item_metadata]
 
     @property
     def category_definitions(self) -> tuple[Category, ...]:

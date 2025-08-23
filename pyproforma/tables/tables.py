@@ -128,6 +128,7 @@ class Tables:
         # Check if we need to add bottom border to the last item
         has_total = category.category_obj.include_total
         
+        # TODO: update this to use metadata instead
         for i, item in enumerate(category.line_items_definitions):
             # Add bottom border to the last item if there's a total row coming after
             is_last_item = (i == len(category.line_items_definitions) - 1)
