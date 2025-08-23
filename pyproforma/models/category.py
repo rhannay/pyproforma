@@ -69,6 +69,7 @@ class Category:
         self.name = name
         self.label = label if label is not None else name
         self.include_total = include_total
+        self._is_system_generated = False  # Private attribute
 
         if include_total:
             self.total_label = (
@@ -79,6 +80,15 @@ class Category:
             self.total_label = None
             self.total_name = None
 
+    @property
+    def is_system_generated(self) -> bool:
+        """Read-only access to system generation status."""
+        return self._is_system_generated
+    
+    def _mark_as_system_generated(self):
+        """Internal method for Model to mark categories as system-generated."""
+        self._is_system_generated = True
+    
     def __str__(self):
         return f"Category(name='{self.name}', label='{self.label}', total_label='{self.total_label}', total_name='{self.total_name}', include_total={self.include_total})"
 

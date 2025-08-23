@@ -85,15 +85,7 @@ class Model(SerializationMixin):
         
         self._line_item_definitions = line_items
 
-        # if no categories provided, gather unique categories from line_items
-        if categories is None:
-            category_names = set([item.category for item in line_items])
-            self._category_definitions = [
-                Category(name=name, label=name)
-                for name in category_names
-            ]
-        else:
-            self._category_definitions = categories
+        self._category_definitions = self._gather_category_definitions(line_items, categories)
 
         self.constraints = constraints if constraints is not None else []
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
@@ -111,6 +103,35 @@ class Model(SerializationMixin):
             self._category_definitions,
             self.line_item_metadata
         )
+
+    @staticmethod
+    def _gather_category_definitions(line_items: list[LineItem], categories: list[Category] = None) -> list[Category]:
+        """
+        Gather category definitions from provided categories or infer from line items.
+        
+        If categories are provided, use them directly. If not, automatically infer 
+        categories from the unique category names used in the line items and mark 
+        them as system-generated.
+        
+        Args:
+            line_items (list[LineItem]): Line items to infer categories from
+            categories (list[Category], optional): Explicit category definitions
+            
+        Returns:
+            list[Category]: List of category definitions to use in the model
+        """
+        if categories is None:
+            # Auto-infer categories from line items
+            category_names = set([item.category for item in line_items])
+            category_definitions = []
+            for name in category_names:
+                category = Category(name=name, label=name)
+                category._mark_as_system_generated()
+                category_definitions.append(category)
+            return category_definitions
+        else:
+            # Use provided categories
+            return categories
 
     def _gather_line_item_metadata(self) -> list[dict]:
         """
