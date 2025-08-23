@@ -9,6 +9,7 @@ import copy
 from ..compare import Compare
 from ..formula import validate_formula
 from .value_matrix import generate_value_matrix
+from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -98,12 +99,12 @@ class Model(SerializationMixin):
         self.constraints = constraints if constraints is not None else []
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
 
-        self._validate_categories()
-        self._validate_constraints()
-        self._validate_multi_line_items()
+        validate_categories(self._line_item_definitions, self._category_definitions)
+        validate_constraints(self.constraints, self._line_item_definitions)
+        validate_multi_line_items(self.multi_line_items)
 
         self.line_item_metadata = self._gather_line_item_metadata()
-        self._validate_formulas()
+        validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
             self.years,
@@ -111,93 +112,6 @@ class Model(SerializationMixin):
             self._category_definitions,
             self.line_item_metadata
         )
-
-    def _validate_categories(self):
-        """
-        Validates that all categories referenced by line items are defined in the model's categories,
-        and that all category names are unique.
-
-        Raises:
-            ValueError: If a line item's category is not present in the list of defined categories,
-                       or if duplicate category names are found.
-        """
-        # Validate that all category names are unique
-        category_names = [category.name for category in self._category_definitions]
-        duplicates = set([name for name in category_names if category_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate category names not allowed: {', '.join(sorted(duplicates))}")
-        
-        # Validate that all item types in line_items are defined in categories        
-        for item in self._line_item_definitions:
-            if item.category not in category_names:
-                raise ValueError(f"Category '{item.category}' for LineItem '{item.name}' is not defined category.")
-
-
-    def _validate_constraints(self):
-        """
-        Validates that all constraints have unique names and reference existing line items.
-
-        Raises:
-            ValueError: If two or more constraints have the same name, or if a constraint
-                       references a line item that doesn't exist.
-        """
-        if not self.constraints:
-            return
-            
-        constraint_names = [constraint.name for constraint in self.constraints]
-        duplicates = set([name for name in constraint_names if constraint_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate constraint names not allowed: {', '.join(sorted(duplicates))}")
-        
-        # Validate that all constraint line_item_names reference existing line items
-        line_item_names = [item.name for item in self._line_item_definitions]
-        for constraint in self.constraints:
-            if constraint.line_item_name not in line_item_names:
-                raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
-
-    def _validate_multi_line_items(self):
-        """
-        Validates that all multi line items have unique names.
-
-        Raises:
-            ValueError: If two or more multi line items have the same name.
-        """
-        if not self.multi_line_items:
-            return
-            
-        generator_names = [generator.name for generator in self.multi_line_items]
-        duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}")
-
-    def _validate_formulas(self):
-        """
-        Validates that all line item formulas reference only defined variables.
-        
-        This method checks each line item that has a formula to ensure all variables
-        referenced in the formula exist in the model's defined names. This includes
-        line items, category totals, and line item generator outputs.
-        
-        Raises:
-            ValueError: If any formula contains undefined variable names
-        """
-        if not self._line_item_definitions:
-            return
-            
-        # Get all defined names that can be used in formulas
-        defined_variable_names = [name['name'] for name in self.line_item_metadata]
-        
-        # Validate each line item's formula
-        for line_item in self._line_item_definitions:
-            if line_item.formula is not None and line_item.formula.strip():
-                try:
-                    validate_formula(line_item.formula, line_item.name, defined_variable_names)
-                except ValueError as e:
-                    # Enhance the error message to include the line item name
-                    raise ValueError(f"Error in formula for line item '{line_item.name}': {str(e)}") from e
 
     def _gather_line_item_metadata(self) -> list[dict]:
         """
@@ -284,11 +198,11 @@ class Model(SerializationMixin):
         return defined_names
 
     def _reclalculate(self):
-        self._validate_categories()
-        self._validate_constraints()
-        self._validate_multi_line_items()
+        validate_categories(self._line_item_definitions, self._category_definitions)
+        validate_constraints(self.constraints, self._line_item_definitions)
+        validate_multi_line_items(self.multi_line_items)
         self.line_item_metadata = self._gather_line_item_metadata()
-        self._validate_formulas()
+        validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
             self.years,
             self._line_item_definitions + self.multi_line_items,
