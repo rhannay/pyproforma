@@ -9,6 +9,7 @@ import copy
 from ..compare import Compare
 from .value_matrix import generate_value_matrix
 from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas
+from .metadata import collect_category_metadata, collect_line_item_metadata
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -95,8 +96,10 @@ class Model(SerializationMixin):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         
-        self.category_metadata = self._collect_category_metadata()
-        self.line_item_metadata = self._collect_line_item_metadata()
+        self.category_metadata = collect_category_metadata(self._category_definitions)
+        self.line_item_metadata = collect_line_item_metadata(
+            self._line_item_definitions, self._category_definitions, self.multi_line_items
+        )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
@@ -149,123 +152,13 @@ class Model(SerializationMixin):
         
         return category_definitions
 
-    def _collect_category_metadata(self) -> list[dict]:
-        """
-        Collect category metadata from category definitions.
-        
-        This method extracts key information from each category definition
-        to create a comprehensive metadata structure for categories.
-        
-        Returns:
-            list[dict]: A list of dictionaries, each containing:
-                - 'name' (str): The category name
-                - 'label' (str): The display label for the category
-                - 'include_total' (bool): Whether the category includes a total row
-                - 'total_name' (str): The name used for the category total
-                - 'total_label' (str): The display label for the category total
-                - 'system_generated' (bool): Whether the category was auto-generated
-        """
-        category_metadata = []
-        for category in self._category_definitions:
-            category_metadata.append({
-                'name': category.name,
-                'label': category.label,
-                'include_total': category.include_total,
-                'total_name': category.total_name,
-                'total_label': category.total_label,
-                'system_generated': category.is_system_generated
-            })
-        return category_metadata
-
-    def _collect_line_item_metadata(self) -> list[dict]:
-        """
-        Collects all defined names across the model to create a comprehensive 
-        namespace.
-        
-        This method aggregates identifiers from all model components including 
-        line items, category totals, and line item generators to 
-        build a unified namespace for value lookups and validation.
-        
-        Returns:
-            list[dict]: A list of dictionaries, each containing:
-                - 'name' (str): The identifier name used for lookups
-                - 'label' (str): The display label for this identifier
-                - 'value_format' (str): The formatting type for values 
-                  (None, 'str', 'no_decimals', 'two_decimals', 'percent', 
-                  'percent_one_decimal', 'percent_two_decimals')
-                - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'multi_line_item')
-                - 'source_name' (str): The original source object's name
-                - 'category' (str): The category name
-                
-        Raises:
-            ValueError: If duplicate names are found across different components
-                       
-        Example:
-            For a model with revenue line item and revenue category:
-            [
-                {'name': 'revenue', 'label': 'Revenue', 
-                 'value_format': 'no_decimals', 'source_type': 'line_item', 
-                 'source_name': 'revenue', 'category': 'income'},
-                {'name': 'total_revenue', 'label': 'Total Revenue', 
-                 'value_format': 'no_decimals', 'source_type': 'category', 
-                 'source_name': 'revenue', 'category': None}
-            ]
-        """
-        defined_names = []
-        for item in self._line_item_definitions:
-            defined_names.append({
-                'name': item.name, 
-                'label': item.label, 
-                'value_format': item.value_format, 
-                'source_type': 'line_item', 
-                'source_name': item.name,
-                'category': item.category,
-            })
-        for category in self._category_definitions:
-            if category.include_total:
-                # Only include category total if there are line items in category
-                items_in_category = [
-                    item for item in self._line_item_definitions 
-                    if item.category == category.name
-                ]
-                if items_in_category:  # Only add total if category has items
-                    defined_names.append({
-                        'name': category.total_name, 
-                        'label': category.total_label, 
-                        'value_format': 'no_decimals', 
-                        'source_type': 'category', 
-                        'source_name': category.name,
-                        'category': None,
-                    })
-        for generator in self.multi_line_items:
-            for gen_name in generator.defined_names:
-                defined_names.append({
-                    'name': gen_name, 
-                    'label': gen_name, 
-                    'value_format': 'no_decimals', 
-                    'source_type': 'multi_line_item', 
-                    'source_name': generator.name,
-                    'category': generator.name,
-                })
-        
-        # Check for duplicate names in defined_names
-        # and raise ValueError if any duplicates are found.
-        names_list = [item['name'] for item in defined_names]
-        duplicates = set([
-            name for name in names_list if names_list.count(name) > 1
-        ])
-        if duplicates:
-            raise ValueError(
-                f"Duplicate defined names found in Model: {', '.join(duplicates)}"
-            )
-        return defined_names
-
     def _reclalculate(self):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)
-        self.line_item_metadata = self._collect_line_item_metadata()
+        self.line_item_metadata = collect_line_item_metadata(
+            self._line_item_definitions, self._category_definitions, self.multi_line_items
+        )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
             self.years,
