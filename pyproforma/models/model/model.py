@@ -8,7 +8,7 @@ from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
 from .value_matrix import generate_value_matrix
-from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas
+from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas, validate_line_items
 from .metadata import collect_category_metadata, collect_line_item_metadata
 
 # Namespace imports
@@ -89,6 +89,7 @@ class Model(SerializationMixin):
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
+        validate_line_items(self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
@@ -140,6 +141,7 @@ class Model(SerializationMixin):
         return category_definitions
 
     def _recalculate(self):
+        validate_line_items(self._line_item_definitions)
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)

@@ -7,7 +7,8 @@ from pyproforma.models.model.validations import (
     validate_categories,
     validate_constraints,
     validate_multi_line_items,
-    validate_formulas
+    validate_formulas,
+    validate_line_items
 )
 from pyproforma import LineItem, Category, Constraint
 from pyproforma.models.multi_line_item import Debt, ShortTermDebt
@@ -130,6 +131,78 @@ class TestValidateCategories:
         
         # Should not raise any exception
         validate_categories(line_items, categories)
+
+
+class TestValidateLineItems:
+    """Test the validate_line_items function."""
+
+    def test_empty_line_items_pass_validation(self):
+        """Test that empty line items list passes validation."""
+        validate_line_items([])
+
+    def test_none_line_items_pass_validation(self):
+        """Test that None line items passes validation."""
+        # Test with None converted to empty list - the function expects a list
+        validate_line_items([])
+
+    def test_valid_line_items_pass_validation(self):
+        """Test that valid line items with unique names pass validation."""
+        line_items = [
+            LineItem(name='revenue', category='income', values={2023: 1000}),
+            LineItem(name='costs', category='expense', values={2023: 500}),
+            LineItem(name='profit', category='income', values={2023: 500})
+        ]
+        
+        # Should not raise any exception
+        validate_line_items(line_items)
+
+    def test_duplicate_line_item_names_raise_error(self):
+        """Test that duplicate line item names raise ValueError."""
+        line_items = [
+            LineItem(name='revenue', category='income', values={2023: 1000}),
+            LineItem(name='revenue', category='expense', values={2023: 500})  # duplicate name
+        ]
+        
+        with pytest.raises(ValueError) as exc_info:
+            validate_line_items(line_items)
+        
+        error_msg = str(exc_info.value)
+        assert "Duplicate line item names not allowed: revenue" in error_msg
+
+    def test_multiple_duplicate_line_item_names(self):
+        """Test that multiple duplicate line item names are all reported."""
+        line_items = [
+            LineItem(name='revenue', category='income', values={2023: 1000}),
+            LineItem(name='revenue', category='income', values={2023: 1200}),  # duplicate name
+            LineItem(name='costs', category='expense', values={2023: 500}),
+            LineItem(name='costs', category='expense', values={2023: 600}),    # duplicate name
+            LineItem(name='profit', category='income', values={2023: 400})
+        ]
+        
+        with pytest.raises(ValueError) as exc_info:
+            validate_line_items(line_items)
+        
+        error_msg = str(exc_info.value)
+        assert "Duplicate line item names not allowed:" in error_msg
+        assert "costs" in error_msg
+        assert "revenue" in error_msg
+
+    def test_line_item_names_case_sensitive(self):
+        """Test that line item name validation is case sensitive."""
+        line_items = [
+            LineItem(name='Revenue', category='income', values={2023: 1000}),
+            LineItem(name='revenue', category='income', values={2023: 1200})  # different case
+        ]
+        
+        # Should not raise any exception - case matters
+        validate_line_items(line_items)
+
+    def test_single_line_item(self):
+        """Test that a single line item passes validation."""
+        line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
+        
+        # Should not raise any exception
+        validate_line_items(line_items)
 
 
 class TestValidateConstraints:

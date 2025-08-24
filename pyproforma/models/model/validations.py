@@ -13,6 +13,26 @@ from pyproforma.models.multi_line_item import MultiLineItem
 from ..formula import validate_formula
 
 
+def validate_line_items(line_items: List[LineItem]):
+    """
+    Validates that all line items have unique names.
+
+    Args:
+        line_items (List[LineItem]): List of line items to validate
+
+    Raises:
+        ValueError: If two or more line items have the same name.
+    """
+    if not line_items:
+        return
+        
+    line_item_names = [item.name for item in line_items]
+    duplicates = set([name for name in line_item_names if line_item_names.count(name) > 1])
+    
+    if duplicates:
+        raise ValueError(f"Duplicate line item names not allowed: {', '.join(sorted(duplicates))}")
+
+
 def validate_categories(line_items: List[LineItem], categories: List[Category]):
     """
     Validates that all categories referenced by line items are defined in the model's categories,
