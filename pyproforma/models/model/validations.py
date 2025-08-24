@@ -13,15 +13,17 @@ from pyproforma.models.multi_line_item import MultiLineItem
 from ..formula import validate_formula
 
 
-def validate_line_items(line_items: List[LineItem]):
+def validate_line_items(line_items: List[LineItem], categories: List[Category]):
     """
-    Validates that all line items have unique names.
+    Validates that all line items have unique names and reference valid categories.
 
     Args:
         line_items (List[LineItem]): List of line items to validate
+        categories (List[Category]): List of category definitions to validate references against
 
     Raises:
-        ValueError: If two or more line items have the same name.
+        ValueError: If two or more line items have the same name, or if a line item
+                   references a category that is not defined.
     """
     if not line_items:
         return
@@ -32,19 +34,22 @@ def validate_line_items(line_items: List[LineItem]):
     if duplicates:
         raise ValueError(f"Duplicate line item names not allowed: {', '.join(sorted(duplicates))}")
 
+    # Validate that all item types in line_items are defined in categories        
+    category_names = [category.name for category in categories]
+    for item in line_items:
+        if item.category not in category_names:
+            raise ValueError(f"Category '{item.category}' for LineItem '{item.name}' is not defined category.")
 
-def validate_categories(line_items: List[LineItem], categories: List[Category]):
+
+def validate_categories(categories: List[Category]):
     """
-    Validates that all categories referenced by line items are defined in the model's categories,
-    and that all category names are unique.
+    Validates that all category names are unique.
 
     Args:
-        line_items (List[LineItem]): List of line items to validate
         categories (List[Category]): List of category definitions
 
     Raises:
-        ValueError: If a line item's category is not present in the list of defined categories,
-                   or if duplicate category names are found.
+        ValueError: If duplicate category names are found.
     """
     # Validate that all category names are unique
     category_names = [category.name for category in categories]
@@ -53,10 +58,6 @@ def validate_categories(line_items: List[LineItem], categories: List[Category]):
     if duplicates:
         raise ValueError(f"Duplicate category names not allowed: {', '.join(sorted(duplicates))}")
     
-    # Validate that all item types in line_items are defined in categories        
-    for item in line_items:
-        if item.category not in category_names:
-            raise ValueError(f"Category '{item.category}' for LineItem '{item.name}' is not defined category.")
 
 
 def validate_constraints(constraints: List[Constraint], line_items: List[LineItem]):

@@ -18,37 +18,18 @@ class TestValidateCategories:
     """Test the validate_categories function."""
 
     def test_valid_categories_pass_validation(self):
-        """Test that valid categories and line items pass validation."""
+        """Test that valid categories pass validation."""
         categories = [
             Category(name='income', label='Income'),
             Category(name='expense', label='Expenses')
         ]
-        line_items = [
-            LineItem(name='revenue', category='income', values={2023: 1000}),
-            LineItem(name='costs', category='expense', values={2023: 500})
-        ]
         
         # Should not raise any exception
-        validate_categories(line_items, categories)
+        validate_categories(categories)
 
-    def test_empty_lists_pass_validation(self):
-        """Test that empty lists pass validation."""
-        validate_categories([], [])
-
-    def test_empty_line_items_with_categories_passes(self):
-        """Test that empty line items with categories passes validation."""
-        categories = [Category(name='income', label='Income')]
-        validate_categories([], categories)
-
-    def test_empty_categories_with_line_items_fails(self):
-        """Test that line items without matching categories fails validation."""
-        line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
-        
-        with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, [])
-        
-        error_msg = str(exc_info.value)
-        assert "Category 'income' for LineItem 'revenue' is not defined category" in error_msg
+    def test_empty_categories_pass_validation(self):
+        """Test that empty categories list passes validation."""
+        validate_categories([])
 
     def test_duplicate_category_names_raise_error(self):
         """Test that duplicate category names raise ValueError."""
@@ -57,10 +38,9 @@ class TestValidateCategories:
             Category(name='income', label='Income 2'),
             Category(name='expense', label='Expenses')
         ]
-        line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, categories)
+            validate_categories(categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate category names not allowed: income" in error_msg
@@ -73,64 +53,32 @@ class TestValidateCategories:
             Category(name='expense', label='Expense 1'),
             Category(name='expense', label='Expense 2')
         ]
-        line_items = []
         
         with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, categories)
+            validate_categories(categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate category names not allowed:" in error_msg
         assert "expense" in error_msg
         assert "income" in error_msg
 
-    def test_undefined_category_in_line_item_raises_error(self):
-        """Test that line items with undefined categories raise ValueError."""
-        categories = [Category(name='income', label='Income')]
-        line_items = [
-            LineItem(name='revenue', category='income', values={2023: 1000}),
-            LineItem(name='costs', category='expense', values={2023: 500})  # undefined category
-        ]
-        
-        with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, categories)
-        
-        error_msg = str(exc_info.value)
-        assert "Category 'expense' for LineItem 'costs' is not defined category" in error_msg
-
-    def test_multiple_undefined_categories_raises_error(self):
-        """Test that multiple line items with undefined categories raise ValueError for the first one."""
-        categories = [Category(name='income', label='Income')]
-        line_items = [
-            LineItem(name='revenue', category='income', values={2023: 1000}),
-            LineItem(name='costs', category='expense', values={2023: 500}),
-            LineItem(name='tax', category='other', values={2023: 100})
-        ]
-        
-        with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, categories)
-        
-        error_msg = str(exc_info.value)
-        # Should catch the first undefined category
-        assert "Category 'expense' for LineItem 'costs' is not defined category" in error_msg
-
     def test_categories_case_sensitive(self):
-        """Test that category validation is case sensitive."""
-        categories = [Category(name='Income', label='Income')]
-        line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
+        """Test that category name validation is case sensitive."""
+        categories = [
+            Category(name='Income', label='Income 1'),
+            Category(name='income', label='Income 2')  # different case
+        ]
         
-        with pytest.raises(ValueError) as exc_info:
-            validate_categories(line_items, categories)
-        
-        error_msg = str(exc_info.value)
-        assert "Category 'income' for LineItem 'revenue' is not defined category" in error_msg
+        # Should not raise any exception - case matters
+        validate_categories(categories)
 
-    def test_single_category_single_line_item(self):
-        """Test basic case with one category and one line item."""
-        categories = [Category(name='test', label='Test Category')]
-        line_items = [LineItem(name='item', category='test', values={2023: 100})]
+    def test_single_category_passes_validation(self):
+        """Test that a single category passes validation."""
+        categories = [Category(name='income', label='Income')]
         
         # Should not raise any exception
-        validate_categories(line_items, categories)
+        # Should not raise any exception
+        validate_categories(categories)
 
 
 class TestValidateLineItems:
@@ -138,15 +86,18 @@ class TestValidateLineItems:
 
     def test_empty_line_items_pass_validation(self):
         """Test that empty line items list passes validation."""
-        validate_line_items([])
+        categories = [Category('income'), Category('expense')]
+        validate_line_items([], categories)
 
     def test_none_line_items_pass_validation(self):
         """Test that None line items passes validation."""
         # Test with None converted to empty list - the function expects a list
-        validate_line_items([])
+        categories = [Category('income'), Category('expense')]
+        validate_line_items([], categories)
 
     def test_valid_line_items_pass_validation(self):
         """Test that valid line items with unique names pass validation."""
+        categories = [Category('income'), Category('expense')]
         line_items = [
             LineItem(name='revenue', category='income', values={2023: 1000}),
             LineItem(name='costs', category='expense', values={2023: 500}),
@@ -154,23 +105,25 @@ class TestValidateLineItems:
         ]
         
         # Should not raise any exception
-        validate_line_items(line_items)
+        validate_line_items(line_items, categories)
 
     def test_duplicate_line_item_names_raise_error(self):
         """Test that duplicate line item names raise ValueError."""
+        categories = [Category('income'), Category('expense')]
         line_items = [
             LineItem(name='revenue', category='income', values={2023: 1000}),
             LineItem(name='revenue', category='expense', values={2023: 500})  # duplicate name
         ]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_line_items(line_items)
+            validate_line_items(line_items, categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate line item names not allowed: revenue" in error_msg
 
     def test_multiple_duplicate_line_item_names(self):
         """Test that multiple duplicate line item names are all reported."""
+        categories = [Category('income'), Category('expense')]
         line_items = [
             LineItem(name='revenue', category='income', values={2023: 1000}),
             LineItem(name='revenue', category='income', values={2023: 1200}),  # duplicate name
@@ -180,7 +133,7 @@ class TestValidateLineItems:
         ]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_line_items(line_items)
+            validate_line_items(line_items, categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate line item names not allowed:" in error_msg
@@ -189,20 +142,46 @@ class TestValidateLineItems:
 
     def test_line_item_names_case_sensitive(self):
         """Test that line item name validation is case sensitive."""
+        categories = [Category('income')]
         line_items = [
             LineItem(name='Revenue', category='income', values={2023: 1000}),
             LineItem(name='revenue', category='income', values={2023: 1200})  # different case
         ]
         
         # Should not raise any exception - case matters
-        validate_line_items(line_items)
+        validate_line_items(line_items, categories)
 
     def test_single_line_item(self):
         """Test that a single line item passes validation."""
+        categories = [Category('income')]
         line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
         
         # Should not raise any exception
-        validate_line_items(line_items)
+        validate_line_items(line_items, categories)
+
+    def test_line_item_with_invalid_category_raises_error(self):
+        """Test that line item referencing undefined category raises ValueError."""
+        categories = [Category('income')]
+        line_items = [
+            LineItem(name='revenue', category='income', values={2023: 1000}),
+            LineItem(name='costs', category='expense', values={2023: 500})  # 'expense' not in categories
+        ]
+        
+        with pytest.raises(ValueError, match="Category 'expense' for LineItem 'costs' is not defined category"):
+            validate_line_items(line_items, categories)
+
+    def test_multiple_line_items_with_invalid_categories_raises_error(self):
+        """Test that multiple line items with undefined categories raise appropriate error."""
+        categories = [Category('income')]
+        line_items = [
+            LineItem(name='revenue', category='income', values={2023: 1000}),
+            LineItem(name='costs', category='expense', values={2023: 500}),  # undefined category
+            LineItem(name='taxes', category='liability', values={2023: 100})  # undefined category
+        ]
+        
+        # Should raise error for the first invalid category encountered
+        with pytest.raises(ValueError, match="Category 'expense' for LineItem 'costs' is not defined category"):
+            validate_line_items(line_items, categories)
 
 
 class TestValidateConstraints:
