@@ -161,6 +161,8 @@ class Model(SerializationMixin):
                 - 'name' (str): The category name
                 - 'label' (str): The display label for the category
                 - 'include_total' (bool): Whether the category includes a total row
+                - 'total_name' (str): The name used for the category total
+                - 'total_label' (str): The display label for the category total
                 - 'system_generated' (bool): Whether the category was auto-generated
         """
         category_metadata = []
@@ -169,6 +171,8 @@ class Model(SerializationMixin):
                 'name': category.name,
                 'label': category.label,
                 'include_total': category.include_total,
+                'total_name': category.total_name,
+                'total_label': category.total_label,
                 'system_generated': category.is_system_generated
             })
         return category_metadata
