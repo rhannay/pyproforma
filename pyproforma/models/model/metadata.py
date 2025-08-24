@@ -46,7 +46,7 @@ def collect_category_metadata(
             'include_total': category.include_total,
             'total_name': category.total_name,
             'total_label': category.total_label,
-            'system_generated': category.is_system_generated
+            'system_generated': False
         })
     
     # Add metadata for multi-line items (as system-generated categories)

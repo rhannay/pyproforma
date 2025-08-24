@@ -19,7 +19,7 @@ class SerializationMixin:
         """
         Convert model to dictionary representation for serialization.
         
-        Only includes user-defined categories (excludes system-generated ones).
+        Only includes user-defined categories
         
         Returns:
             dict: Dictionary containing all model data suitable for YAML/JSON export
@@ -27,7 +27,7 @@ class SerializationMixin:
         return {
             'years': self.years,
             'line_items': [item.to_dict() for item in self._line_item_definitions],
-            'categories': [category.to_dict() for category in self._category_definitions if not category.is_system_generated],
+            'categories': [category.to_dict() for category in self._category_definitions],
             'line_item_generators': [generator.to_dict() for generator in self.multi_line_items],
             'constraints': [constraint.to_dict() for constraint in self.constraints]
         }
