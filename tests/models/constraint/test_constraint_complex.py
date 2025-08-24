@@ -196,7 +196,8 @@ class TestConstraintsWithComplexModels:
         assert len(reconstructed_model.constraints) == 2
         assert len(reconstructed_model.multi_line_items) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
-        assert len(reconstructed_model._category_definitions) == 3
+        assert len(reconstructed_model._category_definitions) == 2  # Multi-line items no longer create category definitions
+        assert len(reconstructed_model.category_metadata) == 3  # But they are captured in metadata
         
         # Verify constraint details
         constraint_names = [c.name for c in reconstructed_model.constraints]

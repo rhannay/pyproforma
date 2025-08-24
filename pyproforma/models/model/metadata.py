@@ -11,15 +11,21 @@ from ..category import Category
 from pyproforma.models.multi_line_item import MultiLineItem
 
 
-def collect_category_metadata(category_definitions: List[Category]) -> List[Dict]:
+def collect_category_metadata(
+    category_definitions: List[Category],
+    multi_line_items: List[MultiLineItem] = None
+) -> List[Dict]:
     """
-    Collect category metadata from category definitions.
+    Collect category metadata from category definitions and multi-line items.
     
     This function extracts key information from each category definition
-    to create a comprehensive metadata structure for categories.
+    to create a comprehensive metadata structure for categories, and also
+    creates category metadata entries for multi-line items (without creating
+    actual Category objects for them).
     
     Args:
         category_definitions (List[Category]): List of category definitions
+        multi_line_items (List[MultiLineItem], optional): List of multi-line item generators
     
     Returns:
         List[Dict]: A list of dictionaries, each containing:
@@ -31,6 +37,8 @@ def collect_category_metadata(category_definitions: List[Category]) -> List[Dict
             - 'system_generated' (bool): Whether the category was auto-generated
     """
     category_metadata = []
+    
+    # Add metadata for category definitions
     for category in category_definitions:
         category_metadata.append({
             'name': category.name,
@@ -40,6 +48,21 @@ def collect_category_metadata(category_definitions: List[Category]) -> List[Dict
             'total_label': category.total_label,
             'system_generated': category.is_system_generated
         })
+    
+    # Add metadata for multi-line items (as system-generated categories)
+    if multi_line_items is not None:
+        existing_category_names = {cat['name'] for cat in category_metadata}
+        for multi_item in multi_line_items:
+            if multi_item.name not in existing_category_names:
+                category_metadata.append({
+                    'name': multi_item.name,
+                    'label': multi_item.name,
+                    'include_total': False,
+                    'total_name': None,
+                    'total_label': None,
+                    'system_generated': True
+                })
+    
     return category_metadata
 
 

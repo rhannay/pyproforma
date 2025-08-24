@@ -89,14 +89,14 @@ class Model(SerializationMixin):
 
         self._line_item_definitions = line_items
 
-        self._category_definitions = self._collect_category_definitions(line_items, categories, multi_line_items)
+        self._category_definitions = self._collect_category_definitions(line_items, categories)
 
         self.constraints = constraints if constraints is not None else []
 
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         
-        self.category_metadata = collect_category_metadata(self._category_definitions)
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self._category_definitions, self.multi_line_items
         )
@@ -112,20 +112,19 @@ class Model(SerializationMixin):
     @staticmethod
     def _collect_category_definitions(
         line_items: list[LineItem], 
-        categories: list[Category] = None,
-        multi_line_items: list[MultiLineItem] = None
+        categories: list[Category] = None
     ) -> list[Category]:
         """
-        Collect category definitions from provided categories or infer from line items and multi-line items.
+        Collect category definitions from provided categories or infer from line items.
         
         If categories are provided, use them as the base. If not, automatically infer 
-        categories from the unique category names used in the line items. In both cases,
-        add additional categories for multi-line items, marking auto-generated ones as system-generated.
+        categories from the unique category names used in the line items.
+        Multi-line items are no longer added as category definitions - they are only 
+        captured in metadata.
         
         Args:
             line_items (list[LineItem]): Line items to infer categories from
             categories (list[Category], optional): Explicit category definitions
-            multi_line_items (list[MultiLineItem], optional): Multi-line items to create categories for
             
         Returns:
             list[Category]: List of category definitions to use in the model
@@ -141,21 +140,13 @@ class Model(SerializationMixin):
             # Use provided categories as base
             category_definitions = list(categories)
         
-        # Always add categories for multi-line items if provided
-        if multi_line_items is not None:
-            existing_category_names = {cat.name for cat in category_definitions}
-            for multi_item in multi_line_items:
-                if multi_item.name not in existing_category_names:
-                    category = Category(name=multi_item.name, label=multi_item.name, include_total=False)
-                    category._mark_as_system_generated()
-                    category_definitions.append(category)
-        
         return category_definitions
 
     def _reclalculate(self):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self._category_definitions, self.multi_line_items
         )
