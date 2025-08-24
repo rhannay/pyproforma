@@ -139,7 +139,7 @@ class Model(SerializationMixin):
         
         return category_definitions
 
-    def _reclalculate(self):
+    def _recalculate(self):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)
