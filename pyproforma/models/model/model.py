@@ -88,15 +88,15 @@ class Model(SerializationMixin):
 
         self._line_item_definitions = line_items
 
-        self._category_definitions = self._gather_category_definitions(line_items, categories, multi_line_items)
+        self._category_definitions = self._collect_category_definitions(line_items, categories, multi_line_items)
 
         self.constraints = constraints if constraints is not None else []
 
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         
-        self.category_metadata = self._gather_category_metadata()
-        self.line_item_metadata = self._gather_line_item_metadata()
+        self.category_metadata = self._collect_category_metadata()
+        self.line_item_metadata = self._collect_line_item_metadata()
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
@@ -107,13 +107,13 @@ class Model(SerializationMixin):
         )
 
     @staticmethod
-    def _gather_category_definitions(
+    def _collect_category_definitions(
         line_items: list[LineItem], 
         categories: list[Category] = None,
         multi_line_items: list[MultiLineItem] = None
     ) -> list[Category]:
         """
-        Gather category definitions from provided categories or infer from line items and multi-line items.
+        Collect category definitions from provided categories or infer from line items and multi-line items.
         
         If categories are provided, use them as the base. If not, automatically infer 
         categories from the unique category names used in the line items. In both cases,
@@ -149,9 +149,9 @@ class Model(SerializationMixin):
         
         return category_definitions
 
-    def _gather_category_metadata(self) -> list[dict]:
+    def _collect_category_metadata(self) -> list[dict]:
         """
-        Gather category metadata from category definitions.
+        Collect category metadata from category definitions.
         
         This method extracts key information from each category definition
         to create a comprehensive metadata structure for categories.
@@ -173,7 +173,7 @@ class Model(SerializationMixin):
             })
         return category_metadata
 
-    def _gather_line_item_metadata(self) -> list[dict]:
+    def _collect_line_item_metadata(self) -> list[dict]:
         """
         Collects all defined names across the model to create a comprehensive 
         namespace.
@@ -261,7 +261,7 @@ class Model(SerializationMixin):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items)
-        self.line_item_metadata = self._gather_line_item_metadata()
+        self.line_item_metadata = self._collect_line_item_metadata()
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
             self.years,

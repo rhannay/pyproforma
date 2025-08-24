@@ -114,7 +114,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.multi_line_items = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -148,7 +148,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.multi_line_items = []        
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -175,7 +175,7 @@ class TestGenerateValueMatrix:
         model._category_definitions = basic_categories
         model.multi_line_items = []
 
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -200,7 +200,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.multi_line_items = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -225,7 +225,7 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.multi_line_items = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -342,7 +342,7 @@ class TestGenerateValueMatrix:
         model._category_definitions = basic_categories
         model.assumptions = []
         model.multi_line_items = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
         
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
@@ -368,7 +368,7 @@ class TestGenerateValueMatrix:
         model._category_definitions = basic_categories
         model.assumptions = []
         model.multi_line_items = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.line_item_metadata = model._collect_line_item_metadata()
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
