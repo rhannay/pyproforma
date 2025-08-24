@@ -438,7 +438,7 @@ class CategoryResults:
             self.category_obj = model.get_category_definition(category_name)
         else:
             self.category_obj = None
-        self.line_item_names = model.get_line_item_names_by_category(category_name)
+        self.line_item_names = model.line_item_names_by_category(category_name)
     
     @property
     def name(self) -> str:
@@ -627,7 +627,7 @@ class ConstraintResults:
     def __init__(self, model: 'Model', constraint_name: str):
         self.model = model
         self.constraint_name = constraint_name
-        self.constraint_definition = model.get_constraint_definition(constraint_name)
+        self.constraint_definition = model.constraint_definition(constraint_name)
         self.line_item_name = self.constraint_definition.line_item_name
         
         line_item_definition = model.get_line_item_definition(self.line_item_name)

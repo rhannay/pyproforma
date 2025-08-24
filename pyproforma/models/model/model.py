@@ -479,7 +479,7 @@ class Model(SerializationMixin):
         valid_categories = [category['name'] for category in self.category_metadata]
         raise KeyError(f"Category item '{name}' not found. Valid categories are: {valid_categories}")
     
-    def get_line_item_names_by_category(self, category_name: str) -> list[str]:
+    def line_item_names_by_category(self, category_name: str) -> list[str]:
         """
         Get all line item names in a specific category.
         
@@ -505,7 +505,7 @@ class Model(SerializationMixin):
         
         return line_item_names
 
-    def get_constraint_definition(self, name: str) -> Constraint:
+    def constraint_definition(self, name: str) -> Constraint:
         """Get a constraint definition by name.
         
         Args:

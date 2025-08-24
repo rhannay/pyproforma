@@ -140,7 +140,7 @@ class Tables:
         has_total = include_total and category.include_total
 
         # Get line item names for this category using metadata
-        line_item_names = self._model.get_line_item_names_by_category(category_name)
+        line_item_names = self._model.line_item_names_by_category(category_name)
 
         for i, item_name in enumerate(line_item_names):
             # Add bottom border to the last item if there's a total row coming after
@@ -223,7 +223,7 @@ class Tables:
         Returns:
             Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.
         """
-        constraint = self._model.get_constraint_definition(constraint_name)
+        constraint = self._model.constraint_definition(constraint_name)
         rows = [
             rt.LabelRow(label=constraint.label, bold=True),
             rt.ItemRow(name=constraint.line_item_name),

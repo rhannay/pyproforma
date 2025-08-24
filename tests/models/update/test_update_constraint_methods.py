@@ -326,7 +326,7 @@ class TestUpdateConstraintMethods:
             target=35000.0
         )
         
-        updated = sample_model.get_constraint_definition("initial_constraint")
+        updated = sample_model.constraint_definition("initial_constraint")
         assert updated.target == 35000.0
         
         # Delete one constraint
