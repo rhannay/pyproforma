@@ -79,10 +79,10 @@ class Tables:
         """
         rows = []
         # Line Items (including all categories)
-        if self._model._category_definitions:
+        if self._model.category_names:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
-            for cat_def in self._model._category_definitions:
-                rows.extend(self._category_rows(cat_def.name))
+            for category_name in self._model.category_names:
+                rows.extend(self._category_rows(category_name))
         # Multi Line Item items
         if self._model.multi_line_items:
             rows.append(rt.LabelRow(label='MULTI LINE ITEM ITEMS', bold=True))
@@ -116,17 +116,17 @@ class Tables:
     
     def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
-        for cat_def in self._model._category_definitions:
-            rows.extend(self._category_rows(cat_def.name, hardcoded_color=hardcoded_color))
+        for category_name in self._model.category_names:
+            rows.extend(self._category_rows(category_name, hardcoded_color=hardcoded_color))
         return rows
     
     def _category_rows(self, category_name: str, hardcoded_color: Optional[str] = None):
         rows = []
         category = self._model.category(category_name)
-        rows.append(rt.LabelRow(label=category.category_obj.label, bold=True))
+        rows.append(rt.LabelRow(label=category.label, bold=True))
         
         # Check if we need to add bottom border to the last item
-        has_total = category.category_obj.include_total
+        has_total = category.include_total
         
         # Get line item names for this category using metadata
         line_item_names = self._model.line_item_names(category=category_name)
@@ -138,8 +138,8 @@ class Tables:
             
             rows.append(rt.ItemRow(name=item_name, hardcoded_color=hardcoded_color, bottom_border=bottom_border))
             
-        if category.category_obj.include_total:
-            rows.append(rt.ItemRow(name=category.category_obj.total_name, bold=True))
+        if category.include_total:
+            rows.append(rt.ItemRow(name=category.total_name, bold=True))
         return rows
 
     def category(self, category_name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:

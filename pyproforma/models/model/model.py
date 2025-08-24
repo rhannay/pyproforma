@@ -391,7 +391,7 @@ class Model(SerializationMixin):
         """
         if category is not None:
             # Validate that the category exists
-            category_names = {cat.name for cat in self._category_definitions}
+            category_names = {cat['name'] for cat in self.category_metadata}
             if category not in category_names:
                 available_categories = sorted(category_names)
                 raise KeyError(f"Category '{category}' not found. Available categories: {available_categories}")
@@ -491,7 +491,7 @@ class Model(SerializationMixin):
             >>> revenue.to_dataframe()  # Returns pandas DataFrame
         """
         if category_name is None or category_name == "":
-            available_categories = [category.name for category in self._category_definitions]
+            available_categories = [category['name'] for category in self.category_metadata]
             if available_categories:
                 raise ValueError(f"Category name is required. Available category names are: {available_categories}")
             else:
@@ -612,7 +612,7 @@ class Model(SerializationMixin):
         for category in self._category_definitions:
             if category.name == name:
                 return category
-        valid_categories = [category.name for category in self._category_definitions]
+        valid_categories = [category['name'] for category in self.category_metadata]
         raise KeyError(f"Category item '{name}' not found. Valid categories are: {valid_categories}")
     
     def get_line_item_definitions_by_category(self, category_name: str) -> list[LineItem]:
@@ -742,17 +742,17 @@ class Model(SerializationMixin):
         """
         # Count items by category
         line_items_by_category = {}
-        for category in self._category_definitions:
-            items_in_category = [item.name for item in self._line_item_definitions if item.category == category.name]
+        for category in self.category_metadata:
+            items_in_category = [item.name for item in self._line_item_definitions if item.category == category['name']]
             if items_in_category:  # Only include categories that have items
-                line_items_by_category[category.name] = items_in_category
+                line_items_by_category[category['name']] = items_in_category
         
         return {
             'years': self.years,
             'years_count': len(self.years),
             'year_range': f"{min(self.years)} - {max(self.years)}" if self.years else "None",
             'line_items_count': len(self._line_item_definitions),
-            'categories_count': len(self._category_definitions),
+            'categories_count': len(self.category_metadata),
             'multi_line_items_count': len(self.multi_line_items),
             'constraints_count': len(self.constraints),
             'line_items_by_category': line_items_by_category,
