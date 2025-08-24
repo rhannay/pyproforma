@@ -82,7 +82,7 @@ class Tables:
         if self._model.category_names:
             rows.append(rt.LabelRow(label='LINE ITEMS', bold=True))
             for category_name in self._model.category_names:
-                rows.extend(self._category_rows(category_name))
+                rows.extend(self._category_rows(category_name, include_total=True))
         # Multi Line Item items
         if self._model.multi_line_items:
             rows.append(rt.LabelRow(label='MULTI LINE ITEM ITEMS', bold=True))
@@ -117,16 +117,16 @@ class Tables:
     def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
         for category_name in self._model.category_names:
-            rows.extend(self._category_rows(category_name, hardcoded_color=hardcoded_color))
+            rows.extend(self._category_rows(category_name, include_total=False, hardcoded_color=hardcoded_color))
         return rows
-    
-    def _category_rows(self, category_name: str, hardcoded_color: Optional[str] = None):
+
+    def _category_rows(self, category_name: str, include_total: bool = False, hardcoded_color: Optional[str] = None):
         rows = []
         category = self._model.category(category_name)
         rows.append(rt.LabelRow(label=category.label, bold=True))
         
         # Check if we need to add bottom border to the last item
-        has_total = category.include_total
+        has_total = include_total and category.include_total
         
         # Get line item names for this category using metadata
         line_item_names = self._model.line_item_names(category=category_name)
@@ -138,17 +138,18 @@ class Tables:
             
             rows.append(rt.ItemRow(name=item_name, hardcoded_color=hardcoded_color, bottom_border=bottom_border))
             
-        if category.include_total:
+        if include_total and category.include_total:
             rows.append(rt.ItemRow(name=category.total_name, bold=True))
         return rows
 
-    def category(self, category_name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
+    def category(self, category_name: str, include_name: bool = False, include_total: bool = True, hardcoded_color: Optional[str] = None) -> Table:
         """
         Generate a table for a specific category.
         
         Args:
             category_name (str): The name of the category to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            include_total (bool, optional): Whether to include category totals if the category has them configured. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be 
                                            displayed in this color. Defaults to None.
@@ -156,7 +157,7 @@ class Tables:
         Returns:
             Table: A Table object containing the category items.
         """
-        rows = self._category_rows(category_name, hardcoded_color=hardcoded_color)
+        rows = self._category_rows(category_name, include_total=include_total, hardcoded_color=hardcoded_color)
         return self.from_template(rows, include_name=include_name)
 
     def line_item(self, name: str, include_name: bool = False, hardcoded_color: Optional[str] = None) -> Table:
