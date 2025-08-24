@@ -58,7 +58,7 @@ class TestCollectCategoryMetadata:
             },
             {
                 'name': 'category_totals',
-                'label': 'category_totals',
+                'label': 'Category Totals',
                 'include_total': False,
                 'total_name': None,
                 'total_label': None,
@@ -113,7 +113,7 @@ class TestCollectCategoryMetadata:
             },
             {
                 'name': 'category_totals',
-                'label': 'category_totals',
+                'label': 'Category Totals',
                 'include_total': False,
                 'total_name': None,
                 'total_label': None,
@@ -141,7 +141,7 @@ class TestCollectCategoryMetadata:
             },
             {
                 'name': 'debt',
-                'label': 'debt',
+                'label': 'debt (Multi-Line Item)',
                 'include_total': False,
                 'total_name': None,
                 'total_label': None,
@@ -181,7 +181,7 @@ class TestCollectCategoryMetadata:
         expected = [
             {
                 'name': 'debt1',
-                'label': 'debt1',
+                'label': 'debt1 (Multi-Line Item)',
                 'include_total': False,
                 'total_name': None,
                 'total_label': None,
@@ -189,7 +189,7 @@ class TestCollectCategoryMetadata:
             },
             {
                 'name': 'debt2',
-                'label': 'debt2',
+                'label': 'debt2 (Multi-Line Item)',
                 'include_total': False,
                 'total_name': None,
                 'total_label': None,

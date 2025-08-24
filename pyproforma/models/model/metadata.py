@@ -56,7 +56,7 @@ def collect_category_metadata(
             if multi_item.name not in existing_category_names:
                 category_metadata.append({
                     'name': multi_item.name,
-                    'label': multi_item.name,
+                    'label': f'{multi_item.name} (Multi-Line Item)',
                     'include_total': False,
                     'total_name': None,
                     'total_label': None,
@@ -68,7 +68,7 @@ def collect_category_metadata(
     if categories_with_totals:
         category_metadata.append({
             'name': 'category_totals',
-            'label': 'category_totals',
+            'label': 'Category Totals',
             'include_total': False,
             'total_name': None,
             'total_label': None,
