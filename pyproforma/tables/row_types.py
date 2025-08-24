@@ -75,9 +75,9 @@ class ItemsByCategoryRow(BaseRow):
         """Create rows for all line items in a specific category."""
         rows = []
         # Get all line items in the specified category
-        for item in model.get_line_item_definitions_by_category(self.category):
+        for item_name in model.get_line_item_names_by_category(self.category):
             item_config = ItemRow(
-                name=item.name,
+                name=item_name,
                 include_name=self.include_name,
                 bold=self.bold,
                 value_format=self.value_format

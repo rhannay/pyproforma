@@ -479,14 +479,6 @@ class Model(SerializationMixin):
         valid_categories = [category['name'] for category in self.category_metadata]
         raise KeyError(f"Category item '{name}' not found. Valid categories are: {valid_categories}")
     
-    def get_line_item_definitions_by_category(self, category_name: str) -> list[LineItem]:
-        """Get all line items in a specific category."""
-        items = []
-        for item in self._line_item_definitions:
-            if item.category == category_name:
-                items.append(item)
-        return items
-
     def get_line_item_names_by_category(self, category_name: str) -> list[str]:
         """
         Get all line item names in a specific category.
