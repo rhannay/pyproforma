@@ -95,7 +95,7 @@ class Model(SerializationMixin):
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         
-
+        self.category_metadata = self._gather_category_metadata()
         self.line_item_metadata = self._gather_line_item_metadata()
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
@@ -148,6 +148,30 @@ class Model(SerializationMixin):
                     category_definitions.append(category)
         
         return category_definitions
+
+    def _gather_category_metadata(self) -> list[dict]:
+        """
+        Gather category metadata from category definitions.
+        
+        This method extracts key information from each category definition
+        to create a comprehensive metadata structure for categories.
+        
+        Returns:
+            list[dict]: A list of dictionaries, each containing:
+                - 'name' (str): The category name
+                - 'label' (str): The display label for the category
+                - 'include_total' (bool): Whether the category includes a total row
+                - 'system_generated' (bool): Whether the category was auto-generated
+        """
+        category_metadata = []
+        for category in self._category_definitions:
+            category_metadata.append({
+                'name': category.name,
+                'label': category.label,
+                'include_total': category.include_total,
+                'system_generated': category.is_system_generated
+            })
+        return category_metadata
 
     def _gather_line_item_metadata(self) -> list[dict]:
         """
