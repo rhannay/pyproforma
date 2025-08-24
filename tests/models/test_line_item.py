@@ -589,6 +589,20 @@ class TestCategory:
         assert reconstructed.total_name is None
         assert reconstructed.include_total == original.include_total
 
+    def test_category_rejects_reserved_names(self):
+        """Test that Category rejects reserved names like 'category_totals'."""
+        with pytest.raises(ValueError) as excinfo:
+            Category(name="category_totals")
+        assert "is reserved and cannot be used" in str(excinfo.value)
+        assert "category_totals" in str(excinfo.value)
+
+    def test_category_allows_non_reserved_names(self):
+        """Test that Category allows valid non-reserved names."""
+        # This should work fine
+        category = Category(name="my_category")
+        assert category.name == "my_category"
+
+
 class TestIsHardcoded:
     """Test class for the is_hardcoded method."""
 

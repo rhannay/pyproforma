@@ -14,3 +14,9 @@ VALUE_FORMATS = [
 # Type alias for valid value formats (based on VALUE_FORMATS constant)
 # Note: Using explicit Literal since dynamic Literal is not supported at runtime
 ValueFormat = Literal[None, 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals']
+
+# Reserved category names that cannot be used by users
+RESERVED_CATEGORY_NAMES = [
+    'category_totals'
+]
+
