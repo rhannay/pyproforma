@@ -316,38 +316,43 @@ class TestValidateMultiLineItems:
 
     def test_empty_multi_line_items_pass_validation(self):
         """Test that empty multi line items list passes validation."""
-        validate_multi_line_items([])
+        categories = [Category('income'), Category('expense')]
+        validate_multi_line_items([], categories)
 
     def test_none_multi_line_items_pass_validation(self):
         """Test that None multi line items passes validation."""
         # Test with None converted to empty list - the function expects a list
-        validate_multi_line_items([])
+        categories = [Category('income'), Category('expense')]
+        validate_multi_line_items([], categories)
 
     def test_valid_multi_line_items_pass_validation(self):
         """Test that valid multi line items pass validation."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(name='short_debt', draws={}, paydown={}, begin_balance=0, interest_rate=0.03)
         ]
         
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items)
+        validate_multi_line_items(multi_line_items, categories)
 
     def test_duplicate_multi_line_item_names_raise_error(self):
         """Test that duplicate multi line item names raise ValueError."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name='debt1', par_amount={2023: 2000}, interest_rate=0.04, term=3)
         ]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items)
+            validate_multi_line_items(multi_line_items, categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed: debt1" in error_msg
 
     def test_multiple_duplicate_multi_line_item_names(self):
         """Test error message when multiple multi line item names are duplicated."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name='debt1', par_amount={2023: 1500}, interest_rate=0.04, term=3),
@@ -356,7 +361,7 @@ class TestValidateMultiLineItems:
         ]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items)
+            validate_multi_line_items(multi_line_items, categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed:" in error_msg
@@ -365,38 +370,42 @@ class TestValidateMultiLineItems:
 
     def test_mixed_types_with_same_names_raise_error(self):
         """Test that different multi line item types with same names raise ValueError."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='debt_item', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(name='debt_item', draws={}, paydown={}, begin_balance=0, interest_rate=0.03)
         ]
         
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items)
+            validate_multi_line_items(multi_line_items, categories)
         
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed: debt_item" in error_msg
 
     def test_multi_line_item_names_case_sensitive(self):
         """Test that multi line item names are case sensitive."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='Debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name='debt1', par_amount={2023: 2000}, interest_rate=0.04, term=3)
         ]
         
         # Should not raise any exception (different case = different names)
-        validate_multi_line_items(multi_line_items)
+        validate_multi_line_items(multi_line_items, categories)
 
     def test_single_multi_line_item(self):
         """Test basic case with one multi line item."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='single_debt', par_amount={2023: 1000}, interest_rate=0.05, term=5)
         ]
         
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items)
+        validate_multi_line_items(multi_line_items, categories)
 
     def test_multiple_different_multi_line_items(self):
         """Test multiple different multi line items with unique names."""
+        categories = [Category('income'), Category('expense')]
         multi_line_items = [
             Debt(name='long_term_debt', par_amount={2023: 1000}, interest_rate=0.05, term=10),
             Debt(name='equipment_loan', par_amount={2023: 500}, interest_rate=0.06, term=5),
@@ -405,7 +414,34 @@ class TestValidateMultiLineItems:
         ]
         
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items)
+        validate_multi_line_items(multi_line_items, categories)
+
+    def test_multi_line_item_name_conflicts_with_category(self):
+        """Test that multi line item names that conflict with category names raise ValueError."""
+        categories = [Category('income'), Category('debt_service')]
+        multi_line_items = [
+            Debt(name='debt_service', par_amount={2023: 1000}, interest_rate=0.05, term=5)  # conflicts with category
+        ]
+        
+        with pytest.raises(ValueError, match="Multi line item names cannot match category names: debt_service"):
+            validate_multi_line_items(multi_line_items, categories)
+
+    def test_multiple_multi_line_item_category_conflicts(self):
+        """Test that multiple multi line item names conflicting with categories are reported."""
+        categories = [Category('income'), Category('debt_service'), Category('expenses')]
+        multi_line_items = [
+            Debt(name='debt_service', par_amount={2023: 1000}, interest_rate=0.05, term=5),  # conflicts
+            ShortTermDebt(name='income', draws={}, paydown={}, begin_balance=0, interest_rate=0.03),  # conflicts
+            Debt(name='valid_debt', par_amount={2023: 500}, interest_rate=0.04, term=3)  # no conflict
+        ]
+        
+        with pytest.raises(ValueError) as exc_info:
+            validate_multi_line_items(multi_line_items, categories)
+        
+        error_msg = str(exc_info.value)
+        assert "Multi line item names cannot match category names:" in error_msg
+        assert "debt_service" in error_msg
+        assert "income" in error_msg
 
 
 class TestValidateFormulas:

@@ -91,7 +91,7 @@ class Model(SerializationMixin):
 
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_multi_line_items(self.multi_line_items)
+        validate_multi_line_items(self.multi_line_items, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         
         self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
@@ -144,7 +144,7 @@ class Model(SerializationMixin):
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
-        validate_multi_line_items(self.multi_line_items)
+        validate_multi_line_items(self.multi_line_items, self._category_definitions)
         self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items

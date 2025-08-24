@@ -88,15 +88,17 @@ def validate_constraints(constraints: List[Constraint], line_items: List[LineIte
             raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
 
 
-def validate_multi_line_items(multi_line_items: List[MultiLineItem]):
+def validate_multi_line_items(multi_line_items: List[MultiLineItem], categories: List[Category]):
     """
-    Validates that all multi line items have unique names.
+    Validates that all multi line items have unique names and don't conflict with category names.
 
     Args:
         multi_line_items (List[MultiLineItem]): List of multi line items to validate
+        categories (List[Category]): List of categories to check for name conflicts
 
     Raises:
-        ValueError: If two or more multi line items have the same name.
+        ValueError: If two or more multi line items have the same name, or if a multi
+                   line item name conflicts with a category name.
     """
     if not multi_line_items:
         return
@@ -106,6 +108,13 @@ def validate_multi_line_items(multi_line_items: List[MultiLineItem]):
     
     if duplicates:
         raise ValueError(f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}")
+    
+    # Validate that multi line item names don't conflict with category names
+    category_names = [category.name for category in categories]
+    conflicts = [name for name in generator_names if name in category_names]
+    
+    if conflicts:
+        raise ValueError(f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}")
 
 
 def validate_formulas(line_items: List[LineItem], line_item_metadata: List[dict]):
