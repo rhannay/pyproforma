@@ -84,15 +84,12 @@ class Model(SerializationMixin):
             raise ValueError("Years cannot be an empty list.")
         self.years = sorted(years)
         
-        self.multi_line_items = multi_line_items if multi_line_items is not None else []
-        validate_multi_line_items(self.multi_line_items)
-
-        self._line_item_definitions = line_items
-
         self._category_definitions = self._collect_category_definitions(line_items, categories)
-
+        self._line_item_definitions = line_items
+        self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
+        validate_multi_line_items(self.multi_line_items)
         validate_categories(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         

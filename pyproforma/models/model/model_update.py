@@ -431,7 +431,7 @@ class UpdateNamespace:
             return
         
         # Helper function to apply updates to a model
-        def apply_updates(model, updates):
+        def apply_updates(model: Model, updates: list[tuple[str, dict]]):
             for item_name, update_params in updates:
                 # Find the existing line item
                 existing_item = None
