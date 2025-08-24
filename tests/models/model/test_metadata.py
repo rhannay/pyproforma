@@ -329,7 +329,7 @@ class TestCollectLineItemMetadata:
             'value_format': 'no_decimals',
             'source_type': 'category',
             'source_name': 'revenue',
-            'category': None
+            'category': 'category_totals'
         }
     
     def test_category_totals_excluded_if_no_items(self):

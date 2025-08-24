@@ -119,7 +119,7 @@ def collect_line_item_metadata(
              'source_name': 'revenue', 'category': 'income'},
             {'name': 'total_revenue', 'label': 'Total Revenue', 
              'value_format': 'no_decimals', 'source_type': 'category', 
-             'source_name': 'revenue', 'category': None}
+             'source_name': 'revenue', 'category': 'category_totals'}
         ]
     """
     defined_names = []
@@ -150,7 +150,7 @@ def collect_line_item_metadata(
                     'value_format': 'no_decimals', 
                     'source_type': 'category', 
                     'source_name': category_meta['name'],
-                    'category': None,
+                    'category': 'category_totals',
                 })
     
     # Add multi-line item generators
