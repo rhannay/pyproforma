@@ -342,7 +342,7 @@ class UpdateNamespace:
         """
         # Find the existing line item
         try:
-            existing_item = self._model.get_line_item_definition(name)
+            existing_item = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
         
@@ -632,7 +632,7 @@ class UpdateNamespace:
         """
         # Verify the line item exists
         try:
-            line_item_to_delete = self._model.get_line_item_definition(name)
+            line_item_to_delete = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
         

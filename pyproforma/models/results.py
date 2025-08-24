@@ -40,7 +40,7 @@ class LineItemResults:
         self.label = self._line_item_metadata['label']
         self.value_format = self._line_item_metadata['value_format']
         if self.source_type == 'line_item':
-            self._line_item_definition = model.get_line_item_definition(item_name)
+            self._line_item_definition = model.line_item_definition(item_name)
         else:
             self._line_item_definition = None
 
@@ -388,7 +388,7 @@ class LineItemResults:
         formula_info = ""
         if self.source_type == "line_item":
             try:
-                line_item = self.model.get_line_item_definition(self.item_name)
+                line_item = self.model.line_item_definition(self.item_name)
                 if line_item.formula:
                     formula_info = f"\nFormula: {line_item.formula}"
                 else:
@@ -630,7 +630,7 @@ class ConstraintResults:
         self.constraint_definition = model.constraint_definition(constraint_name)
         self.line_item_name = self.constraint_definition.line_item_name
         
-        line_item_definition = model.get_line_item_definition(self.line_item_name)
+        line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
     
     def __str__(self) -> str:

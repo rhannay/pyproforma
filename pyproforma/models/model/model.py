@@ -439,7 +439,7 @@ class Model(SerializationMixin):
         
         return LineItemResults(self, item_name)
     
-    def get_line_item_definition(self, name: str) -> LineItem:
+    def line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
         
@@ -734,7 +734,7 @@ class Model(SerializationMixin):
     def _is_last_item_in_category(self, name: str) -> bool:
         """Check if the given item name is the last item in its category"""
         # Find the item with the given name and get its category
-        target_item = self.get_line_item_definition(name)
+        target_item = self.line_item_definition(name)
         
         # Get all items in the same category
         items_in_category = [item for item in self._line_item_definitions if item.category == target_item.category]
