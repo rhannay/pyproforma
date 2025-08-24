@@ -434,8 +434,39 @@ class CategoryResults:
         self.model = model
         self.category_name = category_name
         self.category_obj = model.get_category_definition(category_name)
+        self.category_metadata = model._metadata_for_category(category_name)
         self.line_items_definitions = model.get_line_item_definitions_by_category(category_name)
         self.line_item_names = model.get_line_item_names_by_category(category_name)
+    
+    @property
+    def name(self) -> str:
+        """The category name."""
+        return self.category_metadata['name']
+    
+    @property
+    def label(self) -> str:
+        """The display label for the category."""
+        return self.category_metadata['label']
+    
+    @property
+    def include_total(self) -> bool:
+        """Whether the category includes a total row."""
+        return self.category_metadata['include_total']
+    
+    @property
+    def total_name(self) -> str:
+        """The name used for the category total."""
+        return self.category_metadata['total_name']
+    
+    @property
+    def total_label(self) -> str:
+        """The display label for the category total."""
+        return self.category_metadata['total_label']
+    
+    @property
+    def system_generated(self) -> bool:
+        """Whether the category was auto-generated."""
+        return self.category_metadata['system_generated']
     
     def __str__(self) -> str:
         """
@@ -456,7 +487,7 @@ class CategoryResults:
         Raises:
             ValueError: If the category doesn't include totals
         """
-        if not self.category_obj.include_total:
+        if not self.include_total:
             raise ValueError(f"Category '{self.category_name}' does not include totals")
         
         totals = {}
@@ -503,10 +534,10 @@ class CategoryResults:
         df = pd.DataFrame(df_data, index=[item.name for item in self.line_items_definitions])
         
         # Add total row if category includes totals
-        if self.category_obj.include_total:
+        if self.include_total:
             try:
                 total_row = self.totals()
-                df.loc[self.category_obj.total_name] = [total_row[year] for year in self.model.years]
+                df.loc[self.total_name] = [total_row[year] for year in self.model.years]
             except (ValueError, KeyError):
                 pass
         
@@ -548,7 +579,7 @@ class CategoryResults:
         
         # Get totals for all years if category includes totals
         total_info = ""
-        if self.category_obj.include_total and self.model.years:
+        if self.include_total and self.model.years:
             try:
                 totals_list = []
                 for year in self.model.years:
@@ -560,7 +591,7 @@ class CategoryResults:
                 total_info = "\nTotals: Not available"
         
         summary_text = (f"CategoryResults('{self.category_name}')\n"
-                f"Label: {self.category_obj.label}\n"
+                f"Label: {self.label}\n"
                 f"Line Items: {num_items}\n"
                 f"Items: {', '.join(item_names)}{total_info}")
         
