@@ -438,7 +438,6 @@ class CategoryResults:
             self.category_obj = model.get_category_definition(category_name)
         else:
             self.category_obj = None
-        self.line_items_definitions = model.get_line_item_definitions_by_category(category_name)
         self.line_item_names = model.get_line_item_names_by_category(category_name)
     
     @property
@@ -478,7 +477,7 @@ class CategoryResults:
         return self.summary()
     
     def __repr__(self) -> str:
-        return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_items_definitions)})"
+        return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_item_names)})"
         
     def totals(self) -> dict[int, float]:
         """
@@ -510,13 +509,13 @@ class CategoryResults:
             dict[str, dict[int, float]]: Nested dictionary with values for each item by year
         """
         values = {}
-        for item in self.line_items_definitions:
-            values[item.name] = {}
+        for item_name in self.line_item_names:
+            values[item_name] = {}
             for year in self.model.years:
                 try:
-                    values[item.name][year] = self.model.value(item.name, year)
+                    values[item_name][year] = self.model.value(item_name, year)
                 except KeyError:
-                    values[item.name][year] = 0.0
+                    values[item_name][year] = 0.0
         
         return values
     
@@ -532,9 +531,9 @@ class CategoryResults:
         # Create DataFrame with line items as index and years as columns
         df_data = {}
         for year in self.model.years:
-            df_data[year] = [values_dict[item.name][year] for item in self.line_items_definitions]
+            df_data[year] = [values_dict[item_name][year] for item_name in self.line_item_names]
         
-        df = pd.DataFrame(df_data, index=[item.name for item in self.line_items_definitions])
+        df = pd.DataFrame(df_data, index=self.line_item_names)
         
         # Add total row if category includes totals
         if self.include_total:
@@ -577,9 +576,9 @@ class CategoryResults:
         Returns:
             str: Formatted summary of the category
         """
-        num_items = len(self.line_items_definitions)
-        item_names = [item.name for item in self.line_items_definitions]
-        
+        num_items = len(self.line_item_names)
+        item_names = self.line_item_names
+
         # Get totals for all years if category includes totals
         total_info = ""
         if self.include_total and self.model.years:

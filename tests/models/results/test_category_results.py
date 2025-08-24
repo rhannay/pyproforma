@@ -73,7 +73,6 @@ class TestCategoryResultsInitialization:
         assert category_results.category_obj.name == "income"
         assert category_results.category_obj.label == "Income"
         assert category_results.category_obj.include_total is True
-        assert len(category_results.line_items_definitions) == 2
         assert len(category_results.line_item_names) == 2
         assert "product_sales" in category_results.line_item_names
         assert "service_revenue" in category_results.line_item_names
@@ -96,7 +95,7 @@ class TestCategoryResultsInitialization:
         assert category_results.category_obj.name == "metrics"
         assert category_results.category_obj.label == "Metrics"
         assert category_results.category_obj.include_total is False
-        assert len(category_results.line_items_definitions) == 1
+        assert len(category_results.line_item_names) == 1
         assert "conversion_rate" in category_results.line_item_names
     
     def test_init_invalid_category_name(self, model_with_categories):
@@ -626,7 +625,6 @@ class TestCategoryResultsEdgeCases:
         
         category_results = CategoryResults(model, "empty_category")
         
-        assert len(category_results.line_items_definitions) == 0
         assert len(category_results.line_item_names) == 0
         
         values = category_results.values()
