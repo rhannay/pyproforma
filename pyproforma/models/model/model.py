@@ -98,7 +98,7 @@ class Model(SerializationMixin):
         
         self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
-            self._line_item_definitions, self._category_definitions, self.multi_line_items
+            self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
@@ -148,7 +148,7 @@ class Model(SerializationMixin):
         validate_multi_line_items(self.multi_line_items)
         self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
-            self._line_item_definitions, self._category_definitions, self.multi_line_items
+            self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
@@ -381,8 +381,6 @@ class Model(SerializationMixin):
             else:
                 raise ValueError("Category name is required, but no categories are defined in this model.")
         
-        # Validate that the category exists
-        self.get_category_definition(category_name)  # This will raise KeyError if not found
         return CategoryResults(self, category_name)
     
     def constraint(self, constraint_name: str = None) -> ConstraintResults:
@@ -521,7 +519,9 @@ class Model(SerializationMixin):
             KeyError: If the category name is not found
         """
         # Validate that the category exists
-        self.get_category_definition(category_name)  # This will raise KeyError if not found
+        if category_name not in self.category_names:
+            available_categories = sorted(self.category_names)
+            raise KeyError(f"Category '{category_name}' not found. Available categories: {available_categories}")
         
         # Get all line item names that belong to this category
         line_item_names = []

@@ -433,8 +433,11 @@ class CategoryResults:
     def __init__(self, model: 'Model', category_name: str):
         self.model = model
         self.category_name = category_name
-        self.category_obj = model.get_category_definition(category_name)
         self.category_metadata = model._metadata_for_category(category_name)
+        if self.category_metadata['system_generated'] is False:
+            self.category_obj = model.get_category_definition(category_name)
+        else:
+            self.category_obj = None
         self.line_items_definitions = model.get_line_item_definitions_by_category(category_name)
         self.line_item_names = model.get_line_item_names_by_category(category_name)
     

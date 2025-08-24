@@ -34,7 +34,7 @@ def collect_category_metadata(
             - 'include_total' (bool): Whether the category includes a total row
             - 'total_name' (str): The name used for the category total
             - 'total_label' (str): The display label for the category total
-            - 'system_generated' (bool): Whether the category was auto-generated
+            - 'system_generated' (bool): Whether this is a system-generated category
     """
     category_metadata = []
     
@@ -63,12 +63,24 @@ def collect_category_metadata(
                     'system_generated': True
                 })
     
+    # Add 'category_totals' category if any categories have totals
+    categories_with_totals = [cat for cat in category_metadata if cat['include_total']]
+    if categories_with_totals:
+        category_metadata.append({
+            'name': 'category_totals',
+            'label': 'category_totals',
+            'include_total': False,
+            'total_name': None,
+            'total_label': None,
+            'system_generated': True
+        })
+    
     return category_metadata
 
 
 def collect_line_item_metadata(
     line_item_definitions: List[LineItem],
-    category_definitions: List[Category],
+    category_metadata: List[Dict],
     multi_line_items: List[MultiLineItem]
 ) -> List[Dict]:
     """
@@ -81,7 +93,7 @@ def collect_line_item_metadata(
     
     Args:
         line_item_definitions (List[LineItem]): List of line item definitions
-        category_definitions (List[Category]): List of category definitions
+        category_metadata (List[Dict]): List of category metadata dictionaries
         multi_line_items (List[MultiLineItem]): List of multi-line item generators
     
     Returns:
@@ -123,21 +135,21 @@ def collect_line_item_metadata(
             'category': item.category,
         })
     
-    # Add category totals
-    for category in category_definitions:
-        if category.include_total:
+    # Add category totals from metadata
+    for category_meta in category_metadata:
+        if category_meta['include_total']:
             # Only include category total if there are line items in category
             items_in_category = [
                 item for item in line_item_definitions 
-                if item.category == category.name
+                if item.category == category_meta['name']
             ]
             if items_in_category:  # Only add total if category has items
                 defined_names.append({
-                    'name': category.total_name, 
-                    'label': category.total_label, 
+                    'name': category_meta['total_name'], 
+                    'label': category_meta['total_label'], 
                     'value_format': 'no_decimals', 
                     'source_type': 'category', 
-                    'source_name': category.name,
+                    'source_name': category_meta['name'],
                     'category': None,
                 })
     
