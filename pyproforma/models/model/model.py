@@ -421,7 +421,7 @@ class Model(SerializationMixin):
         Returns:
             list[str]: List of category names
         """
-        return [category.name for category in self._category_definitions]
+        return [category['name'] for category in self.category_metadata]
 
     # ============================================================================
     # LOOKUP/GETTER METHODS
@@ -445,6 +445,26 @@ class Model(SerializationMixin):
             if defined_name['name'] == item_name:
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
+
+    def _metadata_for_category(self, category_name: str) -> dict:
+        """
+        Get category metadata for a specific category name.
+        
+        Args:
+            category_name (str): The name of the category to get metadata for
+            
+        Returns:
+            dict: Dictionary containing category metadata including name, label,
+                  include_total, total_name, total_label, and system_generated
+                  
+        Raises:
+            KeyError: If the category name is not found in category metadata
+        """
+        for category_meta in self.category_metadata:
+            if category_meta['name'] == category_name:
+                return category_meta
+        available_categories = [cat['name'] for cat in self.category_metadata]
+        raise KeyError(f"Category '{category_name}' not found in model. Available categories: {available_categories}")
 
     def category(self, category_name: str = None) -> CategoryResults:
         """
