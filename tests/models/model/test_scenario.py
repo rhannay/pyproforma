@@ -136,10 +136,10 @@ def test_scenario_rename_items(basic_model):
     ])
     
     # Check that names were updated
-    assert "income" in scenario_model.line_item_names()
-    assert "expenses" in scenario_model.line_item_names()
-    assert "revenue" not in scenario_model.line_item_names()
-    assert "costs" not in scenario_model.line_item_names()
+    assert "income" in scenario_model.line_item_names
+    assert "expenses" in scenario_model.line_item_names
+    assert "revenue" not in scenario_model.line_item_names
+    assert "costs" not in scenario_model.line_item_names
 
     # Check that formulas still work
     assert scenario_model["profit", 2023] == 30

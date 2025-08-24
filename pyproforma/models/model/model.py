@@ -259,32 +259,15 @@ class Model(SerializationMixin):
         """
         return self._line_item_definitions
     
-    def line_item_names(self, category: str = None) -> list[str]:
+    @property
+    def line_item_names(self) -> list[str]:
         """
-        Get list of line item names, optionally filtered by category.
+        Get list of all line item names.
         
-        Args:
-            category (str, optional): Category name to filter by. If None, returns all line item names.
-            
         Returns:
             list[str]: List of line item names
-            
-        Raises:
-            KeyError: If the specified category is not found in the model
         """
-        if category is not None:
-            # Validate that the category exists
-            category_names = {cat['name'] for cat in self.category_metadata}
-            if category not in category_names:
-                available_categories = sorted(category_names)
-                raise KeyError(f"Category '{category}' not found. Available categories: {available_categories}")
-            
-            # Return line items filtered by category
-            return [item['name'] for item in self.line_item_metadata 
-                   if item['category'] == category]
-        else:
-            # Return all line item names
-            return [item['name'] for item in self.line_item_metadata]
+        return [item['name'] for item in self.line_item_metadata]
 
     @property
     def category_definitions(self) -> tuple[Category, ...]:
