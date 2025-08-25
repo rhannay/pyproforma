@@ -1,14 +1,12 @@
 from typing import TYPE_CHECKING, Optional
+
 import pandas as pd
 import plotly.graph_objects as go
-from pyproforma.tables.table_class import format_value, Table
 
+from pyproforma.tables.table_class import Table, format_value
 
 if TYPE_CHECKING:
     from .model import Model
-    from .line_item import LineItem
-    from .category import Category
-    from .constraint import Constraint
 
 
 class LineItemResults:
@@ -31,9 +29,9 @@ class LineItemResults:
         >>> revenue_item.table()  # Returns Table object
         >>> revenue_item.chart()  # Returns Plotly chart
     """
-    
+
     def __init__(self, model: 'Model', item_name: str):
-        self.model = model 
+        self.model = model
         self.item_name = item_name
         self._line_item_metadata = model._get_item_metadata(item_name)
         self.source_type = self._line_item_metadata['source_type']
@@ -47,10 +45,10 @@ class LineItemResults:
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
         return self.summary()
-    
+
     def __repr__(self) -> str:
         return f"LineItemResults(item_name='{self.item_name}', source_type='{self._line_item_metadata['source_type']}')"
-    
+
     def values(self) -> dict[int, float]:
         """
         Return a dictionary of year: value for this item.
@@ -62,7 +60,7 @@ class LineItemResults:
         for year in self.model.years:
             values[year] = self.model.value(self.item_name, year)
         return values
-    
+
     def value(self, year: int) -> float:
         """
         Return the value for this item for a specific year.
@@ -77,7 +75,7 @@ class LineItemResults:
             KeyError: If the year is not in the model's years
         """
         return self.model.value(self.item_name, year)
-    
+
     def is_hardcoded(self, year: int) -> bool:
         """
         Check if the line item has a hardcoded value for a specific year.
@@ -92,14 +90,14 @@ class LineItemResults:
         if self._line_item_definition is None:
             return False
         return self._line_item_definition.is_hardcoded(year)
-    
+
     def __getitem__(self, year: int) -> float:
         """
         Allow bracket access to item value for a specific year.
         Equivalent to self.value(year).
         """
         return self.value(year)
-    
+
     def to_series(self) -> pd.Series:
         """
         Return a pandas Series with years as index and values.
@@ -109,7 +107,7 @@ class LineItemResults:
         """
         values_dict = self.values()
         return pd.Series(values_dict, name=self.item_name)
-    
+
     def to_dataframe(self) -> pd.DataFrame:
         """
         Return a pandas DataFrame with a single row for this item.
@@ -119,7 +117,7 @@ class LineItemResults:
         """
         values_dict = self.values()
         return pd.DataFrame([values_dict], index=[self.item_name])
-    
+
     def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
         Return a Table object for this item using the tables.line_item() function.
@@ -151,7 +149,7 @@ class LineItemResults:
             KeyError: If the item name is not found in the model
         """
         return self.model.charts.line_item(self.item_name, width=width, height=height, template=template, chart_type=chart_type)
-    
+
     def cumulative_percent_change_chart(self, width: int = 800, height: int = 600, template: str = 'plotly_white') -> go.Figure:
         """
         Create a chart showing cumulative percentage change from a base year.
@@ -165,14 +163,14 @@ class LineItemResults:
             go.Figure: The Plotly chart figure showing cumulative change percentages
         """
         return self.model.charts.cumulative_percent_change(self.item_name, width=width, height=height, template=template)
-    
+
     def _repr_html_(self) -> str:
         """
         Return HTML representation for Jupyter notebooks.
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
         return self.summary(html=True)
-    
+
     def percent_change(self, year: int) -> float:
         """
         Calculate the percent change of this line item from the previous year to the given year.
@@ -190,25 +188,25 @@ class LineItemResults:
         # Check if this is the first year
         if year == self.model.years[0]:
             return None
-            
+
         # Get the index of the current year to find the previous year
         try:
             year_index = self.model.years.index(year)
         except ValueError:
             raise KeyError(f"Year {year} not found in model years: {self.model.years}")
-            
+
         previous_year = self.model.years[year_index - 1]
-        
+
         # Get values for current and previous years
         current_value = self.model.value(self.item_name, year)
         previous_value = self.model.value(self.item_name, previous_year)
-        
+
         # Handle None values or zero previous value
         if previous_value is None or current_value is None:
             return None
         if previous_value == 0:
             return None
-            
+
         # Calculate percent change: (current - previous) / previous
         return (current_value - previous_value) / previous_value
 
@@ -229,27 +227,27 @@ class LineItemResults:
         """
         # Determine the base year
         base_year = start_year if start_year is not None else self.model.years[0]
-        
+
         # Validate years exist
         if year not in self.model.years:
             raise KeyError(f"Year {year} not found in model years: {self.model.years}")
         if base_year not in self.model.years:
             raise KeyError(f"Start year {base_year} not found in model years: {self.model.years}")
-            
+
         # Check if this is the same as the base year
         if year == base_year:
             return 0
-            
+
         # Get values for current and base years
         current_value = self.model.value(self.item_name, year)
         base_year_value = self.model.value(self.item_name, base_year)
-        
+
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
             return None
         if base_year_value == 0:
             return None
-            
+
         # Calculate percent change: (current - base) / base
         return (current_value - base_year_value) / base_year_value
 
@@ -270,25 +268,25 @@ class LineItemResults:
         """
         # Determine the base year
         base_year = start_year if start_year is not None else self.model.years[0]
-        
+
         # Validate years exist
         if year not in self.model.years:
             raise KeyError(f"Year {year} not found in model years: {self.model.years}")
         if base_year not in self.model.years:
             raise KeyError(f"Start year {base_year} not found in model years: {self.model.years}")
-            
+
         # Get values for current and base years
         current_value = self.model.value(self.item_name, year)
         base_year_value = self.model.value(self.item_name, base_year)
-        
+
         # Handle None values
         if base_year_value is None or current_value is None:
             return None
-            
+
         # Check if this is the same as the base year
         if year == base_year:
             return 0
-            
+
         # Calculate absolute change: current - base
         return current_value - base_year_value
 
@@ -310,23 +308,23 @@ class LineItemResults:
         """
         # Determine the base year
         base_year = start_year if start_year is not None else self.model.years[0]
-        
+
         # Validate years exist
         if year not in self.model.years:
             raise KeyError(f"Year {year} not found in model years: {self.model.years}")
         if base_year not in self.model.years:
             raise KeyError(f"Start year {base_year} not found in model years: {self.model.years}")
-            
+
         # Get values for current and base years
         current_value = self.model.value(self.item_name, year)
         base_year_value = self.model.value(self.item_name, base_year)
-        
+
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
             return None
         if base_year_value == 0:
             return None
-            
+
         # Calculate indexed value: (current / base) * 100
         return (current_value / base_year_value) * 100.0
 
@@ -345,12 +343,12 @@ class LineItemResults:
         """
         # Use all years if none specified
         years_to_sum = years if years is not None else self.model.years
-        
+
         # Validate all years exist in the model
         for year in years_to_sum:
             if year not in self.model.years:
                 raise KeyError(f"Year {year} not found in model years: {self.model.years}")
-        
+
         # Sum values for all specified years
         cumulative_sum = 0
         for year in years_to_sum:
@@ -358,7 +356,7 @@ class LineItemResults:
             if value is None:
                 value = 0  # Treat None values as zero
             cumulative_sum += value
-        
+
         return cumulative_sum
 
     def summary(self, html: bool = False) -> str:
@@ -383,7 +381,7 @@ class LineItemResults:
                 value_info = f"\nValues: {', '.join(values_list)}"
             except KeyError:
                 value_info = "\nValues: Not available"
-        
+
         # Get formula information based on source type
         formula_info = ""
         if self.source_type == "line_item":
@@ -397,12 +395,12 @@ class LineItemResults:
                 formula_info = "\nFormula: Not available"
         elif self.source_type == "category":
             formula_info = f"\nFormula: Sum of items in category '{self.item_name}'"
-        
+
         summary_text = (f"LineItemResults('{self.item_name}')\n"
                 f"Label: {self.label}\n"
                 f"Source Type: {self.source_type}\n"
                 f"Value Format: {self.value_format}{formula_info}{value_info}")
-        
+
         if html:
             html_summary = summary_text.replace('\n', '<br>')
             return f'<pre>{html_summary}</pre>'
@@ -429,7 +427,7 @@ class CategoryResults:
         >>> revenue_results.items  # Returns list of LineItems
         >>> revenue_results.to_dataframe()  # Returns pandas DataFrame
     """
-    
+
     def __init__(self, model: 'Model', category_name: str):
         self.model = model
         self.category_name = category_name
@@ -439,46 +437,46 @@ class CategoryResults:
         else:
             self.category_obj = None
         self.line_item_names = model.line_item_names_by_category(category_name)
-    
+
     @property
     def name(self) -> str:
         """The category name."""
         return self.category_metadata['name']
-    
+
     @property
     def label(self) -> str:
         """The display label for the category."""
         return self.category_metadata['label']
-    
+
     @property
     def include_total(self) -> bool:
         """Whether the category includes a total row."""
         return self.category_metadata['include_total']
-    
+
     @property
     def total_name(self) -> str:
         """The name used for the category total."""
         return self.category_metadata['total_name']
-    
+
     @property
     def total_label(self) -> str:
         """The display label for the category total."""
         return self.category_metadata['total_label']
-    
+
     @property
     def system_generated(self) -> bool:
         """Whether the category was auto-generated."""
         return self.category_metadata['system_generated']
-    
+
     def __str__(self) -> str:
         """
         Return a string representation showing key information about the category.
         """
         return self.summary()
-    
+
     def __repr__(self) -> str:
         return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_item_names)})"
-        
+
     def totals(self) -> dict[int, float]:
         """
         Return a dictionary of year: total value for this category.
@@ -491,16 +489,16 @@ class CategoryResults:
         """
         if not self.include_total:
             raise ValueError(f"Category '{self.category_name}' does not include totals")
-        
+
         totals = {}
         for year in self.model.years:
             try:
                 totals[year] = self.model.category_total(self.category_name, year)
             except KeyError:
                 totals[year] = 0.0
-        
+
         return totals
-    
+
     def values(self) -> dict[str, dict[int, float]]:
         """
         Return a nested dictionary of item_name: {year: value} for all items in category.
@@ -516,9 +514,9 @@ class CategoryResults:
                     values[item_name][year] = self.model.value(item_name, year)
                 except KeyError:
                     values[item_name][year] = 0.0
-        
+
         return values
-    
+
     def to_dataframe(self) -> pd.DataFrame:
         """
         Return a pandas DataFrame with line items as rows and years as columns.
@@ -527,14 +525,14 @@ class CategoryResults:
             pd.DataFrame: DataFrame with line items and their values across years
         """
         values_dict = self.values()
-        
+
         # Create DataFrame with line items as index and years as columns
         df_data = {}
         for year in self.model.years:
             df_data[year] = [values_dict[item_name][year] for item_name in self.line_item_names]
-        
+
         df = pd.DataFrame(df_data, index=self.line_item_names)
-        
+
         # Add total row if category includes totals
         if self.include_total:
             try:
@@ -542,9 +540,9 @@ class CategoryResults:
                 df.loc[self.total_name] = [total_row[year] for year in self.model.years]
             except (ValueError, KeyError):
                 pass
-        
+
         return df
-    
+
     def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
@@ -591,12 +589,12 @@ class CategoryResults:
                 total_info = f"\nTotals: {', '.join(totals_list)}"
             except (KeyError, AttributeError):
                 total_info = "\nTotals: Not available"
-        
+
         summary_text = (f"CategoryResults('{self.category_name}')\n"
                 f"Label: {self.label}\n"
                 f"Line Items: {num_items}\n"
                 f"Items: {', '.join(item_names)}{total_info}")
-        
+
         if html:
             html_summary = summary_text.replace('\n', '<br>')
             return f'<pre>{html_summary}</pre>'
@@ -623,23 +621,23 @@ class ConstraintResults:
         >>> debt_constraint.table()  # Returns Table object
         >>> debt_constraint.chart()  # Returns Plotly chart
     """
-    
+
     def __init__(self, model: 'Model', constraint_name: str):
         self.model = model
         self.constraint_name = constraint_name
         self.constraint_definition = model.constraint_definition(constraint_name)
         self.line_item_name = self.constraint_definition.line_item_name
-        
+
         line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
-    
+
     def __str__(self) -> str:
         """Return a string representation showing key information about the constraint."""
         return self.summary()
-    
+
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
-    
+
     def line_item_value(self, year: int) -> float:
         """
         Return the line item value for this constraint for a specific year.
@@ -654,7 +652,7 @@ class ConstraintResults:
             KeyError: If the year is not in the model's years
         """
         return self.model.value(self.line_item_name, year)
-    
+
     def target(self, year: int) -> float:
         """
         Return the target value for this constraint for a specific year.
@@ -669,7 +667,7 @@ class ConstraintResults:
             KeyError: If the year is not in the model's years
         """
         return self.constraint_definition.get_target(year)
-    
+
     def table(self):
         """
         Return a Table object for this constraint using the tables.constraint() function.
@@ -711,7 +709,7 @@ class ConstraintResults:
             ValueError: If year or line item is not found in the model, or no target available
         """
         return self.constraint_definition.evaluate(self.model._value_matrix, year)
-        
+
     def failing_years(self) -> list[int]:
         """
         Return a list of years where the constraint is not satisfied.
@@ -727,7 +725,7 @@ class ConstraintResults:
             except ValueError:
                 # Skip years that can't be evaluated
                 pass
-        
+
         return failing
 
     def _repr_html_(self) -> str:
@@ -736,7 +734,7 @@ class ConstraintResults:
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
         return self.summary(html=True)
-    
+
     def summary(self, html: bool = False) -> str:
         """
         Return a summary string with key information about the constraint.
@@ -752,7 +750,7 @@ class ConstraintResults:
         try:
             target = self.constraint_definition.target
             operator_symbol = self.constraint_definition.get_operator_symbol()
-            
+
             if isinstance(target, dict):
                 target_str = str({year: format_value(value, self.value_format) for year, value in target.items()})
                 target_info = f"\nTarget: {operator_symbol} {target_str}"
@@ -761,7 +759,7 @@ class ConstraintResults:
                 target_info = f"\nTarget: {operator_symbol} {formatted_target}"
         except (KeyError, AttributeError):
             target_info = "\nTarget: Not available"
-        
+
         # Get value for first year if available
         value_info = ""
         if self.model.years:
@@ -772,7 +770,7 @@ class ConstraintResults:
                 value_info = f"\nValue ({first_year}): {formatted_value}"
             except KeyError:
                 value_info = "\nValue: Not available"
-        
+
         # Get list of failing years
         failing_years_list = self.failing_years()
         failing_info = ""
@@ -783,15 +781,15 @@ class ConstraintResults:
                 failing_info = f"\nFailing Years: {', '.join(map(str, failing_years_list))}"
         else:
             if html:
-                failing_info = f"\n<span style='color: green;'>Status: All years pass constraint check</span>"
+                failing_info = "\n<span style='color: green;'>Status: All years pass constraint check</span>"
             else:
                 failing_info = "\nStatus: All years pass constraint check"
-        
+
         summary_text = (f"ConstraintResults('{self.constraint_name}')\n"
                 f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"
                 f"Line Item: {self.line_item_name}"
                 f"{target_info}{value_info}{failing_info}")
-        
+
         if html:
             html_summary = summary_text.replace('\n', '<br>')
             return f'<pre>{html_summary}</pre>'

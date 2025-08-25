@@ -1,7 +1,7 @@
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
+from pyproforma.models._utils import check_interim_values_by_year, check_name
 from pyproforma.models.multi_line_item.abc_class import MultiLineItem
-from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
 @MultiLineItem.register("short_term_debt")
@@ -63,45 +63,45 @@ class ShortTermDebt(MultiLineItem):
         ...     interest_rate='prime_rate'  # Look up from interim_values_by_year
         ... )
     """
-    
+
     def __init__(
-            self, 
+            self,
             name: str,
-            draws: dict | str = None, 
-            paydown: dict | str = None, 
+            draws: dict | str = None,
+            paydown: dict | str = None,
             begin_balance: float = 0.0,
             interest_rate: float | dict | str = 0.0):
-        
+
         if not check_name(name):
             raise ValueError("Short term debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters).")
-        
+
         self.name = name
         self._draws = draws if draws is not None else {}
         self._paydown = paydown if paydown is not None else {}
         self._begin_balance = begin_balance
         self._interest_rate = interest_rate
-        
+
         # Validate interest rate is not negative if it's a number
         if isinstance(interest_rate, (float, int)) and interest_rate < 0:
             raise ValueError("Interest rate cannot be negative")
-        
+
         # Validate interest rate dict values are not negative if it's a dict
         if isinstance(interest_rate, dict):
             for year, rate in interest_rate.items():
                 if rate < 0:
                     raise ValueError(f"Interest rate for year {year} cannot be negative")
-        
+
         # Validate draws and paydown values are not negative if they're dicts
         if isinstance(draws, dict):
             for year, amount in draws.items():
                 if amount < 0:
                     raise ValueError(f"Draw amount for year {year} cannot be negative")
-        
+
         if isinstance(paydown, dict):
             for year, amount in paydown.items():
                 if amount < 0:
                     raise ValueError(f"Paydown amount for year {year} cannot be negative")
-        
+
         # Define the line item names
         self._debt_outstanding_name = f'{self.name}.debt_outstanding'
         self._draw_name = f'{self.name}.draw'
@@ -115,16 +115,16 @@ class ShortTermDebt(MultiLineItem):
         draws = config.get('draws')
         if isinstance(draws, dict):
             draws = {int(k): v for k, v in draws.items()}
-        
+
         paydown = config.get('paydown')
         if isinstance(paydown, dict):
             paydown = {int(k): v for k, v in paydown.items()}
-        
+
         # Convert interest_rate keys from strings to integers if it's a dict (for JSON compatibility)
         interest_rate = config['interest_rate']
         if isinstance(interest_rate, dict):
             interest_rate = {int(k): v for k, v in interest_rate.items()}
-        
+
         return cls(
             name=config['name'],
             draws=draws,
@@ -132,7 +132,7 @@ class ShortTermDebt(MultiLineItem):
             begin_balance=config.get('begin_balance', 0.0),
             interest_rate=interest_rate
         )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert the ShortTermDebt instance to a dictionary representation."""
         return {
@@ -147,7 +147,7 @@ class ShortTermDebt(MultiLineItem):
     # ----------------------------------
     # MAIN PUBLIC API METHODS (MultiLineItem ABC)
     # ----------------------------------
-    
+
     @property
     def defined_names(self) -> List[str]:
         """
@@ -183,30 +183,30 @@ class ShortTermDebt(MultiLineItem):
             raise ValueError(f"Invalid interim values by year: {error_msg}")
 
         result = {}
-        
+
         # Get start year and validate draws/paydowns are not before it
         start_year = self._get_start_year(interim_values_by_year, year)
         self._validate_years_not_before_start(start_year)
-        
+
         result[self._debt_outstanding_name] = self._get_debt_outstanding(interim_values_by_year, year)
         result[self._draw_name] = self._get_draw(interim_values_by_year, year)
         result[self._principal_name] = self._get_paydown(interim_values_by_year, year)
         result[self._interest_name] = self._get_interest(interim_values_by_year, year)
-        
+
         return result
-    
+
     # ----------------------------------
     # PARAMETER LOOKUP METHODS
     # ----------------------------------
-    
+
     def _get_start_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> int:
         """Get the start year - just the first year in interim_values_by_year."""
         if not interim_values_by_year:
             raise ValueError("No years available in interim_values_by_year to determine start year")
-        
+
         # Simply return the first year in the dictionary (assume years are in order, don't sort)
         return list(interim_values_by_year.keys())[0]
-    
+
     def _validate_years_not_before_start(self, start_year: int) -> None:
         """
         Validate that draws and paydowns are not prior to the start year.
@@ -222,20 +222,20 @@ class ShortTermDebt(MultiLineItem):
             for year in self._draws.keys():
                 if year < start_year:
                     raise ValueError(f"Draw year {year} is prior to start year {start_year}")
-        
+
         # Check paydowns if they are specified as a dict
         if isinstance(self._paydown, dict):
             for year in self._paydown.keys():
                 if year < start_year:
                     raise ValueError(f"Paydown year {year} is prior to start year {start_year}")
-    
+
     def _get_begin_balance(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int = None) -> float:
         """Get the begin balance from the fixed value."""
         if isinstance(self._begin_balance, (float, int)):
             return float(self._begin_balance)
         else:
             raise TypeError(f"Begin balance must be a float, not {type(self._begin_balance)}")
-    
+
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the interest rate, from a fixed value, dict lookup by year, or interim_values_by_year lookup."""
         if isinstance(self._interest_rate, (float, int)):
@@ -248,7 +248,7 @@ class ShortTermDebt(MultiLineItem):
                 raise ValueError(f"Interest rate for year {year} not found in interest rate dictionary")
         elif isinstance(self._interest_rate, str):
             interest_rate_name = self._interest_rate
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 interest_rate_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][interest_rate_name]
                 if value is None:
@@ -258,14 +258,14 @@ class ShortTermDebt(MultiLineItem):
                 raise ValueError(f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Interest rate must be a float, dict, or string, not {type(self._interest_rate)}")
-    
+
     def _get_draws_for_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the draws for a specific year, either from dict or interim_values_by_year lookup."""
         if isinstance(self._draws, dict):
             return float(self._draws.get(year, 0.0))
         elif isinstance(self._draws, str):
             draws_name = self._draws
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 draws_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][draws_name]
                 if value is None:
@@ -275,14 +275,14 @@ class ShortTermDebt(MultiLineItem):
                 raise ValueError(f"Could not find draws '{draws_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Draws must be a dict or string, not {type(self._draws)}")
-    
+
     def _get_paydown_for_year(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """Get the paydown for a specific year, either from dict or interim_values_by_year lookup."""
         if isinstance(self._paydown, dict):
             return float(self._paydown.get(year, 0.0))
         elif isinstance(self._paydown, str):
             paydown_name = self._paydown
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 paydown_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][paydown_name]
                 if value is None:
@@ -304,43 +304,43 @@ class ShortTermDebt(MultiLineItem):
         """
         start_year = self._get_start_year(interim_values_by_year, year)
         begin_balance = self._get_begin_balance(interim_values_by_year)
-        
+
         # Check if year is before start_year (allow start_year - 1 as it returns begin_balance)
         if year < start_year - 1:
             raise ValueError(f"Cannot calculate debt outstanding for year {year} as it is before the start year {start_year}")
-        
+
         # If asking for the year before start_year, return begin_balance
         if year == start_year - 1:
             return begin_balance
-        
+
         # Get all years from draws and paydowns to determine the range
         draws_years = set()
         paydown_years = set()
-        
+
         if isinstance(self._draws, dict):
             draws_years = set(self._draws.keys())
         if isinstance(self._paydown, dict):
             paydown_years = set(self._paydown.keys())
-        
+
         all_years = draws_years | paydown_years
-        
+
         # For dynamic parameters (strings), find the first year with available data
         if isinstance(self._draws, str) or isinstance(self._paydown, str):
             available_years = sorted(interim_values_by_year.keys())
             min_year = None
             for check_year in available_years:
                 year_data = interim_values_by_year[check_year]
-                
+
                 # Check if the required dynamic parameters exist in this year
-                draws_available = (not isinstance(self._draws, str) or 
+                draws_available = (not isinstance(self._draws, str) or
                                  self._draws in year_data)
-                paydown_available = (not isinstance(self._paydown, str) or 
+                paydown_available = (not isinstance(self._paydown, str) or
                                    self._paydown in year_data)
-                
+
                 if draws_available and paydown_available:
                     min_year = check_year
                     break
-            
+
             if min_year is None:
                 # If we can't find a year with all required data, use start_year
                 # The actual lookup will fail later with a proper error message
@@ -349,17 +349,17 @@ class ShortTermDebt(MultiLineItem):
             return begin_balance
         else:
             min_year = min(all_years)
-        
+
         # If year is before any activity, return begin balance
         if year < min_year:
             return begin_balance
-        
+
         # Calculate cumulative balance up to the given year
         balance = begin_balance
         for y in range(min_year, year + 1):
             balance += self._get_draws_for_year(interim_values_by_year, y)
             balance -= self._get_paydown_for_year(interim_values_by_year, y)
-        
+
         return balance
 
     def _get_draw(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
@@ -376,13 +376,13 @@ class ShortTermDebt(MultiLineItem):
         Interest is calculated based on the debt outstanding at the beginning of the year.
         """
         start_year = self._get_start_year(interim_values_by_year, year)
-        
+
         # Check if year is before start_year
         if year < start_year:
             raise ValueError(f"Cannot calculate interest for year {year} as it is before the start year {start_year}")
-        
+
         # Use previous year's ending balance (which equals begin_balance for start_year)
         previous_year_balance = self._get_debt_outstanding(interim_values_by_year, year - 1)
         interest_rate = self._get_interest_rate(interim_values_by_year, year)
-        
+
         return previous_year_balance * interest_rate

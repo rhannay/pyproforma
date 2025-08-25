@@ -1,9 +1,10 @@
-from pyproforma.models.multi_line_item.debt import Debt
-from pyproforma.models.model.model import Model
+
+
 from pyproforma.models.line_item import LineItem
+from pyproforma.models.model.model import Model
+from pyproforma.models.multi_line_item.debt import Debt
+
 from .utils import _get_p_i, _is_close
-import pytest
-import math
 
 
 class TestDebtParamsFromValueMatrix:
@@ -13,7 +14,7 @@ class TestDebtParamsFromValueMatrix:
     These tests verify that Debt instances can reference values from other line items in the model
     and that their calculated values are correctly integrated into the model's value matrix.
     """
-    
+
     def test_debt_par_amounts_from_value_matrix(self):
         """
         Test debt where par_amount is a string reference to a value in the model.
@@ -24,7 +25,7 @@ class TestDebtParamsFromValueMatrix:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a debt generator that references the par_amount line item
         debt = Debt(
             name='test_from_matrix',
@@ -32,7 +33,7 @@ class TestDebtParamsFromValueMatrix:
             interest_rate=0.05,
             term=30
         )
-        
+
         # Create a model with line items and the debt generator
         model = Model(
             line_items=[
@@ -42,7 +43,7 @@ class TestDebtParamsFromValueMatrix:
                     category="debt_params",
                     values={
                         2020: 1_000_000,
-                        2021: 1_500_000, 
+                        2021: 1_500_000,
                         2022: 0  # No new issuance in 2022
                     }
                 )
@@ -50,13 +51,13 @@ class TestDebtParamsFromValueMatrix:
             years=years,
             multi_line_items=[debt]  # Add the debt generator directly to the model
         )
-        
+
         # Test first year (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
         assert _is_close(model.value('test_from_matrix.principal', 2020), p1)
         assert _is_close(model.value('test_from_matrix.interest', 2020), i1)
         assert model.value('test_from_matrix.bond_proceeds', 2020) == 1_000_000
-        
+
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
@@ -66,7 +67,7 @@ class TestDebtParamsFromValueMatrix:
         assert _is_close(model.value('test_from_matrix.principal', 2021), p1 + p2)
         assert _is_close(model.value('test_from_matrix.interest', 2021), i1 + i2)
         assert model.value('test_from_matrix.bond_proceeds', 2021) == 1_500_000
-        
+
         # Test third year (2022) - both previous issuances exist but no new bond proceeds
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
@@ -76,7 +77,7 @@ class TestDebtParamsFromValueMatrix:
         assert _is_close(model.value('test_from_matrix.principal', 2022), p1 + p2)
         assert _is_close(model.value('test_from_matrix.interest', 2022), i1 + i2)
         assert model.value('test_from_matrix.bond_proceeds', 2022) == 0
-        
+
     def test_all_debt_params_from_value_matrix(self):
         """
         Test debt where all parameters (par_amount, interest_rate, term) are string references.
@@ -88,7 +89,7 @@ class TestDebtParamsFromValueMatrix:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a debt object with all parameters as string references to line items
         debt = Debt(
             name='test_all_params',
@@ -96,7 +97,7 @@ class TestDebtParamsFromValueMatrix:
             interest_rate='interest_rate', # String reference to the line item
             term='term'                    # String reference to the line item
         )
-        
+
         # Create a model with line items and the debt generator
         model = Model(
             line_items=[
@@ -134,13 +135,13 @@ class TestDebtParamsFromValueMatrix:
             years=years,
             multi_line_items=[debt]  # Add the debt generator directly to the model
         )
-        
+
         # Test first year (2020) - only first issuance exists
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
         assert _is_close(model.value('test_all_params.principal', 2020), p1)
         assert _is_close(model.value('test_all_params.interest', 2020), i1)
         assert model.value('test_all_params.bond_proceeds', 2020) == 1_000_000
-        
+
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
@@ -150,7 +151,7 @@ class TestDebtParamsFromValueMatrix:
         assert _is_close(model.value('test_all_params.principal', 2021), p1 + p2)
         assert _is_close(model.value('test_all_params.interest', 2021), i1 + i2)
         assert model.value('test_all_params.bond_proceeds', 2021) == 1_500_000
-        
+
         # Test third year (2022) - both previous issuances exist but no new bond proceeds
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
@@ -175,7 +176,7 @@ class TestDebtParamsFromValueMatrix:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a debt generator that references the last layer in our formula chain
         debt = Debt(
             name='test_from_matrix',
@@ -183,7 +184,7 @@ class TestDebtParamsFromValueMatrix:
             interest_rate=0.05,
             term=30
         )
-        
+
         # Create a model with line items and the debt generator
         model = Model(
             line_items=[
@@ -193,7 +194,7 @@ class TestDebtParamsFromValueMatrix:
                     category="debt_params",
                     values={
                         2020: 1_000_000,
-                        2021: 1_500_000, 
+                        2021: 1_500_000,
                         2022: 0  # No new issuance in 2022
                     }
                 ),
@@ -219,29 +220,29 @@ class TestDebtParamsFromValueMatrix:
             years=years,
             multi_line_items=[debt]  # Add the debt generator directly to the model
         )
-        
+
         # Verify the chain of reference values are calculated correctly
         assert model.value('par_amount', 2020) == 1_000_000
         assert model.value('par_amount_2', 2020) == 1_000_000
         assert model.value('par_amount_3', 2020) == 1_000_000
         assert model.value('par_amount_4', 2020) == 1_000_000
-        
+
         assert model.value('par_amount', 2021) == 1_500_000
         assert model.value('par_amount_2', 2021) == 1_500_000
         assert model.value('par_amount_3', 2021) == 1_500_000
         assert model.value('par_amount_4', 2021) == 1_500_000
-        
+
         assert model.value('par_amount', 2022) == 0
         assert model.value('par_amount_2', 2022) == 0
         assert model.value('par_amount_3', 2022) == 0
         assert model.value('par_amount_4', 2022) == 0
-        
+
         # Test first year (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
         assert _is_close(model.value('test_from_matrix.principal', 2020), p1)
         assert _is_close(model.value('test_from_matrix.interest', 2020), i1)
         assert model.value('test_from_matrix.bond_proceeds', 2020) == 1_000_000
-        
+
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
@@ -251,7 +252,7 @@ class TestDebtParamsFromValueMatrix:
         assert _is_close(model.value('test_from_matrix.principal', 2021), p1 + p2)
         assert _is_close(model.value('test_from_matrix.interest', 2021), i1 + i2)
         assert model.value('test_from_matrix.bond_proceeds', 2021) == 1_500_000
-        
+
         # Test third year (2022) - both previous issuances exist but no new bond proceeds
         # Values from first issuance (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)

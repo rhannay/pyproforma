@@ -1,5 +1,5 @@
 import pytest
-from pyproforma.models.line_item import LineItem
+
 from pyproforma.models.model.model import Model
 
 
@@ -7,18 +7,18 @@ from pyproforma.models.model.model import Model
 def basic_model() -> Model:
     """Create a simple model with some line items for testing."""
     model = Model(line_items=[], years=[2023, 2024, 2025])
-    
+
     # Add categories
     model.update.add_category(name="income")
     model.update.add_category(name="expenses")
     model.update.add_category(name="profit")
-    
+
     # Add line items
     model.update.add_line_item(name="revenue", category="income", values={2023: 100, 2024: 110, 2025: 121})
     model.update.add_line_item(name="costs", category="expenses", values={2023: 70, 2024: 75, 2025: 80})
     model.update.add_line_item(name="profit", category="profit", formula="revenue - costs")
     model.update.add_line_item(name="margin", category="profit", formula="profit / revenue", value_format="percentage")
-    
+
     return model
 
 
@@ -38,7 +38,7 @@ def test_update_multiple_line_items_basic(basic_model):
         ("revenue", {"values": {2023: 200, 2024: 220, 2025: 242}}),
         ("costs", {"values": {2023: 120, 2024: 130, 2025: 140}})
     ])
-    
+
     # Check that values were updated
     assert basic_model["revenue", 2023] == 200
     assert basic_model["costs", 2023] == 120
@@ -54,7 +54,7 @@ def test_update_certaint_values(basic_model):
         ("revenue", {"updated_values": {2023: 250}}),
         ("costs", {"updated_values": {2024: 150}})
     ])
-    
+
     # Check that only specified years were updated
     assert basic_model["revenue", 2023] == 250
     assert basic_model["revenue", 2024] == 110  # Unchanged
@@ -69,10 +69,10 @@ def test_update_multiple_line_items_empty_list(basic_model):
     """Test that passing an empty list does nothing."""
     # Get original state
     original_revenue = basic_model["revenue", 2023]
-    
+
     # Update with empty list
     basic_model.update.update_multiple_line_items([])
-    
+
     # Check that nothing changed
     assert basic_model["revenue", 2023] == original_revenue
 
@@ -84,7 +84,7 @@ def test_update_multiple_line_items_formulas(basic_model):
         ("costs", {"formula": "revenue * 0.6", "values": {}}),
         ("margin", {"formula": "profit / revenue * 100", "value_format": "no_decimals"})
     ])
-    
+
     # Check that formulas were updated and recalculated
     assert basic_model.line_item_definition("costs").formula == "revenue * 0.6"
     assert basic_model["costs", 2023] == 60  # 100 * 0.6 = 60
@@ -110,7 +110,7 @@ def test_update_multiple_line_items_rename(basic_model):
         ("profit", {"formula": "income - expenses"}),
         ("margin", {"formula": "profit / income * 100", "value_format": "no_decimals"})
     ])
-    
+
     # Check that names were updated
     assert "income" in basic_model.line_item_names
     assert "expenses" in basic_model.line_item_names
@@ -128,7 +128,7 @@ def test_update_multiple_line_items_invalid_name(basic_model):
             ("revenue", {"values": {2023: 200}}),
             ("nonexistent", {"values": {2023: 100}})
         ])
-    
+
     # Check that no changes were applied (transaction rolled back)
     assert basic_model.value("revenue", 2023) == 100
 
@@ -140,7 +140,7 @@ def test_update_multiple_line_items_invalid_formula(basic_model):
             ("revenue", {"values": {2023: 200}}),
             ("profit", {"formula": "invalid_item - costs"})
         ])
-    
+
     # Check that no changes were applied (transaction rolled back)
     assert basic_model["revenue", 2023] == 100
     assert basic_model.line_item_definition("profit").formula == "revenue - costs"
@@ -153,7 +153,7 @@ def test_update_multiple_line_items_change_category(basic_model):
         ("revenue", {"category": "profit"}),
         ("costs", {"category": "profit"})
     ])
-    
+
     # Check that categories were updated
     assert basic_model.line_item_definition("revenue").category == "profit"
     assert basic_model.line_item_definition("costs").category == "profit"
@@ -178,7 +178,7 @@ def test_update_multiple_line_items_all_properties(basic_model):
             "value_format": "no_decimals"
         })
     ])
-    
+
     # Check that all properties were updated
     updated_item = basic_model.line_item_definition("total_revenue")
     assert updated_item.name == "total_revenue"
@@ -196,7 +196,7 @@ def test_update_multiple_line_items_mixed_updates(basic_model):
         ("costs", {"formula": "revenue * 0.5", "values": {}}),
         ("profit", {"value_format": "two_decimals"})
     ])
-    
+
     # Check that all updates were applied correctly
     assert basic_model["revenue", 2023] == 200
     assert basic_model.line_item_definition("revenue").label == "Annual Revenue"

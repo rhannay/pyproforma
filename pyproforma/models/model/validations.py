@@ -6,11 +6,13 @@ categories, constraints, multi line items, and formulas.
 """
 
 from typing import List
+
+from pyproforma.models.multi_line_item import MultiLineItem
+
 from ..category import Category
 from ..constraint import Constraint
-from ..line_item import LineItem
-from pyproforma.models.multi_line_item import MultiLineItem
 from ..formula import validate_formula
+from ..line_item import LineItem
 
 
 def validate_line_items(line_items: List[LineItem], categories: List[Category]):
@@ -27,14 +29,14 @@ def validate_line_items(line_items: List[LineItem], categories: List[Category]):
     """
     if not line_items:
         return
-        
+
     line_item_names = [item.name for item in line_items]
     duplicates = set([name for name in line_item_names if line_item_names.count(name) > 1])
-    
+
     if duplicates:
         raise ValueError(f"Duplicate line item names not allowed: {', '.join(sorted(duplicates))}")
 
-    # Validate that all item types in line_items are defined in categories        
+    # Validate that all item types in line_items are defined in categories
     category_names = [category.name for category in categories]
     for item in line_items:
         if item.category not in category_names:
@@ -54,10 +56,10 @@ def validate_categories(categories: List[Category]):
     # Validate that all category names are unique
     category_names = [category.name for category in categories]
     duplicates = set([name for name in category_names if category_names.count(name) > 1])
-    
+
     if duplicates:
         raise ValueError(f"Duplicate category names not allowed: {', '.join(sorted(duplicates))}")
-    
+
 
 
 def validate_constraints(constraints: List[Constraint], line_items: List[LineItem]):
@@ -74,13 +76,13 @@ def validate_constraints(constraints: List[Constraint], line_items: List[LineIte
     """
     if not constraints:
         return
-        
+
     constraint_names = [constraint.name for constraint in constraints]
     duplicates = set([name for name in constraint_names if constraint_names.count(name) > 1])
-    
+
     if duplicates:
         raise ValueError(f"Duplicate constraint names not allowed: {', '.join(sorted(duplicates))}")
-    
+
     # Validate that all constraint line_item_names reference existing line items
     line_item_names = [item.name for item in line_items]
     for constraint in constraints:
@@ -102,17 +104,17 @@ def validate_multi_line_items(multi_line_items: List[MultiLineItem], categories:
     """
     if not multi_line_items:
         return
-        
+
     generator_names = [generator.name for generator in multi_line_items]
     duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
-    
+
     if duplicates:
         raise ValueError(f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}")
-    
+
     # Validate that multi line item names don't conflict with category names
     category_names = [category.name for category in categories]
     conflicts = [name for name in generator_names if name in category_names]
-    
+
     if conflicts:
         raise ValueError(f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}")
 
@@ -134,10 +136,10 @@ def validate_formulas(line_items: List[LineItem], line_item_metadata: List[dict]
     """
     if not line_items:
         return
-        
+
     # Get all defined names that can be used in formulas
     defined_variable_names = [name['name'] for name in line_item_metadata]
-    
+
     # Validate each line item's formula
     for line_item in line_items:
         if line_item.formula is not None and line_item.formula.strip():

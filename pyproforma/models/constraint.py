@@ -1,4 +1,5 @@
-from typing import Literal, Union, Dict
+from typing import Dict, Literal, Union
+
 from ._utils import check_name
 
 
@@ -58,7 +59,7 @@ class Constraint:
         ...     tolerance=1000.0  # Must be at least $1000 under budget
         ... )
     """
-    
+
     VALID_OPERATORS = {'eq', 'lt', 'le', 'gt', 'ge', 'ne'}
     OPERATOR_SYMBOLS = {
         'eq': '=',
@@ -68,7 +69,7 @@ class Constraint:
         'ge': '>=',
         'ne': '!='
     }
-    
+
     def __init__(
         self,
         name: str,
@@ -127,16 +128,16 @@ class Constraint:
         """
         if year not in value_matrix:
             raise ValueError(f"Year {year} not found in value_matrix")
-        
+
         if self.line_item_name not in value_matrix[year]:
             raise ValueError(f"Line item '{self.line_item_name}' not found in value_matrix for year {year}")
-        
+
         target_value = self.get_target(year)
         if target_value is None:
             raise ValueError(f"No target value available for year {year}")
-        
+
         line_item_value = value_matrix[year][self.line_item_name]
-        
+
         if self.operator == 'eq':
             return abs(line_item_value - target_value) <= self.tolerance
         elif self.operator == 'lt':
@@ -168,14 +169,14 @@ class Constraint:
         """
         if year not in value_matrix:
             raise ValueError(f"Year {year} not found in value_matrix")
-        
+
         if self.line_item_name not in value_matrix[year]:
             raise ValueError(f"Line item '{self.line_item_name}' not found in value_matrix for year {year}")
-        
+
         target_value = self.get_target(year)
         if target_value is None:
             raise ValueError(f"No target value available for year {year}")
-        
+
         actual_value = value_matrix[year][self.line_item_name]
         return actual_value - target_value
 
@@ -187,7 +188,7 @@ class Constraint:
             str: The symbol corresponding to the operator (e.g., '=', '>', '<=')
         """
         return self.OPERATOR_SYMBOLS.get(self.operator, self.operator)
-        
+
     def to_dict(self) -> dict:
         """Convert Constraint to dictionary representation."""
         return {

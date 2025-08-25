@@ -1,4 +1,5 @@
 import pytest
+
 from pyproforma.models.category import Category
 
 
@@ -80,8 +81,8 @@ class TestCategory:
 
     def test_include_total_with_custom_labels(self):
         category = Category(
-            name="revenue", 
-            label="Operating Revenue", 
+            name="revenue",
+            label="Operating Revenue",
             total_label="Total Operating Revenue",
             include_total=True
         )
@@ -127,11 +128,11 @@ class TestCategory:
             total_label="Total Test Category",
             include_total=True
         )
-        
+
         # Convert to dict and back
         data = original.to_dict()
         reconstructed = Category.from_dict(data)
-        
+
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
         assert reconstructed.label == original.label
@@ -146,11 +147,11 @@ class TestCategory:
             label="No Total Category",
             include_total=False
         )
-        
+
         # Convert to dict and back
         data = original.to_dict()
         reconstructed = Category.from_dict(data)
-        
+
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
         assert reconstructed.label == original.label

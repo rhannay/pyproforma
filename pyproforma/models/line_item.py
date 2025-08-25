@@ -1,8 +1,6 @@
-from typing import List, Union
-import pandas as pd
-from ._utils import check_name, check_interim_values_by_year
+from ..constants import ValueFormat
+from ._utils import check_interim_values_by_year, check_name
 from .formula import calculate_formula
-from ..constants import VALUE_FORMATS, ValueFormat
 
 
 class LineItem:
@@ -106,7 +104,7 @@ class LineItem:
         # If value for this year is in .values, return that value (including None)
         if year in self.values:
             return self.values[year]
-        
+
         # No value exists, so use a formula
         if self.formula:
             return calculate_formula(self.formula, interim_values_by_year, year)
@@ -143,7 +141,7 @@ class LineItem:
         values = item_dict.get('values', {})
         if values:
             values = {int(k): v for k, v in values.items()}
-        
+
         return cls(
             name=item_dict['name'],
             category=item_dict['category'],

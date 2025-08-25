@@ -1,79 +1,81 @@
 import pytest
-from pyproforma.models import Model, LineItem, Category
+
+from pyproforma.models import Category, LineItem, Model
+
 
 class TestTableCreation:
-    
+
     @pytest.fixture
     def sample_model(self):
         """Create a sample Model with line items and formulas for testing."""
         # Create line items with initial values and formulas
         revenue_sales = LineItem(
-            name="revenue_sales", 
-            label="Sales Revenue", 
-            category="revenue", 
-            values={2023: 1000000.0}, 
+            name="revenue_sales",
+            label="Sales Revenue",
+            category="revenue",
+            values={2023: 1000000.0},
             formula='revenue_sales[-1] * 1.10'  # 10% growth
         )
-        
+
         revenue_services = LineItem(
-            name="revenue_services", 
-            label="Service Revenue", 
-            category="revenue", 
-            values={2023: 500000.0}, 
+            name="revenue_services",
+            label="Service Revenue",
+            category="revenue",
+            values={2023: 500000.0},
             formula='revenue_services[-1] * 1.15'  # 15% growth
         )
-        
+
         cost_of_goods = LineItem(
-            name="cost_of_goods", 
-            label="Cost of Goods Sold", 
-            category="expense", 
-            values={2023: 400000.0}, 
+            name="cost_of_goods",
+            label="Cost of Goods Sold",
+            category="expense",
+            values={2023: 400000.0},
             formula='revenue_sales * 0.4'  # 40% of sales revenue
         )
-        
+
         operating_expenses = LineItem(
-            name="operating_expenses", 
-            label="Operating Expenses", 
-            category="expense", 
-            values={2023: 300000.0}, 
+            name="operating_expenses",
+            label="Operating Expenses",
+            category="expense",
+            values={2023: 300000.0},
             formula='operating_expenses[-1] * 1.05'  # 5% growth
         )
-        
+
         # Define categories
         categories = [
             Category(name="revenue", label="Revenue"),
             Category(name="expense", label="Expenses"),
             Category(name="calculated", label="Calculated", include_total=False)
         ]
-        
+
         # Define calculated formulas as LineItems
         gross_profit = LineItem(
-            name="gross_profit", 
-            label="Gross Profit", 
+            name="gross_profit",
+            label="Gross Profit",
             category="calculated",
             formula="total_revenue - cost_of_goods"
         )
-        
+
         net_profit = LineItem(
-            name="net_profit", 
-            label="Net Profit", 
+            name="net_profit",
+            label="Net Profit",
             category="calculated",
             formula="total_revenue - total_expense"
         )
-        
+
         profit_margin = LineItem(
-            name="profit_margin", 
-            label="Profit Margin %", 
+            name="profit_margin",
+            label="Profit Margin %",
             category="calculated",
             formula="net_profit / total_revenue * 100"
         )
-        
+
         return Model(
             line_items=[revenue_sales, revenue_services, cost_of_goods, operating_expenses, gross_profit, net_profit, profit_margin],
             categories=categories,
             years=[2023, 2024, 2025, 2026]
         )
-    
+
     def test_table_creation(self, sample_model: Model):
         # create all() table
         table = sample_model.tables.all()
@@ -97,14 +99,14 @@ class TestTableCreation:
     def test_item_table_assumption(self):
         """Test that item table creation works for an assumption (now as line item)."""
         line_items = [
-            LineItem(name='growth_rate', label='Growth Rate', category='assumptions', 
+            LineItem(name='growth_rate', label='Growth Rate', category='assumptions',
                     values={2023: 0.05, 2024: 0.10, 2026: 0.07})
         ]
-        
+
         categories = [
             Category(name='assumptions', label='Assumptions')
         ]
-        
+
         model = Model(
             line_items=line_items,
             categories=categories,

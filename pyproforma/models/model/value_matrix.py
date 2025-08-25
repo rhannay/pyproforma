@@ -9,13 +9,14 @@ across all years in a financial model.
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from ..line_item import LineItem
-    from ..category import Category
     from pyproforma.models.multi_line_item import MultiLineItem
+
+    from ..category import Category
+    from ..line_item import LineItem
 
 
 def _calculate_category_total(
-    values_by_name: dict[str, float], 
+    values_by_name: dict[str, float],
     line_item_metadata: list[dict],
     category_name: str
 ) -> float:
@@ -49,7 +50,7 @@ def _calculate_category_total(
             if metadata.get('source_type') == 'line_item' and metadata.get('category') is not None
         )
         raise KeyError(f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}")
-    
+
     # Find all line items that belong to this category and sum their values
     total = 0
     for metadata in line_item_metadata:
@@ -57,11 +58,11 @@ def _calculate_category_total(
             item_name = metadata['name']
             if item_name not in values_by_name:
                 raise KeyError(f"Line item '{item_name}' in category '{category_name}' not found in values")
-            
+
             value = values_by_name[item_name]
             if value is not None:
                 total += value
-    
+
     return total
 
 
@@ -95,32 +96,32 @@ def generate_value_matrix(
     value_matrix = {}
     for year in years:
         value_matrix[year] = {}
-    
+
         # Calculate line items in dependency order
         calculated_items = set()
         remaining_items = line_item_definitions.copy()
         max_iterations = len(line_item_definitions) + 1  # Safety valve
         iteration = 0
-        
+
         while remaining_items and iteration < max_iterations:
             iteration += 1
             items_calculated_this_round = []
-            
+
             for item in remaining_items:
                 try:
                     # Check if this is a MultiLineItem or LineItem
                     # MultiLineItems have get_values() and defined_names, LineItems have get_value() and name
-                    
+
                     if hasattr(item, 'get_values') and hasattr(item, 'defined_names'):
                         # Handle MultiLineItem - get multiple values
                         generated_values = item.get_values(value_matrix, year)
-                        
+
                         # Update value matrix with the generated values
                         value_matrix[year].update(generated_values)
-                        
+
                         # Add all generated names to calculated_items
                         calculated_items.update(generated_values.keys())
-                        
+
                         # Mark this generator as calculated
                         items_calculated_this_round.append(item)
                     elif hasattr(item, 'get_value') and hasattr(item, 'name'):
@@ -131,12 +132,12 @@ def generate_value_matrix(
                     else:
                         # Unknown object type, skip
                         raise ValueError(f"Unknown item type: {type(item)}")
-                            
+
                 except (KeyError, ValueError) as e:
                     # Check if this is a None value error - these should be raised immediately
                     if isinstance(e, ValueError) and "has None value" in str(e) and "Cannot use None values in formulas" in str(e):
                         raise e
-                    
+
                     # Check if this is a missing variable error vs dependency issue
                     if isinstance(e, ValueError) and "not found for year" in str(e):
                         # Extract variable name from error message
@@ -153,32 +154,32 @@ def generate_value_matrix(
                                 raise ValueError(f"Error calculating line item '{item_name}' for year {year}. Formula: '{formula}'. Line item '{var_name}' not found in model.") from e
                     # Item depends on something not yet calculated, skip for now
                     continue
-        
+
             # Remove successfully calculated items from remaining list
             for item in items_calculated_this_round:
                 remaining_items.remove(item)
-            
+
             # After each round, check if we can calculate any category totals
             for category in category_definitions:
                 if category.include_total and category.total_name not in value_matrix[year]:
                     # Check if all items in this category have been calculated
                     # Only look at LineItem objects for category totals, not MultiLineItems
-                    line_items_only = [item for item in line_item_definitions 
+                    line_items_only = [item for item in line_item_definitions
                                      if hasattr(item, 'get_value') and hasattr(item, 'name')]
                     items_in_category = [item for item in line_items_only if item.category == category.name]
                     all_items_calculated = all(item.name in calculated_items for item in items_in_category)
-                    
+
                     if all_items_calculated and items_in_category:  # Only if category has items
                         category_total = _calculate_category_total(
                             value_matrix[year], line_item_metadata, category.name
                         )
                         total_name = category.total_name
                         value_matrix[year][total_name] = category_total
-            
+
             # If no progress was made this round, we have circular dependencies
             if not items_calculated_this_round:
                 break
-        
+
         # Check if all items were calculated
         if remaining_items:
             failed_items = []
@@ -187,14 +188,14 @@ def generate_value_matrix(
                     # MultiLineItem
                     failed_items.extend(item.defined_names)  # Add all names from the generator
                 elif hasattr(item, 'get_value') and hasattr(item, 'name'):
-                    # LineItem 
+                    # LineItem
                     failed_items.append(item.name)  # Add the single line item name
                 else:
                     # Unknown type
                     failed_items.append(str(item))
-            
+
             raise ValueError(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
-    
+
         # Ensure all defined names are present in the value matrix
         for name in line_item_metadata:
             if name['name'] not in value_matrix[year]:

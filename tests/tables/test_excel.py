@@ -1,8 +1,8 @@
-import pytest
-import tempfile
 import os
-from pyproforma.tables.excel import value_format_to_excel_format, to_excel
-from pyproforma.tables.table_class import Table, Cell, Row, Column
+import tempfile
+
+from pyproforma.tables.excel import to_excel, value_format_to_excel_format
+from pyproforma.tables.table_class import Cell, Column, Row, Table
 
 
 class TestValueFormatToExcelFormat:
@@ -60,7 +60,7 @@ class TestValueFormatToExcelFormat:
             'percent_two_decinals': '0.00%',  # Handle typo in codebase
             'str': '@',
         }
-        
+
         for value_format, expected_excel_format in format_mappings.items():
             result = value_format_to_excel_format(value_format)
             assert result == expected_excel_format, f"Expected {expected_excel_format} for {value_format}, got {result}"
@@ -83,11 +83,11 @@ class TestValueFormatToExcelFormat:
         """Test edge cases and special values."""
         # Empty string
         assert value_format_to_excel_format('') == 'General'
-        
+
         # Very long string
         long_format = 'a' * 1000
         assert value_format_to_excel_format(long_format) == 'General'
-        
+
         # Special characters
         assert value_format_to_excel_format('no-decimals') == 'General'
         assert value_format_to_excel_format('no_decimals!') == 'General'
@@ -96,17 +96,17 @@ class TestValueFormatToExcelFormat:
         """Test that the function always returns a string."""
         result = value_format_to_excel_format(None)
         assert isinstance(result, str)
-        
+
         result = value_format_to_excel_format('no_decimals')
         assert isinstance(result, str)
-        
+
         result = value_format_to_excel_format('unknown')
         assert isinstance(result, str)
 
 
 class TestToExcelIntegration:
     """Integration tests for to_excel function with value_format_to_excel_format."""
-    
+
     def test_to_excel_with_different_formats(self):
         """Test that to_excel properly applies different value formats."""
         columns = [
@@ -115,7 +115,7 @@ class TestToExcelIntegration:
             Column(label="Percentage"),
             Column(label="Text")
         ]
-        
+
         rows = [
             Row(cells=[
                 Cell(value="Revenue", value_format="str"),
@@ -130,19 +130,19 @@ class TestToExcelIntegration:
                 Cell(value="Another text", value_format=None)  # Test None format
             ])
         ]
-        
+
         table = Table(columns=columns, rows=rows)
-        
+
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
             try:
                 # This should not raise any exceptions
                 to_excel(table, tmp_file.name)
-                
+
                 # Verify file was created
                 assert os.path.exists(tmp_file.name)
                 assert os.path.getsize(tmp_file.name) > 0
-                
+
             finally:
                 # Clean up
                 if os.path.exists(tmp_file.name):
@@ -161,7 +161,7 @@ class TestToExcelIntegration:
             Column(label="String"),
             Column(label="Unknown Format")
         ]
-        
+
         rows = [
             Row(cells=[
                 Cell(value=12345.67, value_format=None),
@@ -174,19 +174,19 @@ class TestToExcelIntegration:
                 Cell(value=12345.67, value_format="unknown_format")
             ])
         ]
-        
+
         table = Table(columns=columns, rows=rows)
-        
+
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
             try:
                 # This should not raise any exceptions
                 to_excel(table, tmp_file.name)
-                
+
                 # Verify file was created
                 assert os.path.exists(tmp_file.name)
                 assert os.path.getsize(tmp_file.name) > 0
-                
+
             finally:
                 # Clean up
                 if os.path.exists(tmp_file.name):
@@ -197,7 +197,7 @@ class TestToExcelIntegration:
         columns = [Column(label="Test")]
         rows = []
         table = Table(columns=columns, rows=rows)
-        
+
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
             try:
                 to_excel(table, tmp_file.name)

@@ -1,10 +1,10 @@
 import pytest
-from pyproforma import Model, LineItem, Category
-from pyproforma.models.formula import validate_formula  
+
+from pyproforma import LineItem, Model
 
 
 def test_simple_model_with_formulas_works():
-    
+
     """Test that a simple model with line items and formulas works correctly."""
     # Line item with values
     a = LineItem(
@@ -12,24 +12,24 @@ def test_simple_model_with_formulas_works():
         category='test',
         values={2023: 10, 2024: 20}
     )
-    
+
     # Line item with formula that references 'a'
     b = LineItem(
         name='b',
         category='test',
         formula='a * 2'
     )
-    
+
     # Create model
     model = Model(
         line_items=[a, b],
         years=[2023, 2024]
     )
-    
+
     # Test the values are calculated correctly
     assert model['a', 2023] == 10
     assert model['a', 2024] == 20
-    
+
     assert model['b', 2023] == 20  # 10 * 2
     assert model['b', 2024] == 40  # 20 * 2
 
@@ -152,7 +152,7 @@ def test_error_future_offset():
             years=[2023, 2024]
         )
     assert "Error in formula for line item 'b': Future time references are not allowed: a[1]" in str(excinfo.value)
-    
+
 # def test_misc():
 #     """Test that a formula with future time offset raises an error with enhanced error message."""
 #     formula = 'a * 2'

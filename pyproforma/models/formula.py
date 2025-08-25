@@ -1,8 +1,9 @@
 import re
-import numexpr as ne
 from typing import Dict, List
 
-    
+import numexpr as ne
+
+
 def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     """
     Validate that all variable names in a formula are included in the provided list of valid names.
@@ -37,17 +38,17 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     # Check that the line item name is in valid_names
     if name not in valid_names:
         raise ValueError(f"Line item name '{name}' is not found in valid names")
-    
+
     # Strip whitespace from the formula
     formula = formula.strip()
-    
+
     # Extract variables from time-offset patterns like revenue[-1], cost[-2], etc.
     offset_vars = re.findall(r'([\w.]+)\[(-?\d+)\]', formula)
     offset_var_names = [var for var, offset in offset_vars]
-    
+
     # Extract all potential variable names from the formula
     all_potential_vars = re.findall(r'\b[\w.]+\b', formula)
-    
+
     # Filter to only include valid identifiers that aren't Python keywords or built-ins
     # and exclude numeric literals. For dotted names, check if they're valid variable names
     import keyword
@@ -57,24 +58,24 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         is_valid_var = False
         if var.isidentifier():
             # Simple identifier
-            is_valid_var = (not keyword.iskeyword(var) and 
+            is_valid_var = (not keyword.iskeyword(var) and
                           var not in ['True', 'False', 'None'] and
                           not var.replace('_', '').isdigit())
         elif '.' in var:
             # Dotted name - check each part is a valid identifier
             parts = var.split('.')
-            is_valid_var = all(part.isidentifier() and 
-                             not keyword.iskeyword(part) and 
+            is_valid_var = all(part.isidentifier() and
+                             not keyword.iskeyword(part) and
                              part not in ['True', 'False', 'None'] and
                              not part.replace('_', '').isdigit()
                              for part in parts)
-        
+
         if is_valid_var:
             formula_vars.add(var)
-    
+
     # Add variables from offset patterns
     formula_vars.update(offset_var_names)
-    
+
     # Check for circular reference (formula referencing its own name without time offset or with [0] offset)
     if name in formula_vars:
         # Check if the name appears without a time offset
@@ -82,12 +83,12 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         pattern = rf'\b{re.escape(name)}\b(?!\[)'
         if re.search(pattern, formula):
             raise ValueError(f"Circular reference detected: formula for '{name}' references itself without a time offset")
-    
+
     # Check for circular reference with [0] time offset (which is equivalent to no offset)
     pattern_with_zero_offset = rf'\b{re.escape(name)}\[0\]'
     if re.search(pattern_with_zero_offset, formula):
         raise ValueError(f"Circular reference detected: formula for '{name}' references itself with [0] time offset, which is equivalent to no time offset")
-    
+
     # Check for positive time offsets (future references) which are not allowed
     positive_offset_vars = [(var, int(offset)) for var, offset in offset_vars if int(offset) > 0]
     if positive_offset_vars:
@@ -95,10 +96,10 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         for var, offset in positive_offset_vars:
             error_details.append(f"{var}[{offset}]")
         raise ValueError(f"Future time references are not allowed: {', '.join(error_details)}")
-    
+
     # Check if all formula variables are in the provided valid_names list
     missing_vars = formula_vars - set(valid_names)
-    
+
     if missing_vars:
         missing_list = sorted(missing_vars)
         raise ValueError(f"Formula contains undefined line item names: {', '.join(missing_list)}")

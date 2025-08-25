@@ -1,6 +1,7 @@
-import pytest
-from pyproforma.tables.table_class import format_value, Table, Cell, Row, Column
 import pandas as pd
+import pytest
+
+from pyproforma.tables.table_class import Cell, Column, Row, Table, format_value
 
 
 class TestFormatValue:
@@ -68,12 +69,12 @@ class TestFormatValue:
         """Test edge cases and boundary values."""
         # Test very large numbers
         assert format_value(1000000, 'no_decimals') == "1,000,000"
-        
+
         # Test very small percentages
         assert format_value(0.001, 'percent') == "0%"  # rounds to 0
         assert format_value(0.005, 'percent') == "0%"  # rounds to 0 (banker's rounding)
         assert format_value(0.006, 'percent') == "1%"  # rounds to 1
-        
+
         # Test negative values
         assert format_value(-1234.56, 'no_decimals') == "-1,235"
         assert format_value(-0.1234, 'percent') == "-12%"
@@ -133,12 +134,12 @@ class TestTableClass:
         ]
         table = Table(columns=columns, rows=rows)
         style_map = table._get_style_map()
-        
+
         expected_style_map = {
             (0, 'A'): 'font-weight: bold; text-align: right;',
             (0, 'B'): 'text-align: right;',
             (1, 'A'): 'text-align: center;',
             (1, 'B'): 'font-weight: bold; text-align: right;'
         }
-        
+
         assert style_map == expected_style_map

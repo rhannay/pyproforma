@@ -3,14 +3,15 @@ Test cases for the validation functions in validations.py module.
 """
 
 import pytest
+
+from pyproforma import Category, Constraint, LineItem
 from pyproforma.models.model.validations import (
     validate_categories,
     validate_constraints,
-    validate_multi_line_items,
     validate_formulas,
-    validate_line_items
+    validate_line_items,
+    validate_multi_line_items,
 )
-from pyproforma import LineItem, Category, Constraint
 from pyproforma.models.multi_line_item import Debt, ShortTermDebt
 
 
@@ -23,7 +24,7 @@ class TestValidateCategories:
             Category(name='income', label='Income'),
             Category(name='expense', label='Expenses')
         ]
-        
+
         # Should not raise any exception
         validate_categories(categories)
 
@@ -38,10 +39,10 @@ class TestValidateCategories:
             Category(name='income', label='Income 2'),
             Category(name='expense', label='Expenses')
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_categories(categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate category names not allowed: income" in error_msg
 
@@ -53,10 +54,10 @@ class TestValidateCategories:
             Category(name='expense', label='Expense 1'),
             Category(name='expense', label='Expense 2')
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_categories(categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate category names not allowed:" in error_msg
         assert "expense" in error_msg
@@ -68,14 +69,14 @@ class TestValidateCategories:
             Category(name='Income', label='Income 1'),
             Category(name='income', label='Income 2')  # different case
         ]
-        
+
         # Should not raise any exception - case matters
         validate_categories(categories)
 
     def test_single_category_passes_validation(self):
         """Test that a single category passes validation."""
         categories = [Category(name='income', label='Income')]
-        
+
         # Should not raise any exception
         # Should not raise any exception
         validate_categories(categories)
@@ -103,7 +104,7 @@ class TestValidateLineItems:
             LineItem(name='costs', category='expense', values={2023: 500}),
             LineItem(name='profit', category='income', values={2023: 500})
         ]
-        
+
         # Should not raise any exception
         validate_line_items(line_items, categories)
 
@@ -114,10 +115,10 @@ class TestValidateLineItems:
             LineItem(name='revenue', category='income', values={2023: 1000}),
             LineItem(name='revenue', category='expense', values={2023: 500})  # duplicate name
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_line_items(line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate line item names not allowed: revenue" in error_msg
 
@@ -131,10 +132,10 @@ class TestValidateLineItems:
             LineItem(name='costs', category='expense', values={2023: 600}),    # duplicate name
             LineItem(name='profit', category='income', values={2023: 400})
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_line_items(line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate line item names not allowed:" in error_msg
         assert "costs" in error_msg
@@ -147,7 +148,7 @@ class TestValidateLineItems:
             LineItem(name='Revenue', category='income', values={2023: 1000}),
             LineItem(name='revenue', category='income', values={2023: 1200})  # different case
         ]
-        
+
         # Should not raise any exception - case matters
         validate_line_items(line_items, categories)
 
@@ -155,7 +156,7 @@ class TestValidateLineItems:
         """Test that a single line item passes validation."""
         categories = [Category('income')]
         line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
-        
+
         # Should not raise any exception
         validate_line_items(line_items, categories)
 
@@ -166,7 +167,7 @@ class TestValidateLineItems:
             LineItem(name='revenue', category='income', values={2023: 1000}),
             LineItem(name='costs', category='expense', values={2023: 500})  # 'expense' not in categories
         ]
-        
+
         with pytest.raises(ValueError, match="Category 'expense' for LineItem 'costs' is not defined category"):
             validate_line_items(line_items, categories)
 
@@ -178,7 +179,7 @@ class TestValidateLineItems:
             LineItem(name='costs', category='expense', values={2023: 500}),  # undefined category
             LineItem(name='taxes', category='liability', values={2023: 100})  # undefined category
         ]
-        
+
         # Should raise error for the first invalid category encountered
         with pytest.raises(ValueError, match="Category 'expense' for LineItem 'costs' is not defined category"):
             validate_line_items(line_items, categories)
@@ -193,7 +194,7 @@ class TestValidateConstraints:
         validate_constraints([], line_items)
 
     def test_none_constraints_pass_validation(self):
-        """Test that None constraints passes validation.""" 
+        """Test that None constraints passes validation."""
         line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
         # Test with None converted to empty list - the function expects a list
         validate_constraints([], line_items)
@@ -208,7 +209,7 @@ class TestValidateConstraints:
             Constraint(name='revenue_min', line_item_name='revenue', target=500, operator='gt'),
             Constraint(name='cost_max', line_item_name='costs', target=1000, operator='lt')
         ]
-        
+
         # Should not raise any exception
         validate_constraints(constraints, line_items)
 
@@ -219,10 +220,10 @@ class TestValidateConstraints:
             Constraint(name='revenue_check', line_item_name='revenue', target=500, operator='gt'),
             Constraint(name='revenue_check', line_item_name='revenue', target=1000, operator='gt')
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, line_items)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate constraint names not allowed: revenue_check" in error_msg
 
@@ -235,10 +236,10 @@ class TestValidateConstraints:
             Constraint(name='check2', line_item_name='revenue', target=700, operator='gt'),
             Constraint(name='check2', line_item_name='revenue', target=800, operator='gt')
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, line_items)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate constraint names not allowed:" in error_msg
         assert "check1" in error_msg
@@ -248,10 +249,10 @@ class TestValidateConstraints:
         """Test that constraints referencing invalid line items raise ValueError."""
         line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
         constraints = [Constraint(name='invalid_check', line_item_name='costs', target=500, operator='gt')]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, line_items)
-        
+
         error_msg = str(exc_info.value)
         assert "Constraint 'invalid_check' references unknown line item 'costs'" in error_msg
 
@@ -262,10 +263,10 @@ class TestValidateConstraints:
             Constraint(name='check1', line_item_name='costs', target=500, operator='gt'),
             Constraint(name='check2', line_item_name='expenses', target=600, operator='gt')
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, line_items)
-        
+
         error_msg = str(exc_info.value)
         # Should catch the first invalid reference
         assert "Constraint 'check1' references unknown line item 'costs'" in error_msg
@@ -277,7 +278,7 @@ class TestValidateConstraints:
             Constraint(name='Check', line_item_name='revenue', target=500, operator='gt'),
             Constraint(name='check', line_item_name='revenue', target=600, operator='gt')
         ]
-        
+
         # Should not raise any exception (different case = different names)
         validate_constraints(constraints, line_items)
 
@@ -285,10 +286,10 @@ class TestValidateConstraints:
         """Test that line item references are case sensitive."""
         line_items = [LineItem(name='Revenue', category='income', values={2023: 1000})]
         constraints = [Constraint(name='check', line_item_name='revenue', target=500, operator='gt')]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, line_items)
-        
+
         error_msg = str(exc_info.value)
         assert "Constraint 'check' references unknown line item 'revenue'" in error_msg
 
@@ -296,17 +297,17 @@ class TestValidateConstraints:
         """Test that constraints with dict targets work correctly."""
         line_items = [LineItem(name='revenue', category='income', values={2023: 1000})]
         constraints = [Constraint(name='revenue_check', line_item_name='revenue', target={2023: 500}, operator='gt')]
-        
+
         # Should not raise any exception
         validate_constraints(constraints, line_items)
 
     def test_empty_line_items_with_constraints_fails(self):
         """Test that constraints with empty line items fail validation."""
         constraints = [Constraint(name='check', line_item_name='revenue', target=500, operator='gt')]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_constraints(constraints, [])
-        
+
         error_msg = str(exc_info.value)
         assert "Constraint 'check' references unknown line item 'revenue'" in error_msg
 
@@ -332,7 +333,7 @@ class TestValidateMultiLineItems:
             Debt(name='debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(name='short_debt', draws={}, paydown={}, begin_balance=0, interest_rate=0.03)
         ]
-        
+
         # Should not raise any exception
         validate_multi_line_items(multi_line_items, categories)
 
@@ -343,10 +344,10 @@ class TestValidateMultiLineItems:
             Debt(name='debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name='debt1', par_amount={2023: 2000}, interest_rate=0.04, term=3)
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_multi_line_items(multi_line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed: debt1" in error_msg
 
@@ -359,10 +360,10 @@ class TestValidateMultiLineItems:
             ShortTermDebt(name='short1', draws={}, paydown={}, begin_balance=0, interest_rate=0.03),
             ShortTermDebt(name='short1', draws={}, paydown={}, begin_balance=0, interest_rate=0.02)
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_multi_line_items(multi_line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed:" in error_msg
         assert "debt1" in error_msg
@@ -375,10 +376,10 @@ class TestValidateMultiLineItems:
             Debt(name='debt_item', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(name='debt_item', draws={}, paydown={}, begin_balance=0, interest_rate=0.03)
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_multi_line_items(multi_line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Duplicate multi line item names not allowed: debt_item" in error_msg
 
@@ -389,7 +390,7 @@ class TestValidateMultiLineItems:
             Debt(name='Debt1', par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name='debt1', par_amount={2023: 2000}, interest_rate=0.04, term=3)
         ]
-        
+
         # Should not raise any exception (different case = different names)
         validate_multi_line_items(multi_line_items, categories)
 
@@ -399,7 +400,7 @@ class TestValidateMultiLineItems:
         multi_line_items = [
             Debt(name='single_debt', par_amount={2023: 1000}, interest_rate=0.05, term=5)
         ]
-        
+
         # Should not raise any exception
         validate_multi_line_items(multi_line_items, categories)
 
@@ -412,7 +413,7 @@ class TestValidateMultiLineItems:
             ShortTermDebt(name='credit_line', draws={}, paydown={}, begin_balance=0, interest_rate=0.03),
             ShortTermDebt(name='working_capital', draws={}, paydown={}, begin_balance=0, interest_rate=0.04)
         ]
-        
+
         # Should not raise any exception
         validate_multi_line_items(multi_line_items, categories)
 
@@ -422,7 +423,7 @@ class TestValidateMultiLineItems:
         multi_line_items = [
             Debt(name='debt_service', par_amount={2023: 1000}, interest_rate=0.05, term=5)  # conflicts with category
         ]
-        
+
         with pytest.raises(ValueError, match="Multi line item names cannot match category names: debt_service"):
             validate_multi_line_items(multi_line_items, categories)
 
@@ -434,10 +435,10 @@ class TestValidateMultiLineItems:
             ShortTermDebt(name='income', draws={}, paydown={}, begin_balance=0, interest_rate=0.03),  # conflicts
             Debt(name='valid_debt', par_amount={2023: 500}, interest_rate=0.04, term=3)  # no conflict
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_multi_line_items(multi_line_items, categories)
-        
+
         error_msg = str(exc_info.value)
         assert "Multi line item names cannot match category names:" in error_msg
         assert "debt_service" in error_msg
@@ -453,7 +454,7 @@ class TestValidateFormulas:
 
     def test_none_line_items_pass_validation(self):
         """Test that None line items passes validation."""
-        # Test with None converted to empty list - the function expects a list  
+        # Test with None converted to empty list - the function expects a list
         validate_formulas([], [])
 
     def test_line_items_without_formulas_pass_validation(self):
@@ -466,7 +467,7 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -482,7 +483,7 @@ class TestValidateFormulas:
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'},
             {'name': 'profit', 'label': 'Profit', 'value_format': None, 'source_type': 'line_item', 'source_name': 'profit', 'category': 'income'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -496,10 +497,10 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formulas(line_items, metadata)
-        
+
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'costs'" in error_msg
         assert "unknown_variable" in error_msg
@@ -514,10 +515,10 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formulas(line_items, metadata)
-        
+
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'costs'" in error_msg
         assert "missing_a" in error_msg
@@ -533,7 +534,7 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'growth', 'label': 'Growth', 'value_format': None, 'source_type': 'line_item', 'source_name': 'growth', 'category': 'metrics'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -547,10 +548,10 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'growth', 'label': 'Growth', 'value_format': None, 'source_type': 'line_item', 'source_name': 'growth', 'category': 'metrics'}
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formulas(line_items, metadata)
-        
+
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'growth'" in error_msg
         assert "unknown_var" in error_msg
@@ -566,7 +567,7 @@ class TestValidateFormulas:
             {'name': 'total_income', 'label': 'Total Income', 'value_format': 'no_decimals', 'source_type': 'category', 'source_name': 'income', 'category': None},
             {'name': 'margin', 'label': 'Margin', 'value_format': None, 'source_type': 'line_item', 'source_name': 'margin', 'category': 'metrics'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -581,7 +582,7 @@ class TestValidateFormulas:
             {'name': 'debt_interest_expense', 'label': 'Debt Interest Expense', 'value_format': 'no_decimals', 'source_type': 'multi_line_item', 'source_name': 'debt1', 'category': None},
             {'name': 'debt_service_coverage', 'label': 'Debt Service Coverage', 'value_format': None, 'source_type': 'line_item', 'source_name': 'debt_service_coverage', 'category': 'metrics'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -595,7 +596,7 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -609,7 +610,7 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -623,7 +624,7 @@ class TestValidateFormulas:
             {'name': 'revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -643,7 +644,7 @@ class TestValidateFormulas:
             {'name': 'tax_rate', 'label': 'Tax Rate', 'value_format': 'percent', 'source_type': 'line_item', 'source_name': 'tax_rate', 'category': 'assumption'},
             {'name': 'net_income', 'label': 'Net Income', 'value_format': None, 'source_type': 'line_item', 'source_name': 'net_income', 'category': 'income'}
         ]
-        
+
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
@@ -657,10 +658,10 @@ class TestValidateFormulas:
             {'name': 'Revenue', 'label': 'Revenue', 'value_format': None, 'source_type': 'line_item', 'source_name': 'Revenue', 'category': 'income'},
             {'name': 'costs', 'label': 'Costs', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs', 'category': 'expense'}
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formulas(line_items, metadata)
-        
+
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'costs'" in error_msg
         assert "revenue" in error_msg
@@ -677,10 +678,10 @@ class TestValidateFormulas:
             {'name': 'costs1', 'label': 'Costs1', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs1', 'category': 'expense'},
             {'name': 'costs2', 'label': 'Costs2', 'value_format': None, 'source_type': 'line_item', 'source_name': 'costs2', 'category': 'expense'}
         ]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formulas(line_items, metadata)
-        
+
         error_msg = str(exc_info.value)
         # Should catch the first formula error
         assert "Error in formula for line item 'costs1'" in error_msg

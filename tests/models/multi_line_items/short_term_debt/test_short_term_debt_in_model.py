@@ -1,8 +1,9 @@
-from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
-from pyproforma.models.model.model import Model
+
 from pyproforma.models.line_item import LineItem
+from pyproforma.models.model.model import Model
+from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
+
 from .utils import _is_close
-import pytest
 
 
 class TestShortTermDebtInModel:
@@ -12,7 +13,7 @@ class TestShortTermDebtInModel:
     These tests verify that ShortTermDebt instances can reference values from other line items 
     in the model and that their calculated values are correctly integrated into the model's value matrix.
     """
-    
+
     def test_short_term_debt_fixed_parameters_in_model(self):
         """
         Test short-term debt with fixed parameters integrated into a model.
@@ -23,7 +24,7 @@ class TestShortTermDebtInModel:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a short-term debt generator with fixed parameters
         std = ShortTermDebt(
             name='credit_line',
@@ -32,26 +33,26 @@ class TestShortTermDebtInModel:
             begin_balance=1000000,
             interest_rate=0.05
         )
-        
+
         # Create a model with the short-term debt generator
         model = Model(
             line_items=[],  # No additional line items needed for fixed parameters
             years=years,
             multi_line_items=[std]
         )
-        
+
         # Test year 2020 values (draw only)
         assert model.value('credit_line.debt_outstanding', 2020) == 1500000  # 1M + 500k
         assert model.value('credit_line.draw', 2020) == 500000
         assert model.value('credit_line.principal', 2020) == 0.0
         assert _is_close(model.value('credit_line.interest', 2020), 50000)  # 1M * 0.05
-        
+
         # Test year 2021 values (draw and paydown)
         assert model.value('credit_line.debt_outstanding', 2021) == 1600000  # 1.5M + 300k - 200k
         assert model.value('credit_line.draw', 2021) == 300000
         assert model.value('credit_line.principal', 2021) == 200000
         assert _is_close(model.value('credit_line.interest', 2021), 75000)  # 1.5M * 0.05
-        
+
         # Test year 2022 values (paydown only)
         assert model.value('credit_line.debt_outstanding', 2022) == 1000000  # 1.6M - 600k
         assert model.value('credit_line.draw', 2022) == 0.0
@@ -68,7 +69,7 @@ class TestShortTermDebtInModel:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a short-term debt generator that references the prime_rate line item
         std = ShortTermDebt(
             name='variable_debt',
@@ -77,7 +78,7 @@ class TestShortTermDebtInModel:
             begin_balance=1000000,
             interest_rate='prime_rate',  # Reference to the line item we'll create
         )
-        
+
         # Create a model with line items and the debt generator
         model = Model(
             line_items=[
@@ -95,17 +96,17 @@ class TestShortTermDebtInModel:
             years=years,
             multi_line_items=[std]
         )
-        
+
         # Test debt outstanding remains constant (no draws/paydowns)
         assert model.value('variable_debt.debt_outstanding', 2020) == 1000000
         assert model.value('variable_debt.debt_outstanding', 2021) == 1000000
         assert model.value('variable_debt.debt_outstanding', 2022) == 1000000
-        
+
         # Test interest calculations with varying rates
         assert _is_close(model.value('variable_debt.interest', 2020), 30000)   # 1M * 0.03
         assert _is_close(model.value('variable_debt.interest', 2021), 45000)   # 1M * 0.045
         assert _is_close(model.value('variable_debt.interest', 2022), 20000)   # 1M * 0.02
-        
+
         # Test no draws or paydowns
         assert model.value('variable_debt.draw', 2020) == 0.0
         assert model.value('variable_debt.draw', 2021) == 0.0
@@ -124,7 +125,7 @@ class TestShortTermDebtInModel:
         """
         # Define years for our model
         years = [2020, 2021, 2022]
-        
+
         # Create a short-term debt generator that references other line items
         std = ShortTermDebt(
             name='flexible_debt',
@@ -133,7 +134,7 @@ class TestShortTermDebtInModel:
             begin_balance=750000,      # Fixed value
             interest_rate=0.04
         )
-        
+
         # Create a model with line items and the debt generator
         model = Model(
             line_items=[
@@ -168,22 +169,22 @@ class TestShortTermDebtInModel:
             years=years,
             multi_line_items=[std]
         )
-        
+
         # Test debt outstanding calculations
         assert model.value('flexible_debt.debt_outstanding', 2020) == 1000000  # 750k + 250k
         assert model.value('flexible_debt.debt_outstanding', 2021) == 950000   # 1M + 100k - 150k
         assert model.value('flexible_debt.debt_outstanding', 2022) == 150000   # 950k + 0 - 800k
-        
+
         # Test draw values match the line items
         assert model.value('flexible_debt.draw', 2020) == 250000
         assert model.value('flexible_debt.draw', 2021) == 100000
         assert model.value('flexible_debt.draw', 2022) == 0
-        
+
         # Test principal (paydown) values match the line items
         assert model.value('flexible_debt.principal', 2020) == 0
         assert model.value('flexible_debt.principal', 2021) == 150000
         assert model.value('flexible_debt.principal', 2022) == 800000
-        
+
         # Test interest calculations (4% rate on beginning balance)
         assert _is_close(model.value('flexible_debt.interest', 2020), 30000)   # 750k * 0.04
         assert _is_close(model.value('flexible_debt.interest', 2021), 40000)   # 1M * 0.04
@@ -201,14 +202,14 @@ class TestShortTermDebtInModel:
             begin_balance=100000,
             interest_rate=0.05
         )
-        
+
         # Create a model with the generator
         model = Model(
             line_items=[],
             years=[2020, 2021],
             multi_line_items=[std]
         )
-        
+
         # Test that all defined names are in the model and accessible
         expected_names = [
             'test_debt.debt_outstanding',
@@ -216,7 +217,7 @@ class TestShortTermDebtInModel:
             'test_debt.principal',
             'test_debt.interest'
         ]
-        
+
         for name in expected_names:
             # Test that we can get values for all years
             assert model.value(name, 2020) is not None

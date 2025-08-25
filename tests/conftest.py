@@ -1,5 +1,7 @@
 import pytest
+
 from pyproforma import LineItem, Model
+
 
 @pytest.fixture
 def sample_line_item_list() -> list[LineItem]:

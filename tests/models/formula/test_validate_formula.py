@@ -1,4 +1,5 @@
 import pytest
+
 from pyproforma.models.formula import validate_formula
 
 
@@ -10,7 +11,7 @@ class TestValidateFormula:
         formula = "revenue - expenses"
         name = "profit"
         valid_names = ["revenue", "expenses", "profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -19,7 +20,7 @@ class TestValidateFormula:
         formula = "revenue * (1 - tax_rate) - expenses + depreciation"
         name = "profit"
         valid_names = ["revenue", "tax_rate", "expenses", "depreciation", "profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -28,7 +29,7 @@ class TestValidateFormula:
         formula = "revenue[-1] * growth_rate + expenses[-2]"
         name = "projected_revenue"
         valid_names = ["revenue", "growth_rate", "expenses", "projected_revenue"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -37,7 +38,7 @@ class TestValidateFormula:
         formula = "revenue - expenses + revenue[-1] * 0.1"
         name = "adjusted_profit"
         valid_names = ["revenue", "expenses", "adjusted_profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -46,7 +47,7 @@ class TestValidateFormula:
         formula = "revenue - expenses"
         name = "missing_item"
         valid_names = ["revenue", "expenses", "profit"]
-        
+
         with pytest.raises(ValueError, match="Line item name 'missing_item' is not found in valid names"):
             validate_formula(formula, name, valid_names)
 
@@ -55,7 +56,7 @@ class TestValidateFormula:
         formula = "profit + expenses"
         name = "profit"
         valid_names = ["profit", "expenses"]
-        
+
         with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself without a time offset"):
             validate_formula(formula, name, valid_names)
 
@@ -64,7 +65,7 @@ class TestValidateFormula:
         formula = "profit[-1] * 1.1"
         name = "profit"
         valid_names = ["profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -73,7 +74,7 @@ class TestValidateFormula:
         formula = "profit[1] + profit[2]"
         name = "profit"
         valid_names = ["profit"]
-        
+
         # Should raise an exception for positive offsets
         with pytest.raises(ValueError, match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]"):
             validate_formula(formula, name, valid_names)
@@ -83,7 +84,7 @@ class TestValidateFormula:
         formula = "revenue[1] + expenses"
         name = "projected_revenue"
         valid_names = ["revenue", "expenses", "projected_revenue"]
-        
+
         with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\]"):
             validate_formula(formula, name, valid_names)
 
@@ -92,7 +93,7 @@ class TestValidateFormula:
         formula = "revenue[1] + expenses[2] + costs[3]"
         name = "projection"
         valid_names = ["revenue", "expenses", "costs", "projection"]
-        
+
         with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]"):
             validate_formula(formula, name, valid_names)
 
@@ -101,7 +102,7 @@ class TestValidateFormula:
         formula = "profit[0] + expenses"
         name = "profit"
         valid_names = ["profit", "expenses"]
-        
+
         with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
             validate_formula(formula, name, valid_names)
 
@@ -110,7 +111,7 @@ class TestValidateFormula:
         formula = "revenue - missing_var"
         name = "profit"
         valid_names = ["revenue", "expenses", "profit"]
-        
+
         with pytest.raises(ValueError, match="Formula contains undefined line item names: missing_var"):
             validate_formula(formula, name, valid_names)
 
@@ -119,10 +120,10 @@ class TestValidateFormula:
         formula = "missing_a + missing_b - revenue"
         name = "result"
         valid_names = ["revenue", "expenses", "result"]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formula(formula, name, valid_names)
-        
+
         error_msg = str(exc_info.value)
         assert "Formula contains undefined line item names:" in error_msg
         assert "missing_a" in error_msg
@@ -142,7 +143,7 @@ class TestValidateFormula:
         formula = "revenue * 1.5 + 1000 - expenses"
         name = "adjusted_revenue"
         valid_names = ["revenue", "expenses", "adjusted_revenue"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -151,7 +152,7 @@ class TestValidateFormula:
         formula = "revenue * 0.85 + expenses * 1.2"
         name = "weighted_total"
         valid_names = ["revenue", "expenses", "weighted_total"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -160,7 +161,7 @@ class TestValidateFormula:
         formula = "(revenue + other_income) * (1 - tax_rate) / shares_outstanding"
         name = "earnings_per_share"
         valid_names = ["revenue", "other_income", "tax_rate", "shares_outstanding", "earnings_per_share"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -169,7 +170,7 @@ class TestValidateFormula:
         formula = "  revenue   -   expenses  "
         name = "profit"
         valid_names = ["revenue", "expenses", "profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -178,7 +179,7 @@ class TestValidateFormula:
         formula = ""
         name = "empty_item"
         valid_names = ["revenue", "expenses", "empty_item"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -187,7 +188,7 @@ class TestValidateFormula:
         formula = "1000 + 500 * 1.2"
         name = "constant"
         valid_names = ["revenue", "expenses", "constant"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -196,7 +197,7 @@ class TestValidateFormula:
         formula = "revenue[-1] + revenue[-2] + revenue[-3]"
         name = "moving_average"
         valid_names = ["revenue", "moving_average"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -205,7 +206,7 @@ class TestValidateFormula:
         formula = "revenue[1] + revenue[2]"
         name = "future_projection"
         valid_names = ["revenue", "future_projection"]
-        
+
         # Should raise an exception for positive time offsets
         with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]"):
             validate_formula(formula, name, valid_names)
@@ -215,18 +216,18 @@ class TestValidateFormula:
         formula = "gross_revenue - cost_of_goods_sold"
         name = "net_income"
         valid_names = ["gross_revenue", "cost_of_goods_sold", "net_income"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
     def test_formula_ignores_python_keywords(self):
         """Test that Python keywords in formulas don't cause issues."""
-        # Note: This tests the filtering logic, though in practice formulas 
+        # Note: This tests the filtering logic, though in practice formulas
         # shouldn't contain Python keywords as variable names
         formula = "revenue + if + for"  # 'if' and 'for' are Python keywords
         name = "test_item"
         valid_names = ["revenue", "test_item"]
-        
+
         # Should raise error only for the undefined variables that aren't keywords
         # Keywords should be ignored by the validation
         # This test verifies the keyword filtering works
@@ -237,10 +238,10 @@ class TestValidateFormula:
         formula = "Revenue + EXPENSES"  # Different case
         name = "total"
         valid_names = ["revenue", "expenses", "total"]  # lowercase
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formula(formula, name, valid_names)
-        
+
         error_msg = str(exc_info.value)
         assert "Revenue" in error_msg or "EXPENSES" in error_msg
 
@@ -249,7 +250,7 @@ class TestValidateFormula:
         formula = "company.revenue - company.expenses"
         name = "company.profit"
         valid_names = ["company.revenue", "company.expenses", "company.profit"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -258,7 +259,7 @@ class TestValidateFormula:
         formula = "revenue + revenue * 0.1 + revenue[-1]"
         name = "adjusted_revenue"
         valid_names = ["revenue", "adjusted_revenue"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -267,7 +268,7 @@ class TestValidateFormula:
         formula = "((revenue - cogs) / revenue) * 100 + margin[-1]"
         name = "current_margin"
         valid_names = ["revenue", "cogs", "margin", "current_margin"]
-        
+
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
 
@@ -276,38 +277,38 @@ class TestValidateFormula:
         formula = "zebra + alpha + beta"
         name = "test_item"
         valid_names = ["revenue", "test_item"]
-        
+
         with pytest.raises(ValueError) as exc_info:
             validate_formula(formula, name, valid_names)
-        
+
         error_msg = str(exc_info.value)
         # Check that variables appear in sorted order
         assert "alpha, beta, zebra" in error_msg
-    
+
     def test_circular_reference_complex_formula(self):
         """Test circular reference detection in complex formulas."""
         formula = "revenue + profit * 0.1 - expenses"
         name = "profit"
         valid_names = ["revenue", "profit", "expenses"]
-        
+
         with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself without a time offset"):
             validate_formula(formula, name, valid_names)
-    
+
     def test_no_false_positive_circular_reference(self):
         """Test that similar names don't trigger false positive circular references."""
         formula = "profit_margin + profit_tax"
         name = "profit"
         valid_names = ["profit", "profit_margin", "profit_tax"]
-        
+
         # Should not raise any exception - profit_margin and profit_tax are different from profit
         validate_formula(formula, name, valid_names)
-    
+
     def test_circular_reference_with_zero_offset(self):
         """Test that circular reference with [0] time offset raises error."""
         formula = "profit[0] + expenses"
         name = "profit"
         valid_names = ["profit", "expenses"]
-        
+
         with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
             validate_formula(formula, name, valid_names)
 
@@ -316,6 +317,6 @@ class TestValidateFormula:
         formula = "company.profit + revenue"
         name = "company.profit"
         valid_names = ["company.profit", "revenue"]
-        
+
         with pytest.raises(ValueError, match="Circular reference detected: formula for 'company.profit' references itself without a time offset"):
             validate_formula(formula, name, valid_names)

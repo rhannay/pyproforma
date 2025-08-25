@@ -1,7 +1,8 @@
-import yaml
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import yaml
 
 if TYPE_CHECKING:
     from .model import Model
@@ -14,7 +15,7 @@ class SerializationMixin:
     This mixin provides methods to convert models to/from various formats
     including dictionary, YAML, and JSON representations.
     """
-    
+
     def to_dict(self) -> dict:
         """
         Convert model to dictionary representation for serialization.
@@ -31,7 +32,7 @@ class SerializationMixin:
             'line_item_generators': [generator.to_dict() for generator in self.multi_line_items],
             'constraints': [constraint.to_dict() for constraint in self.constraints]
         }
-    
+
     def to_yaml(self, file_path: str = None) -> str | None:
         """
         Export model configuration to YAML format.
@@ -44,13 +45,13 @@ class SerializationMixin:
         """
         config_dict = self.to_dict()
         yaml_str = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
-        
+
         if file_path:
             Path(file_path).write_text(yaml_str)
             return None
-        
+
         return yaml_str
-    
+
     def to_json(self, file_path: str = None, indent: int = 2) -> str:
         """
         Export model configuration to JSON format.
@@ -64,12 +65,12 @@ class SerializationMixin:
         """
         config_dict = self.to_dict()
         json_str = json.dumps(config_dict, indent=indent)
-        
+
         if file_path:
             Path(file_path).write_text(json_str)
-        
+
         return json_str
-    
+
     @classmethod
     def from_dict(cls, config_dict: dict) -> 'Model':
         """
@@ -81,35 +82,36 @@ class SerializationMixin:
         Returns:
             Model: New Model instance created from the configuration
         """
-        from ..line_item import LineItem
-        from ..category import Category
         from pyproforma.models.multi_line_item import MultiLineItem
+
+        from ..category import Category
         from ..constraint import Constraint
-        
+        from ..line_item import LineItem
+
         # Reconstruct line items
         line_items = [
-            LineItem.from_dict(item_dict) 
+            LineItem.from_dict(item_dict)
             for item_dict in config_dict.get('line_items', [])
         ]
-        
+
         # Reconstruct categories
         categories = [
-            Category.from_dict(category_dict) 
+            Category.from_dict(category_dict)
             for category_dict in config_dict.get('categories', [])
         ]
-        
+
         # Reconstruct multi line items (basic implementation)
         multi_line_items = [
             MultiLineItem.from_dict(generator_dict)
             for generator_dict in config_dict.get('line_item_generators', [])
         ]
-        
+
         # Reconstruct constraints
         constraints = [
-            Constraint.from_dict(constraint_dict) 
+            Constraint.from_dict(constraint_dict)
             for constraint_dict in config_dict.get('constraints', [])
         ]
-        
+
         return cls(
             line_items=line_items,
             years=config_dict['years'],
@@ -117,7 +119,7 @@ class SerializationMixin:
             multi_line_items=multi_line_items,
             constraints=constraints
         )
-    
+
     @classmethod
     def from_yaml(cls, file_path: str = None, yaml_str: str = None) -> 'Model':
         """
@@ -137,10 +139,10 @@ class SerializationMixin:
             yaml_str = Path(file_path).read_text()
         elif yaml_str is None:
             raise ValueError("Either file_path or yaml_str must be provided")
-        
+
         config_dict = yaml.safe_load(yaml_str)
         return cls.from_dict(config_dict)
-    
+
     @classmethod
     def from_json(cls, file_path: str = None, json_str: str = None) -> 'Model':
         """
@@ -160,6 +162,6 @@ class SerializationMixin:
             json_str = Path(file_path).read_text()
         elif json_str is None:
             raise ValueError("Either file_path or json_str must be provided")
-        
+
         config_dict = json.loads(json_str)
         return cls.from_dict(config_dict)

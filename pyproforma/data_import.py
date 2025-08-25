@@ -1,5 +1,7 @@
 import openpyxl
-from pyproforma import LineItem, Model
+
+from pyproforma import LineItem
+
 
 def _excel_to_list(filename, sheet_name: str = None) -> list[dict]:
     wb = openpyxl.load_workbook(filename, data_only=True)

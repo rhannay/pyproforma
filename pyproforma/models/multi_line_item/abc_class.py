@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any, Type
+from typing import Any, Dict, List, Optional, Type
+
 
 class MultiLineItem(ABC):
     """
@@ -14,10 +15,10 @@ class MultiLineItem(ABC):
     - LoanAmortization (generating principal, interest, and balance line items)
     - RevenueBreakdown (generating revenue line items by product/service)
     """
-    
+
     # Registry to store multi line item subclasses by type
     _registry: Dict[str, Type['MultiLineItem']] = {}
-    
+
     @classmethod
     def register(cls, generator_type: str):
         """Decorator to register a multi line item subclass with a specific type."""
@@ -25,7 +26,7 @@ class MultiLineItem(ABC):
             cls._registry[generator_type] = subclass
             return subclass
         return decorator
-    
+
     @classmethod
     def from_dict(cls, config: Dict[str, Any]) -> 'MultiLineItem':
         """
@@ -43,14 +44,14 @@ class MultiLineItem(ABC):
         generator_type = config.get('type')
         if not generator_type:
             raise ValueError("Configuration must include a 'type' field")
-        
+
         if generator_type not in cls._registry:
             raise ValueError(f"Unknown multi line item type: {generator_type}. "
                            f"Available types: {list(cls._registry.keys())}")
-        
+
         generator_class = cls._registry[generator_type]
         return generator_class.from_config(config)
-    
+
     @classmethod
     @abstractmethod
     def from_config(cls, config: Dict[str, Any]) -> 'MultiLineItem':
@@ -65,7 +66,7 @@ class MultiLineItem(ABC):
             MultiLineItem: Instance of this multi line item
         """
         pass
-    
+
     @abstractmethod
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -76,7 +77,7 @@ class MultiLineItem(ABC):
             Dict[str, Any]: Dictionary representation including 'type' field
         """
         pass
-    
+
     @property
     @abstractmethod
     def defined_names(self) -> List[str]:
@@ -87,7 +88,7 @@ class MultiLineItem(ABC):
             List[str]: The names of all line items this component can generate values for.
         """
         pass
-    
+
     @abstractmethod
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
                   year: int) -> Dict[str, Optional[float]]:

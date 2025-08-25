@@ -1,7 +1,7 @@
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
+from pyproforma.models._utils import check_interim_values_by_year, check_name
 from pyproforma.models.multi_line_item.abc_class import MultiLineItem
-from pyproforma.models._utils import check_name, check_interim_values_by_year
 
 
 @MultiLineItem.register("debt")
@@ -13,11 +13,11 @@ class Debt(MultiLineItem):
     This class will handle debt related calculations including principal, interest payments, 
     and debt service schedule. Currently a placeholder implementation.
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                 name: str,
-                par_amount: dict | str, 
-                interest_rate: float | str, 
+                par_amount: dict | str,
+                interest_rate: float | str,
                 term: int | str,
                 existing_debt_service: list[dict] = None):
         """
@@ -55,11 +55,11 @@ class Debt(MultiLineItem):
         self._debt_outstanding_name = f'{self.name}.debt_outstanding'
 
         self.ds_schedules = {}
-        
+
         self.existing_debt_service = existing_debt_service or []
         # Validate the existing debt service structure
         self._validate_existing_debt_service(self.existing_debt_service)
-    
+
     @classmethod
     def _validate_existing_debt_service(cls, existing_debt_service: list[dict]):
         """
@@ -73,55 +73,55 @@ class Debt(MultiLineItem):
         """
         if not existing_debt_service:
             return  # Empty list or None is valid
-        
+
         # Check that it's a list
         if not isinstance(existing_debt_service, list):
             raise ValueError("existing_debt_service must be a list of dictionaries")
-        
+
         # Check each entry is a dictionary with required keys
         required_keys = {'year', 'principal', 'interest'}
         for i, entry in enumerate(existing_debt_service):
             if not isinstance(entry, dict):
                 raise ValueError(f"existing_debt_service entry {i} must be a dictionary")
-            
+
             # Check required keys
             if not required_keys.issubset(entry.keys()):
                 missing_keys = required_keys - entry.keys()
                 raise ValueError(f"existing_debt_service entry {i} is missing required keys: {missing_keys}")
-            
+
             # Validate data types
             if not isinstance(entry['year'], int):
                 raise ValueError(f"existing_debt_service entry {i}: 'year' must be an integer")
-            
+
             if not isinstance(entry['principal'], (int, float)):
                 raise ValueError(f"existing_debt_service entry {i}: 'principal' must be a number")
-            
+
             if not isinstance(entry['interest'], (int, float)):
                 raise ValueError(f"existing_debt_service entry {i}: 'interest' must be a number")
-            
+
             # Validate non-negative values
             if entry['principal'] < 0:
                 raise ValueError(f"existing_debt_service entry {i}: 'principal' must be non-negative")
-            
+
             if entry['interest'] < 0:
                 raise ValueError(f"existing_debt_service entry {i}: 'interest' must be non-negative")
-        
+
         # Check for sequential years with no gaps
         years = [entry['year'] for entry in existing_debt_service]
-        
+
         # Check that years are provided in ascending order
         if len(years) > 1:
             for i in range(1, len(years)):
                 if years[i] <= years[i-1]:
                     raise ValueError("existing_debt_service years must be provided in ascending order")
-        
+
         # Check for sequential years with no gaps (years are already in order and no duplicates)
         if len(years) > 1:
             for i in range(1, len(years)):
                 if years[i] != years[i-1] + 1:
                     raise ValueError(f"existing_debt_service years must be sequential with no gaps. "
                                    f"Gap found between {years[i-1]} and {years[i]}")
-    
+
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> 'Debt':
         """Create a Debt instance from a configuration dictionary."""
@@ -129,7 +129,7 @@ class Debt(MultiLineItem):
         par_amount = config['par_amount']
         if isinstance(par_amount, dict):
             par_amount = {int(k): v for k, v in par_amount.items()}
-        
+
         return cls(
             name=config['name'],
             par_amount=par_amount,
@@ -137,7 +137,7 @@ class Debt(MultiLineItem):
             term=config['term'],
             existing_debt_service=config.get('existing_debt_service')
         )
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Debt instance to a dictionary representation."""
         return {
@@ -148,11 +148,11 @@ class Debt(MultiLineItem):
             'term': self._term,
             'existing_debt_service': self.existing_debt_service if self.existing_debt_service else None
         }
-    
+
     # ----------------------------------
     # MAIN PUBLIC API METHODS
     # ----------------------------------
-    
+
     @property
     def defined_names(self) -> List[str]:
         """
@@ -184,11 +184,11 @@ class Debt(MultiLineItem):
             raise ValueError(f"Invalid interim values by year: {error_msg}")
 
         result = {}
-        
+
         # Build up bond issues
         # Start by clearing out self.debt_service_schedules
         self.ds_schedules = {}
-        
+
         # Extract years from interim_values_by_year keys
         years = sorted([y for y in interim_values_by_year.keys()])
 
@@ -208,16 +208,16 @@ class Debt(MultiLineItem):
 
         # Bond proceeds (par amounts for new debt issues in this year)
         result[self._bond_proceeds_name] = self._get_par_amount(interim_values_by_year, year)
-        
+
         # Outstanding debt at the end of this year
         result[self._debt_outstanding_name] = self.get_debt_outstanding(year)
-            
+
         return result
-    
+
     # ----------------------------------
     # PRINCIPAL AND INTEREST BY YEAR
     # ----------------------------------
-    
+
     def get_principal(self, year: int) -> float:
         """
         Get the total principal payment for a specific year across all debt issues.
@@ -229,20 +229,20 @@ class Debt(MultiLineItem):
             float: The total principal payment for the specified year.
         """
         total_principal = 0.0
-        
+
         # Check existing debt service schedule
         for entry in self.existing_debt_service:
             if entry['year'] == year:
                 total_principal += entry['principal']
-        
+
         # Check scheduled debt issues
         for start_year, schedule in self.ds_schedules.items():
             for entry in schedule:
                 if entry['year'] == year:
                     total_principal += entry['principal']
-        
+
         return total_principal
-    
+
     def get_interest(self, year: int) -> float:
         """
         Get the total interest payment for a specific year across all debt issues.
@@ -254,20 +254,20 @@ class Debt(MultiLineItem):
             float: The total interest payment for the specified year.
         """
         total_interest = 0.0
-        
+
         # Check existing debt service schedule
         for entry in self.existing_debt_service:
             if entry['year'] == year:
                 total_interest += entry['interest']
-        
+
         # Check scheduled debt issues
         for start_year, schedule in self.ds_schedules.items():
             for entry in schedule:
                 if entry['year'] == year:
                     total_interest += entry['interest']
-        
+
         return total_interest
-        
+
     def get_debt_outstanding(self, year: int) -> float:
         """
         Get the total outstanding principal at the end of a specific year across all debt issues.
@@ -279,19 +279,19 @@ class Debt(MultiLineItem):
             float: The total outstanding principal at the end of the specified year.
         """
         total_outstanding = 0.0
-        
+
         # Calculate outstanding balance from existing debt service
         existing_outstanding = self._calculate_debt_outstanding_for_issue(self.existing_debt_service, year)
         total_outstanding += existing_outstanding
-        
+
         # Calculate outstanding balance from scheduled debt issues
         for start_year, schedule in self.ds_schedules.items():
             if start_year <= year:  # Only consider debt issued by the end of this year
                 outstanding = self._calculate_debt_outstanding_for_issue(schedule, year)
                 total_outstanding += outstanding
-        
+
         return total_outstanding
-    
+
     @classmethod
     def _calculate_debt_outstanding_for_issue(cls, debt_service_schedule: list[dict], year: int) -> float:
         """
@@ -306,14 +306,14 @@ class Debt(MultiLineItem):
         """
         if not debt_service_schedule:
             return 0.0
-        
+
         # Outstanding principal is just the sum of all principal payments due after this year
         return sum(entry['principal'] for entry in debt_service_schedule if entry['year'] > year)
-        
+
     # ----------------------------------
     # DEBT SCHEDULE MANAGEMENT
     # ----------------------------------
-    
+
     def _add_bond_issue(self, par: float, interest_rate: float, start_year: int, term: int):
         """
         Add a bond issue to the debt service schedules.
@@ -330,13 +330,13 @@ class Debt(MultiLineItem):
         # Check if a schedule with this start_year already exists
         if start_year in self.ds_schedules:
             raise ValueError(f"A debt service schedule already exists for year {start_year}")
-            
+
         # Generate debt service schedule using static method
         schedule = self.generate_debt_service_schedule(par, interest_rate, start_year, term)
-        
+
         # Add to ds_schedules with start_year as key
         self.ds_schedules[start_year] = schedule
-    
+
     @classmethod
     def generate_debt_service_schedule(cls, par_amount, interest_rate: float, start_year: int, term: int):
         """
@@ -353,7 +353,7 @@ class Debt(MultiLineItem):
                  with each dictionary containing 'year', 'principal', and 'interest'.
         """
         schedule = []
-        
+
         if interest_rate == 0:
             # For zero interest loans, simply divide principal evenly across the term
             equal_payment = par_amount / term
@@ -378,13 +378,13 @@ class Debt(MultiLineItem):
                     'interest': interest
                 })
                 remaining_principal -= principal_payment
-        
+
         return schedule
-    
+
     # ----------------------------------
     # DEBT ISSUE PARAMETER METHODS
     # ----------------------------------
-    
+
     def _get_interest_rate(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """
         Get the interest rate for a specific year.
@@ -406,7 +406,7 @@ class Debt(MultiLineItem):
         elif isinstance(self._interest_rate, str):
             interest_rate_name = self._interest_rate
             # Look up the value in interim_values_by_year
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 interest_rate_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][interest_rate_name]
                 if value is None:
@@ -416,7 +416,7 @@ class Debt(MultiLineItem):
                 raise ValueError(f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Interest rate must be a float or string, not {type(self._interest_rate)}")
-    
+
     def _get_par_amount(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> float:
         """
         Get the par amount for a specific year.
@@ -439,7 +439,7 @@ class Debt(MultiLineItem):
         elif isinstance(self._par_amount, str):
             par_amount_name = self._par_amount
             # Look up the value in interim_values_by_year
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 par_amount_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][par_amount_name]
                 if value is None:
@@ -449,7 +449,7 @@ class Debt(MultiLineItem):
                 raise ValueError(f"Could not find par amount '{par_amount_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Par amount must be a dict or string, not {type(self._par_amount)}")
-    
+
     def _get_term(self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int) -> int:
         """
         Get the term for a specific year.
@@ -468,13 +468,13 @@ class Debt(MultiLineItem):
             TypeError: If the term is not an int or string.
         """
         term_value = None
-        
+
         if isinstance(self._term, int):
             term_value = self._term
         elif isinstance(self._term, str):
             term_name = self._term
             # Look up the value in interim_values_by_year
-            if (year in interim_values_by_year and 
+            if (year in interim_values_by_year and
                 term_name in interim_values_by_year[year]):
                 value = interim_values_by_year[year][term_name]
                 if value is None:
@@ -484,11 +484,11 @@ class Debt(MultiLineItem):
                 raise ValueError(f"Could not find term '{term_name}' for year {year} in interim values")
         else:
             raise TypeError(f"Term must be an int or string, not {type(self._term)}")
-            
+
         # Validate that the term is a positive whole number greater than zero
         if term_value <= 0:
             raise ValueError(f"Term must be positive, got {term_value}")
         if not isinstance(term_value, int) or term_value != float(term_value):
             raise ValueError(f"Term must be a whole number, got {term_value}")
-            
+
         return term_value

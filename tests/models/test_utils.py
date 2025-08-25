@@ -1,5 +1,6 @@
-from pyproforma.models._utils import check_name, check_interim_values_by_year
 import pytest
+
+from pyproforma.models._utils import check_interim_values_by_year, check_name
 
 
 class TestCheckName:

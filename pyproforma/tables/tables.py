@@ -1,7 +1,8 @@
-from .table_class import Table, Cell, Row, Column
-from .table_generator import generate_table_from_template
 from typing import TYPE_CHECKING, Optional
+
 from . import row_types as rt
+from .table_class import Table
+from .table_generator import generate_table_from_template
 
 if TYPE_CHECKING:
     from pyproforma import Model

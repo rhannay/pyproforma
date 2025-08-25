@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .model import Model 
+    from .model import Model
 
-from ..line_item import LineItem
+from ...constants import ValueFormat
 from ..category import Category
 from ..constraint import Constraint
-from ...constants import ValueFormat
+from ..line_item import LineItem
 
 
 class UpdateNamespace:
@@ -60,10 +60,10 @@ class UpdateNamespace:
         # Validate that exactly one of category or name is provided
         if category is not None and name is not None:
             raise ValueError("Cannot specify both 'category' and 'name' parameters. Use one or the other.")
-        
+
         if category is None and name is None:
             raise ValueError("Must specify either 'category' parameter or 'name' parameter.")
-        
+
         # Handle the case where a Category instance is passed
         if category is not None:
             new_category = category
@@ -79,18 +79,18 @@ class UpdateNamespace:
             except ValueError as e:
                 # Re-raise Category creation errors with our standard format
                 raise ValueError(f"Failed to add category '{name}': {str(e)}") from e
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             model_copy._category_definitions.append(new_category)
             model_copy._recalculate()
-            
+
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._category_definitions.append(new_category)
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to add category '{new_category.name}': {str(e)}") from e
@@ -140,10 +140,10 @@ class UpdateNamespace:
         # Validate that exactly one of line_item or name is provided
         if line_item is not None and name is not None:
             raise ValueError("Cannot specify both 'line_item' and 'name' parameters. Use one or the other.")
-        
+
         if line_item is None and name is None:
             raise ValueError("Must specify either 'line_item' parameter or 'name' parameter.")
-        
+
         # Handle the case where a LineItem instance is passed
         if line_item is not None:
             new_line_item = line_item
@@ -151,7 +151,7 @@ class UpdateNamespace:
             # Handle the case where parameters are passed to create a new LineItem
             if category is None:
                 raise TypeError("When creating a new LineItem, 'category' parameter is required")
-            
+
             # Create the new line item - this will validate the name format
             try:
                 new_line_item = LineItem(
@@ -165,18 +165,18 @@ class UpdateNamespace:
             except ValueError as e:
                 # Re-raise LineItem creation errors with our standard format
                 raise ValueError(f"Failed to add line item '{name}': {str(e)}") from e
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             model_copy._line_item_definitions.append(new_line_item)
             model_copy._recalculate()
-            
+
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions.append(new_line_item)
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to add line item '{new_line_item.name}': {str(e)}") from e
@@ -236,10 +236,10 @@ class UpdateNamespace:
             if category_item.name == name:
                 existing_category = category_item
                 break
-        
+
         if existing_category is None:
             raise KeyError(f"Category '{name}' not found in model")
-        
+
         # If a Category instance is provided, use it as the replacement
         if category is not None:
             updated_category = category
@@ -255,40 +255,40 @@ class UpdateNamespace:
             except ValueError as e:
                 # Re-raise Category creation errors with our standard format
                 raise ValueError(f"Failed to update category '{name}': {str(e)}") from e
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
-            
+
             # Find and replace the category in the copy
             for i, category_item in enumerate(model_copy._category_definitions):
                 if category_item.name == name:
                     model_copy._category_definitions[i] = updated_category
                     break
-            
+
             # If the category name changed, update all line items that reference it
             if updated_category.name != name:
                 for line_item in model_copy._line_item_definitions:
                     if line_item.category == name:
                         line_item.category = updated_category.name
-            
+
             model_copy._recalculate()
-            
+
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             for i, category_item in enumerate(self._model._category_definitions):
                 if category_item.name == name:
                     self._model._category_definitions[i] = updated_category
                     break
-            
+
             # Update line items if category name changed
             if updated_category.name != name:
                 for line_item in self._model._line_item_definitions:
                     if line_item.category == name:
                         line_item.category = updated_category.name
-            
+
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update category '{name}': {str(e)}") from e
@@ -345,7 +345,7 @@ class UpdateNamespace:
             existing_item = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
-        
+
         # If a LineItem instance is provided, use it as the replacement
         if line_item is not None:
             updated_item = line_item
@@ -363,7 +363,7 @@ class UpdateNamespace:
             except ValueError as e:
                 # Re-raise LineItem creation errors with our standard format
                 raise ValueError(f"Failed to update line item '{name}': {str(e)}") from e
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
@@ -373,7 +373,7 @@ class UpdateNamespace:
                     model_copy._line_item_definitions[i] = updated_item
                     break
             model_copy._recalculate()
-            
+
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             for i, item in enumerate(self._model._line_item_definitions):
@@ -381,7 +381,7 @@ class UpdateNamespace:
                     self._model._line_item_definitions[i] = updated_item
                     break
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line item '{name}': {str(e)}") from e
@@ -429,7 +429,7 @@ class UpdateNamespace:
         """
         if not item_updates:
             return
-        
+
         # Helper function to apply updates to a model
         def apply_updates(model: 'Model', updates: list[tuple[str, dict]]):
             for item_name, update_params in updates:
@@ -440,29 +440,29 @@ class UpdateNamespace:
                         existing_item = item
                         item_index = i
                         break
-                
+
                 if existing_item is None:
                     raise KeyError(f"Line item '{item_name}' not found in model")
-                
+
                 # Create a working copy of the update parameters
                 params_copy = update_params.copy()
-                
+
                 # Check for conflicting parameters: values and updated_values
                 if 'values' in params_copy and 'updated_values' in params_copy:
                     raise ValueError(
                         f"Cannot specify both 'values' and 'updated_values' for line item '{item_name}'. "
                         f"Use 'values' to replace all values or 'updated_values' to update specific years."
                     )
-                
+
                 # Handle updated_values by merging with existing values
                 if 'updated_values' in params_copy:
                     merged_values = existing_item.values.copy()  # Start with existing values
                     merged_values.update(params_copy['updated_values'])  # Update with new values
                     params_copy['values'] = merged_values
-                    
+
                     # Remove updated_values as it's not a LineItem parameter
                     del params_copy['updated_values']
-                
+
                 # Create updated line item
                 updated_item = LineItem(
                     name=params_copy.get('new_name', existing_item.name),
@@ -472,22 +472,22 @@ class UpdateNamespace:
                     formula=params_copy.get('formula', existing_item.formula),
                     value_format=params_copy.get('value_format', existing_item.value_format)
                 )
-                
+
                 # Replace the existing item
                 model._line_item_definitions[item_index] = updated_item
-            
+
             # Recalculate the model with all changes
             model._recalculate()
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             apply_updates(model_copy, item_updates)
-            
+
             # If we get here, all updates were successful on the copy
             # Now apply them to the actual model
             apply_updates(self._model, item_updates)
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line items: {str(e)}") from e
@@ -526,25 +526,25 @@ class UpdateNamespace:
         # Validate input
         if not isinstance(new_years, list):
             raise TypeError(f"Expected list, got {type(new_years).__name__}")
-        
+
         if not new_years:
             raise ValueError("Years cannot be an empty list")
-        
+
         if not all(isinstance(year, int) for year in new_years):
             raise ValueError("All years must be integers")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             # Update years and recalculate (remove duplicates and sort)
             model_copy.years = sorted(list(set(new_years)))
             model_copy._recalculate()
-            
+
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model.years = sorted(list(set(new_years)))
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update years: {str(e)}") from e
@@ -584,28 +584,28 @@ class UpdateNamespace:
             if category.name == name:
                 category_to_delete = category
                 break
-        
+
         if category_to_delete is None:
             raise KeyError(f"Category '{name}' not found in model")
-        
+
         # Check if any line items reference this category
         line_items_using_category = [item for item in self._model._line_item_definitions if item.category == name]
         if line_items_using_category:
             item_names = [item.name for item in line_items_using_category]
             raise ValueError(f"Cannot delete category '{name}' because it is used by line items: {', '.join(item_names)}")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             # Remove the category from the copy
             model_copy._category_definitions = [category for category in model_copy._category_definitions if category.name != name]
             model_copy._recalculate()
-            
+
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model._category_definitions = [category for category in self._model._category_definitions if category.name != name]
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete category '{name}': {str(e)}") from e
@@ -635,19 +635,19 @@ class UpdateNamespace:
             line_item_to_delete = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             # Remove the line item from the copy
             model_copy._line_item_definitions = [item for item in model_copy._line_item_definitions if item.name != name]
             model_copy._recalculate()
-            
+
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions = [item for item in self._model._line_item_definitions if item.name != name]
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete line item '{name}': {str(e)}") from e
@@ -709,7 +709,7 @@ class UpdateNamespace:
             # Method 2: Create constraint from parameters
             if any(param is None for param in [name, line_item_name, target, operator]):
                 raise ValueError("When constraint is None, name, line_item_name, target, and operator are required")
-            
+
             new_constraint = Constraint(
                 name=name,
                 line_item_name=line_item_name,
@@ -718,23 +718,23 @@ class UpdateNamespace:
                 tolerance=tolerance,
                 label=label
             )
-        
+
         # Check if constraint name already exists
         existing_names = [c.name for c in self._model.constraints]
         if new_constraint.name in existing_names:
             raise ValueError(f"Constraint with name '{new_constraint.name}' already exists")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             model_copy.constraints.append(new_constraint)
             model_copy._recalculate()
-            
+
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model.constraints.append(new_constraint)
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to add constraint '{new_constraint.name}': {str(e)}") from e
@@ -795,11 +795,11 @@ class UpdateNamespace:
                 constraint_index = i
                 existing_constraint = c
                 break
-        
+
         if existing_constraint is None:
             available_constraints = [c.name for c in self._model.constraints]
             raise KeyError(f"Constraint '{name}' not found. Available constraints: {available_constraints}")
-        
+
         if constraint is not None:
             # Method 1: Replace with provided constraint
             updated_constraint = constraint
@@ -813,24 +813,24 @@ class UpdateNamespace:
                 tolerance=tolerance if tolerance is not None else existing_constraint.tolerance,
                 label=label if label is not None else existing_constraint.label
             )
-        
+
         # Check if new name conflicts with other constraints (excluding the one being updated)
         if updated_constraint.name != existing_constraint.name:
             existing_names = [c.name for c in self._model.constraints if c.name != existing_constraint.name]
             if updated_constraint.name in existing_names:
                 raise ValueError(f"Constraint with name '{updated_constraint.name}' already exists")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             model_copy.constraints[constraint_index] = updated_constraint
             model_copy._recalculate()
-            
+
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model.constraints[constraint_index] = updated_constraint
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update constraint '{name}': {str(e)}") from e
@@ -861,22 +861,22 @@ class UpdateNamespace:
             if constraint.name == name:
                 constraint_exists = True
                 break
-        
+
         if not constraint_exists:
             available_constraints = [c.name for c in self._model.constraints]
             raise KeyError(f"Constraint '{name}' not found. Available constraints: {available_constraints}")
-        
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
             model_copy.constraints = [c for c in model_copy.constraints if c.name != name]
             model_copy._recalculate()
-            
+
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model.constraints = [c for c in self._model.constraints if c.name != name]
             self._model._recalculate()
-            
+
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete constraint '{name}': {str(e)}") from e

@@ -1,4 +1,4 @@
-from .models import LineItem, Model, Category, Constraint
+from .models import Category, Constraint, LineItem, Model
 
 # Bringing in row types for easy table generation
 from .tables import row_types

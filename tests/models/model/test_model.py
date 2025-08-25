@@ -1,7 +1,9 @@
 import pytest
-from pyproforma import LineItem, Model, Category
+
+from pyproforma import Category, LineItem, Model
 from pyproforma.models.constraint import Constraint
 from pyproforma.models.multi_line_item.debt import Debt
+
 
 class TestItemTypeValidation:
 
@@ -12,7 +14,7 @@ class TestItemTypeValidation:
         )
         assert len(li_set._category_definitions) == 1
         assert li_set._category_definitions[0].name == "revenue"
-    
+
     def test_item_type_missing(self):
         with pytest.raises(ValueError) as excinfo:
             Model(
@@ -45,7 +47,7 @@ class TestLineItemsWithFormulas:
             categories=categories,
             years=[2020, 2021, 2022]
         )
-    
+
     def test_line_item_set_init(self, sample_line_item_set_2: Model):
         # Check the Model initialization
         assert isinstance(sample_line_item_set_2, Model)
@@ -59,7 +61,7 @@ class TestLineItemsWithFormulas:
         assert sample_line_item_set_2["rev_2", 2020] == 100.0
         assert sample_line_item_set_2["rev_2", 2021] == 100.0 + 50.0
         assert sample_line_item_set_2["rev_2", 2022] == 100.0 + 50.0 + 50.0
-        assert sample_line_item_set_2["exp_1", 2020] == 200.0       
+        assert sample_line_item_set_2["exp_1", 2020] == 200.0
         assert sample_line_item_set_2["exp_1", 2021] == 200.0 * 0.95
         assert sample_line_item_set_2["exp_1", 2022] == 200.0 * 0.95 * 0.95
         assert sample_line_item_set_2["net_revenue", 2020] == 200.0
@@ -84,7 +86,7 @@ class TestModelWithBalanceSheetConcept:
             # balance_sheet_line_items=[begin_cash, end_cash],
             years=[2020, 2021]
         )
-    
+
     def test_line_item_set_init(self, sample_line_item_set: Model):
         assert sample_line_item_set['rev_1', 2020] == 300.0
         expected_end_cash_2020 = 1000.0 + 300.0 + 100.0 - 200.0
@@ -148,11 +150,11 @@ class TestModelWithGenerators:
             years=[2020, 2021, 2022],
             multi_line_items=[debt]
         )
-    
+
     def test_line_item_set_with_generators(self, sample_line_item_set_with_generators: Model):
         lis = sample_line_item_set_with_generators
         ds_schedule = Debt.generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
-        
+
         assert isinstance(lis, Model)
         assert lis['debt.principal', 2020] == 0
         assert lis['debt.principal', 2021] == ds_schedule[0]['principal']
@@ -176,7 +178,7 @@ class TestDuplicateNames:
                 years=[2020]
             )
         assert "Duplicate" in str(excinfo.value)
-        
+
         # item name and formula name overlap
         with pytest.raises(ValueError) as excinfo:
             lis = [
@@ -198,7 +200,7 @@ class TestDuplicateNames:
 
 class TestOtherMisc:
     def test_line_item_set_get_item(self, sample_line_item_set: Model):
-        
+
         # assert item values by year
         assert sample_line_item_set["item1", 2020] == 100.0
         assert sample_line_item_set["item2", 2021] == 75.0
@@ -219,34 +221,34 @@ class TestOtherMisc:
         assert "Year 2022 not found" in str(excinfo.value)
 
         # get a category total
-        assert sample_line_item_set["total_revenue", 2020] == 300.0  
+        assert sample_line_item_set["total_revenue", 2020] == 300.0
 
     def test_getitem_string_returns_line_item_results(self, sample_line_item_set: Model):
         """Test that __getitem__ with string key returns LineItemResults object."""
         from pyproforma.models.results import LineItemResults
-        
+
         # Test string key returns LineItemResults
         result = sample_line_item_set["item1"]
         assert isinstance(result, LineItemResults)
         assert result.item_name == "item1"
         assert result.source_type == "line_item"
-        
+
         # Test that it's equivalent to line_item() method
         line_item_result = sample_line_item_set.line_item("item1")
         assert type(result) == type(line_item_result)
         assert result.item_name == line_item_result.item_name
         assert result.source_type == line_item_result.source_type
-        
+
         # Test with different item
         result2 = sample_line_item_set["item2"]
         assert isinstance(result2, LineItemResults)
         assert result2.item_name == "item2"
-        
+
         # Test invalid item name raises KeyError
         with pytest.raises(KeyError):
             sample_line_item_set["nonexistent"]
-            
-        # Test invalid key type raises KeyError  
+
+        # Test invalid key type raises KeyError
         with pytest.raises(KeyError) as excinfo:
             sample_line_item_set[123]
         assert "Key must be a tuple of (item_name, year) or a string item_name" in str(excinfo.value)
@@ -255,14 +257,14 @@ class TestOtherMisc:
         sample = Model(
             line_items=[
                 LineItem(name="item1", category="revenue", values={2020: 100.0}),
-                LineItem(name="item2", category="expense", values={2020: 200.0}),                
+                LineItem(name="item2", category="expense", values={2020: 200.0}),
                 LineItem(name="item3", category="revenue", values={2020: 100.0}),
                 LineItem(name="item4", category="expense", values={2020: 150.0})
             ],
             categories=[Category(name="revenue"), Category(name="expense")],
             years=[2020]
         )
-        
+
         # Test if the last item in a category is identified correctly
         assert sample._is_last_item_in_category("item1") is False
         assert sample._is_last_item_in_category("item2") is False
@@ -280,7 +282,7 @@ class TestOtherMisc:
             categories=[Category(name="revenue"), Category(name="expense")],
             years=[2020]
         )
-        
+
         # Test category total calculation
         assert sample.category_total("revenue", 2020) == 250.0
         assert sample.category_total("expense", 2020) == 450.0
@@ -295,26 +297,26 @@ class TestOtherMisc:
             categories=[Category(name="revenue"), Category(name="expense"), Category(name="assumption")],
             years=[2020]
         )
-        
+
         # Test getting item info for line item
         item_info = sample._get_item_metadata("item1")
         assert item_info['name'] == 'item1'
         assert item_info['source_type'] == 'line_item'
         assert item_info['source_name'] == 'item1'
-        
+
         # Test getting item info for assumption
         assumption_info = sample._get_item_metadata("growth_rate")
         assert assumption_info['name'] == 'growth_rate'
         assert assumption_info['label'] == 'Growth Rate'
         assert assumption_info['value_format'] == 'two_decimals'
         assert assumption_info['source_type'] == 'line_item'
-        
+
         # Test getting item info for category total
         total_info = sample._get_item_metadata("total_revenue")
         assert total_info['name'] == 'total_revenue'
         assert total_info['source_type'] == 'category'
         assert total_info['source_name'] == 'revenue'
-        
+
         # Test KeyError for non-existent item
         with pytest.raises(KeyError) as excinfo:
             sample._get_item_metadata("non_existent_item")
@@ -323,7 +325,7 @@ class TestOtherMisc:
 
 class TestModelWithConstraints:
     """Test that Model works correctly with constraints."""
-    
+
     @pytest.fixture
     def sample_model_with_constraints(self) -> Model:
         """Create a sample model with constraints for testing."""
@@ -339,22 +341,21 @@ class TestModelWithConstraints:
                 values={2023: 50000, 2024: 60000}
             )
         ]
-        
+
         categories = [
             Category(name="income", label="Income"),
             Category(name="costs", label="Costs")
         ]
-        
+
         return Model(
             line_items=line_items,
             years=[2023, 2024],
             categories=categories
         )
-    
+
     def test_model_initialization_with_constraints(self, sample_model_with_constraints: Model):
         """Test that model can be initialized with constraints."""
-        from pyproforma.models.constraint import Constraint
-        
+
         constraints = [
             Constraint(
                 name="min_revenue",
@@ -369,26 +370,25 @@ class TestModelWithConstraints:
                 operator="le"
             )
         ]
-        
+
         model = Model(
             line_items=sample_model_with_constraints._line_item_definitions,
             years=sample_model_with_constraints.years,
             categories=sample_model_with_constraints._category_definitions,
             constraints=constraints
         )
-        
+
         assert len(model.constraints) == 2
         assert model.constraints[0].name == "min_revenue"
         assert model.constraints[1].name == "max_expenses"
-        
+
         # Test that model still functions normally
         assert model.value("revenue", 2023) == 100000
         assert model.value("expenses", 2024) == 60000
-    
+
     def test_constraints_preserved_during_copy(self, sample_model_with_constraints: Model):
         """Test that constraints are preserved when copying a model."""
-        from pyproforma.models.constraint import Constraint
-        
+
         constraints = [
             Constraint(
                 name="revenue_constraint",
@@ -397,27 +397,26 @@ class TestModelWithConstraints:
                 operator="gt"
             )
         ]
-        
+
         original_model = Model(
             line_items=sample_model_with_constraints._line_item_definitions,
             years=sample_model_with_constraints.years,
             categories=sample_model_with_constraints._category_definitions,
             constraints=constraints
         )
-        
+
         copied_model = original_model.copy()
-        
+
         # Check that constraints are copied
         assert len(copied_model.constraints) == 1
         assert copied_model.constraints[0].name == "revenue_constraint"
-        
+
         # Check that they are independent objects
         assert original_model.constraints[0] is not copied_model.constraints[0]
-    
+
     def test_constraints_in_serialization(self, sample_model_with_constraints: Model):
         """Test that constraints are included in serialization."""
-        from pyproforma.models.constraint import Constraint
-        
+
         constraints = [
             Constraint(
                 name="test_constraint",
@@ -426,57 +425,56 @@ class TestModelWithConstraints:
                 operator="ge"
             )
         ]
-        
+
         model = Model(
             line_items=sample_model_with_constraints._line_item_definitions,
             years=sample_model_with_constraints.years,
             categories=sample_model_with_constraints._category_definitions,
             constraints=constraints
         )
-        
+
         # Test to_dict
         model_dict = model.to_dict()
         assert 'constraints' in model_dict
         assert len(model_dict['constraints']) == 1
         assert model_dict['constraints'][0]['name'] == 'test_constraint'
-        
+
         # Test from_dict
         reconstructed_model = Model.from_dict(model_dict)
         assert len(reconstructed_model.constraints) == 1
         assert reconstructed_model.constraints[0].name == 'test_constraint'
-        
+
         # Test to_yaml
         yaml_str = model.to_yaml()
         assert 'constraints:' in yaml_str
         assert 'test_constraint' in yaml_str
-        
+
         # Test from_yaml
         yaml_model = Model.from_yaml(yaml_str=yaml_str)
 
         assert len(yaml_model.constraints) == 1
         assert yaml_model.constraints[0].name == 'test_constraint'
-    
+
     def test_model_functions_with_many_constraints(self, sample_model_with_constraints: Model):
         """Test that model functions correctly with many constraints."""
-        from pyproforma.models.constraint import Constraint
-        
+
         constraints = [
             Constraint(f"constraint_{i}", "revenue", 1000.0 * i, "gt")
             for i in range(10)
         ]
-        
+
         model = Model(
             line_items=sample_model_with_constraints._line_item_definitions,
             years=sample_model_with_constraints.years,
             categories=sample_model_with_constraints._category_definitions,
             constraints=constraints
         )
-        
+
         # Test that model still functions normally
         assert len(model.constraints) == 10
         assert model.value("revenue", 2023) == 100000
         assert model.value("expenses", 2024) == 60000
-        
+
         # Test that all constraints are there
         constraint_names = [c.name for c in model.constraints]
         for i in range(10):

@@ -1,6 +1,8 @@
-from pyproforma import LineItem
 import pytest
+
+from pyproforma import LineItem
 from pyproforma.models.formula import calculate_formula
+
 
 class DummyLineItemSet:
     def __getitem__(self, key):
@@ -12,7 +14,7 @@ class DummyLineItemSet:
             ('b', 2024): 5,
             ('c', 2024): 2,
         }.get((var_name, year), 1)
-    
+
 sample_value_matrix = {
     2024: {'a': 10, 'b': 5, 'c': 2},
     2023: {'a': 8, 'b': 4, 'c': 1},
@@ -52,7 +54,7 @@ def test_lineitem_formula_from_dict():
     assert f.name == "test3"
     assert f.formula == "a * b"
     assert f.label == "test3"
-    
+
 
 def test_lineitem_formula_calc_simple_addition():
     # Test that LineItem with formula can calculate values through get_value
@@ -126,10 +128,10 @@ def test__calculate_formula_with_invalid_formulas():
     with pytest.raises(SyntaxError):
         calculate_formula('a +', values_matrix, 2024)
     with pytest.raises(SyntaxError):
-        calculate_formula('a + b -', values_matrix, 2024)  
+        calculate_formula('a + b -', values_matrix, 2024)
     # year offset out of range
     with pytest.raises(ValueError):
-        calculate_formula('a[-2] + b', values_matrix, 2024)  
+        calculate_formula('a[-2] + b', values_matrix, 2024)
     with pytest.raises(ValueError) as excinfo:
         calculate_formula('a + c', values_matrix, 2024)  # c is not defined, should raise KeyError
     assert "'c' not found" in str(excinfo.value)
@@ -149,6 +151,6 @@ def test__calculate_formula_with_invalid_formulas():
     result = calculate_formula('(a + b) * 2', values_matrix, 2024)
     assert result == (10 + 5) * 2  # should respect parentheses
     # Nested parentheses
-    result = calculate_formula('((a + b) * 2) + a', values_matrix, 2024)        
+    result = calculate_formula('((a + b) * 2) + a', values_matrix, 2024)
     assert result == ((10 + 5) * 2) + 10  # should respect nested parentheses
 
