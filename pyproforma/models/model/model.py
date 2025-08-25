@@ -190,7 +190,8 @@ class Model(SerializationMixin):
                 LineItemResults object for string keys
 
         Raises:
-            KeyError: If key format is invalid, item name not found, or year not in model
+            KeyError: If key format is invalid, item name not found,
+                or year not in model
 
         Examples:
             >>> model["revenue", 2023]  # Returns float value: 1000.0
@@ -209,13 +210,15 @@ class Model(SerializationMixin):
         """
         Retrieve a specific value from the model for a given item name and year.
 
-        This is the primary method for accessing calculated values in the model. It returns
-        the value for any defined name (line item, category total, or line item generator output)
-        for a specific year in the model.
+        This is the primary method for accessing calculated values in the model.
+        It returns the value for any defined name (line item, category total,
+        or line item generator output) for a specific year in the model.
 
         Args:
-            name (str): The name of the item to retrieve (must be a defined name in the model)
-            year (int): The year to retrieve the value for (must be within the model's time horizon)
+            name (str): The name of the item to retrieve
+                (must be a defined name in the model)
+            year (int): The year to retrieve the value for
+                (must be within the model's time horizon)
 
         Returns:
             float: The calculated value for the specified item and year
