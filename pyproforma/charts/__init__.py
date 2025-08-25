@@ -1,1 +1,1 @@
-from .charts import Charts
+from .charts import Charts as Charts

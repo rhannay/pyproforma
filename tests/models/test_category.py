@@ -1,44 +1,42 @@
 import pytest
+
 from pyproforma.models.category import Category
 
 
 class TestCategory:
-
-    @pytest.mark.parametrize("name", [
-        "ValidName",
-        "valid_name",
-        "valid-name",
-        "A",
-        "a_b-c",
-        "a1"
-    ])
+    @pytest.mark.parametrize(
+        "name", ["ValidName", "valid_name", "valid-name", "A", "a_b-c", "a1"]
+    )
     def test_item_type_validate_name_accepts_valid_names(self, name):
         # Should not raise
         Category(name=name)
 
-    @pytest.mark.parametrize("name", [
-        "invalid name",    # contains space
-        "invalid$name",    # contains special character $
-        "invalid.name",    # contains dot
-        "invalid@name",    # contains @
-        "invalid/name",    # contains /
-        "invalid,name",    # contains comma
-        "invalid*name",    # contains *
-        "invalid!name",    # contains !
-        "invalid#name",    # contains #
-        "invalid%name",    # contains %
-        "invalid^name",    # contains ^
-        "invalid&name",    # contains &
-        "invalid(name)",   # contains parentheses
-        "invalid+name",    # contains +
-        "invalid=name",    # contains =
-        "invalid~name",    # contains ~
-        "invalid`name",    # contains `
-        "invalid|name",    # contains |
-        "invalid\\name",   # contains backslash
-        "invalid'name",    # contains apostrophe
-        "invalid\"name",   # contains quote
-    ])
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "invalid name",  # contains space
+            "invalid$name",  # contains special character $
+            "invalid.name",  # contains dot
+            "invalid@name",  # contains @
+            "invalid/name",  # contains /
+            "invalid,name",  # contains comma
+            "invalid*name",  # contains *
+            "invalid!name",  # contains !
+            "invalid#name",  # contains #
+            "invalid%name",  # contains %
+            "invalid^name",  # contains ^
+            "invalid&name",  # contains &
+            "invalid(name)",  # contains parentheses
+            "invalid+name",  # contains +
+            "invalid=name",  # contains =
+            "invalid~name",  # contains ~
+            "invalid`name",  # contains `
+            "invalid|name",  # contains |
+            "invalid\\name",  # contains backslash
+            "invalid'name",  # contains apostrophe
+            'invalid"name',  # contains quote
+        ],
+    )
     def test_item_type_validate_name_rejects_invalid_names(self, name):
         with pytest.raises(ValueError) as excinfo:
             Category(name=name)
@@ -80,10 +78,10 @@ class TestCategory:
 
     def test_include_total_with_custom_labels(self):
         category = Category(
-            name="revenue", 
-            label="Operating Revenue", 
+            name="revenue",
+            label="Operating Revenue",
             total_label="Total Operating Revenue",
-            include_total=True
+            include_total=True,
         )
         assert category.include_total is True
         assert category.label == "Operating Revenue"
@@ -95,7 +93,7 @@ class TestCategory:
             name="expense",
             label="Operating Expenses",
             total_label="This should be ignored",
-            include_total=False
+            include_total=False,
         )
         assert category.include_total is False
         assert category.label == "Operating Expenses"
@@ -104,12 +102,12 @@ class TestCategory:
 
     def test_category_str_representation_with_include_total_true(self):
         category = Category(name="revenue", label="Revenue")
-        expected = "Category(name='revenue', label='Revenue', total_label='Total Revenue', total_name='total_revenue', include_total=True)"
+        expected = "Category(name='revenue', label='Revenue', total_label='Total Revenue', total_name='total_revenue', include_total=True)"  # noqa: E501
         assert str(category) == expected
 
     def test_category_str_representation_with_include_total_false(self):
         category = Category(name="expense", include_total=False)
-        expected = "Category(name='expense', label='expense', total_label='None', total_name='None', include_total=False)"
+        expected = "Category(name='expense', label='expense', total_label='None', total_name='None', include_total=False)"  # noqa: E501
         assert str(category) == expected
 
     def test_category_repr_same_as_str(self):
@@ -125,13 +123,13 @@ class TestCategory:
             name="test_category",
             label="Test Category",
             total_label="Total Test Category",
-            include_total=True
+            include_total=True,
         )
-        
+
         # Convert to dict and back
         data = original.to_dict()
         reconstructed = Category.from_dict(data)
-        
+
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
         assert reconstructed.label == original.label
@@ -142,15 +140,13 @@ class TestCategory:
     def test_category_serialization_round_trip_no_total(self):
         """Test serialization round trip for Category with include_total=False."""
         original = Category(
-            name="no_total_category",
-            label="No Total Category",
-            include_total=False
+            name="no_total_category", label="No Total Category", include_total=False
         )
-        
+
         # Convert to dict and back
         data = original.to_dict()
         reconstructed = Category.from_dict(data)
-        
+
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
         assert reconstructed.label == original.label
