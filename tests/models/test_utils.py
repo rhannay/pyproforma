@@ -19,7 +19,7 @@ class TestCheckName:
             ("_leading_underscore", True),
             ("trailing_underscore_", True),
             ("name!", False),
-        ]
+        ],
     )
     def test_check_name(self, name, expected):
         assert check_name(name) == expected
@@ -34,9 +34,7 @@ class TestCheckInterimValuesByYear:
 
     def test_single_year(self):
         """Dictionary with a single year should be valid."""
-        values = {
-            2023: {"revenue": 1000, "expenses": 800, "profit": 200}
-        }
+        values = {2023: {"revenue": 1000, "expenses": 800, "profit": 200}}
         result, error = check_interim_values_by_year(values)
         assert result is True
         assert error is None
@@ -46,7 +44,7 @@ class TestCheckInterimValuesByYear:
         values = {
             2023: {"revenue": 1000, "expenses": 800, "profit": 200},
             2024: {"revenue": 1100, "expenses": 850, "profit": 250},
-            2025: {"revenue": 1200, "expenses": 900, "profit": 300}
+            2025: {"revenue": 1200, "expenses": 900, "profit": 300},
         }
         result, error = check_interim_values_by_year(values)
         assert result is True
@@ -57,7 +55,7 @@ class TestCheckInterimValuesByYear:
         values = {
             2023: {"revenue": 1000, "expenses": 800, "profit": 200},
             2024: {"revenue": 1100, "expenses": 850, "profit": 250},
-            2025: {"revenue": 1200, "expenses": 900}  # Missing "profit"
+            2025: {"revenue": 1200, "expenses": 900},  # Missing "profit"
         }
         result, error = check_interim_values_by_year(values)
         assert result is True
@@ -67,7 +65,7 @@ class TestCheckInterimValuesByYear:
         """Dictionary with non-integer keys should be invalid."""
         values = {
             2023: {"revenue": 1000, "expenses": 800},
-            "2024": {"revenue": 1100, "expenses": 850}  # String key
+            "2024": {"revenue": 1100, "expenses": 850},  # String key
         }
         result, error = check_interim_values_by_year(values)
         assert result is False
@@ -77,7 +75,7 @@ class TestCheckInterimValuesByYear:
         """Dictionary with unordered years should be invalid."""
         values = {
             2024: {"revenue": 1100, "expenses": 850},
-            2023: {"revenue": 1000, "expenses": 800}  # Out of order
+            2023: {"revenue": 1000, "expenses": 800},  # Out of order
         }
         result, error = check_interim_values_by_year(values)
         assert result is False
@@ -87,7 +85,7 @@ class TestCheckInterimValuesByYear:
         """Dictionary with non-dict values should be invalid."""
         values = {
             2023: {"revenue": 1000, "expenses": 800},
-            2024: [1100, 850]  # List instead of dict
+            2024: [1100, 850],  # List instead of dict
         }
         result, error = check_interim_values_by_year(values)
         assert result is False
@@ -99,7 +97,7 @@ class TestCheckInterimValuesByYear:
         values = {
             2023: {"revenue": 1000, "expenses": 800, "profit": 200},
             2024: {"revenue": 1100, "profit": 250},  # Missing "expenses"
-            2025: {"revenue": 1200, "expenses": 900, "profit": 300}
+            2025: {"revenue": 1200, "expenses": 900, "profit": 300},
         }
         result, error = check_interim_values_by_year(values)
         assert result is False
@@ -112,7 +110,7 @@ class TestCheckInterimValuesByYear:
         values = {
             2023: {"revenue": 1000, "expenses": 800},
             2024: {"revenue": 1100, "expenses": 850},
-            2025: {"revenue": 1200, "expenses": 900, "new_metric": 50}  # Extra key
+            2025: {"revenue": 1200, "expenses": 900, "new_metric": 50},  # Extra key
         }
         result, error = check_interim_values_by_year(values)
         assert result is False

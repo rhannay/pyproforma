@@ -12,20 +12,16 @@ class TestConstraintSerialization:
         """Create a sample model with constraints for testing."""
         line_items = [
             LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000, 2024: 120000}
+                name="revenue", category="income", values={2023: 100000, 2024: 120000}
             ),
             LineItem(
-                name="expenses",
-                category="costs",
-                values={2023: 50000, 2024: 60000}
-            )
+                name="expenses", category="costs", values={2023: 50000, 2024: 60000}
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income"),
-            Category(name="costs", label="Costs")
+            Category(name="costs", label="Costs"),
         ]
 
         constraints = [
@@ -33,45 +29,47 @@ class TestConstraintSerialization:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=80000.0,
-                operator="gt"
+                operator="gt",
             ),
             Constraint(
                 name="max_expenses",
                 line_item_name="expenses",
                 target=70000.0,
-                operator="le"
-            )
+                operator="le",
+            ),
         ]
 
         return Model(
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            constraints=constraints
+            constraints=constraints,
         )
 
     def test_to_dict_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_dict includes constraints in the output."""
         model_dict = sample_model_with_constraints.to_dict()
 
-        assert 'constraints' in model_dict
-        assert len(model_dict['constraints']) == 2
+        assert "constraints" in model_dict
+        assert len(model_dict["constraints"]) == 2
 
         # Check first constraint
-        constraint1 = model_dict['constraints'][0]
-        assert constraint1['name'] == 'min_revenue'
-        assert constraint1['line_item_name'] == 'revenue'
-        assert constraint1['target'] == 80000.0
-        assert constraint1['operator'] == 'gt'
+        constraint1 = model_dict["constraints"][0]
+        assert constraint1["name"] == "min_revenue"
+        assert constraint1["line_item_name"] == "revenue"
+        assert constraint1["target"] == 80000.0
+        assert constraint1["operator"] == "gt"
 
         # Check second constraint
-        constraint2 = model_dict['constraints'][1]
-        assert constraint2['name'] == 'max_expenses'
-        assert constraint2['line_item_name'] == 'expenses'
-        assert constraint2['target'] == 70000.0
-        assert constraint2['operator'] == 'le'
+        constraint2 = model_dict["constraints"][1]
+        assert constraint2["name"] == "max_expenses"
+        assert constraint2["line_item_name"] == "expenses"
+        assert constraint2["target"] == 70000.0
+        assert constraint2["operator"] == "le"
 
-    def test_from_dict_reconstructs_constraints(self, sample_model_with_constraints: Model):
+    def test_from_dict_reconstructs_constraints(
+        self, sample_model_with_constraints: Model
+    ):
         """Test that from_dict properly reconstructs constraints."""
         model_dict = sample_model_with_constraints.to_dict()
         reconstructed_model = Model.from_dict(model_dict)
@@ -80,35 +78,37 @@ class TestConstraintSerialization:
 
         # Check first constraint
         constraint1 = reconstructed_model.constraints[0]
-        assert constraint1.name == 'min_revenue'
-        assert constraint1.line_item_name == 'revenue'
+        assert constraint1.name == "min_revenue"
+        assert constraint1.line_item_name == "revenue"
         assert constraint1.target == 80000.0
-        assert constraint1.operator == 'gt'
+        assert constraint1.operator == "gt"
 
         # Check second constraint
         constraint2 = reconstructed_model.constraints[1]
-        assert constraint2.name == 'max_expenses'
-        assert constraint2.line_item_name == 'expenses'
+        assert constraint2.name == "max_expenses"
+        assert constraint2.line_item_name == "expenses"
         assert constraint2.target == 70000.0
-        assert constraint2.operator == 'le'
+        assert constraint2.operator == "le"
 
     def test_to_yaml_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_yaml includes constraints in the output."""
         yaml_str = sample_model_with_constraints.to_yaml()
 
-        assert 'constraints:' in yaml_str
-        assert 'min_revenue' in yaml_str
-        assert 'max_expenses' in yaml_str
-        assert 'line_item_name: revenue' in yaml_str
-        assert 'target: 80000.0' in yaml_str
-        assert 'operator: gt' in yaml_str
+        assert "constraints:" in yaml_str
+        assert "min_revenue" in yaml_str
+        assert "max_expenses" in yaml_str
+        assert "line_item_name: revenue" in yaml_str
+        assert "target: 80000.0" in yaml_str
+        assert "operator: gt" in yaml_str
 
-    def test_to_yaml_returns_none_when_file_path_provided(self, sample_model_with_constraints: Model):
+    def test_to_yaml_returns_none_when_file_path_provided(
+        self, sample_model_with_constraints: Model
+    ):
         """Test that to_yaml returns None when file_path is provided."""
         import os
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             temp_path = f.name
 
         try:
@@ -117,20 +117,22 @@ class TestConstraintSerialization:
             assert result is None
 
             # Test that the file was still written correctly
-            with open(temp_path, 'r') as f:
+            with open(temp_path, "r") as f:
                 file_content = f.read()
 
             assert len(file_content) > 0
-            assert 'constraints:' in file_content
-            assert 'min_revenue' in file_content
-            assert 'max_expenses' in file_content
+            assert "constraints:" in file_content
+            assert "min_revenue" in file_content
+            assert "max_expenses" in file_content
 
         finally:
             # Clean up
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    def test_from_yaml_reconstructs_constraints(self, sample_model_with_constraints: Model):
+    def test_from_yaml_reconstructs_constraints(
+        self, sample_model_with_constraints: Model
+    ):
         """Test that from_yaml properly reconstructs constraints."""
         yaml_str = sample_model_with_constraints.to_yaml()
         reconstructed_model = Model.from_yaml(yaml_str=yaml_str)
@@ -139,8 +141,8 @@ class TestConstraintSerialization:
 
         # Check that constraints are properly reconstructed
         constraint_names = [c.name for c in reconstructed_model.constraints]
-        assert 'min_revenue' in constraint_names
-        assert 'max_expenses' in constraint_names
+        assert "min_revenue" in constraint_names
+        assert "max_expenses" in constraint_names
 
     def test_to_json_includes_constraints(self, sample_model_with_constraints: Model):
         """Test that to_json includes constraints in the output."""
@@ -153,7 +155,9 @@ class TestConstraintSerialization:
         assert '"target": 80000.0' in json_str
         assert '"operator": "gt"' in json_str
 
-    def test_from_json_reconstructs_constraints(self, sample_model_with_constraints: Model):
+    def test_from_json_reconstructs_constraints(
+        self, sample_model_with_constraints: Model
+    ):
         """Test that from_json properly reconstructs constraints."""
         json_str = sample_model_with_constraints.to_json()
         reconstructed_model = Model.from_json(json_str=json_str)
@@ -162,47 +166,31 @@ class TestConstraintSerialization:
 
         # Check that constraints are properly reconstructed
         constraint_names = [c.name for c in reconstructed_model.constraints]
-        assert 'min_revenue' in constraint_names
-        assert 'max_expenses' in constraint_names
+        assert "min_revenue" in constraint_names
+        assert "max_expenses" in constraint_names
 
     def test_to_dict_with_no_constraints(self):
         """Test that to_dict works correctly when there are no constraints."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2023]
-        )
+        model = Model(line_items=line_items, years=[2023])
 
         model_dict = model.to_dict()
 
-        assert 'constraints' in model_dict
-        assert model_dict['constraints'] == []
+        assert "constraints" in model_dict
+        assert model_dict["constraints"] == []
 
     def test_from_dict_with_no_constraints(self):
         """Test that from_dict works correctly when there are no constraints in the dict."""
         model_dict = {
-            'years': [2023],
-            'line_items': [
-                {
-                    'name': 'revenue',
-                    'category': 'income',
-                    'values': {2023: 100000}
-                }
+            "years": [2023],
+            "line_items": [
+                {"name": "revenue", "category": "income", "values": {2023: 100000}}
             ],
-            'categories': [
-                {
-                    'name': 'income',
-                    'label': 'Income'
-                }
-            ],
-            'generators': []
+            "categories": [{"name": "income", "label": "Income"}],
+            "generators": [],
             # Note: no 'constraints' key
         }
 
@@ -218,11 +206,7 @@ class TestConstraintCopy:
     def test_copy_includes_constraints(self):
         """Test that Model.copy() includes constraints in the copied model."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
         constraints = [
@@ -230,14 +214,12 @@ class TestConstraintCopy:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=50000.0,
-                operator="gt"
+                operator="gt",
             )
         ]
 
         original_model = Model(
-            line_items=line_items,
-            years=[2023],
-            constraints=constraints
+            line_items=line_items, years=[2023], constraints=constraints
         )
 
         copied_model = original_model.copy()
@@ -251,11 +233,7 @@ class TestConstraintCopy:
     def test_copy_constraints_are_independent(self):
         """Test that copied constraints are independent from original."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
         constraints = [
@@ -263,14 +241,12 @@ class TestConstraintCopy:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=50000.0,
-                operator="gt"
+                operator="gt",
             )
         ]
 
         original_model = Model(
-            line_items=line_items,
-            years=[2023],
-            constraints=constraints
+            line_items=line_items, years=[2023], constraints=constraints
         )
 
         copied_model = original_model.copy()
@@ -281,22 +257,17 @@ class TestConstraintCopy:
 
         # But they should have the same values
         assert original_model.constraints[0].name == copied_model.constraints[0].name
-        assert original_model.constraints[0].target == copied_model.constraints[0].target
+        assert (
+            original_model.constraints[0].target == copied_model.constraints[0].target
+        )
 
     def test_copy_with_no_constraints(self):
         """Test that Model.copy() works correctly when there are no constraints."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
-        original_model = Model(
-            line_items=line_items,
-            years=[2023]
-        )
+        original_model = Model(line_items=line_items, years=[2023])
 
         copied_model = original_model.copy()
 
@@ -310,11 +281,7 @@ class TestConstraintValidation:
     def test_recalculate_validates_constraints(self):
         """Test that _recalculate method validates constraints."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
         constraints = [
@@ -322,22 +289,18 @@ class TestConstraintValidation:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=50000.0,
-                operator="gt"
+                operator="gt",
             )
         ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2023],
-            constraints=constraints
-        )
+        model = Model(line_items=line_items, years=[2023], constraints=constraints)
 
         # Add a duplicate constraint manually to test validation
         duplicate_constraint = Constraint(
             name="min_revenue",  # Same name
             line_item_name="revenue",
             target=80000.0,
-            operator="lt"
+            operator="lt",
         )
 
         model.constraints.append(duplicate_constraint)
@@ -349,18 +312,10 @@ class TestConstraintValidation:
     def test_constraint_validation_with_empty_list(self):
         """Test that constraint validation works with empty constraint list."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2023],
-            constraints=[]
-        )
+        model = Model(line_items=line_items, years=[2023], constraints=[])
 
         # This should not raise any errors
         model._recalculate()
@@ -375,15 +330,11 @@ class TestConstraintIntegration:
         """Test that model functions normally when constraints are present."""
         line_items = [
             LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000, 2024: 120000}
+                name="revenue", category="income", values={2023: 100000, 2024: 120000}
             ),
             LineItem(
-                name="expenses",
-                category="costs",
-                values={2023: 50000, 2024: 60000}
-            )
+                name="expenses", category="costs", values={2023: 50000, 2024: 60000}
+            ),
         ]
 
         constraints = [
@@ -391,20 +342,18 @@ class TestConstraintIntegration:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=80000.0,
-                operator="gt"
+                operator="gt",
             ),
             Constraint(
                 name="max_expenses",
                 line_item_name="expenses",
                 target=70000.0,
-                operator="le"
-            )
+                operator="le",
+            ),
         ]
 
         model = Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            constraints=constraints
+            line_items=line_items, years=[2023, 2024], constraints=constraints
         )
 
         # Test that normal model operations work
@@ -425,11 +374,7 @@ class TestConstraintIntegration:
     def test_constraints_do_not_interfere_with_defined_names(self):
         """Test that constraints don't interfere with the defined names namespace."""
         line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000}
-            )
+            LineItem(name="revenue", category="income", values={2023: 100000})
         ]
 
         constraints = [
@@ -437,21 +382,19 @@ class TestConstraintIntegration:
                 name="revenue_constraint",
                 line_item_name="revenue",
                 target=50000.0,
-                operator="gt"
+                operator="gt",
             )
         ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2023],
-            constraints=constraints
-        )
+        model = Model(line_items=line_items, years=[2023], constraints=constraints)
 
         # Check that defined names doesn't include constraint names
-        defined_names = [item['name'] for item in model.line_item_metadata]
+        defined_names = [item["name"] for item in model.line_item_metadata]
         assert "revenue" in defined_names
         assert "total_income" in defined_names
-        assert "revenue_constraint" not in defined_names  # Constraints shouldn't be in defined names
+        assert (
+            "revenue_constraint" not in defined_names
+        )  # Constraints shouldn't be in defined names
 
         # Check that constraints are still accessible
         assert len(model.constraints) == 1

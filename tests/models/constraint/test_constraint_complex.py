@@ -10,29 +10,22 @@ class TestConstraintsWithComplexModels:
         """Test that constraints work with models that include line item generators."""
         line_items = [
             LineItem(
-                name="revenue",
-                category="income",
-                values={2023: 100000, 2024: 120000}
+                name="revenue", category="income", values={2023: 100000, 2024: 120000}
             ),
             LineItem(
                 name="debt_service",
                 category="expenses",
-                formula="debt.principal + debt.interest"
-            )
+                formula="debt.principal + debt.interest",
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income"),
-            Category(name="expenses", label="Expenses")
+            Category(name="expenses", label="Expenses"),
         ]
 
         line_item_generators = [
-            Debt(
-                name="debt",
-                par_amount={2023: 50000},
-                interest_rate=0.05,
-                term=10
-            )
+            Debt(name="debt", par_amount={2023: 50000}, interest_rate=0.05, term=10)
         ]
 
         constraints = [
@@ -40,14 +33,14 @@ class TestConstraintsWithComplexModels:
                 name="min_revenue",
                 line_item_name="revenue",
                 target=80000.0,
-                operator="gt"
+                operator="gt",
             ),
             Constraint(
                 name="max_debt_service",
                 line_item_name="debt_service",
                 target=10000.0,
-                operator="lt"
-            )
+                operator="lt",
+            ),
         ]
 
         model = Model(
@@ -55,7 +48,7 @@ class TestConstraintsWithComplexModels:
             years=[2023, 2024],
             categories=categories,
             multi_line_items=line_item_generators,
-            constraints=constraints
+            constraints=constraints,
         )
 
         # Test that model functions correctly
@@ -79,23 +72,21 @@ class TestConstraintsWithComplexModels:
             LineItem(
                 name="base_revenue",
                 category="income",
-                values={2023: 100000, 2024: 110000}  # Added 2024 value
+                values={2023: 100000, 2024: 110000},  # Added 2024 value
             ),
             LineItem(
                 name="growth_rate",
                 category="assumptions",
-                values={2023: 0.05, 2024: 0.07}
+                values={2023: 0.05, 2024: 0.07},
             ),
             LineItem(
                 name="projected_revenue",
                 category="income",
-                formula="base_revenue * (1 + growth_rate)"
+                formula="base_revenue * (1 + growth_rate)",
             ),
             LineItem(
-                name="net_income",
-                category="calculated",
-                formula="total_income * 0.8"
-            )
+                name="net_income", category="calculated", formula="total_income * 0.8"
+            ),
         ]
 
         constraints = [
@@ -103,20 +94,18 @@ class TestConstraintsWithComplexModels:
                 name="min_net_income",
                 line_item_name="net_income",
                 target=80000.0,
-                operator="gt"
+                operator="gt",
             ),
             Constraint(
                 name="reasonable_growth",
                 line_item_name="growth_rate",
                 target=0.10,
-                operator="lt"
-            )
+                operator="lt",
+            ),
         ]
 
         model = Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            constraints=constraints
+            line_items=line_items, years=[2023, 2024], constraints=constraints
         )
 
         # Test that model functions correctly
@@ -141,27 +130,18 @@ class TestConstraintsWithComplexModels:
                 name="revenue",
                 category="income",
                 values={2023: 100000},
-                formula="revenue[-1] * 1.05"
+                formula="revenue[-1] * 1.05",
             ),
-            LineItem(
-                name="expenses",
-                category="costs",
-                formula="revenue * 0.6"
-            )
+            LineItem(name="expenses", category="costs", formula="revenue * 0.6"),
         ]
 
         categories = [
             Category(name="income", label="Income", include_total=True),
-            Category(name="costs", label="Costs", include_total=True)
+            Category(name="costs", label="Costs", include_total=True),
         ]
 
         line_item_generators = [
-            Debt(
-                name="loan",
-                par_amount={2023: 25000},
-                interest_rate=0.04,
-                term=5
-            )
+            Debt(name="loan", par_amount={2023: 25000}, interest_rate=0.04, term=5)
         ]
 
         constraints = [
@@ -169,14 +149,14 @@ class TestConstraintsWithComplexModels:
                 name="revenue_growth",
                 line_item_name="revenue",
                 target=95000.0,
-                operator="gt"
+                operator="gt",
             ),
             Constraint(
                 name="expense_ratio",
                 line_item_name="expenses",
                 target=70000.0,
-                operator="le"
-            )
+                operator="le",
+            ),
         ]
 
         original_model = Model(
@@ -184,7 +164,7 @@ class TestConstraintsWithComplexModels:
             years=[2023, 2024],
             categories=categories,
             multi_line_items=line_item_generators,
-            constraints=constraints
+            constraints=constraints,
         )
 
         # Test serialization and deserialization
@@ -195,8 +175,12 @@ class TestConstraintsWithComplexModels:
         assert len(reconstructed_model.constraints) == 2
         assert len(reconstructed_model.multi_line_items) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
-        assert len(reconstructed_model._category_definitions) == 2  # Multi-line items no longer create category definitions
-        assert len(reconstructed_model.category_metadata) == 4  # 2 user categories + 1 multi-line item + 1 category_totals
+        assert (
+            len(reconstructed_model._category_definitions) == 2
+        )  # Multi-line items no longer create category definitions
+        assert (
+            len(reconstructed_model.category_metadata) == 4
+        )  # 2 user categories + 1 multi-line item + 1 category_totals
 
         # Verify constraint details
         constraint_names = [c.name for c in reconstructed_model.constraints]
@@ -210,16 +194,8 @@ class TestConstraintsWithComplexModels:
     def test_constraint_copy_with_complex_model(self):
         """Test that copying works correctly with complex models including constraints."""
         line_items = [
-            LineItem(
-                name="item1",
-                category="cat1",
-                values={2023: 1000}
-            ),
-            LineItem(
-                name="item2",
-                category="cat2",
-                values={2023: 2000}
-            )
+            LineItem(name="item1", category="cat1", values={2023: 1000}),
+            LineItem(name="item2", category="cat2", values={2023: 2000}),
         ]
 
         constraints = [
@@ -227,14 +203,12 @@ class TestConstraintsWithComplexModels:
                 name="copy_test",
                 line_item_name="item1",
                 target={2023: 1000, 2024: 1100},
-                operator="eq"
+                operator="eq",
             )
         ]
 
         model = Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            constraints=constraints
+            line_items=line_items, years=[2023, 2024], constraints=constraints
         )
 
         copied_model = model.copy()

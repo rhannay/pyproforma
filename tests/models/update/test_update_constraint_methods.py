@@ -12,24 +12,24 @@ class TestUpdateConstraintMethods:
         revenue = LineItem(
             name="revenue",
             category="income",
-            values={2023: 100000, 2024: 120000, 2025: 140000}
+            values={2023: 100000, 2024: 120000, 2025: 140000},
         )
 
         expenses = LineItem(
             name="expenses",
             category="costs",
-            values={2023: 60000, 2024: 65000, 2025: 70000}
+            values={2023: 60000, 2024: 65000, 2025: 70000},
         )
 
         categories = [
             Category(name="income", label="Income", include_total=True),
-            Category(name="costs", label="Costs", include_total=True)
+            Category(name="costs", label="Costs", include_total=True),
         ]
 
         return Model(
             line_items=[revenue, expenses],
             years=[2023, 2024, 2025],
-            categories=categories
+            categories=categories,
         )
 
     @pytest.fixture
@@ -40,14 +40,16 @@ class TestUpdateConstraintMethods:
             line_item_name="revenue",
             target=50000.0,
             operator="ge",
-            label="Minimum Revenue"
+            label="Minimum Revenue",
         )
 
     # ============================================================================
     # ADD CONSTRAINT TESTS
     # ============================================================================
 
-    def test_add_constraint_with_constraint_object(self, sample_model: Model, sample_constraint: Constraint):
+    def test_add_constraint_with_constraint_object(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test adding a constraint using a Constraint object."""
         initial_count = len(sample_model.constraints)
 
@@ -69,7 +71,7 @@ class TestUpdateConstraintMethods:
             target=80000.0,
             operator="le",
             tolerance=100.0,
-            label="Maximum Expenses"
+            label="Maximum Expenses",
         )
 
         assert len(sample_model.constraints) == initial_count + 1
@@ -87,7 +89,7 @@ class TestUpdateConstraintMethods:
             name="test_constraint",
             line_item_name="revenue",
             target=1000.0,
-            operator="eq"
+            operator="eq",
         )
 
         constraint = sample_model.constraints[-1]
@@ -97,10 +99,16 @@ class TestUpdateConstraintMethods:
 
     def test_add_constraint_missing_parameters_raises_error(self, sample_model: Model):
         """Test that missing required parameters raise ValueError."""
-        with pytest.raises(ValueError, match="name, line_item_name, target, and operator are required"):
-            sample_model.update.add_constraint(name="test")  # Missing other required params
+        with pytest.raises(
+            ValueError, match="name, line_item_name, target, and operator are required"
+        ):
+            sample_model.update.add_constraint(
+                name="test"
+            )  # Missing other required params
 
-    def test_add_constraint_duplicate_name_raises_error(self, sample_model: Model, sample_constraint: Constraint):
+    def test_add_constraint_duplicate_name_raises_error(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test that adding a constraint with duplicate name raises error."""
         sample_model.update.add_constraint(sample_constraint)
 
@@ -114,14 +122,16 @@ class TestUpdateConstraintMethods:
                 name="invalid_constraint",
                 line_item_name="nonexistent_item",
                 target=1000.0,
-                operator="eq"
+                operator="eq",
             )
 
     # ============================================================================
     # UPDATE CONSTRAINT TESTS
     # ============================================================================
 
-    def test_update_constraint_with_constraint_object(self, sample_model: Model, sample_constraint: Constraint):
+    def test_update_constraint_with_constraint_object(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test updating a constraint using a complete Constraint object."""
         sample_model.update.add_constraint(sample_constraint)
 
@@ -129,7 +139,7 @@ class TestUpdateConstraintMethods:
             name="updated_revenue",
             line_item_name="revenue",
             target=75000.0,
-            operator="gt"
+            operator="gt",
         )
 
         sample_model.update.update_constraint("min_revenue", constraint=new_constraint)
@@ -139,15 +149,14 @@ class TestUpdateConstraintMethods:
         assert updated.target == 75000.0
         assert updated.operator == "gt"
 
-    def test_update_constraint_with_parameters(self, sample_model: Model, sample_constraint: Constraint):
+    def test_update_constraint_with_parameters(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test updating specific parameters of a constraint."""
         sample_model.update.add_constraint(sample_constraint)
 
         sample_model.update.update_constraint(
-            "min_revenue",
-            target=60000.0,
-            operator="gt",
-            tolerance=500.0
+            "min_revenue", target=60000.0, operator="gt", tolerance=500.0
         )
 
         updated = sample_model.constraints[0]
@@ -157,14 +166,13 @@ class TestUpdateConstraintMethods:
         assert updated.operator == "gt"  # Should be updated
         assert updated.tolerance == 500.0  # Should be updated
 
-    def test_update_constraint_rename(self, sample_model: Model, sample_constraint: Constraint):
+    def test_update_constraint_rename(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test renaming a constraint."""
         sample_model.update.add_constraint(sample_constraint)
 
-        sample_model.update.update_constraint(
-            "min_revenue",
-            new_name="revenue_minimum"
-        )
+        sample_model.update.update_constraint("min_revenue", new_name="revenue_minimum")
 
         updated = sample_model.constraints[0]
         assert updated.name == "revenue_minimum"
@@ -173,47 +181,38 @@ class TestUpdateConstraintMethods:
     def test_update_constraint_not_found_raises_error(self, sample_model: Model):
         """Test that updating non-existent constraint raises KeyError."""
         with pytest.raises(KeyError, match="Constraint 'nonexistent' not found"):
-            sample_model.update.update_constraint(
-                "nonexistent",
-                target=1000.0
-            )
+            sample_model.update.update_constraint("nonexistent", target=1000.0)
 
     def test_update_constraint_name_conflict_raises_error(self, sample_model: Model):
         """Test that renaming constraint to existing name raises error."""
         sample_model.update.add_constraint(
-            name="constraint1",
-            line_item_name="revenue",
-            target=1000.0,
-            operator="eq"
+            name="constraint1", line_item_name="revenue", target=1000.0, operator="eq"
         )
         sample_model.update.add_constraint(
-            name="constraint2",
-            line_item_name="revenue",
-            target=2000.0,
-            operator="eq"
+            name="constraint2", line_item_name="revenue", target=2000.0, operator="eq"
         )
 
         with pytest.raises(ValueError, match="already exists"):
-            sample_model.update.update_constraint(
-                "constraint1",
-                new_name="constraint2"
-            )
+            sample_model.update.update_constraint("constraint1", new_name="constraint2")
 
-    def test_update_constraint_invalid_line_item_raises_error(self, sample_model: Model, sample_constraint: Constraint):
+    def test_update_constraint_invalid_line_item_raises_error(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test that updating constraint with invalid line item raises error."""
         sample_model.update.add_constraint(sample_constraint)
 
         with pytest.raises(ValueError, match="Failed to update constraint"):
             sample_model.update.update_constraint(
-                "min_revenue",
-                line_item_name="nonexistent_item"
+                "min_revenue", line_item_name="nonexistent_item"
             )
 
     # ============================================================================
     # DELETE CONSTRAINT TESTS
     # ============================================================================
 
-    def test_delete_constraint_success(self, sample_model: Model, sample_constraint: Constraint):
+    def test_delete_constraint_success(
+        self, sample_model: Model, sample_constraint: Constraint
+    ):
         """Test successfully deleting a constraint."""
         sample_model.update.add_constraint(sample_constraint)
         initial_count = len(sample_model.constraints)
@@ -233,16 +232,10 @@ class TestUpdateConstraintMethods:
         """Test deleting multiple constraints."""
         # Add multiple constraints
         sample_model.update.add_constraint(
-            name="constraint1",
-            line_item_name="revenue",
-            target=1000.0,
-            operator="eq"
+            name="constraint1", line_item_name="revenue", target=1000.0, operator="eq"
         )
         sample_model.update.add_constraint(
-            name="constraint2",
-            line_item_name="expenses",
-            target=2000.0,
-            operator="eq"
+            name="constraint2", line_item_name="expenses", target=2000.0, operator="eq"
         )
 
         assert len(sample_model.constraints) == 2
@@ -270,7 +263,7 @@ class TestUpdateConstraintMethods:
             name="test_constraint",
             line_item_name="revenue",
             target=50000.0,
-            operator="ge"
+            operator="ge",
         )
 
         # Verify model integrity is preserved
@@ -279,10 +272,7 @@ class TestUpdateConstraintMethods:
         assert sample_model._value_matrix == initial_value_matrix
 
         # Update constraint
-        sample_model.update.update_constraint(
-            "test_constraint",
-            target=60000.0
-        )
+        sample_model.update.update_constraint("test_constraint", target=60000.0)
 
         # Verify model integrity is still preserved
         assert len(sample_model._line_item_definitions) == initial_line_items
@@ -298,14 +288,16 @@ class TestUpdateConstraintMethods:
         assert sample_model._value_matrix == initial_value_matrix
         assert len(sample_model.constraints) == 0
 
-    def test_constraint_methods_work_with_existing_constraints(self, sample_model: Model):
+    def test_constraint_methods_work_with_existing_constraints(
+        self, sample_model: Model
+    ):
         """Test that constraint methods work when model already has constraints."""
         # Add initial constraint directly
         initial_constraint = Constraint(
             name="initial_constraint",
             line_item_name="revenue",
             target=30000.0,
-            operator="gt"
+            operator="gt",
         )
         sample_model.constraints.append(initial_constraint)
         sample_model._recalculate()
@@ -315,16 +307,13 @@ class TestUpdateConstraintMethods:
             name="added_constraint",
             line_item_name="expenses",
             target=70000.0,
-            operator="le"
+            operator="le",
         )
 
         assert len(sample_model.constraints) == 2
 
         # Update existing constraint
-        sample_model.update.update_constraint(
-            "initial_constraint",
-            target=35000.0
-        )
+        sample_model.update.update_constraint("initial_constraint", target=35000.0)
 
         updated = sample_model.constraint_definition("initial_constraint")
         assert updated.target == 35000.0
@@ -342,7 +331,7 @@ class TestUpdateConstraintMethods:
             name="test_constraint",
             line_item_name="revenue",
             target=1000.0,
-            operator="eq"
+            operator="eq",
         )
 
         with pytest.raises(ValueError) as exc_info:
@@ -350,7 +339,7 @@ class TestUpdateConstraintMethods:
                 name="test_constraint",
                 line_item_name="revenue",
                 target=2000.0,
-                operator="eq"
+                operator="eq",
             )
         assert "already exists" in str(exc_info.value)
 

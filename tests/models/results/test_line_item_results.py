@@ -17,22 +17,22 @@ def basic_line_items():
             category="income",
             label="Revenue",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="no_decimals"
+            value_format="no_decimals",
         ),
         LineItem(
             name="expenses",
             category="costs",
             label="Expenses",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="no_decimals"
+            value_format="no_decimals",
         ),
         LineItem(
             name="profit",
             category="income",
             label="Profit",
             formula="revenue - expenses",
-            value_format="no_decimals"
-        )
+            value_format="no_decimals",
+        ),
     ]
 
 
@@ -41,7 +41,7 @@ def basic_categories():
     """Create basic categories for testing."""
     return [
         Category(name="income", label="Income"),
-        Category(name="costs", label="Costs")
+        Category(name="costs", label="Costs"),
     ]
 
 
@@ -51,7 +51,7 @@ def model_with_line_items(basic_line_items, basic_categories):
     return Model(
         line_items=basic_line_items,
         years=[2023, 2024, 2025],
-        categories=basic_categories
+        categories=basic_categories,
     )
 
 
@@ -111,7 +111,10 @@ class TestLineItemResultsStringRepresentation:
         """Test __repr__ method returns expected format."""
         repr_result = repr(line_item_results)
 
-        assert repr_result == "LineItemResults(item_name='revenue', source_type='line_item')"
+        assert (
+            repr_result
+            == "LineItemResults(item_name='revenue', source_type='line_item')"
+        )
 
     def test_summary_method(self, line_item_results):
         """Test summary method returns formatted line item information."""
@@ -174,15 +177,15 @@ class TestLineItemResultsValueMethods:
 
     def test_values_method_calls_model_value(self, line_item_results):
         """Test that values method calls model.value for each year."""
-        with patch.object(line_item_results.model, 'value') as mock_value:
+        with patch.object(line_item_results.model, "value") as mock_value:
             mock_value.side_effect = [100000, 120000, 140000]
 
-            values = line_item_results.values()
+            line_item_results.values()
 
             expected_calls = [
-                (('revenue', 2023),),
-                (('revenue', 2024),),
-                (('revenue', 2025),)
+                (("revenue", 2023),),
+                (("revenue", 2024),),
+                (("revenue", 2025),),
             ]
 
             assert mock_value.call_count == 3
@@ -191,7 +194,7 @@ class TestLineItemResultsValueMethods:
 
     def test_value_method_calls_model_value(self, line_item_results):
         """Test that value method calls model.value with correct parameters."""
-        with patch.object(line_item_results.model, 'value') as mock_value:
+        with patch.object(line_item_results.model, "value") as mock_value:
             mock_value.return_value = 100000
 
             result = line_item_results.value(2023)
@@ -228,7 +231,7 @@ class TestLineItemResultsDataFrameMethods:
 
     def test_to_series_uses_values_method(self, line_item_results):
         """Test that to_series method uses values method."""
-        with patch.object(line_item_results, 'values') as mock_values:
+        with patch.object(line_item_results, "values") as mock_values:
             mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
 
             series = line_item_results.to_series()
@@ -238,7 +241,7 @@ class TestLineItemResultsDataFrameMethods:
 
     def test_to_dataframe_uses_values_method(self, line_item_results):
         """Test that to_dataframe method uses values method."""
-        with patch.object(line_item_results, 'values') as mock_values:
+        with patch.object(line_item_results, "values") as mock_values:
             mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
 
             df = line_item_results.to_dataframe()
@@ -257,20 +260,24 @@ class TestLineItemResultsTableMethod:
 
     def test_table_method_returns_table(self, line_item_results):
         """Test table method returns a Table object."""
-        with patch('pyproforma.tables.tables.Tables.line_item') as mock_line_item:
+        with patch("pyproforma.tables.tables.Tables.line_item") as mock_line_item:
             mock_table = Mock()
             mock_line_item.return_value = mock_table
 
             result = line_item_results.table()
 
-            mock_line_item.assert_called_once_with("revenue", include_name=False, hardcoded_color=None)
+            mock_line_item.assert_called_once_with(
+                "revenue", include_name=False, hardcoded_color=None
+            )
             assert result is mock_table
 
     def test_table_method_passes_item_name(self, line_item_results):
         """Test table method passes correct item name."""
-        with patch('pyproforma.tables.tables.Tables.line_item') as mock_line_item:
+        with patch("pyproforma.tables.tables.Tables.line_item") as mock_line_item:
             line_item_results.table()
-            mock_line_item.assert_called_once_with("revenue", include_name=False, hardcoded_color=None)
+            mock_line_item.assert_called_once_with(
+                "revenue", include_name=False, hardcoded_color=None
+            )
 
 
 class TestLineItemResultsChartMethods:
@@ -283,7 +290,7 @@ class TestLineItemResultsChartMethods:
 
     def test_chart_method_default_parameters(self, line_item_results):
         """Test chart method with default parameters."""
-        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
+        with patch("pyproforma.charts.charts.Charts.line_item") as mock_line_item:
             mock_fig = Mock()
             mock_line_item.return_value = mock_fig
 
@@ -293,78 +300,75 @@ class TestLineItemResultsChartMethods:
                 "revenue",
                 width=800,
                 height=600,
-                template='plotly_white',
-                chart_type='line'
+                template="plotly_white",
+                chart_type="line",
             )
             assert result is mock_fig
 
     def test_chart_method_custom_parameters(self, line_item_results):
         """Test chart method with custom parameters."""
-        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
+        with patch("pyproforma.charts.charts.Charts.line_item") as mock_line_item:
             mock_fig = Mock()
             mock_line_item.return_value = mock_fig
 
             result = line_item_results.chart(
-                width=1000,
-                height=800,
-                template='plotly_dark',
-                chart_type='bar'
+                width=1000, height=800, template="plotly_dark", chart_type="bar"
             )
 
             mock_line_item.assert_called_once_with(
                 "revenue",
                 width=1000,
                 height=800,
-                template='plotly_dark',
-                chart_type='bar'
+                template="plotly_dark",
+                chart_type="bar",
             )
             assert result is mock_fig
 
     def test_chart_method_passes_item_name(self, line_item_results):
         """Test chart method passes correct item name."""
-        with patch('pyproforma.charts.charts.Charts.line_item') as mock_line_item:
+        with patch("pyproforma.charts.charts.Charts.line_item") as mock_line_item:
             line_item_results.chart()
             mock_line_item.assert_called_once_with(
                 "revenue",
                 width=800,
                 height=600,
-                template='plotly_white',
-                chart_type='line'
+                template="plotly_white",
+                chart_type="line",
             )
 
-    def test_cumulative_percent_change_chart_method_default_parameters(self, line_item_results):
+    def test_cumulative_percent_change_chart_method_default_parameters(
+        self, line_item_results
+    ):
         """Test cumulative_percent_change_chart method with default parameters."""
-        with patch('pyproforma.charts.charts.Charts.cumulative_percent_change') as mock_cumulative:
+        with patch(
+            "pyproforma.charts.charts.Charts.cumulative_percent_change"
+        ) as mock_cumulative:
             mock_fig = Mock()
             mock_cumulative.return_value = mock_fig
 
             result = line_item_results.cumulative_percent_change_chart()
 
             mock_cumulative.assert_called_once_with(
-                "revenue",
-                width=800,
-                height=600,
-                template='plotly_white'
+                "revenue", width=800, height=600, template="plotly_white"
             )
             assert result is mock_fig
 
-    def test_cumulative_percent_change_chart_method_custom_parameters(self, line_item_results):
+    def test_cumulative_percent_change_chart_method_custom_parameters(
+        self, line_item_results
+    ):
         """Test cumulative_percent_change_chart method with custom parameters."""
-        with patch('pyproforma.charts.charts.Charts.cumulative_percent_change') as mock_cumulative:
+        with patch(
+            "pyproforma.charts.charts.Charts.cumulative_percent_change"
+        ) as mock_cumulative:
             mock_fig = Mock()
             mock_cumulative.return_value = mock_fig
 
             result = line_item_results.cumulative_percent_change_chart(
-                width=1000,
-                height=800,
-                template='plotly_dark'
+                width=1000, height=800, template="plotly_dark"
             )
 
             mock_cumulative.assert_called_once_with(
-                "revenue",
-                width=1000,
-                height=800,
-                template='plotly_dark'
+                "revenue", width=1000, height=800, template="plotly_dark"
             )
             assert result is mock_fig
 
@@ -381,20 +385,20 @@ class TestLineItemResultsHtmlRepr:
         """Test _repr_html_ method returns HTML formatted summary."""
         html_result = line_item_results._repr_html_()
 
-        assert html_result.startswith('<pre>')
-        assert html_result.endswith('</pre>')
+        assert html_result.startswith("<pre>")
+        assert html_result.endswith("</pre>")
         assert "LineItemResults('revenue')" in html_result
         assert "Label: Revenue" in html_result
-        assert '<br>' in html_result  # Newlines converted to HTML breaks
+        assert "<br>" in html_result  # Newlines converted to HTML breaks
 
     def test_repr_html_converts_newlines(self, line_item_results):
         """Test _repr_html_ method converts newlines to HTML breaks."""
         html_result = line_item_results._repr_html_()
 
         # Should not contain literal newlines
-        assert '\n' not in html_result
+        assert "\n" not in html_result
         # Should contain HTML line breaks
-        assert '<br>' in html_result
+        assert "<br>" in html_result
 
 
 class TestLineItemResultsErrorHandling:
@@ -406,7 +410,7 @@ class TestLineItemResultsErrorHandling:
         return Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
-            categories=basic_categories
+            categories=basic_categories,
         )
 
     def test_summary_handles_missing_value(self, model_with_line_items_basic):
@@ -414,7 +418,7 @@ class TestLineItemResultsErrorHandling:
         line_item_results = LineItemResults(model_with_line_items_basic, "revenue")
 
         # Mock value to raise KeyError
-        with patch.object(line_item_results.model, 'value', side_effect=KeyError):
+        with patch.object(line_item_results.model, "value", side_effect=KeyError):
             summary = line_item_results.summary()
 
             assert "LineItemResults('revenue')" in summary
@@ -425,7 +429,10 @@ class TestLineItemResultsErrorHandling:
         """Test chart method when underlying chart method raises error."""
         line_item_results = LineItemResults(model_with_line_items_basic, "revenue")
 
-        with patch('pyproforma.charts.charts.Charts.line_item', side_effect=KeyError("Chart error")):
+        with patch(
+            "pyproforma.charts.charts.Charts.line_item",
+            side_effect=KeyError("Chart error"),
+        ):
             with pytest.raises(KeyError, match="Chart error"):
                 line_item_results.chart()
 
@@ -433,7 +440,10 @@ class TestLineItemResultsErrorHandling:
         """Test table method when underlying table method raises error."""
         line_item_results = LineItemResults(model_with_line_items_basic, "revenue")
 
-        with patch('pyproforma.tables.tables.Tables.line_item', side_effect=KeyError("Table error")):
+        with patch(
+            "pyproforma.tables.tables.Tables.line_item",
+            side_effect=KeyError("Table error"),
+        ):
             with pytest.raises(KeyError, match="Table error"):
                 line_item_results.table()
 
@@ -450,27 +460,23 @@ class TestLineItemResultsIntegration:
                 category="income",
                 label="Revenue",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 label="Expenses",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals"
-            )
+                value_format="no_decimals",
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income"),
-            Category(name="costs", label="Costs")
+            Category(name="costs", label="Costs"),
         ]
 
-        return Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            categories=categories
-        )
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
 
     def test_line_item_results_from_model_method(self, integrated_model):
         """Test creating LineItemResults through model.line_item() method."""
@@ -485,7 +491,9 @@ class TestLineItemResultsIntegration:
         assert "LineItemResults('revenue')" in summary
         assert "Label: Revenue" in summary
 
-    def test_line_item_results_string_representation_integration(self, integrated_model):
+    def test_line_item_results_string_representation_integration(
+        self, integrated_model
+    ):
         """Test string representation with real model data."""
         line_item_results = integrated_model.line_item("revenue")
 
@@ -542,17 +550,13 @@ class TestLineItemResultsEdgeCases:
                 category="income",
                 label="Revenue 2024",
                 values={2024: 100000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             )
         ]
 
         categories = [Category(name="income", label="Income")]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         line_item_results = LineItemResults(model, "revenue_2024")
 
@@ -569,17 +573,13 @@ class TestLineItemResultsEdgeCases:
                 name="revenue",
                 category="income",
                 values={2024: 100000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             )
         ]
 
         categories = [Category(name="income", label="Income")]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         line_item_results = LineItemResults(model, "revenue")
 
@@ -597,23 +597,19 @@ class TestLineItemResultsEdgeCases:
                 name="percentage_item",
                 category="metrics",
                 values={2024: 0.15},
-                value_format="percent"
+                value_format="percent",
             ),
             LineItem(
                 name="decimal_item",
                 category="metrics",
                 values={2024: 1234.56},
-                value_format="two_decimals"
-            )
+                value_format="two_decimals",
+            ),
         ]
 
         categories = [Category(name="metrics", label="Metrics")]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         # Test percentage format
         percentage_results = LineItemResults(model, "percentage_item")
@@ -635,32 +631,30 @@ class TestLineItemResultsCalculationMethods:
                 name="revenue",
                 category="income",
                 values={2020: 100, 2021: 120, 2022: 150, 2023: 120},
-                value_format="no_decimals"
+                value_format="no_decimals",
             ),
             LineItem(
                 name="expense",
                 category="costs",
                 values={2020: 50, 2021: 50, 2022: 75, 2023: 0},
-                value_format="no_decimals"
+                value_format="no_decimals",
             ),
             LineItem(
                 name="zero_item",
                 category="other",
                 values={2020: 0, 2021: 10, 2022: 0, 2023: 5},
-                value_format="no_decimals"
-            )
+                value_format="no_decimals",
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income"),
             Category(name="costs", label="Costs"),
-            Category(name="other", label="Other")
+            Category(name="other", label="Other"),
         ]
 
         return Model(
-            line_items=line_items,
-            years=[2020, 2021, 2022, 2023],
-            categories=categories
+            line_items=line_items, years=[2020, 2021, 2022, 2023], categories=categories
         )
 
     def test_percent_change_method(self, calculation_model):
@@ -810,14 +804,16 @@ class TestLineItemResultsCalculationMethods:
 
         # Test percent_change
         assert revenue_item.percent_change(2020) is None  # First year
-        assert revenue_item.percent_change(2021) == 0.2   # 20% increase
+        assert revenue_item.percent_change(2021) == 0.2  # 20% increase
 
         # Test cumulative_percent_change
         assert revenue_item.cumulative_percent_change(2020) == 0  # Base year
-        assert revenue_item.cumulative_percent_change(2022) == 0.5  # 50% increase from base
+        assert (
+            revenue_item.cumulative_percent_change(2022) == 0.5
+        )  # 50% increase from base
 
         # Test cumulative_change
-        assert revenue_item.cumulative_change(2020) == 0   # Base year
+        assert revenue_item.cumulative_change(2020) == 0  # Base year
         assert revenue_item.cumulative_change(2022) == 50  # 50 increase from base
 
         # Test index_to_year
@@ -886,7 +882,8 @@ class TestLineItemResultsCalculationMethods:
         revenue_item = calculation_model.line_item("revenue")
 
         # Mock model.value to return None for 2021
-        with patch.object(revenue_item.model, 'value') as mock_value:
+        with patch.object(revenue_item.model, "value") as mock_value:
+
             def side_effect(item_name, year):
                 if item_name == "revenue" and year == 2021:
                     return None

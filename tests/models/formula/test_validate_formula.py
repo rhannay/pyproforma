@@ -48,7 +48,10 @@ class TestValidateFormula:
         name = "missing_item"
         valid_names = ["revenue", "expenses", "profit"]
 
-        with pytest.raises(ValueError, match="Line item name 'missing_item' is not found in valid names"):
+        with pytest.raises(
+            ValueError,
+            match="Line item name 'missing_item' is not found in valid names",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_circular_reference_without_offset(self):
@@ -57,7 +60,10 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["profit", "expenses"]
 
-        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself without a time offset"):
+        with pytest.raises(
+            ValueError,
+            match="Circular reference detected: formula for 'profit' references itself without a time offset",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_valid_self_reference_with_offset(self):
@@ -76,7 +82,10 @@ class TestValidateFormula:
         valid_names = ["profit"]
 
         # Should raise an exception for positive offsets
-        with pytest.raises(ValueError, match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]"):
+        with pytest.raises(
+            ValueError,
+            match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_invalid_positive_offset_single(self):
@@ -85,7 +94,9 @@ class TestValidateFormula:
         name = "projected_revenue"
         valid_names = ["revenue", "expenses", "projected_revenue"]
 
-        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\]"):
+        with pytest.raises(
+            ValueError, match="Future time references are not allowed: revenue\\[1\\]"
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_invalid_positive_offset_multiple(self):
@@ -94,7 +105,10 @@ class TestValidateFormula:
         name = "projection"
         valid_names = ["revenue", "expenses", "costs", "projection"]
 
-        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]"):
+        with pytest.raises(
+            ValueError,
+            match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_circular_reference_with_zero_offset(self):
@@ -103,7 +117,10 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["profit", "expenses"]
 
-        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
+        with pytest.raises(
+            ValueError,
+            match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_invalid_single_missing_variable(self):
@@ -112,7 +129,9 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["revenue", "expenses", "profit"]
 
-        with pytest.raises(ValueError, match="Formula contains undefined line item names: missing_var"):
+        with pytest.raises(
+            ValueError, match="Formula contains undefined line item names: missing_var"
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_invalid_multiple_missing_variables(self):
@@ -135,7 +154,9 @@ class TestValidateFormula:
         name = "total"
         valid_names = ["revenue", "expenses", "total"]
 
-        with pytest.raises(ValueError, match="Formula contains undefined line item names: missing_var"):
+        with pytest.raises(
+            ValueError, match="Formula contains undefined line item names: missing_var"
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_formula_with_numeric_literals(self):
@@ -160,7 +181,13 @@ class TestValidateFormula:
         """Test formula with various mathematical operators and parentheses."""
         formula = "(revenue + other_income) * (1 - tax_rate) / shares_outstanding"
         name = "earnings_per_share"
-        valid_names = ["revenue", "other_income", "tax_rate", "shares_outstanding", "earnings_per_share"]
+        valid_names = [
+            "revenue",
+            "other_income",
+            "tax_rate",
+            "shares_outstanding",
+            "earnings_per_share",
+        ]
 
         # Should not raise any exception
         validate_formula(formula, name, valid_names)
@@ -208,7 +235,10 @@ class TestValidateFormula:
         valid_names = ["revenue", "future_projection"]
 
         # Should raise an exception for positive time offsets
-        with pytest.raises(ValueError, match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]"):
+        with pytest.raises(
+            ValueError,
+            match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_formula_with_underscore_variables(self):
@@ -291,7 +321,10 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["revenue", "profit", "expenses"]
 
-        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself without a time offset"):
+        with pytest.raises(
+            ValueError,
+            match="Circular reference detected: formula for 'profit' references itself without a time offset",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_no_false_positive_circular_reference(self):
@@ -309,7 +342,10 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["profit", "expenses"]
 
-        with pytest.raises(ValueError, match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset"):
+        with pytest.raises(
+            ValueError,
+            match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset",
+        ):
             validate_formula(formula, name, valid_names)
 
     def test_circular_reference_with_dots(self):
@@ -318,5 +354,8 @@ class TestValidateFormula:
         name = "company.profit"
         valid_names = ["company.profit", "revenue"]
 
-        with pytest.raises(ValueError, match="Circular reference detected: formula for 'company.profit' references itself without a time offset"):
+        with pytest.raises(
+            ValueError,
+            match="Circular reference detected: formula for 'company.profit' references itself without a time offset",
+        ):
             validate_formula(formula, name, valid_names)

@@ -12,7 +12,7 @@ class TestConstraintInit:
             name="test_constraint",
             line_item_name="revenue",
             target=100000.0,
-            operator="gt"
+            operator="gt",
         )
 
         assert constraint.name == "test_constraint"
@@ -29,15 +29,12 @@ class TestConstraintInit:
             "test123",
             "constraint_2024",
             "MIN_REVENUE",
-            "a1b2c3"
+            "a1b2c3",
         ]
 
         for name in valid_names:
             constraint = Constraint(
-                name=name,
-                line_item_name="revenue",
-                target=1000.0,
-                operator="eq"
+                name=name, line_item_name="revenue", target=1000.0, operator="eq"
             )
             assert constraint.name == name
 
@@ -56,12 +53,12 @@ class TestConstraintInit:
         ]
 
         for name in invalid_names:
-            with pytest.raises(ValueError, match="Constraint name must only contain letters, numbers, underscores, or hyphens"):
+            with pytest.raises(
+                ValueError,
+                match="Constraint name must only contain letters, numbers, underscores, or hyphens",
+            ):
                 Constraint(
-                    name=name,
-                    line_item_name="revenue",
-                    target=1000.0,
-                    operator="eq"
+                    name=name, line_item_name="revenue", target=1000.0, operator="eq"
                 )
 
     def test_all_valid_operators(self):
@@ -73,7 +70,7 @@ class TestConstraintInit:
                 name="test_constraint",
                 line_item_name="revenue",
                 target=1000.0,
-                operator=operator
+                operator=operator,
             )
             assert constraint.operator == operator
 
@@ -92,7 +89,7 @@ class TestConstraintInit:
             "!=",
             "invalid",
             "",
-            None
+            None,
         ]
 
         for operator in invalid_operators:
@@ -101,7 +98,7 @@ class TestConstraintInit:
                     name="test_constraint",
                     line_item_name="revenue",
                     target=1000.0,
-                    operator=operator
+                    operator=operator,
                 )
 
     def test_target_value_conversion(self):
@@ -113,7 +110,7 @@ class TestConstraintInit:
             ("100.75", 100.75),
             (0, 0.0),
             (-50, -50.0),
-            (-50.25, -50.25)
+            (-50.25, -50.25),
         ]
 
         for input_value, expected_value in test_cases:
@@ -121,7 +118,7 @@ class TestConstraintInit:
                 name="test_constraint",
                 line_item_name="revenue",
                 target=input_value,
-                operator="eq"
+                operator="eq",
             )
             assert constraint.target == expected_value
             assert isinstance(constraint.target, float)
@@ -133,7 +130,7 @@ class TestConstraintInit:
             name="dict_test",
             line_item_name="revenue",
             target=target_dict,
-            operator="eq"
+            operator="eq",
         )
 
         assert constraint.target == target_dict
@@ -143,15 +140,7 @@ class TestConstraintInit:
 
     def test_invalid_target_value(self):
         """Test that invalid target values raise appropriate errors."""
-        invalid_values = [
-            "not_a_number",
-            "abc",
-            "",
-            None,
-            [],
-            {},
-            "100.5.5"
-        ]
+        invalid_values = ["not_a_number", "abc", "", None, [], {}, "100.5.5"]
 
         for value in invalid_values:
             with pytest.raises((ValueError, TypeError)):
@@ -159,7 +148,7 @@ class TestConstraintInit:
                     name="test_constraint",
                     line_item_name="revenue",
                     target=value,
-                    operator="eq"
+                    operator="eq",
                 )
 
     def test_line_item_name_assignment(self):
@@ -170,7 +159,7 @@ class TestConstraintInit:
             "operating_expenses",
             "net_income",
             "cash_flow",
-            "item_123"
+            "item_123",
         ]
 
         for line_item_name in test_names:
@@ -178,7 +167,7 @@ class TestConstraintInit:
                 name="test_constraint",
                 line_item_name=line_item_name,
                 target=1000.0,
-                operator="eq"
+                operator="eq",
             )
             assert constraint.line_item_name == line_item_name
 
@@ -188,14 +177,14 @@ class TestConstraintInit:
             name="revenue_min",
             line_item_name="total_revenue",
             target=50000.0,
-            operator="ge"
+            operator="ge",
         )
 
         # Verify all attributes are set
-        assert hasattr(constraint, 'name')
-        assert hasattr(constraint, 'line_item_name')
-        assert hasattr(constraint, 'target')
-        assert hasattr(constraint, 'operator')
+        assert hasattr(constraint, "name")
+        assert hasattr(constraint, "line_item_name")
+        assert hasattr(constraint, "target")
+        assert hasattr(constraint, "operator")
 
         # Verify correct values
         assert constraint.name == "revenue_min"
@@ -207,10 +196,7 @@ class TestConstraintInit:
         """Test constraint creation with edge case values."""
         # Very large numbers
         constraint_large = Constraint(
-            name="large_test",
-            line_item_name="big_revenue",
-            target=1e10,
-            operator="lt"
+            name="large_test", line_item_name="big_revenue", target=1e10, operator="lt"
         )
         assert constraint_large.target == 1e10
 
@@ -219,15 +205,12 @@ class TestConstraintInit:
             name="small_test",
             line_item_name="small_expense",
             target=1e-10,
-            operator="gt"
+            operator="gt",
         )
         assert constraint_small.target == 1e-10
 
         # Zero
         constraint_zero = Constraint(
-            name="zero_test",
-            line_item_name="zero_item",
-            target=0.0,
-            operator="ne"
+            name="zero_test", line_item_name="zero_item", target=0.0, operator="ne"
         )
         assert constraint_zero.target == 0.0

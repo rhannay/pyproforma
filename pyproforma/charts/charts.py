@@ -11,17 +11,17 @@ if TYPE_CHECKING:
 
 class Charts:
     """Charts namespace for a PyProforma model.
-    
+
     Charts is the namespace for chart functions for a PyProforma model. It provides
     various methods to create interactive Plotly charts from model data, including
     line charts, bar charts, pie charts, and specialized charts for financial analysis
     like cumulative changes and indexed values. All charts are generated using Plotly
-    and return Plotly Figure objects for display in Jupyter notebooks or web applications.
+    and return Plotly Figure objects for display in Jupyter notebooks or web applications.  # noqa: E501
     """
 
-    def __init__(self, model: 'Model'):
+    def __init__(self, model: "Model"):
         """Initialize the Charts namespace with a PyProforma model.
-        
+
         Args:
             model (Model): The PyProforma model instance to create charts from.
         """
@@ -33,12 +33,12 @@ class Charts:
         title: str = None,
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
-        chart_type: str = 'line'
+        template: str = "plotly_white",
+        chart_type: str = "line",
     ) -> go.Figure:
         """
         Create a chart using Plotly showing the values for a given name over years.
-        
+
         Args:
             name (str): The name of the item to chart (line item, assumption, etc.)
             title (str, optional): Custom chart title. If None, uses default title "{label}".
@@ -46,10 +46,10 @@ class Charts:
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
             chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
-            
+
         Returns:
             Chart figure: The Plotly chart figure
-            
+
         Raises:
             KeyError: If the name is not found in the model
         """
@@ -71,12 +71,7 @@ class Charts:
                 values.append(0.0)
 
         # Create dataset
-        dataset = ChartDataSet(
-            label=label,
-            data=values,
-            color='blue',
-            type=chart_type
-        )
+        dataset = ChartDataSet(label=label, data=values, color="blue", type=chart_type)
 
         # Create chart configuration
         chart_title = title if title is not None else f"{label}"
@@ -84,15 +79,11 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=[dataset],
             title=chart_title,
-            value_format=value_format
+            value_format=value_format,
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
 
@@ -102,12 +93,12 @@ class Charts:
         title: str = None,
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
+        template: str = "plotly_white",
         value_format: ValueFormat = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the values for multiple items over years.
-        
+
         Args:
             item_names (list[str]): List of item names to chart (line items, assumptions, etc.)
             title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".
@@ -115,10 +106,10 @@ class Charts:
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
             value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.
-            
+
         Returns:
             Chart figure: The Plotly chart figure with multiple lines
-            
+
         Raises:
             KeyError: If any name is not found in the model
         """
@@ -134,7 +125,9 @@ class Charts:
             try:
                 value_format = self._model.line_item(item_names[0]).value_format
             except KeyError:
-                raise KeyError(f"Name '{item_names[0]}' not found in model defined names.")
+                raise KeyError(
+                    f"Name '{item_names[0]}' not found in model defined names."
+                )
 
         # # Define colors for multiple lines (cycles through if more items than colors)
         # colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
@@ -160,7 +153,7 @@ class Charts:
                 label=label,
                 data=values,
                 # color=colors[i % len(colors)],
-                type='line'
+                type="line",
             )
             datasets.append(dataset)
 
@@ -170,15 +163,11 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format=value_format
+            value_format=value_format,
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
 
@@ -187,22 +176,22 @@ class Charts:
         item_names: Union[str, list[str]],
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
-        start_year: int = None
+        template: str = "plotly_white",
+        start_year: int = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the cumulative percent change for one or more items over years.
-        
+
         Args:
             item_names (str or list[str]): Single item name or list of item names to chart cumulative percent change for
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
             start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
+
         Returns:
             Chart figure: The Plotly chart figure showing cumulative percent change
-            
+
         Raises:
             KeyError: If any name is not found in the model
             ValueError: If any name refers to an assumption (not supported for cumulative percent change)
@@ -219,7 +208,18 @@ class Charts:
         datasets = []
 
         # Define colors for multiple lines (cycles through if more items than colors)
-        colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+        colors = [
+            "blue",
+            "red",
+            "green",
+            "orange",
+            "purple",
+            "brown",
+            "pink",
+            "gray",
+            "olive",
+            "cyan",
+        ]
 
         for i, name in enumerate(item_names):
             # Get the item info and label for display
@@ -232,12 +232,16 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    cum_pct_change = self._model.line_item(name).cumulative_percent_change(year, start_year=start_year)
+                    cum_pct_change = self._model.line_item(
+                        name
+                    ).cumulative_percent_change(year, start_year=start_year)
                     # Convert to percentage (multiply by 100) for better chart readability
                     if cum_pct_change is not None:
                         values.append(cum_pct_change)
                     else:
-                        values.append(0.0)  # First year or when calculation not possible
+                        values.append(
+                            0.0
+                        )  # First year or when calculation not possible
                 except (KeyError, ValueError) as e:
                     # Re-raise the error with context
                     raise e
@@ -247,7 +251,7 @@ class Charts:
                 label=f"{label} Cumulative % Change",
                 data=values,
                 color=colors[i % len(colors)],
-                type='line'
+                type="line",
             )
             datasets.append(dataset)
 
@@ -260,15 +264,11 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format='percent'
+            value_format="percent",
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
 
@@ -277,22 +277,22 @@ class Charts:
         item_names: Union[str, list[str]],
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
-        start_year: int = None
+        template: str = "plotly_white",
+        start_year: int = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the cumulative absolute change for one or more items over years.
-        
+
         Args:
             item_names (str or list[str]): Single item name or list of item names to chart cumulative change for
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
             start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
-            
+
         Returns:
             Chart figure: The Plotly chart figure showing cumulative absolute change
-            
+
         Raises:
             KeyError: If any name is not found in the model
             ValueError: If any name refers to an assumption (not supported for cumulative change)
@@ -309,7 +309,18 @@ class Charts:
         datasets = []
 
         # Define colors for multiple lines (cycles through if more items than colors)
-        colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+        colors = [
+            "blue",
+            "red",
+            "green",
+            "orange",
+            "purple",
+            "brown",
+            "pink",
+            "gray",
+            "olive",
+            "cyan",
+        ]
 
         for i, name in enumerate(item_names):
             # Get the item info and label for display
@@ -322,12 +333,16 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    cum_change = self._model.line_item(name).cumulative_change(year, start_year=start_year)
+                    cum_change = self._model.line_item(name).cumulative_change(
+                        year, start_year=start_year
+                    )
                     # Handle None values (like first year or when calculation not possible)
                     if cum_change is not None:
                         values.append(cum_change)
                     else:
-                        values.append(0.0)  # First year or when calculation not possible
+                        values.append(
+                            0.0
+                        )  # First year or when calculation not possible
                 except (KeyError, ValueError) as e:
                     # Re-raise the error with context
                     raise e
@@ -337,7 +352,7 @@ class Charts:
                 label=f"{label} Cumulative Change",
                 data=values,
                 color=colors[i % len(colors)],
-                type='line'
+                type="line",
             )
             datasets.append(dataset)
 
@@ -350,15 +365,11 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format='currency'
+            value_format="currency",
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
 
@@ -367,24 +378,24 @@ class Charts:
         item_names: Union[str, list[str]],
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
-        start_year: int = None
+        template: str = "plotly_white",
+        start_year: int = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the indexed values for one or more items over years.
-        
+
         The start year is set to 100 and other years are indexed from there.
-        
+
         Args:
             item_names (str or list[str]): Single item name or list of item names to chart indexed values for
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
             start_year (int, optional): The base year for indexing. If None, uses the first year in the model.
-            
+
         Returns:
             Chart figure: The Plotly chart figure showing indexed values
-            
+
         Raises:
             KeyError: If any name is not found in the model
             ValueError: If any name refers to an assumption (not supported for index_to_year)
@@ -401,7 +412,18 @@ class Charts:
         datasets = []
 
         # Define colors for multiple lines (cycles through if more items than colors)
-        colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+        colors = [
+            "blue",
+            "red",
+            "green",
+            "orange",
+            "purple",
+            "brown",
+            "pink",
+            "gray",
+            "olive",
+            "cyan",
+        ]
 
         for i, name in enumerate(item_names):
             # Get the item info and label for display
@@ -414,7 +436,9 @@ class Charts:
             values = []
             for year in years:
                 try:
-                    indexed_value = self._model.line_item(name).index_to_year(year, start_year=start_year)
+                    indexed_value = self._model.line_item(name).index_to_year(
+                        year, start_year=start_year
+                    )
                     # Handle None values (like when base year is zero or None values)
                     if indexed_value is not None:
                         values.append(indexed_value)
@@ -429,7 +453,7 @@ class Charts:
                 label=f"{label} Index",
                 data=values,
                 color=colors[i % len(colors)],
-                type='line'
+                type="line",
             )
             datasets.append(dataset)
 
@@ -442,15 +466,11 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format='number'
+            value_format="number",
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
 
@@ -460,21 +480,21 @@ class Charts:
         year: int,
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white'
+        template: str = "plotly_white",
     ) -> go.Figure:
         """
         Create a pie chart using Plotly showing the values for multiple line items at a specific year.
-        
+
         Args:
             item_names (list[str]): List of line item names to include in the pie chart
             year (int): The year for which to create the pie chart
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            
+
         Returns:
             Chart figure: The Plotly pie chart figure
-            
+
         Raises:
             KeyError: If any name is not found in the model
             ValueError: If item_names list is empty or if year is not in model years
@@ -516,13 +536,13 @@ class Charts:
                 continue
 
         if not values:
-            raise ValueError(f"No positive values found for the specified items in year {year}")
+            raise ValueError(
+                f"No positive values found for the specified items in year {year}"
+            )
 
         # Create pie chart dataset
         dataset = ChartDataSet(
-            label=f"Line Items Distribution ({year})",
-            data=values,
-            type='pie'
+            label=f"Line Items Distribution ({year})", data=values, type="pie"
         )
 
         # Create chart configuration
@@ -530,15 +550,12 @@ class Charts:
             labels=labels,
             data_sets=[dataset],
             title=f"Line Items Distribution - {year}",
-            value_format=value_format
+            value_format=value_format,
         )
 
         # Render the chart with Plotly
         fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template,
-            show_legend=False
+            width=width, height=height, template=template, show_legend=False
         )
 
         return fig
@@ -548,13 +565,13 @@ class Charts:
         constraint_name: str,
         width: int = 800,
         height: int = 600,
-        template: str = 'plotly_white',
-        line_item_type: str = 'bar',
-        constraint_type: str = 'line'
+        template: str = "plotly_white",
+        line_item_type: str = "bar",
+        constraint_type: str = "line",
     ) -> go.Figure:
         """
         Create a chart using Plotly showing both the line item values and constraint target values over years.
-        
+
         Args:
             constraint_name (str): The name of the constraint to chart
             width (int): Chart width in pixels (default: 800)
@@ -562,10 +579,10 @@ class Charts:
             template (str): Plotly template to use (default: 'plotly_white')
             line_item_type (str): Type of chart for line item data - 'line', 'bar', etc. (default: 'line')
             constraint_type (str): Type of chart for constraint target data - 'line', 'bar', etc. (default: 'bar')
-            
+
         Returns:
             Chart figure: The Plotly chart figure with both datasets
-            
+
         Raises:
             KeyError: If the constraint name is not found in the model
         """
@@ -573,7 +590,9 @@ class Charts:
         try:
             constraint = self._model.constraint_definition(constraint_name)
         except KeyError:
-            raise KeyError(f"Constraint '{constraint_name}' not found in model constraints.")
+            raise KeyError(
+                f"Constraint '{constraint_name}' not found in model constraints."
+            )
 
         # Get the associated line item info
         line_item_name = constraint.line_item_name
@@ -582,7 +601,9 @@ class Charts:
             line_item_label = line_item.label
             value_format = line_item.value_format
         except KeyError:
-            raise KeyError(f"Line item '{line_item_name}' not found in model defined names.")
+            raise KeyError(
+                f"Line item '{line_item_name}' not found in model defined names."
+            )
 
         # Get years
         years = self._model.years
@@ -612,8 +633,8 @@ class Charts:
         line_item_dataset = ChartDataSet(
             label=line_item_label,
             data=line_item_values,
-            color='blue',
-            type=line_item_type
+            color="blue",
+            type=line_item_type,
         )
         datasets.append(line_item_dataset)
 
@@ -621,8 +642,8 @@ class Charts:
         constraint_dataset = ChartDataSet(
             label=f"{constraint.label} Target",
             data=constraint_values,
-            color='red',
-            type=constraint_type
+            color="red",
+            type=constraint_type,
         )
         datasets.append(constraint_dataset)
 
@@ -631,15 +652,10 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=f"{line_item_label} vs {constraint.label} Target",
-            value_format=value_format
+            value_format=value_format,
         )
 
         # Render the chart with Plotly
-        fig = chart.to_plotly(
-            width=width,
-            height=height,
-            template=template
-        )
+        fig = chart.to_plotly(width=width, height=height, template=template)
 
         return fig
-

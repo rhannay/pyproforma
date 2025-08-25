@@ -16,14 +16,14 @@ def basic_line_items():
             name="revenue",
             category="income",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="two_decimals"
+            value_format="two_decimals",
         ),
         LineItem(
             name="expenses",
             category="costs",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="two_decimals"
-        )
+            value_format="two_decimals",
+        ),
     ]
 
 
@@ -32,7 +32,7 @@ def basic_categories():
     """Create basic categories for testing."""
     return [
         Category(name="income", label="Income"),
-        Category(name="costs", label="Costs")
+        Category(name="costs", label="Costs"),
     ]
 
 
@@ -45,22 +45,22 @@ def basic_constraints():
             line_item_name="revenue",
             target=80000.0,
             operator="gt",
-            label="Minimum Revenue"
+            label="Minimum Revenue",
         ),
         Constraint(
             name="max_expenses",
             line_item_name="expenses",
             target=75000.0,
             operator="lt",
-            label="Maximum Expenses"
+            label="Maximum Expenses",
         ),
         Constraint(
             name="revenue_growth",
             line_item_name="revenue",
             target={2023: 95000.0, 2024: 115000.0, 2025: 135000.0},
             operator="ge",
-            label="Revenue Growth Target"
-        )
+            label="Revenue Growth Target",
+        ),
     ]
 
 
@@ -71,7 +71,7 @@ def model_with_constraints(basic_line_items, basic_categories, basic_constraints
         line_items=basic_line_items,
         years=[2023, 2024, 2025],
         categories=basic_categories,
-        constraints=basic_constraints
+        constraints=basic_constraints,
     )
 
 
@@ -91,7 +91,9 @@ class TestConstraintResultsInitialization:
 
     def test_init_invalid_constraint_name(self, model_with_constraints):
         """Test ConstraintResults initialization with invalid constraint name."""
-        with pytest.raises(KeyError, match="Constraint with name 'nonexistent' not found"):
+        with pytest.raises(
+            KeyError, match="Constraint with name 'nonexistent' not found"
+        ):
             ConstraintResults(model_with_constraints, "nonexistent")
 
     def test_init_constraint_with_dict_target(self, model_with_constraints):
@@ -99,7 +101,11 @@ class TestConstraintResultsInitialization:
         constraint_results = ConstraintResults(model_with_constraints, "revenue_growth")
 
         assert constraint_results.constraint_name == "revenue_growth"
-        assert constraint_results.constraint_definition.target == {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        assert constraint_results.constraint_definition.target == {
+            2023: 95000.0,
+            2024: 115000.0,
+            2025: 135000.0,
+        }
         assert constraint_results.constraint_definition.operator == "ge"
 
 
@@ -135,7 +141,9 @@ class TestConstraintResultsStringRepresentation:
         assert "Label: Minimum Revenue" in summary
         assert "Value (2023): 100,000.00" in summary
 
-    def test_summary_with_no_years_raises_error(self, basic_line_items, basic_categories, basic_constraints):
+    def test_summary_with_no_years_raises_error(
+        self, basic_line_items, basic_categories, basic_constraints
+    ):
         """Test that creating a Model with no years raises ValueError."""
         # Model should raise ValueError when years is empty
         with pytest.raises(ValueError, match="Years cannot be an empty list"):
@@ -143,7 +151,7 @@ class TestConstraintResultsStringRepresentation:
                 line_items=basic_line_items,
                 years=[],
                 categories=basic_categories,
-                constraints=basic_constraints
+                constraints=basic_constraints,
             )
 
 
@@ -157,7 +165,7 @@ class TestConstraintResultsTableMethod:
 
     def test_table_method_returns_table(self, constraint_results):
         """Test table method returns a Table object."""
-        with patch('pyproforma.tables.tables.Tables.constraint') as mock_constraint:
+        with patch("pyproforma.tables.tables.Tables.constraint") as mock_constraint:
             mock_table = Mock()
             mock_constraint.return_value = mock_table
 
@@ -168,7 +176,7 @@ class TestConstraintResultsTableMethod:
 
     def test_table_method_passes_constraint_name(self, constraint_results):
         """Test table method passes correct constraint name."""
-        with patch('pyproforma.tables.tables.Tables.constraint') as mock_constraint:
+        with patch("pyproforma.tables.tables.Tables.constraint") as mock_constraint:
             constraint_results.table()
             mock_constraint.assert_called_once_with("min_revenue")
 
@@ -183,7 +191,7 @@ class TestConstraintResultsChartMethod:
 
     def test_chart_method_default_parameters(self, constraint_results):
         """Test chart method with default parameters."""
-        with patch('pyproforma.charts.charts.Charts.constraint') as mock_constraint:
+        with patch("pyproforma.charts.charts.Charts.constraint") as mock_constraint:
             mock_fig = Mock()
             mock_constraint.return_value = mock_fig
 
@@ -193,47 +201,47 @@ class TestConstraintResultsChartMethod:
                 "min_revenue",
                 width=800,
                 height=600,
-                template='plotly_white',
-                line_item_type='bar',
-                constraint_type='line'
+                template="plotly_white",
+                line_item_type="bar",
+                constraint_type="line",
             )
             assert result is mock_fig
 
     def test_chart_method_custom_parameters(self, constraint_results):
         """Test chart method with custom parameters."""
-        with patch('pyproforma.charts.charts.Charts.constraint') as mock_constraint:
+        with patch("pyproforma.charts.charts.Charts.constraint") as mock_constraint:
             mock_fig = Mock()
             mock_constraint.return_value = mock_fig
 
             result = constraint_results.chart(
                 width=1000,
                 height=800,
-                template='plotly_dark',
-                line_item_type='line',
-                constraint_type='bar'
+                template="plotly_dark",
+                line_item_type="line",
+                constraint_type="bar",
             )
 
             mock_constraint.assert_called_once_with(
                 "min_revenue",
                 width=1000,
                 height=800,
-                template='plotly_dark',
-                line_item_type='line',
-                constraint_type='bar'
+                template="plotly_dark",
+                line_item_type="line",
+                constraint_type="bar",
             )
             assert result is mock_fig
 
     def test_chart_method_passes_constraint_name(self, constraint_results):
         """Test chart method passes correct constraint name."""
-        with patch('pyproforma.charts.charts.Charts.constraint') as mock_constraint:
+        with patch("pyproforma.charts.charts.Charts.constraint") as mock_constraint:
             constraint_results.chart()
             mock_constraint.assert_called_once_with(
                 "min_revenue",
                 width=800,
                 height=600,
-                template='plotly_white',
-                line_item_type='bar',
-                constraint_type='line'
+                template="plotly_white",
+                line_item_type="bar",
+                constraint_type="line",
             )
 
 
@@ -258,7 +266,9 @@ class TestConstraintResultsLineItemValueMethod:
         assert constraint_results.line_item_value(2024) == 120000
         assert constraint_results.line_item_value(2025) == 140000
 
-    def test_line_item_value_method_for_expenses_constraint(self, constraint_results_expenses):
+    def test_line_item_value_method_for_expenses_constraint(
+        self, constraint_results_expenses
+    ):
         """Test line_item_value method for expenses constraint."""
         # The "max_expenses" constraint is linked to the "expenses" line item
         # Expenses values from fixture: {2023: 50000, 2024: 60000, 2025: 70000}
@@ -268,7 +278,7 @@ class TestConstraintResultsLineItemValueMethod:
 
     def test_line_item_value_method_calls_model_value(self, constraint_results):
         """Test that line_item_value method calls model.value with correct parameters."""
-        with patch.object(constraint_results.model, 'value') as mock_value:
+        with patch.object(constraint_results.model, "value") as mock_value:
             mock_value.return_value = 100000.0
 
             result = constraint_results.line_item_value(2023)
@@ -278,19 +288,21 @@ class TestConstraintResultsLineItemValueMethod:
 
     def test_line_item_value_method_propagates_key_error(self, constraint_results):
         """Test that line_item_value method propagates KeyError from model.value."""
-        with patch.object(constraint_results.model, 'value') as mock_value:
+        with patch.object(constraint_results.model, "value") as mock_value:
             mock_value.side_effect = KeyError("Year 2026 not found")
 
             with pytest.raises(KeyError, match="Year 2026 not found"):
                 constraint_results.line_item_value(2026)
 
-    def test_line_item_value_method_uses_correct_line_item_name(self, constraint_results):
+    def test_line_item_value_method_uses_correct_line_item_name(
+        self, constraint_results
+    ):
         """Test that line_item_value method uses the correct line item name from constraint."""
         # Verify the constraint is set up correctly
         assert constraint_results.line_item_name == "revenue"
 
         # Mock the model.value to verify it's called with the right line item name
-        with patch.object(constraint_results.model, 'value') as mock_value:
+        with patch.object(constraint_results.model, "value") as mock_value:
             mock_value.return_value = 100000.0
 
             constraint_results.line_item_value(2023)
@@ -337,7 +349,9 @@ class TestConstraintResultsTargetMethod:
         result = constraint_results_with_dict_target.target(2025)
         assert result == 135000.0
 
-    def test_target_method_with_dict_target_missing_year(self, constraint_results_with_dict_target):
+    def test_target_method_with_dict_target_missing_year(
+        self, constraint_results_with_dict_target
+    ):
         """Test target method with dict target for year not in dict."""
         # The "revenue_growth" constraint doesn't have a target for 2026
         result = constraint_results_with_dict_target.target(2026)
@@ -345,7 +359,9 @@ class TestConstraintResultsTargetMethod:
 
     def test_target_method_calls_constraint_definition(self, constraint_results):
         """Test that target method calls get_target on constraint definition."""
-        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+        with patch.object(
+            constraint_results.constraint_definition, "get_target"
+        ) as mock_get_target:
             mock_get_target.return_value = 80000.0
 
             result = constraint_results.target(2023)
@@ -355,13 +371,17 @@ class TestConstraintResultsTargetMethod:
 
     def test_target_method_propagates_exceptions(self, constraint_results):
         """Test that target method propagates exceptions from constraint definition."""
-        with patch.object(constraint_results.constraint_definition, 'get_target') as mock_get_target:
+        with patch.object(
+            constraint_results.constraint_definition, "get_target"
+        ) as mock_get_target:
             mock_get_target.side_effect = ValueError("Custom error")
 
             with pytest.raises(ValueError, match="Custom error"):
                 constraint_results.target(2023)
 
-    def test_target_method_with_custom_constraint(self, basic_line_items, basic_categories):
+    def test_target_method_with_custom_constraint(
+        self, basic_line_items, basic_categories
+    ):
         """Test target method with a custom constraint having specific target."""
         # Create a constraint with specific target value
         constraint_custom = Constraint(
@@ -369,14 +389,14 @@ class TestConstraintResultsTargetMethod:
             line_item_name="revenue",
             target=90000.0,
             operator="gt",
-            label="Test Constraint"
+            label="Test Constraint",
         )
 
         model = Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
             categories=basic_categories,
-            constraints=[constraint_custom]
+            constraints=[constraint_custom],
         )
 
         constraint_results = ConstraintResults(model, "test_constraint")
@@ -402,14 +422,18 @@ class TestConstraintResultsEvaluateMethod:
         """Create a ConstraintResults instance for revenue growth constraint."""
         return ConstraintResults(model_with_constraints, "revenue_growth")
 
-    def test_evaluate_method_returns_true_when_constraint_satisfied(self, constraint_results):
+    def test_evaluate_method_returns_true_when_constraint_satisfied(
+        self, constraint_results
+    ):
         """Test evaluate method returns True when constraint is satisfied."""
         # The "min_revenue" constraint is: revenue > 80000
         # Revenue in 2023 is 100000, so 100000 > 80000 should be True
         result = constraint_results.evaluate(2023)
         assert result is True
 
-    def test_evaluate_method_returns_false_when_constraint_not_satisfied(self, constraint_results_expenses):
+    def test_evaluate_method_returns_false_when_constraint_not_satisfied(
+        self, constraint_results_expenses
+    ):
         """Test evaluate method returns False when constraint is not satisfied."""
         # The "max_expenses" constraint is: expenses < 75000
         # Expenses in 2025 is 70000, so 70000 < 75000 should be True
@@ -426,7 +450,9 @@ class TestConstraintResultsEvaluateMethod:
             result = constraint_results_expenses.evaluate(year)
             assert result is True
 
-    def test_evaluate_method_with_dict_target_constraint(self, constraint_results_revenue_growth):
+    def test_evaluate_method_with_dict_target_constraint(
+        self, constraint_results_revenue_growth
+    ):
         """Test evaluate method with constraint having dictionary target."""
         # The "revenue_growth" constraint has dict target and operator "ge" (>=)
         # Revenue growth targets: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
@@ -444,20 +470,30 @@ class TestConstraintResultsEvaluateMethod:
         result = constraint_results_revenue_growth.evaluate(2025)
         assert result is True
 
-    def test_evaluate_method_calls_constraint_definition_evaluate(self, constraint_results):
+    def test_evaluate_method_calls_constraint_definition_evaluate(
+        self, constraint_results
+    ):
         """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""
-        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+        with patch.object(
+            constraint_results.constraint_definition, "evaluate"
+        ) as mock_evaluate:
             mock_evaluate.return_value = True
 
             result = constraint_results.evaluate(2023)
 
-            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+            mock_evaluate.assert_called_once_with(
+                constraint_results.model._value_matrix, 2023
+            )
             assert result is True
 
     def test_evaluate_method_propagates_value_error(self, constraint_results):
         """Test that evaluate method propagates ValueError from constraint definition."""
-        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
-            mock_evaluate.side_effect = ValueError("Year 2026 not found in value_matrix")
+        with patch.object(
+            constraint_results.constraint_definition, "evaluate"
+        ) as mock_evaluate:
+            mock_evaluate.side_effect = ValueError(
+                "Year 2026 not found in value_matrix"
+            )
 
             with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
                 constraint_results.evaluate(2026)
@@ -471,15 +507,21 @@ class TestConstraintResultsEvaluateMethod:
     def test_evaluate_method_uses_correct_value_matrix(self, constraint_results):
         """Test that evaluate method uses the correct value matrix from the model."""
         # Verify the constraint uses the model's _value_matrix
-        with patch.object(constraint_results.constraint_definition, 'evaluate') as mock_evaluate:
+        with patch.object(
+            constraint_results.constraint_definition, "evaluate"
+        ) as mock_evaluate:
             mock_evaluate.return_value = True
 
             constraint_results.evaluate(2023)
 
             # Verify it was called with the model's _value_matrix
-            mock_evaluate.assert_called_once_with(constraint_results.model._value_matrix, 2023)
+            mock_evaluate.assert_called_once_with(
+                constraint_results.model._value_matrix, 2023
+            )
 
-    def test_evaluate_method_with_custom_constraint(self, basic_line_items, basic_categories):
+    def test_evaluate_method_with_custom_constraint(
+        self, basic_line_items, basic_categories
+    ):
         """Test evaluate method with a custom constraint that fails."""
         # Create a constraint that will fail
         failing_constraint = Constraint(
@@ -487,14 +529,14 @@ class TestConstraintResultsEvaluateMethod:
             line_item_name="revenue",
             target=150000.0,  # Higher than any revenue value
             operator="gt",
-            label="Failing Constraint"
+            label="Failing Constraint",
         )
 
         model = Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
             categories=basic_categories,
-            constraints=[failing_constraint]
+            constraints=[failing_constraint],
         )
 
         constraint_results = ConstraintResults(model, "failing_constraint")
@@ -518,20 +560,20 @@ class TestConstraintResultsHtmlRepr:
         """Test _repr_html_ method returns HTML formatted summary."""
         html_result = constraint_results._repr_html_()
 
-        assert html_result.startswith('<pre>')
-        assert html_result.endswith('</pre>')
+        assert html_result.startswith("<pre>")
+        assert html_result.endswith("</pre>")
         assert "ConstraintResults('min_revenue')" in html_result
         assert "Label: Minimum Revenue" in html_result
-        assert '<br>' in html_result  # Newlines converted to HTML breaks
+        assert "<br>" in html_result  # Newlines converted to HTML breaks
 
     def test_repr_html_converts_newlines(self, constraint_results):
         """Test _repr_html_ method converts newlines to HTML breaks."""
         html_result = constraint_results._repr_html_()
 
         # Should not contain literal newlines
-        assert '\n' not in html_result
+        assert "\n" not in html_result
         # Should contain HTML line breaks
-        assert '<br>' in html_result
+        assert "<br>" in html_result
 
 
 class TestConstraintResultsWithDifferentConstraintTypes:
@@ -546,13 +588,13 @@ class TestConstraintResultsWithDifferentConstraintTypes:
             target=100000.0,
             operator="eq",
             tolerance=0.01,
-            label="Balance Check"
+            label="Balance Check",
         )
         return Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
             categories=basic_categories,
-            constraints=[constraint]
+            constraints=[constraint],
         )
 
     @pytest.fixture
@@ -562,18 +604,20 @@ class TestConstraintResultsWithDifferentConstraintTypes:
             name="no_label_constraint",
             line_item_name="revenue",
             target=100000.0,
-            operator="eq"
+            operator="eq",
         )
         return Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
             categories=basic_categories,
-            constraints=[constraint]
+            constraints=[constraint],
         )
 
     def test_constraint_with_tolerance(self, model_with_tolerance_constraint):
         """Test ConstraintResults with a constraint that has tolerance."""
-        constraint_results = ConstraintResults(model_with_tolerance_constraint, "balance_check")
+        constraint_results = ConstraintResults(
+            model_with_tolerance_constraint, "balance_check"
+        )
 
         assert constraint_results.constraint_definition.tolerance == 0.01
         assert constraint_results.constraint_definition.operator == "eq"
@@ -585,7 +629,9 @@ class TestConstraintResultsWithDifferentConstraintTypes:
 
     def test_constraint_with_no_label(self, model_with_no_label_constraint):
         """Test ConstraintResults with a constraint that has no label."""
-        constraint_results = ConstraintResults(model_with_no_label_constraint, "no_label_constraint")
+        constraint_results = ConstraintResults(
+            model_with_no_label_constraint, "no_label_constraint"
+        )
 
         # Should use name as label when no label is provided
         summary = constraint_results.summary()
@@ -606,20 +652,25 @@ class TestConstraintResultsErrorHandling:
     """Test error handling in ConstraintResults."""
 
     @pytest.fixture
-    def model_with_constraints(self, basic_line_items, basic_categories, basic_constraints):
+    def model_with_constraints(
+        self, basic_line_items, basic_categories, basic_constraints
+    ):
         """Create a model with constraints for testing."""
         return Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
             categories=basic_categories,
-            constraints=basic_constraints
+            constraints=basic_constraints,
         )
 
     def test_chart_method_with_chart_error(self, model_with_constraints):
         """Test chart method when underlying chart method raises error."""
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
 
-        with patch('pyproforma.charts.charts.Charts.constraint', side_effect=KeyError("Chart error")):
+        with patch(
+            "pyproforma.charts.charts.Charts.constraint",
+            side_effect=KeyError("Chart error"),
+        ):
             with pytest.raises(KeyError, match="Chart error"):
                 constraint_results.chart()
 
@@ -627,7 +678,10 @@ class TestConstraintResultsErrorHandling:
         """Test table method when underlying table method raises error."""
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
 
-        with patch('pyproforma.tables.tables.Tables.constraint', side_effect=KeyError("Table error")):
+        with patch(
+            "pyproforma.tables.tables.Tables.constraint",
+            side_effect=KeyError("Table error"),
+        ):
             with pytest.raises(KeyError, match="Table error"):
                 constraint_results.table()
 
@@ -643,19 +697,19 @@ class TestConstraintResultsIntegration:
                 name="revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000},
-                value_format="two_decimals"
+                value_format="two_decimals",
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 values={2023: 50000, 2024: 60000},
-                value_format="two_decimals"
-            )
+                value_format="two_decimals",
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income"),
-            Category(name="costs", label="Costs")
+            Category(name="costs", label="Costs"),
         ]
 
         constraints = [
@@ -664,7 +718,7 @@ class TestConstraintResultsIntegration:
                 line_item_name="revenue",
                 target=90000.0,
                 operator="gt",
-                label="Minimum Profit Margin"
+                label="Minimum Profit Margin",
             )
         ]
 
@@ -672,7 +726,7 @@ class TestConstraintResultsIntegration:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            constraints=constraints
+            constraints=constraints,
         )
 
     def test_constraint_results_from_model_method(self, integrated_model):
@@ -688,7 +742,9 @@ class TestConstraintResultsIntegration:
         assert "ConstraintResults('profit_margin')" in summary
         assert "Label: Minimum Profit Margin" in summary
 
-    def test_constraint_results_string_representation_integration(self, integrated_model):
+    def test_constraint_results_string_representation_integration(
+        self, integrated_model
+    ):
         """Test string representation with real model data."""
         constraint_results = integrated_model.constraint("profit_margin")
 
@@ -714,13 +770,7 @@ class TestConstraintResultsEdgeCases:
 
     def test_constraint_results_with_empty_model_years_raises_error(self):
         """Test that creating a Model with empty years raises ValueError."""
-        line_items = [
-            LineItem(
-                name="revenue",
-                category="income",
-                values={}
-            )
-        ]
+        line_items = [LineItem(name="revenue", category="income", values={})]
 
         categories = [Category(name="income", label="Income")]
 
@@ -729,7 +779,7 @@ class TestConstraintResultsEdgeCases:
                 name="test_constraint",
                 line_item_name="revenue",
                 target=100000.0,
-                operator="gt"
+                operator="gt",
             )
         ]
 
@@ -739,7 +789,7 @@ class TestConstraintResultsEdgeCases:
                 line_items=line_items,
                 years=[],
                 categories=categories,
-                constraints=constraints
+                constraints=constraints,
             )
 
     def test_constraint_results_with_special_characters_in_name(self):
@@ -749,7 +799,7 @@ class TestConstraintResultsEdgeCases:
                 name="revenue_2024",
                 category="income",
                 values={2024: 100000},
-                value_format="two_decimals"
+                value_format="two_decimals",
             )
         ]
 
@@ -761,7 +811,7 @@ class TestConstraintResultsEdgeCases:
                 line_item_name="revenue_2024",
                 target=90000.0,
                 operator="gt",
-                label="Revenue Check 2024"
+                label="Revenue Check 2024",
             )
         ]
 
@@ -769,7 +819,7 @@ class TestConstraintResultsEdgeCases:
             line_items=line_items,
             years=[2024],
             categories=categories,
-            constraints=constraints
+            constraints=constraints,
         )
 
         constraint_results = ConstraintResults(model, "revenue_check_2024")

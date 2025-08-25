@@ -1,5 +1,3 @@
-
-
 def _is_close(a, b, tolerance=1e-6):
     """Helper function to compare floating point numbers with tolerance."""
     return abs(a - b) < tolerance

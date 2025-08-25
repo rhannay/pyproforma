@@ -14,24 +14,20 @@ class TestChartDataSet:
         assert dataset.label == "Test Dataset"
         assert dataset.data == data
         assert dataset.color is None  # Color defaults to None, assigned by Chart class
-        assert dataset.type == 'line'
+        assert dataset.type == "line"
         assert dataset.dashed is False
 
     def test_init_with_custom_values(self):
         """Test ChartDataSet initialization with custom values."""
         data = [10.5, None, 15.2, 8.7]
         dataset = ChartDataSet(
-            label="Revenue",
-            data=data,
-            color='red',
-            type='bar',
-            dashed=True
+            label="Revenue", data=data, color="red", type="bar", dashed=True
         )
 
         assert dataset.label == "Revenue"
         assert dataset.data == data
-        assert dataset.color == 'red'
-        assert dataset.type == 'bar'
+        assert dataset.color == "red"
+        assert dataset.type == "bar"
         assert dataset.dashed is True
 
     def test_init_with_all_chart_types(self):
@@ -39,26 +35,26 @@ class TestChartDataSet:
         data = [1, 2, 3]
 
         # Test line type
-        line_dataset = ChartDataSet("Line", data, type='line')
-        assert line_dataset.type == 'line'
+        line_dataset = ChartDataSet("Line", data, type="line")
+        assert line_dataset.type == "line"
 
         # Test bar type
-        bar_dataset = ChartDataSet("Bar", data, type='bar')
-        assert bar_dataset.type == 'bar'
+        bar_dataset = ChartDataSet("Bar", data, type="bar")
+        assert bar_dataset.type == "bar"
 
         # Test scatter type
-        scatter_dataset = ChartDataSet("Scatter", data, type='scatter')
-        assert scatter_dataset.type == 'scatter'
+        scatter_dataset = ChartDataSet("Scatter", data, type="scatter")
+        assert scatter_dataset.type == "scatter"
 
     def test_init_with_invalid_chart_type(self):
         """Test ChartDataSet initialization with invalid chart type raises ValueError."""
         data = [1, 2, 3]
 
         with pytest.raises(ValueError, match="Invalid chart type 'pies'"):
-            ChartDataSet("Test", data, type='pies')
+            ChartDataSet("Test", data, type="pies")
 
         with pytest.raises(ValueError, match="Invalid chart type 'histogram'"):
-            ChartDataSet("Test", data, type='histogram')
+            ChartDataSet("Test", data, type="histogram")
 
     def test_init_with_empty_data(self):
         """Test ChartDataSet initialization with empty data list."""
@@ -73,7 +69,7 @@ class TestChartDataSet:
 
     def test_repr(self):
         """Test ChartDataSet string representation."""
-        dataset = ChartDataSet("Test", [1, 2, 3], color='green', type='bar')
+        dataset = ChartDataSet("Test", [1, 2, 3], color="green", type="bar")
         expected = "ChartDataSet(label='Test', type='bar', color='green')"
         assert repr(dataset) == expected
 
@@ -89,8 +85,8 @@ class TestChart:
 
         chart = Chart(labels=labels, data_sets=data_sets)
 
-        assert chart.id == 'chart'
-        assert chart.title == 'Chart'
+        assert chart.id == "chart"
+        assert chart.title == "Chart"
         assert chart.labels == labels
         assert chart.data_sets == data_sets
         assert chart.value_format is None
@@ -105,46 +101,46 @@ class TestChart:
         chart = Chart(
             labels=labels,
             data_sets=data_sets,
-            id='revenue_chart',
-            title='Monthly Revenue',
-            value_format='two_decimals'
+            id="revenue_chart",
+            title="Monthly Revenue",
+            value_format="two_decimals",
         )
 
-        assert chart.id == 'revenue_chart'
-        assert chart.title == 'Monthly Revenue'
+        assert chart.id == "revenue_chart"
+        assert chart.title == "Monthly Revenue"
         assert chart.labels == labels
         assert chart.data_sets == data_sets
-        assert chart.value_format == 'two_decimals'
+        assert chart.value_format == "two_decimals"
 
     def test_init_with_all_chart_types(self):
         """Test Chart initialization with datasets of different chart types."""
         labels = ["A", "B", "C"]
 
         # Test line type dataset
-        line_dataset = ChartDataSet("Data", [1, 2, 3], type='line')
+        line_dataset = ChartDataSet("Data", [1, 2, 3], type="line")
         line_chart = Chart(labels, [line_dataset])
-        assert line_chart.data_sets[0].type == 'line'
+        assert line_chart.data_sets[0].type == "line"
 
         # Test bar type dataset
-        bar_dataset = ChartDataSet("Data", [1, 2, 3], type='bar')
+        bar_dataset = ChartDataSet("Data", [1, 2, 3], type="bar")
         bar_chart = Chart(labels, [bar_dataset])
-        assert bar_chart.data_sets[0].type == 'bar'
+        assert bar_chart.data_sets[0].type == "bar"
 
         # Test scatter type dataset
-        scatter_dataset = ChartDataSet("Data", [1, 2, 3], type='scatter')
+        scatter_dataset = ChartDataSet("Data", [1, 2, 3], type="scatter")
         scatter_chart = Chart(labels, [scatter_dataset])
-        assert scatter_chart.data_sets[0].type == 'scatter'
+        assert scatter_chart.data_sets[0].type == "scatter"
 
     def test_init_with_mixed_chart_types(self):
         """Test Chart initialization with mixed chart types in datasets."""
         labels = ["A", "B", "C"]
-        line_dataset = ChartDataSet("Line Data", [1, 2, 3], type='line')
-        bar_dataset = ChartDataSet("Bar Data", [4, 5, 6], type='bar')
+        line_dataset = ChartDataSet("Line Data", [1, 2, 3], type="line")
+        bar_dataset = ChartDataSet("Bar Data", [4, 5, 6], type="bar")
         data_sets = [line_dataset, bar_dataset]
 
         chart = Chart(labels, data_sets)
-        assert chart.data_sets[0].type == 'line'
-        assert chart.data_sets[1].type == 'bar'
+        assert chart.data_sets[0].type == "line"
+        assert chart.data_sets[1].type == "bar"
 
     def test_init_with_single_dataset(self):
         """Test Chart initialization with single dataset."""
@@ -185,7 +181,13 @@ class TestChart:
         dataset = ChartDataSet("Data", [1, 2])
         data_sets = [dataset]
 
-        formats = ['no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals']
+        formats = [
+            "no_decimals",
+            "two_decimals",
+            "percent",
+            "percent_one_decimal",
+            "percent_two_decimals",
+        ]
 
         for fmt in formats:
             chart = Chart(labels, data_sets, value_format=fmt)
@@ -194,9 +196,11 @@ class TestChart:
     def test_repr(self):
         """Test Chart string representation."""
         labels = ["A", "B"]
-        line_dataset = ChartDataSet("Line Data", [1, 2], type='line')
-        bar_dataset = ChartDataSet("Bar Data", [3, 4], type='bar')
-        chart = Chart(labels, [line_dataset, bar_dataset], id='test_chart', title='Test Chart')
+        line_dataset = ChartDataSet("Line Data", [1, 2], type="line")
+        bar_dataset = ChartDataSet("Bar Data", [3, 4], type="bar")
+        chart = Chart(
+            labels, [line_dataset, bar_dataset], id="test_chart", title="Test Chart"
+        )
 
         expected = "Chart(id='test_chart', title='Test Chart', types=['line', 'bar'])"
         assert repr(chart) == expected

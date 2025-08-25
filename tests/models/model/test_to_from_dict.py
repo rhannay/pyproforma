@@ -11,53 +11,76 @@ class TestModelToFromDict:
     def simple_model(self):
         """Create a simple model for testing."""
         line_items = [
-            LineItem(name="revenue", category="income", label="Total Revenue",
-                    values={2023: 100000, 2024: 120000}),
-            LineItem(name="expenses", category="costs", label="Total Expenses",
-                    values={2023: 80000, 2024: 90000}),
-            LineItem(name="growth_rate", category="assumptions", label="Growth Rate",
-                    values={2023: 0.1, 2024: 0.15})
+            LineItem(
+                name="revenue",
+                category="income",
+                label="Total Revenue",
+                values={2023: 100000, 2024: 120000},
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                label="Total Expenses",
+                values={2023: 80000, 2024: 90000},
+            ),
+            LineItem(
+                name="growth_rate",
+                category="assumptions",
+                label="Growth Rate",
+                values={2023: 0.1, 2024: 0.15},
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income Statement"),
             Category(name="costs", label="Cost Items"),
-            Category(name="assumptions", label="Assumptions")
+            Category(name="assumptions", label="Assumptions"),
         ]
 
-        return Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            categories=categories
-        )
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
 
     @pytest.fixture
     def complex_model(self):
         """Create a more complex model with formulas."""
         line_items = [
-            LineItem(name="revenue", category="income",
-                    values={2023: 100000}, formula="revenue[-1] * (1 + growth_rate)"),
-            LineItem(name="expenses", category="costs",
-                    values={2023: 80000}, formula="expenses[-1] * 1.05"),
-            LineItem(name="profit", category="calculated",
-                    formula="total_income - total_costs"),
-            LineItem(name="growth_rate", category="assumptions",
-                    values={2023: 0.1, 2024: 0.15, 2025: 0.12}),
-            LineItem(name="tax_rate", category="assumptions",
-                    values={2023: 0.25, 2024: 0.25, 2025: 0.27})
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2023: 100000},
+                formula="revenue[-1] * (1 + growth_rate)",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                values={2023: 80000},
+                formula="expenses[-1] * 1.05",
+            ),
+            LineItem(
+                name="profit",
+                category="calculated",
+                formula="total_income - total_costs",
+            ),
+            LineItem(
+                name="growth_rate",
+                category="assumptions",
+                values={2023: 0.1, 2024: 0.15, 2025: 0.12},
+            ),
+            LineItem(
+                name="tax_rate",
+                category="assumptions",
+                values={2023: 0.25, 2024: 0.25, 2025: 0.27},
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income Statement", include_total=True),
             Category(name="costs", label="Cost Items", include_total=True),
             Category(name="calculated", label="Calculated Items", include_total=False),
-            Category(name="assumptions", label="Assumptions", include_total=False)
+            Category(name="assumptions", label="Assumptions", include_total=False),
         ]
 
         return Model(
-            line_items=line_items,
-            years=[2023, 2024, 2025],
-            categories=categories
+            line_items=line_items, years=[2023, 2024, 2025], categories=categories
         )
 
     def test_to_dict_basic_structure(self, simple_model):
@@ -133,8 +156,12 @@ class TestModelToFromDict:
 
         # Test that basic structure is preserved
         assert recreated_model.years == simple_model.years
-        assert len(recreated_model._line_item_definitions) == len(simple_model._line_item_definitions)
-        assert len(recreated_model._category_definitions) == len(simple_model._category_definitions)
+        assert len(recreated_model._line_item_definitions) == len(
+            simple_model._line_item_definitions
+        )
+        assert len(recreated_model._category_definitions) == len(
+            simple_model._category_definitions
+        )
 
     def test_from_dict_preserves_line_item_values(self, simple_model):
         """Test that round trip preserves line item values."""
@@ -143,10 +170,18 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Test that values are preserved
-        assert recreated_model.value("revenue", 2023) == simple_model.value("revenue", 2023)
-        assert recreated_model.value("revenue", 2024) == simple_model.value("revenue", 2024)
-        assert recreated_model.value("expenses", 2023) == simple_model.value("expenses", 2023)
-        assert recreated_model.value("expenses", 2024) == simple_model.value("expenses", 2024)
+        assert recreated_model.value("revenue", 2023) == simple_model.value(
+            "revenue", 2023
+        )
+        assert recreated_model.value("revenue", 2024) == simple_model.value(
+            "revenue", 2024
+        )
+        assert recreated_model.value("expenses", 2023) == simple_model.value(
+            "expenses", 2023
+        )
+        assert recreated_model.value("expenses", 2024) == simple_model.value(
+            "expenses", 2024
+        )
 
     def test_from_dict_preserves_assumption_values(self, simple_model):
         """Test that round trip preserves assumption values (now as line items)."""
@@ -155,8 +190,12 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Test that assumption values are preserved
-        assert recreated_model.value("growth_rate", 2023) == simple_model.value("growth_rate", 2023)
-        assert recreated_model.value("growth_rate", 2024) == simple_model.value("growth_rate", 2024)
+        assert recreated_model.value("growth_rate", 2023) == simple_model.value(
+            "growth_rate", 2023
+        )
+        assert recreated_model.value("growth_rate", 2024) == simple_model.value(
+            "growth_rate", 2024
+        )
 
     def test_from_dict_preserves_line_item_attributes(self, simple_model):
         """Test that round trip preserves line item attributes."""
@@ -165,8 +204,16 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Find the revenue line item in both models
-        original_revenue = next(item for item in simple_model._line_item_definitions if item.name == "revenue")
-        recreated_revenue = next(item for item in recreated_model._line_item_definitions if item.name == "revenue")
+        original_revenue = next(
+            item
+            for item in simple_model._line_item_definitions
+            if item.name == "revenue"
+        )
+        recreated_revenue = next(
+            item
+            for item in recreated_model._line_item_definitions
+            if item.name == "revenue"
+        )
 
         # Test attributes are preserved
         assert recreated_revenue.name == original_revenue.name
@@ -181,8 +228,16 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Find the growth rate assumption (now a line item) in both models
-        original_assumption = next(item for item in simple_model._line_item_definitions if item.name == "growth_rate")
-        recreated_assumption = next(item for item in recreated_model._line_item_definitions if item.name == "growth_rate")
+        original_assumption = next(
+            item
+            for item in simple_model._line_item_definitions
+            if item.name == "growth_rate"
+        )
+        recreated_assumption = next(
+            item
+            for item in recreated_model._line_item_definitions
+            if item.name == "growth_rate"
+        )
 
         # Test attributes are preserved
         assert recreated_assumption.name == original_assumption.name
@@ -197,8 +252,12 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Find the income category in both models
-        original_category = next(cat for cat in simple_model._category_definitions if cat.name == "income")
-        recreated_category = next(cat for cat in recreated_model._category_definitions if cat.name == "income")
+        original_category = next(
+            cat for cat in simple_model._category_definitions if cat.name == "income"
+        )
+        recreated_category = next(
+            cat for cat in recreated_model._category_definitions if cat.name == "income"
+        )
 
         # Test attributes are preserved
         assert recreated_category.name == original_category.name
@@ -212,15 +271,29 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Test that formulas are preserved
-        original_revenue = next(item for item in complex_model._line_item_definitions if item.name == "revenue")
-        recreated_revenue = next(item for item in recreated_model._line_item_definitions if item.name == "revenue")
+        original_revenue = next(
+            item
+            for item in complex_model._line_item_definitions
+            if item.name == "revenue"
+        )
+        recreated_revenue = next(
+            item
+            for item in recreated_model._line_item_definitions
+            if item.name == "revenue"
+        )
         assert recreated_revenue.formula == original_revenue.formula
 
         # Test that calculations work correctly
         for year in complex_model.years:
-            assert recreated_model.value("revenue", year) == complex_model.value("revenue", year)
-            assert recreated_model.value("expenses", year) == complex_model.value("expenses", year)
-            assert recreated_model.value("profit", year) == complex_model.value("profit", year)
+            assert recreated_model.value("revenue", year) == complex_model.value(
+                "revenue", year
+            )
+            assert recreated_model.value("expenses", year) == complex_model.value(
+                "expenses", year
+            )
+            assert recreated_model.value("profit", year) == complex_model.value(
+                "profit", year
+            )
 
     def test_round_trip_with_category_totals(self, complex_model):
         """Test that round trip preserves category totals."""
@@ -275,10 +348,7 @@ class TestModelToFromDict:
         ]
 
         debt_generator = Debt(
-            name="loan",
-            par_amount={2023: 50000},
-            interest_rate=0.05,
-            term=5
+            name="loan", par_amount={2023: 50000}, interest_rate=0.05, term=5
         )
 
         categories = [Category(name="income")]
@@ -287,7 +357,7 @@ class TestModelToFromDict:
             line_items=line_items,
             years=[2023],
             categories=categories,
-            multi_line_items=[debt_generator]
+            multi_line_items=[debt_generator],
         )
 
         # to_dict should work
@@ -318,8 +388,14 @@ class TestModelToFromDict:
         assert recreated_model["expenses", 2024] == simple_model["expenses", 2024]
 
         # Test helper methods
-        assert recreated_model.line_item("revenue").label == simple_model.line_item("revenue").label
-        assert recreated_model.line_item("revenue").value_format == simple_model.line_item("revenue").value_format
+        assert (
+            recreated_model.line_item("revenue").label
+            == simple_model.line_item("revenue").label
+        )
+        assert (
+            recreated_model.line_item("revenue").value_format
+            == simple_model.line_item("revenue").value_format
+        )
 
         # Test item info
         revenue_info_original = simple_model._get_item_metadata("revenue")
@@ -328,14 +404,9 @@ class TestModelToFromDict:
 
     def test_round_trip_with_minimal_model(self):
         """Test round trip with minimal model configuration."""
-        line_items = [
-            LineItem(name="item1", category="test", values={2023: 100.0})
-        ]
+        line_items = [LineItem(name="item1", category="test", values={2023: 100.0})]
 
-        minimal_model = Model(
-            line_items=line_items,
-            years=[2023]
-        )
+        minimal_model = Model(line_items=line_items, years=[2023])
 
         # Convert to dict and back
         model_dict = minimal_model.to_dict()
@@ -351,17 +422,23 @@ class TestModelToFromDict:
         result = complex_model.to_dict()
 
         # Check that line items preserve formulas
-        revenue_item = next(item for item in result["line_items"] if item["name"] == "revenue")
+        revenue_item = next(
+            item for item in result["line_items"] if item["name"] == "revenue"
+        )
         assert "formula" in revenue_item
         assert revenue_item["formula"] == "revenue[-1] * (1 + growth_rate)"
 
         # Check that categories preserve all attributes
-        income_cat = next(cat for cat in result["categories"] if cat["name"] == "income")
+        income_cat = next(
+            cat for cat in result["categories"] if cat["name"] == "income"
+        )
         assert "include_total" in income_cat
-        assert income_cat["include_total"] == True
+        assert income_cat["include_total"]
 
         # Check that assumption line items preserve all attributes
-        growth_rate = next(item for item in result["line_items"] if item["name"] == "growth_rate")
+        growth_rate = next(
+            item for item in result["line_items"] if item["name"] == "growth_rate"
+        )
         assert growth_rate["name"] == "growth_rate"
         assert growth_rate["category"] == "assumptions"
         assert 2023 in growth_rate["values"]

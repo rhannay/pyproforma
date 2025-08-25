@@ -21,12 +21,12 @@ def _excel_to_list(filename, sheet_name: str = None) -> list[dict]:
     for row in rows[1:]:
         if not row or row[0] is None or str(row[0]).strip() == "":
             continue  # Skip rows where column A is blank
-        item = dict(zip(headers, row[:len(headers)]))
+        item = dict(zip(headers, row[: len(headers)]))
         data.append(item)
     return data
 
-def load_line_items_excel(filename: str, sheet_name: str = None) -> list[LineItem]:
 
+def load_line_items_excel(filename: str, sheet_name: str = None) -> list[LineItem]:
     data = _excel_to_list(filename, sheet_name)
     if not data:
         raise ValueError("No data found in the Excel file.")

@@ -7,14 +7,16 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 
-def generate_table_from_template(model: 'Model', template: list[Union[dict, BaseRow]], include_name: bool=False) -> Table:
+def generate_table_from_template(
+    model: "Model", template: list[Union[dict, BaseRow]], include_name: bool = False
+) -> Table:
     """Generate a table from a model using a template specification.
-    
+
     Args:
         model: The Model instance containing the data
         template: List of row configurations (dicts or dataclass instances)
         include_name: Whether to include item names in output
-        
+
     Returns:
         Table: A formatted table ready for display or export
     """
@@ -45,12 +47,13 @@ def generate_table_from_template(model: 'Model', template: list[Union[dict, Base
 
     return Table(columns=columns, rows=rows)
 
-def generate_multi_model_table(model_row_pairs: list[tuple['Model', BaseRow]]) -> Table:
+
+def generate_multi_model_table(model_row_pairs: list[tuple["Model", BaseRow]]) -> Table:
     """Generate a table from multiple models using BaseRow configurations.
-    
+
     Args:
         model_row_pairs: List of tuples containing (Model, BaseRow) pairs
-        
+
     Returns:
         Table: A formatted table ready for display or export
     """

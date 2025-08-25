@@ -13,24 +13,24 @@ class TestUnifiedUpdateNamespace:
         revenue = LineItem(
             name="revenue",
             category="income",
-            values={2023: 100000, 2024: 120000, 2025: 140000}
+            values={2023: 100000, 2024: 120000, 2025: 140000},
         )
 
         salary = LineItem(
             name="salary",
             category="expenses",
-            values={2023: 60000, 2024: 65000, 2025: 70000}
+            values={2023: 60000, 2024: 65000, 2025: 70000},
         )
 
         categories = [
             Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True)
+            Category(name="expenses", label="Expenses", include_total=True),
         ]
 
         return Model(
             line_items=[revenue, salary],
             years=[2023, 2024, 2025],
-            categories=categories
+            categories=categories,
         )
 
     def test_unified_namespace_init(self, sample_model: Model):
@@ -41,32 +41,32 @@ class TestUnifiedUpdateNamespace:
     def test_model_has_only_update_namespace(self, sample_model: Model):
         """Test that the model only has the update namespace, not separate add/delete namespaces."""
         # Should have update namespace
-        assert hasattr(sample_model, 'update')
+        assert hasattr(sample_model, "update")
         assert isinstance(sample_model.update, UpdateNamespace)
 
         # Should not have separate add/delete namespaces anymore
-        assert not hasattr(sample_model, 'add')
-        assert not hasattr(sample_model, 'delete')
+        assert not hasattr(sample_model, "add")
+        assert not hasattr(sample_model, "delete")
 
     def test_all_expected_methods_available(self, sample_model: Model):
         """Test that all expected methods are available in the unified namespace."""
         update = sample_model.update
 
         # Add methods
-        assert hasattr(update, 'add_category')
-        assert hasattr(update, 'add_line_item')
-        assert hasattr(update, 'add_constraint')
+        assert hasattr(update, "add_category")
+        assert hasattr(update, "add_line_item")
+        assert hasattr(update, "add_constraint")
 
         # Update methods
-        assert hasattr(update, 'update_category')
-        assert hasattr(update, 'update_line_item')
-        assert hasattr(update, 'update_years')
-        assert hasattr(update, 'update_constraint')
+        assert hasattr(update, "update_category")
+        assert hasattr(update, "update_line_item")
+        assert hasattr(update, "update_years")
+        assert hasattr(update, "update_constraint")
 
         # Delete methods
-        assert hasattr(update, 'delete_category')
-        assert hasattr(update, 'delete_line_item')
-        assert hasattr(update, 'delete_constraint')
+        assert hasattr(update, "delete_category")
+        assert hasattr(update, "delete_line_item")
+        assert hasattr(update, "delete_constraint")
 
     def test_add_category_functionality(self, sample_model: Model):
         """Test that add_category works correctly."""
@@ -75,7 +75,9 @@ class TestUnifiedUpdateNamespace:
         sample_model.update.add_category(name="assets", label="Assets")
 
         assert len(sample_model.category_definitions) == initial_count + 1
-        new_category = next(cat for cat in sample_model.category_definitions if cat.name == "assets")
+        new_category = next(
+            cat for cat in sample_model.category_definitions if cat.name == "assets"
+        )
         assert new_category.label == "Assets"
 
     def test_add_line_item_functionality(self, sample_model: Model):
@@ -85,7 +87,7 @@ class TestUnifiedUpdateNamespace:
         sample_model.update.add_line_item(
             name="rent",
             category="expenses",
-            values={2023: 24000, 2024: 25000, 2025: 26000}
+            values={2023: 24000, 2024: 25000, 2025: 26000},
         )
 
         assert len(sample_model.line_item_definitions) == initial_count + 1
@@ -95,12 +97,16 @@ class TestUnifiedUpdateNamespace:
         """Test that update_category works correctly."""
         sample_model.update.update_category("income", label="Revenue Streams")
 
-        category = next(cat for cat in sample_model.category_definitions if cat.name == "income")
+        category = next(
+            cat for cat in sample_model.category_definitions if cat.name == "income"
+        )
         assert category.label == "Revenue Streams"
 
     def test_update_line_item_functionality(self, sample_model: Model):
         """Test that update_line_item works correctly."""
-        sample_model.update.update_line_item("revenue", values={2023: 150000, 2024: 160000, 2025: 170000})
+        sample_model.update.update_line_item(
+            "revenue", values={2023: 150000, 2024: 160000, 2025: 170000}
+        )
 
         assert sample_model.value("revenue", 2023) == 150000
         assert sample_model.value("revenue", 2024) == 160000
@@ -119,7 +125,9 @@ class TestUnifiedUpdateNamespace:
         sample_model.update.delete_line_item("salary")
 
         assert len(sample_model.line_item_definitions) == initial_count - 1
-        assert "salary" not in [item.name for item in sample_model.line_item_definitions]
+        assert "salary" not in [
+            item.name for item in sample_model.line_item_definitions
+        ]
 
     def test_delete_category_with_no_line_items(self, sample_model: Model):
         """Test that delete_category works when no line items reference it."""
@@ -134,10 +142,11 @@ class TestUnifiedUpdateNamespace:
 
     def test_delete_category_with_line_items_fails(self, sample_model: Model):
         """Test that delete_category fails when line items reference it."""
-        with pytest.raises(ValueError, match="Cannot delete category 'income' because it is used by line items"):
+        with pytest.raises(
+            ValueError,
+            match="Cannot delete category 'income' because it is used by line items",
+        ):
             sample_model.update.delete_category("income")
-
-
 
     def test_error_handling_preserved(self, sample_model: Model):
         """Test that error handling is preserved across all methods."""
@@ -157,9 +166,7 @@ class TestUnifiedUpdateNamespace:
         """Test that validation on copy behavior is preserved."""
         # This should work fine
         sample_model.update.add_line_item(
-            name="valid_item",
-            category="income",
-            values={2023: 1000}
+            name="valid_item", category="income", values={2023: 1000}
         )
 
         # This should fail validation and not affect the original model
@@ -168,7 +175,7 @@ class TestUnifiedUpdateNamespace:
             sample_model.update.add_line_item(
                 name="invalid_item",
                 category="nonexistent_category",  # This will fail
-                values={2023: 1000}
+                values={2023: 1000},
             )
 
         # Original model should be unchanged

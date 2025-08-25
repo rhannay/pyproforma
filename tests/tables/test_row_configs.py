@@ -1,4 +1,5 @@
 """Test the new dataclass row configuration approach."""
+
 from pyproforma import Model
 from pyproforma.tables.row_types import BlankRow, ItemRow, LabelRow, dict_to_row_config
 from pyproforma.tables.table_generator import generate_table_from_template
@@ -7,11 +8,7 @@ from pyproforma.tables.table_generator import generate_table_from_template
 def test_dataclass_row_config_creation():
     """Test that we can create row configs as dataclasses."""
     # Test creating an ItemRow
-    item_config = ItemRow(
-        name="revenue",
-        bold=True,
-        value_format="currency"
-    )
+    item_config = ItemRow(name="revenue", bold=True, value_format="currency")
 
     assert item_config.name == "revenue"
     assert item_config.bold is True
@@ -19,10 +16,7 @@ def test_dataclass_row_config_creation():
     assert item_config.include_name is False  # default value
 
     # Test creating a LabelRow
-    label_config = LabelRow(
-        label="Income Statement",
-        bold=True
-    )
+    label_config = LabelRow(label="Income Statement", bold=True)
 
     assert label_config.label == "Income Statement"
     assert label_config.bold is True
@@ -35,7 +29,7 @@ def test_dict_to_row_config():
         "type": "item",
         "name": "revenue",
         "bold": True,
-        "value_format": "currency"
+        "value_format": "currency",
     }
 
     item_config = dict_to_row_config(item_dict)
@@ -45,11 +39,7 @@ def test_dict_to_row_config():
     assert item_config.value_format == "currency"
 
     # Test label row config
-    label_dict = {
-        "type": "label",
-        "label": "Income Statement",
-        "bold": True
-    }
+    label_dict = {"type": "label", "label": "Income Statement", "bold": True}
 
     label_config = dict_to_row_config(label_dict)
     assert isinstance(label_config, LabelRow)
@@ -60,11 +50,7 @@ def test_dict_to_row_config():
 def test_dataclass_serialization():
     """Test that dataclasses can be serialized to/from dict."""
     # Create a row config
-    item_config = ItemRow(
-        name="revenue",
-        bold=True,
-        value_format="currency"
-    )
+    item_config = ItemRow(name="revenue", bold=True, value_format="currency")
 
     # Convert to dict
     config_dict = item_config.to_dict()

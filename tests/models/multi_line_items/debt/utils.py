@@ -11,8 +11,8 @@ def _get_p_i(i, p, t, sy, y):
         start_year=sy,
     )
     for row in ds_schedule:
-        if row['year'] == y:
-            return row['principal'], row['interest']
+        if row["year"] == y:
+            return row["principal"], row["interest"]
 
 
 def _is_close(a, b, rel_tol=1e-9, abs_tol=0.0):

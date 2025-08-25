@@ -17,29 +17,29 @@ def basic_line_items():
             category="income",
             label="Product Sales",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="no_decimals"
+            value_format="no_decimals",
         ),
         LineItem(
             name="service_revenue",
             category="income",
             label="Service Revenue",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="no_decimals"
+            value_format="no_decimals",
         ),
         LineItem(
             name="salaries",
             category="costs",
             label="Salaries",
             values={2023: 40000, 2024: 45000, 2025: 50000},
-            value_format="no_decimals"
+            value_format="no_decimals",
         ),
         LineItem(
             name="office_rent",
             category="costs",
             label="Office Rent",
             values={2023: 24000, 2024: 24000, 2025: 24000},
-            value_format="no_decimals"
-        )
+            value_format="no_decimals",
+        ),
     ]
 
 
@@ -49,7 +49,7 @@ def basic_categories():
     return [
         Category(name="income", label="Income", include_total=True),
         Category(name="costs", label="Costs", include_total=True),
-        Category(name="metrics", label="Metrics", include_total=False)
+        Category(name="metrics", label="Metrics", include_total=False),
     ]
 
 
@@ -59,7 +59,7 @@ def model_with_categories(basic_line_items, basic_categories):
     return Model(
         line_items=basic_line_items,
         years=[2023, 2024, 2025],
-        categories=basic_categories
+        categories=basic_categories,
     )
 
 
@@ -86,7 +86,7 @@ class TestCategoryResultsInitialization:
             name="conversion_rate",
             category="metrics",
             values={2023: 0.15, 2024: 0.18, 2025: 0.20},
-            value_format="percent"
+            value_format="percent",
         )
         model_with_categories.update.add_line_item(metrics_item)
 
@@ -172,7 +172,7 @@ class TestCategoryResultsTotalsMethod:
             name="conversion_rate",
             category="metrics",
             values={2023: 0.15, 2024: 0.18, 2025: 0.20},
-            value_format="percent"
+            value_format="percent",
         )
         model_with_categories.update.add_line_item(metrics_item)
         return CategoryResults(model_with_categories, "metrics")
@@ -188,22 +188,30 @@ class TestCategoryResultsTotalsMethod:
         expected_totals = {2023: 150000, 2024: 180000, 2025: 210000}
         assert totals == expected_totals
 
-    def test_totals_method_raises_error_for_no_total_category(self, category_results_without_total):
+    def test_totals_method_raises_error_for_no_total_category(
+        self, category_results_without_total
+    ):
         """Test totals method raises ValueError for category without totals."""
-        with pytest.raises(ValueError, match="Category 'metrics' does not include totals"):
+        with pytest.raises(
+            ValueError, match="Category 'metrics' does not include totals"
+        ):
             category_results_without_total.totals()
 
-    def test_totals_method_calls_model_category_total(self, category_results_with_total):
+    def test_totals_method_calls_model_category_total(
+        self, category_results_with_total
+    ):
         """Test that totals method calls model.category_total for each year."""
-        with patch.object(category_results_with_total.model, 'category_total') as mock_category_total:
+        with patch.object(
+            category_results_with_total.model, "category_total"
+        ) as mock_category_total:
             mock_category_total.side_effect = [150000, 180000, 210000]
 
-            totals = category_results_with_total.totals()
+            category_results_with_total.totals()
 
             expected_calls = [
-                (('income', 2023),),
-                (('income', 2024),),
-                (('income', 2025),)
+                (("income", 2023),),
+                (("income", 2024),),
+                (("income", 2025),),
             ]
 
             assert mock_category_total.call_count == 3
@@ -212,7 +220,9 @@ class TestCategoryResultsTotalsMethod:
 
     def test_totals_method_handles_key_error(self, category_results_with_total):
         """Test totals method handles KeyError gracefully."""
-        with patch.object(category_results_with_total.model, 'category_total') as mock_category_total:
+        with patch.object(
+            category_results_with_total.model, "category_total"
+        ) as mock_category_total:
             mock_category_total.side_effect = [150000, KeyError("Error"), 210000]
 
             totals = category_results_with_total.totals()
@@ -251,20 +261,24 @@ class TestCategoryResultsValuesMethod:
 
         expected_values = {
             "product_sales": {2023: 100000, 2024: 120000, 2025: 140000},
-            "service_revenue": {2023: 50000, 2024: 60000, 2025: 70000}
+            "service_revenue": {2023: 50000, 2024: 60000, 2025: 70000},
         }
 
         assert values == expected_values
 
     def test_values_method_calls_model_value(self, category_results):
         """Test that values method calls model.value for each item and year."""
-        with patch.object(category_results.model, 'value') as mock_value:
+        with patch.object(category_results.model, "value") as mock_value:
             mock_value.side_effect = [
-                100000, 120000, 140000,  # product_sales
-                50000, 60000, 70000      # service_revenue
+                100000,
+                120000,
+                140000,  # product_sales
+                50000,
+                60000,
+                70000,  # service_revenue
             ]
 
-            values = category_results.values()
+            category_results.values()
 
             assert mock_value.call_count == 6
             # Check some of the calls
@@ -273,10 +287,14 @@ class TestCategoryResultsValuesMethod:
 
     def test_values_method_handles_key_error(self, category_results):
         """Test values method handles KeyError gracefully."""
-        with patch.object(category_results.model, 'value') as mock_value:
+        with patch.object(category_results.model, "value") as mock_value:
             mock_value.side_effect = [
-                100000, KeyError("Error"), 140000,  # product_sales
-                50000, 60000, 70000                 # service_revenue
+                100000,
+                KeyError("Error"),
+                140000,  # product_sales
+                50000,
+                60000,
+                70000,  # service_revenue
             ]
 
             values = category_results.values()
@@ -336,10 +354,10 @@ class TestCategoryResultsToDataFrameMethod:
 
     def test_to_dataframe_uses_values_method(self, category_results_with_total):
         """Test that to_dataframe method uses values method."""
-        with patch.object(category_results_with_total, 'values') as mock_values:
+        with patch.object(category_results_with_total, "values") as mock_values:
             mock_values.return_value = {
                 "product_sales": {2023: 100000, 2024: 120000, 2025: 140000},
-                "service_revenue": {2023: 50000, 2024: 60000, 2025: 70000}
+                "service_revenue": {2023: 50000, 2024: 60000, 2025: 70000},
             }
 
             df = category_results_with_total.to_dataframe()
@@ -347,9 +365,11 @@ class TestCategoryResultsToDataFrameMethod:
             mock_values.assert_called_once()
             assert df.loc["product_sales", 2023] == 100000
 
-    def test_to_dataframe_handles_total_calculation_error(self, category_results_with_total):
+    def test_to_dataframe_handles_total_calculation_error(
+        self, category_results_with_total
+    ):
         """Test to_dataframe method handles total calculation errors gracefully."""
-        with patch.object(category_results_with_total, 'totals') as mock_totals:
+        with patch.object(category_results_with_total, "totals") as mock_totals:
             mock_totals.side_effect = ValueError("Total calculation error")
 
             df = category_results_with_total.to_dataframe()
@@ -369,7 +389,7 @@ class TestCategoryResultsTableMethod:
 
     def test_table_method_returns_table(self, category_results):
         """Test table method returns a Table object."""
-        with patch('pyproforma.tables.tables.Tables.category') as mock_category:
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
             mock_table = Mock()
             mock_category.return_value = mock_table
 
@@ -380,7 +400,7 @@ class TestCategoryResultsTableMethod:
 
     def test_table_method_passes_category_name(self, category_results):
         """Test table method passes correct category name."""
-        with patch('pyproforma.tables.tables.Tables.category') as mock_category:
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
             category_results.table()
             mock_category.assert_called_once_with("income", hardcoded_color=None)
 
@@ -397,20 +417,20 @@ class TestCategoryResultsHtmlRepr:
         """Test _repr_html_ method returns HTML formatted summary."""
         html_result = category_results._repr_html_()
 
-        assert html_result.startswith('<pre>')
-        assert html_result.endswith('</pre>')
+        assert html_result.startswith("<pre>")
+        assert html_result.endswith("</pre>")
         assert "CategoryResults('income')" in html_result
         assert "Label: Income" in html_result
-        assert '<br>' in html_result  # Newlines converted to HTML breaks
+        assert "<br>" in html_result  # Newlines converted to HTML breaks
 
     def test_repr_html_converts_newlines(self, category_results):
         """Test _repr_html_ method converts newlines to HTML breaks."""
         html_result = category_results._repr_html_()
 
         # Should not contain literal newlines
-        assert '\n' not in html_result
+        assert "\n" not in html_result
         # Should contain HTML line breaks
-        assert '<br>' in html_result
+        assert "<br>" in html_result
 
 
 class TestCategoryResultsErrorHandling:
@@ -422,7 +442,7 @@ class TestCategoryResultsErrorHandling:
         return Model(
             line_items=basic_line_items,
             years=[2023, 2024, 2025],
-            categories=basic_categories
+            categories=basic_categories,
         )
 
     def test_summary_handles_missing_total(self, model_with_categories_basic):
@@ -430,7 +450,9 @@ class TestCategoryResultsErrorHandling:
         category_results = CategoryResults(model_with_categories_basic, "income")
 
         # Mock category_total to raise KeyError
-        with patch.object(category_results.model, 'category_total', side_effect=KeyError):
+        with patch.object(
+            category_results.model, "category_total", side_effect=KeyError
+        ):
             summary = category_results.summary()
 
             assert "CategoryResults('income')" in summary
@@ -441,7 +463,10 @@ class TestCategoryResultsErrorHandling:
         """Test table method when underlying table method raises error."""
         category_results = CategoryResults(model_with_categories_basic, "income")
 
-        with patch('pyproforma.tables.tables.Tables.category', side_effect=KeyError("Table error")):
+        with patch(
+            "pyproforma.tables.tables.Tables.category",
+            side_effect=KeyError("Table error"),
+        ):
             with pytest.raises(KeyError, match="Table error"):
                 category_results.table()
 
@@ -458,34 +483,30 @@ class TestCategoryResultsIntegration:
                 category="income",
                 label="Product Sales",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             ),
             LineItem(
                 name="service_revenue",
                 category="income",
                 label="Service Revenue",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             ),
             LineItem(
                 name="salaries",
                 category="costs",
                 label="Salaries",
                 values={2023: 40000, 2024: 45000},
-                value_format="no_decimals"
-            )
+                value_format="no_decimals",
+            ),
         ]
 
         categories = [
             Category(name="income", label="Income", include_total=True),
-            Category(name="costs", label="Costs", include_total=True)
+            Category(name="costs", label="Costs", include_total=True),
         ]
 
-        return Model(
-            line_items=line_items,
-            years=[2023, 2024],
-            categories=categories
-        )
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
 
     def test_category_results_from_model_method(self, integrated_model):
         """Test creating CategoryResults through model.category() method."""
@@ -527,7 +548,7 @@ class TestCategoryResultsIntegration:
         values = category_results.values()
         expected_values = {
             "product_sales": {2023: 100000, 2024: 120000},
-            "service_revenue": {2023: 50000, 2024: 60000}
+            "service_revenue": {2023: 50000, 2024: 60000},
         }
         assert values == expected_values
 
@@ -563,17 +584,15 @@ class TestCategoryResultsEdgeCases:
                 category="income_2024",
                 label="Revenue 2024",
                 values={2024: 100000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             )
         ]
 
-        categories = [Category(name="income_2024", label="Income 2024", include_total=True)]
+        categories = [
+            Category(name="income_2024", label="Income 2024", include_total=True)
+        ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         category_results = CategoryResults(model, "income_2024")
 
@@ -589,17 +608,13 @@ class TestCategoryResultsEdgeCases:
                 name="revenue",
                 category="income",
                 values={2024: 100000},
-                value_format="no_decimals"
+                value_format="no_decimals",
             )
         ]
 
         categories = [Category(name="income", label="Income", include_total=True)]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         category_results = CategoryResults(model, "income")
 
@@ -617,13 +632,11 @@ class TestCategoryResultsEdgeCases:
         """Test CategoryResults with category containing no line items."""
         line_items = []
 
-        categories = [Category(name="empty_category", label="Empty Category", include_total=True)]
+        categories = [
+            Category(name="empty_category", label="Empty Category", include_total=True)
+        ]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         category_results = CategoryResults(model, "empty_category")
 
@@ -642,23 +655,19 @@ class TestCategoryResultsEdgeCases:
                 name="percentage_metric",
                 category="metrics",
                 values={2024: 0.15},
-                value_format="percent"
+                value_format="percent",
             ),
             LineItem(
                 name="decimal_metric",
                 category="metrics",
                 values={2024: 1234.56},
-                value_format="two_decimals"
-            )
+                value_format="two_decimals",
+            ),
         ]
 
         categories = [Category(name="metrics", label="Metrics", include_total=False)]
 
-        model = Model(
-            line_items=line_items,
-            years=[2024],
-            categories=categories
-        )
+        model = Model(line_items=line_items, years=[2024], categories=categories)
 
         category_results = CategoryResults(model, "metrics")
 
@@ -668,5 +677,7 @@ class TestCategoryResultsEdgeCases:
         assert values["decimal_metric"][2024] == 1234.56
 
         # Test that totals method raises error for category without totals
-        with pytest.raises(ValueError, match="Category 'metrics' does not include totals"):
+        with pytest.raises(
+            ValueError, match="Category 'metrics' does not include totals"
+        ):
             category_results.totals()

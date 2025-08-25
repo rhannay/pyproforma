@@ -3,24 +3,26 @@ from typing import Any, Dict
 
 
 def check_name(name) -> bool:
-    if not re.match(r'^[A-Za-z0-9_-]+$', name):
+    if not re.match(r"^[A-Za-z0-9_-]+$", name):
         return False
     return True
 
 
-def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> tuple[bool, str | None]:
+def check_interim_values_by_year(
+    values_by_year: Dict[int, Dict[str, Any]],
+) -> tuple[bool, str | None]:
     """
     Validates a dictionary of interim values organized by year.
-    
+
     Requirements:
     - Keys must be years (integers) and in ascending order
     - Values must be dictionaries mapping variable names to values
     - All years except the last must contain the same set of variables
     - The last year may contain a subset of the variables from previous years
-    
+
     Args:
         values_by_year (Dict[int, Dict[str, Any]]): Dictionary mapping years to value dictionaries
-        
+
     Returns:
         tuple[bool, str | None]: A tuple containing:
             - bool: True if the structure is valid, False otherwise
@@ -39,7 +41,9 @@ def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> t
         return False, "Years must be in ascending order"
 
     # Check if all values are dictionaries
-    non_dict_years = [year for year in years if not isinstance(values_by_year[year], dict)]
+    non_dict_years = [
+        year for year in years if not isinstance(values_by_year[year], dict)
+    ]
     if non_dict_years:
         return False, f"Values for years {non_dict_years} must be dictionaries"
 
@@ -69,8 +73,9 @@ def check_interim_values_by_year(values_by_year: Dict[int, Dict[str, Any]]) -> t
     last_year_names = set(values_by_year[last_year].keys())
     extra_keys = last_year_names - reference_names
     if extra_keys:
-        return False, f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}"
+        return (
+            False,
+            f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}",
+        )
 
     return True, None
-
-
