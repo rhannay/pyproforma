@@ -89,8 +89,8 @@ class MultiLineItem(ABC):
         Returns a list of all line item names defined by this component.
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.
-        """
+            List[str]: The names of all line items this component can generate values for.  # noqa: E501
+        """  # noqa: E501
         pass
 
     @abstractmethod
@@ -101,16 +101,16 @@ class MultiLineItem(ABC):
         Get all values for this multi line item for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
-                by year, used to prevent circular references and for formula calculations.
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
+                by year, used to prevent circular references and for formula calculations.  # noqa: E501
                 The keys of this dictionary represent all years in the model.
             year (int): The year for which to get the values.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
-                                        component for the specified year, with line item names as keys.
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this  # noqa: E501
+                                        component for the specified year, with line item names as keys.  # noqa: E501
 
         Raises:
-            ValueError: If value already exists in interim_values_by_year to prevent circular references.
-        """
+            ValueError: If value already exists in interim_values_by_year to prevent circular references.  # noqa: E501
+        """  # noqa: E501
         pass

@@ -99,7 +99,7 @@ class TestTableCreation:
         assert table is not None, "Item table creation failed"
         # Verify the table has the correct structure - it now includes change calculations  # noqa: E501
         assert len(table.rows) == 4, (
-            "Item table should have 4 rows (value, % change, cumulative change, cumulative % change)"
+            "Item table should have 4 rows (value, % change, cumulative change, cumulative % change)"  # noqa: E501
         )  # noqa: E501
         # Verify first cell contains the item name, second contains the label
         assert table.rows[0].cells[0].value == "revenue_sales", (
@@ -130,7 +130,7 @@ class TestTableCreation:
         table = model.tables.line_item("growth_rate", include_name=True)
         assert table is not None, "Assumption item table creation failed"
         assert len(table.rows) == 4, (
-            "Assumption item table should have 4 rows (value, % change, cumulative change, cumulative % change)"
+            "Assumption item table should have 4 rows (value, % change, cumulative change, cumulative % change)"  # noqa: E501
         )  # noqa: E501
         assert table.rows[0].cells[0].value == "growth_rate", (
             "First cell should contain assumption name"

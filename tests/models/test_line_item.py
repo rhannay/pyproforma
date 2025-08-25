@@ -174,7 +174,7 @@ class TestGetValueValidation:
         assert "All keys must be integers representing years" in str(excinfo.value)
 
     def test_get_value_validates_interim_values_by_year_unordered_years(self):
-        """Test that get_value validates interim_values_by_year has years in ascending order."""
+        """Test that get_value validates interim_values_by_year has years in ascending order."""  # noqa: E501
         item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
 
         # Invalid: years not in ascending order
@@ -411,7 +411,7 @@ class TestIsHardcoded:
         )  # Even None values are considered hardcoded
 
     def test_is_hardcoded_returns_false_when_year_not_in_values(self):
-        """Test that is_hardcoded returns False when year doesn't exist in values dict."""
+        """Test that is_hardcoded returns False when year doesn't exist in values dict."""  # noqa: E501
         item = LineItem(
             name="test_item", category="revenue", values={2020: 100.0, 2021: 200.0}
         )
@@ -519,7 +519,7 @@ class TestLineItemNoneValues:
             formula="test_item * 2",  # But has formula
         )
 
-        # Formula should be used since year not in values (None doesn't count as having a value)
+        # Formula should be used since year not in values (None doesn't count as having a value)  # noqa: E501
         interim_values = {2021: {"test_item": 50.0}}
         result = item.get_value(interim_values, 2021)
         assert result == 100.0  # 50 * 2
@@ -567,7 +567,7 @@ class TestLineItemNoneValues:
         # This should work fine
         assert model["calculated", 2020] == 200.0
 
-        # But creating a model that includes a year with None formula reference should fail
+        # But creating a model that includes a year with None formula reference should fail  # noqa: E501
         with pytest.raises(ValueError) as excinfo:
             Model(
                 line_items=[base_item, calc_item],
@@ -671,7 +671,7 @@ class TestLineItemNoneValues:
         # Check the calculation works
         assert model["margin", 2022] == 500  # 1200 - 700
 
-        # Check category totals handle None correctly by creating model with all years for non-formula items
+        # Check category totals handle None correctly by creating model with all years for non-formula items  # noqa: E501
         simple_model = Model(
             line_items=[revenue, costs],  # No formula items
             categories=[Category(name="income"), Category(name="expenses")],

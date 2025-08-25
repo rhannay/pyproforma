@@ -277,7 +277,7 @@ class TestConstraintResultsLineItemValueMethod:
         assert constraint_results_expenses.line_item_value(2025) == 70000
 
     def test_line_item_value_method_calls_model_value(self, constraint_results):
-        """Test that line_item_value method calls model.value with correct parameters."""
+        """Test that line_item_value method calls model.value with correct parameters."""  # noqa: E501
         with patch.object(constraint_results.model, "value") as mock_value:
             mock_value.return_value = 100000.0
 
@@ -297,7 +297,7 @@ class TestConstraintResultsLineItemValueMethod:
     def test_line_item_value_method_uses_correct_line_item_name(
         self, constraint_results
     ):
-        """Test that line_item_value method uses the correct line item name from constraint."""
+        """Test that line_item_value method uses the correct line item name from constraint."""  # noqa: E501
         # Verify the constraint is set up correctly
         assert constraint_results.line_item_name == "revenue"
 
@@ -339,7 +339,7 @@ class TestConstraintResultsTargetMethod:
 
     def test_target_method_with_dict_target(self, constraint_results_with_dict_target):
         """Test target method with constraint having dict target."""
-        # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}  # noqa: E501
         result = constraint_results_with_dict_target.target(2023)
         assert result == 95000.0
 
@@ -473,7 +473,7 @@ class TestConstraintResultsEvaluateMethod:
     def test_evaluate_method_calls_constraint_definition_evaluate(
         self, constraint_results
     ):
-        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""
+        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""  # noqa: E501
         with patch.object(
             constraint_results.constraint_definition, "evaluate"
         ) as mock_evaluate:
@@ -487,7 +487,7 @@ class TestConstraintResultsEvaluateMethod:
             assert result is True
 
     def test_evaluate_method_propagates_value_error(self, constraint_results):
-        """Test that evaluate method propagates ValueError from constraint definition."""
+        """Test that evaluate method propagates ValueError from constraint definition."""  # noqa: E501
         with patch.object(
             constraint_results.constraint_definition, "evaluate"
         ) as mock_evaluate:
@@ -793,7 +793,7 @@ class TestConstraintResultsEdgeCases:
             )
 
     def test_constraint_results_with_special_characters_in_name(self):
-        """Test ConstraintResults with constraint names containing special characters."""
+        """Test ConstraintResults with constraint names containing special characters."""  # noqa: E501
         line_items = [
             LineItem(
                 name="revenue_2024",

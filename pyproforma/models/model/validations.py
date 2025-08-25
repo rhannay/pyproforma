@@ -21,12 +21,12 @@ def validate_line_items(line_items: List[LineItem], categories: List[Category]):
 
     Args:
         line_items (List[LineItem]): List of line items to validate
-        categories (List[Category]): List of category definitions to validate references against
+        categories (List[Category]): List of category definitions to validate references against  # noqa: E501
 
     Raises:
         ValueError: If two or more line items have the same name, or if a line item
                    references a category that is not defined.
-    """
+    """  # noqa: E501
     if not line_items:
         return
 
@@ -45,7 +45,7 @@ def validate_line_items(line_items: List[LineItem], categories: List[Category]):
     for item in line_items:
         if item.category not in category_names:
             raise ValueError(
-                f"Category '{item.category}' for LineItem '{item.name}' is not defined category."
+                f"Category '{item.category}' for LineItem '{item.name}' is not defined category."  # noqa: E501
             )
 
 
@@ -101,7 +101,7 @@ def validate_constraints(constraints: List[Constraint], line_items: List[LineIte
     for constraint in constraints:
         if constraint.line_item_name not in line_item_names:
             raise ValueError(
-                f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'"
+                f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'"  # noqa: E501
             )
 
 
@@ -109,7 +109,7 @@ def validate_multi_line_items(
     multi_line_items: List[MultiLineItem], categories: List[Category]
 ):
     """
-    Validates that all multi line items have unique names and don't conflict with category names.
+    Validates that all multi line items have unique names and don't conflict with category names.  # noqa: E501
 
     Args:
         multi_line_items (List[MultiLineItem]): List of multi line items to validate
@@ -118,7 +118,7 @@ def validate_multi_line_items(
     Raises:
         ValueError: If two or more multi line items have the same name, or if a multi
                    line item name conflicts with a category name.
-    """
+    """  # noqa: E501
     if not multi_line_items:
         return
 
@@ -129,7 +129,7 @@ def validate_multi_line_items(
 
     if duplicates:
         raise ValueError(
-            f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}"
+            f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}"  # noqa: E501
         )
 
     # Validate that multi line item names don't conflict with category names
@@ -138,7 +138,7 @@ def validate_multi_line_items(
 
     if conflicts:
         raise ValueError(
-            f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}"
+            f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}"  # noqa: E501
         )
 
 
@@ -152,11 +152,11 @@ def validate_formulas(line_items: List[LineItem], line_item_metadata: List[dict]
 
     Args:
         line_items (List[LineItem]): List of line items to validate
-        line_item_metadata (List[dict]): List of metadata dictionaries containing defined names
+        line_item_metadata (List[dict]): List of metadata dictionaries containing defined names  # noqa: E501
 
     Raises:
         ValueError: If any formula contains undefined variable names
-    """
+    """  # noqa: E501
     if not line_items:
         return
 

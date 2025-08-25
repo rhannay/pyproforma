@@ -23,7 +23,7 @@ def test_simple_model_with_formulas_works():
 
 
 def test_formula_error_raises_with_undefined_line_item():
-    """Test that a formula referencing an undefined line item raises an error with the correct message."""
+    """Test that a formula referencing an undefined line item raises an error with the correct message."""  # noqa: E501
     a = LineItem(name="a", category="test", values={2023: 10, 2024: 20})
     b = LineItem(name="b", category="test", formula="c * 2")
     with pytest.raises(ValueError) as excinfo:
@@ -32,25 +32,25 @@ def test_formula_error_raises_with_undefined_line_item():
 
 
 def test_formula_points_to_itself():
-    """Test that a formula referencing itself without time offset raises a circular reference error."""
+    """Test that a formula referencing itself without time offset raises a circular reference error."""  # noqa: E501
     a = LineItem(name="a", category="test", values={2023: 10, 2024: 20})
     b = LineItem(name="b", category="test", formula="b", values={2023: 10})
     with pytest.raises(ValueError) as excinfo:
         Model(line_items=[a, b], years=[2023, 2024])
     assert (
-        "Circular reference detected: formula for 'b' references itself without a time offset"
+        "Circular reference detected: formula for 'b' references itself without a time offset"  # noqa: E501
         in str(excinfo.value)
     )
 
 
 def test_formula_points_to_itself_with_zero_offset():
-    """Test that a formula referencing itself with [0] time offset raises a circular reference error."""
+    """Test that a formula referencing itself with [0] time offset raises a circular reference error."""  # noqa: E501
     a = LineItem(name="a", category="test", values={2023: 10, 2024: 20})
     b = LineItem(name="b", category="test", formula="b[0] + 5", values={2023: 10})
     with pytest.raises(ValueError) as excinfo:
         Model(line_items=[a, b], years=[2023, 2024])
     assert (
-        "Circular reference detected: formula for 'b' references itself with [0] time offset"
+        "Circular reference detected: formula for 'b' references itself with [0] time offset"  # noqa: E501
         in str(excinfo.value)
     )
 
@@ -65,7 +65,7 @@ def test_formula_with_positive_offset_raises_error():
 
 
 def test_formula_error_raises_with_two_undefined_line_items():
-    """Test that a formula referencing two undefined line items raises an error with the correct message."""
+    """Test that a formula referencing two undefined line items raises an error with the correct message."""  # noqa: E501
     a = LineItem(name="a", category="test", values={2023: 10, 2024: 20})
     b = LineItem(name="b", category="test", formula="c + d")
     with pytest.raises(ValueError) as excinfo:
@@ -74,19 +74,19 @@ def test_formula_error_raises_with_two_undefined_line_items():
 
 
 def test_error_future_offset():
-    """Test that a formula with future time offset raises an error with enhanced error message."""
+    """Test that a formula with future time offset raises an error with enhanced error message."""  # noqa: E501
     a = LineItem(name="a", category="test", values={2023: 10, 2024: 20})
     b = LineItem(name="b", category="test", formula="a[1] * 2")
     with pytest.raises(ValueError) as excinfo:
         Model(line_items=[a, b], years=[2023, 2024])
     assert (
-        "Error in formula for line item 'b': Future time references are not allowed: a[1]"
+        "Error in formula for line item 'b': Future time references are not allowed: a[1]"  # noqa: E501
         in str(excinfo.value)
     )
 
 
 # def test_misc():
-#     """Test that a formula with future time offset raises an error with enhanced error message."""
+#     """Test that a formula with future time offset raises an error with enhanced error message."""  # noqa: E501
 #     formula = 'a * 2'
 #     validate_formula(formula, 'b', ['a', 'b'])
 #     a = LineItem(

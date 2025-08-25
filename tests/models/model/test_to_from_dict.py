@@ -341,7 +341,7 @@ class TestModelToFromDict:
         assert len(recreated_model.multi_line_items) == 0
 
     def test_model_with_generators_round_trip(self):
-        """Test that models with generators can be serialized and deserialized successfully."""
+        """Test that models with generators can be serialized and deserialized successfully."""  # noqa: E501
         # Create a model with a generator
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 100000})

@@ -102,12 +102,12 @@ class TestCategory:
 
     def test_category_str_representation_with_include_total_true(self):
         category = Category(name="revenue", label="Revenue")
-        expected = "Category(name='revenue', label='Revenue', total_label='Total Revenue', total_name='total_revenue', include_total=True)"
+        expected = "Category(name='revenue', label='Revenue', total_label='Total Revenue', total_name='total_revenue', include_total=True)"  # noqa: E501
         assert str(category) == expected
 
     def test_category_str_representation_with_include_total_false(self):
         category = Category(name="expense", include_total=False)
-        expected = "Category(name='expense', label='expense', total_label='None', total_name='None', include_total=False)"
+        expected = "Category(name='expense', label='expense', total_label='None', total_name='None', include_total=False)"  # noqa: E501
         assert str(category) == expected
 
     def test_category_repr_same_as_str(self):

@@ -51,7 +51,7 @@ def _calculate_category_total(
             and metadata.get("category") is not None
         )
         raise KeyError(
-            f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"
+            f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"  # noqa: E501
         )
 
     # Find all line items that belong to this category and sum their values
@@ -64,7 +64,7 @@ def _calculate_category_total(
             item_name = metadata["name"]
             if item_name not in values_by_name:
                 raise KeyError(
-                    f"Line item '{item_name}' in category '{category_name}' not found in values"
+                    f"Line item '{item_name}' in category '{category_name}' not found in values"  # noqa: E501
                 )
 
             value = values_by_name[item_name]
@@ -89,7 +89,7 @@ def generate_value_matrix(
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
+        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items  # noqa: E501
         category_definitions (list[Category]): List of category definitions
         line_item_metadata (list[dict]): Metadata for all defined names
 
@@ -100,7 +100,7 @@ def generate_value_matrix(
     Raises:
         ValueError: If circular dependencies are detected or items cannot be calculated
         KeyError: If defined names are missing from the value matrix
-    """
+    """  # noqa: E501
     value_matrix = {}
     for year in years:
         value_matrix[year] = {}
@@ -118,7 +118,7 @@ def generate_value_matrix(
             for item in remaining_items:
                 try:
                     # Check if this is a MultiLineItem or LineItem
-                    # MultiLineItems have get_values() and defined_names, LineItems have get_value() and name
+                    # MultiLineItems have get_values() and defined_names, LineItems have get_value() and name  # noqa: E501
 
                     if hasattr(item, "get_values") and hasattr(item, "defined_names"):
                         # Handle MultiLineItem - get multiple values
@@ -144,7 +144,7 @@ def generate_value_matrix(
                         raise ValueError(f"Unknown item type: {type(item)}")
 
                 except (KeyError, ValueError) as e:
-                    # Check if this is a None value error - these should be raised immediately
+                    # Check if this is a None value error - these should be raised immediately  # noqa: E501
                     if (
                         isinstance(e, ValueError)
                         and "has None value" in str(e)
@@ -167,11 +167,11 @@ def generate_value_matrix(
                                 name["name"] for name in line_item_metadata
                             ]
                             if var_name not in all_defined_names:
-                                # Variable truly doesn't exist, create enhanced error message
+                                # Variable truly doesn't exist, create enhanced error message  # noqa: E501
                                 item_name = getattr(item, "name", str(item))
                                 formula = getattr(item, "formula", "N/A")
                                 raise ValueError(
-                                    f"Error calculating line item '{item_name}' for year {year}. Formula: '{formula}'. Line item '{var_name}' not found in model."
+                                    f"Error calculating line item '{item_name}' for year {year}. Formula: '{formula}'. Line item '{var_name}' not found in model."  # noqa: E501
                                 ) from e
                     # Item depends on something not yet calculated, skip for now
                     continue
@@ -187,7 +187,7 @@ def generate_value_matrix(
                     and category.total_name not in value_matrix[year]
                 ):
                     # Check if all items in this category have been calculated
-                    # Only look at LineItem objects for category totals, not MultiLineItems
+                    # Only look at LineItem objects for category totals, not MultiLineItems  # noqa: E501
                     line_items_only = [
                         item
                         for item in line_item_definitions
@@ -232,14 +232,14 @@ def generate_value_matrix(
                     failed_items.append(str(item))
 
             raise ValueError(
-                f"Could not calculate line items due to missing dependencies or circular references: {failed_items}"
+                f"Could not calculate line items due to missing dependencies or circular references: {failed_items}"  # noqa: E501
             )
 
         # Ensure all defined names are present in the value matrix
         for name in line_item_metadata:
             if name["name"] not in value_matrix[year]:
                 raise KeyError(
-                    f"Defined name '{name['name']}' not found in value matrix for year {year}."
+                    f"Defined name '{name['name']}' not found in value matrix for year {year}."  # noqa: E501
                 )
 
     return value_matrix

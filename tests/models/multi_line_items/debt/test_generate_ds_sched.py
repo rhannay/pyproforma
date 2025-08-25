@@ -19,7 +19,7 @@ def test_generate_debt_service_schedule_basic():
     # Check if the years are correct
     assert [entry["year"] for entry in schedule] == [2025, 2026, 2027]
 
-    # Check if the total payments sum up to the par amount (with floating point precision)
+    # Check if the total payments sum up to the par amount (with floating point precision)  # noqa: E501
     total_principal = sum(entry["principal"] for entry in schedule)
     assert math.isclose(total_principal, par, rel_tol=1e-9)
 

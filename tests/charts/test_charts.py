@@ -184,7 +184,7 @@ class TestCharts:
             )
             assert result is mock_fig
 
-            # Verify model interactions - should be called for both items plus value_format check
+            # Verify model interactions - should be called for both items plus value_format check  # noqa: E501
             assert (
                 mock_model.line_item.call_count == 3
             )  # 1 for value_format + 2 for items
@@ -281,7 +281,7 @@ class TestCharts:
         assert "Test error" in str(excinfo.value)
 
     @pytest.mark.skip(
-        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"
+        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"  # noqa: E501
     )
     def test_cumulative_percent_change_with_none_values(self, charts, mock_model):
         """Test cumulative percent change handles None values correctly."""
@@ -414,7 +414,7 @@ class TestCharts:
         assert result is mock_fig
 
     def test_colors_cycling(self, charts, mock_model):
-        """Test that ChartDataSet objects are created without colors (colors are assigned by Chart class)."""
+        """Test that ChartDataSet objects are created without colors (colors are assigned by Chart class)."""  # noqa: E501
         # Create a scenario with multiple items
         item_names = ["item1", "item2", "item3", "item4", "item5"]
 
@@ -512,7 +512,7 @@ class TestChartsIntegration:
 
         # Check that data is present
         assert len(fig.data) == 1
-        # First year should be 0 (None converted), subsequent years should show cumulative change
+        # First year should be 0 (None converted), subsequent years should show cumulative change  # noqa: E501
         data = list(fig.data[0].y)
         assert data[0] == 0.0  # First year (None converted to 0)
         assert data[1] == 0.5  # 50% increase from 100 to 150

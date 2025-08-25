@@ -17,7 +17,7 @@ class Charts:
     line charts, bar charts, pie charts, and specialized charts for financial analysis
     like cumulative changes and indexed values. All charts are generated using Plotly
     and return Plotly Figure objects for display in Jupyter notebooks or web applications.  # noqa: E501
-    """
+    """  # noqa: E501
 
     def __init__(self, model: "Model"):
         """Initialize the Charts namespace with a PyProforma model.
@@ -41,18 +41,18 @@ class Charts:
 
         Args:
             name (str): The name of the item to chart (line item, assumption, etc.)
-            title (str, optional): Custom chart title. If None, uses default title "{label}".
+            title (str, optional): Custom chart title. If None, uses default title "{label}".  # noqa: E501
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
+            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure
 
         Raises:
             KeyError: If the name is not found in the model
-        """
+        """  # noqa: E501
         # Get the item info and label for display
         try:
             label = self._model.line_item(name).label
@@ -97,22 +97,22 @@ class Charts:
         value_format: ValueFormat = None,
     ) -> go.Figure:
         """
-        Create a line chart using Plotly showing the values for multiple items over years.
+        Create a line chart using Plotly showing the values for multiple items over years.  # noqa: E501
 
         Args:
-            item_names (list[str]): List of item names to chart (line items, assumptions, etc.)
-            title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".
+            item_names (list[str]): List of item names to chart (line items, assumptions, etc.)  # noqa: E501
+            title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".  # noqa: E501
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.
+            value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure with multiple lines
 
         Raises:
             KeyError: If any name is not found in the model
-        """
+        """  # noqa: E501
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 
@@ -130,7 +130,7 @@ class Charts:
                 )
 
         # # Define colors for multiple lines (cycles through if more items than colors)
-        # colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+        # colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']  # noqa: E501
 
         for i, name in enumerate(item_names):
             # Get the item info and label for display
@@ -180,22 +180,22 @@ class Charts:
         start_year: int = None,
     ) -> go.Figure:
         """
-        Create a line chart using Plotly showing the cumulative percent change for one or more items over years.
+        Create a line chart using Plotly showing the cumulative percent change for one or more items over years.  # noqa: E501
 
         Args:
-            item_names (str or list[str]): Single item name or list of item names to chart cumulative percent change for
+            item_names (str or list[str]): Single item name or list of item names to chart cumulative percent change for  # noqa: E501
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
+            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure showing cumulative percent change
 
         Raises:
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for cumulative percent change)
-        """
+            ValueError: If any name refers to an assumption (not supported for cumulative percent change)  # noqa: E501
+        """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
             item_names = [item_names]
@@ -235,7 +235,7 @@ class Charts:
                     cum_pct_change = self._model.line_item(
                         name
                     ).cumulative_percent_change(year, start_year=start_year)
-                    # Convert to percentage (multiply by 100) for better chart readability
+                    # Convert to percentage (multiply by 100) for better chart readability  # noqa: E501
                     if cum_pct_change is not None:
                         values.append(cum_pct_change)
                     else:
@@ -281,22 +281,22 @@ class Charts:
         start_year: int = None,
     ) -> go.Figure:
         """
-        Create a line chart using Plotly showing the cumulative absolute change for one or more items over years.
+        Create a line chart using Plotly showing the cumulative absolute change for one or more items over years.  # noqa: E501
 
         Args:
-            item_names (str or list[str]): Single item name or list of item names to chart cumulative change for
+            item_names (str or list[str]): Single item name or list of item names to chart cumulative change for  # noqa: E501
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
+            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure showing cumulative absolute change
 
         Raises:
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for cumulative change)
-        """
+            ValueError: If any name refers to an assumption (not supported for cumulative change)  # noqa: E501
+        """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
             item_names = [item_names]
@@ -336,7 +336,7 @@ class Charts:
                     cum_change = self._model.line_item(name).cumulative_change(
                         year, start_year=start_year
                     )
-                    # Handle None values (like first year or when calculation not possible)
+                    # Handle None values (like first year or when calculation not possible)  # noqa: E501
                     if cum_change is not None:
                         values.append(cum_change)
                     else:
@@ -382,24 +382,24 @@ class Charts:
         start_year: int = None,
     ) -> go.Figure:
         """
-        Create a line chart using Plotly showing the indexed values for one or more items over years.
+        Create a line chart using Plotly showing the indexed values for one or more items over years.  # noqa: E501
 
         The start year is set to 100 and other years are indexed from there.
 
         Args:
-            item_names (str or list[str]): Single item name or list of item names to chart indexed values for
+            item_names (str or list[str]): Single item name or list of item names to chart indexed values for  # noqa: E501
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.
+            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure showing indexed values
 
         Raises:
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for index_to_year)
-        """
+            ValueError: If any name refers to an assumption (not supported for index_to_year)  # noqa: E501
+        """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
             item_names = [item_names]
@@ -483,7 +483,7 @@ class Charts:
         template: str = "plotly_white",
     ) -> go.Figure:
         """
-        Create a pie chart using Plotly showing the values for multiple line items at a specific year.
+        Create a pie chart using Plotly showing the values for multiple line items at a specific year.  # noqa: E501
 
         Args:
             item_names (list[str]): List of line item names to include in the pie chart
@@ -498,7 +498,7 @@ class Charts:
         Raises:
             KeyError: If any name is not found in the model
             ValueError: If item_names list is empty or if year is not in model years
-        """
+        """  # noqa: E501
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 
@@ -570,22 +570,22 @@ class Charts:
         constraint_type: str = "line",
     ) -> go.Figure:
         """
-        Create a chart using Plotly showing both the line item values and constraint target values over years.
+        Create a chart using Plotly showing both the line item values and constraint target values over years.  # noqa: E501
 
         Args:
             constraint_name (str): The name of the constraint to chart
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            line_item_type (str): Type of chart for line item data - 'line', 'bar', etc. (default: 'line')
-            constraint_type (str): Type of chart for constraint target data - 'line', 'bar', etc. (default: 'bar')
+            line_item_type (str): Type of chart for line item data - 'line', 'bar', etc. (default: 'line')  # noqa: E501
+            constraint_type (str): Type of chart for constraint target data - 'line', 'bar', etc. (default: 'bar')  # noqa: E501
 
         Returns:
             Chart figure: The Plotly chart figure with both datasets
 
         Raises:
             KeyError: If the constraint name is not found in the model
-        """
+        """  # noqa: E501
         # Get the constraint
         try:
             constraint = self._model.constraint_definition(constraint_name)

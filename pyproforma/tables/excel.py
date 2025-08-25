@@ -141,7 +141,7 @@ def to_excel(table: "Table", filename="table.xlsx"):
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except Exception:
                 pass
 
         # Set column width with some padding

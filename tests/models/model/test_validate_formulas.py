@@ -29,7 +29,7 @@ class TestModelValidateFormulas:
         assert model.value("profit", 2023) == 200.0
 
     def test_invalid_formula_raises_error(self):
-        """Test that models with invalid formulas raise ValueError during initialization."""
+        """Test that models with invalid formulas raise ValueError during initialization."""  # noqa: E501
         revenue = LineItem(name="revenue", category="income", values={2023: 1000})
         invalid_expense = LineItem(
             name="expenses", category="expense", formula="revenue * unknown_variable"
@@ -71,7 +71,7 @@ class TestModelValidateFormulas:
         growth = LineItem(
             name="growth", category="metrics", formula="revenue - revenue[-1]"
         )
-        # This should pass validation (even though it might fail at runtime due to missing data)
+        # This should pass validation (even though it might fail at runtime due to missing data)  # noqa: E501
         try:
             Model(
                 line_items=[revenue, growth], years=[2024]

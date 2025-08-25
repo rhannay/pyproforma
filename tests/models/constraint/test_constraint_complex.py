@@ -4,7 +4,7 @@ from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestConstraintsWithComplexModels:
-    """Test that constraints work correctly with complex models including line item generators."""
+    """Test that constraints work correctly with complex models including line item generators."""  # noqa: E501
 
     def test_constraints_with_line_item_generators(self):
         """Test that constraints work with models that include line item generators."""
@@ -192,7 +192,7 @@ class TestConstraintsWithComplexModels:
         assert reconstructed_model.value("expenses", 2023) == 60000
 
     def test_constraint_copy_with_complex_model(self):
-        """Test that copying works correctly with complex models including constraints."""
+        """Test that copying works correctly with complex models including constraints."""  # noqa: E501
         line_items = [
             LineItem(name="item1", category="cat1", values={2023: 1000}),
             LineItem(name="item2", category="cat2", values={2023: 2000}),

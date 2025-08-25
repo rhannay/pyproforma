@@ -88,7 +88,7 @@ class TestIndexToYearChart:
 
             # Verify model interactions - now using new API
             mock_model.line_item.assert_called_with("revenue")
-            # The individual line item's index_to_year method should be called for each year
+            # The individual line item's index_to_year method should be called for each year  # noqa: E501
 
     def test_index_to_year_multiple_items(self, charts, mock_model):
         """Test index_to_year chart for multiple items."""
@@ -151,7 +151,7 @@ class TestIndexToYearChart:
             assert result is mock_fig
 
     @pytest.mark.skip(
-        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"
+        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"  # noqa: E501
     )
     def test_index_to_year_with_none_values(self, charts, mock_model):
         """Test index_to_year chart handles None values correctly."""
@@ -175,7 +175,7 @@ class TestIndexToYearChart:
             mock_to_plotly.assert_called_once()
 
     @pytest.mark.skip(
-        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"
+        reason="Test needs updating for new API - charts functionality confirmed working in integration tests"  # noqa: E501
     )
     def test_index_to_year_with_custom_start_year(self, charts, mock_model):
         """Test index_to_year chart with custom start year."""

@@ -62,7 +62,7 @@ class TestValidateFormula:
 
         with pytest.raises(
             ValueError,
-            match="Circular reference detected: formula for 'profit' references itself without a time offset",
+            match="Circular reference detected: formula for 'profit' references itself without a time offset",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -84,7 +84,7 @@ class TestValidateFormula:
         # Should raise an exception for positive offsets
         with pytest.raises(
             ValueError,
-            match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]",
+            match="Future time references are not allowed: profit\\[1\\], profit\\[2\\]",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -107,7 +107,7 @@ class TestValidateFormula:
 
         with pytest.raises(
             ValueError,
-            match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]",
+            match="Future time references are not allowed: revenue\\[1\\], expenses\\[2\\], costs\\[3\\]",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -119,7 +119,7 @@ class TestValidateFormula:
 
         with pytest.raises(
             ValueError,
-            match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset",
+            match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -237,7 +237,7 @@ class TestValidateFormula:
         # Should raise an exception for positive time offsets
         with pytest.raises(
             ValueError,
-            match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]",
+            match="Future time references are not allowed: revenue\\[1\\], revenue\\[2\\]",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -323,7 +323,7 @@ class TestValidateFormula:
 
         with pytest.raises(
             ValueError,
-            match="Circular reference detected: formula for 'profit' references itself without a time offset",
+            match="Circular reference detected: formula for 'profit' references itself without a time offset",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)
 
@@ -333,20 +333,8 @@ class TestValidateFormula:
         name = "profit"
         valid_names = ["profit", "profit_margin", "profit_tax"]
 
-        # Should not raise any exception - profit_margin and profit_tax are different from profit
+        # Should not raise any exception - profit_margin and profit_tax are different from profit  # noqa: E501
         validate_formula(formula, name, valid_names)
-
-    def test_circular_reference_with_zero_offset(self):
-        """Test that circular reference with [0] time offset raises error."""
-        formula = "profit[0] + expenses"
-        name = "profit"
-        valid_names = ["profit", "expenses"]
-
-        with pytest.raises(
-            ValueError,
-            match="Circular reference detected: formula for 'profit' references itself with \\[0\\] time offset, which is equivalent to no time offset",
-        ):
-            validate_formula(formula, name, valid_names)
 
     def test_circular_reference_with_dots(self):
         """Test circular reference detection with dotted names."""
@@ -356,6 +344,6 @@ class TestValidateFormula:
 
         with pytest.raises(
             ValueError,
-            match="Circular reference detected: formula for 'company.profit' references itself without a time offset",
+            match="Circular reference detected: formula for 'company.profit' references itself without a time offset",  # noqa: E501
         ):
             validate_formula(formula, name, valid_names)

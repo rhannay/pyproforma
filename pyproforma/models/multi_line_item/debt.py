@@ -12,7 +12,7 @@ class Debt(MultiLineItem):
 
     This class will handle debt related calculations including principal, interest payments,  # noqa: E501
     and debt service schedule. Currently a placeholder implementation.
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -33,19 +33,19 @@ class Debt(MultiLineItem):
                                       or a string representing a line item name to look up in the value matrix.  # noqa: E501
             term (int | str): The term of the debt in years. Can be an integer or a string representing  # noqa: E501
                            a line item name to look up in the value matrix.  # noqa: E501
-            existing_debt_service (list[dict], optional): Pre-existing debt service schedule for debts that
-                                                        were issued before the model period. Each dictionary
-                                                        in the list should contain the following keys:
-                                                        - 'year' (int): The year of the payment
-                                                        - 'principal' (float): The principal payment amount
-                                                        - 'interest' (float): The interest payment amount
-                                                        Example: [{'year': 2024, 'principal': 1000.0, 'interest': 50.0},
-                                                                 {'year': 2025, 'principal': 1000.0, 'interest': 40.0}]
+            existing_debt_service (list[dict], optional): Pre-existing debt service schedule for debts that  # noqa: E501
+                                                        were issued before the model period. Each dictionary  # noqa: E501
+                                                        in the list should contain the following keys:  # noqa: E501
+                                                        - 'year' (int): The year of the payment  # noqa: E501
+                                                        - 'principal' (float): The principal payment amount  # noqa: E501
+                                                        - 'interest' (float): The interest payment amount  # noqa: E501
+                                                        Example: [{'year': 2024, 'principal': 1000.0, 'interest': 50.0},  # noqa: E501
+                                                                 {'year': 2025, 'principal': 1000.0, 'interest': 40.0}]  # noqa: E501
                                                         Defaults to None (empty list).
-        """
+        """  # noqa: E501
         if not check_name(name):
             raise ValueError(
-                "Debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."
+                "Debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."  # noqa: E501
             )
         self.name = name
         self._par_amount = par_amount
@@ -70,11 +70,11 @@ class Debt(MultiLineItem):
         Validate the existing_debt_service structure to ensure it's correctly formatted.
 
         Args:
-            existing_debt_service (list[dict]): The existing debt service schedule to validate.
+            existing_debt_service (list[dict]): The existing debt service schedule to validate.  # noqa: E501
 
         Raises:
-            ValueError: If the existing_debt_service is not properly structured or has gaps in years.
-        """
+            ValueError: If the existing_debt_service is not properly structured or has gaps in years.  # noqa: E501
+        """  # noqa: E501
         if not existing_debt_service:
             return  # Empty list or None is valid
 
@@ -94,7 +94,7 @@ class Debt(MultiLineItem):
             if not required_keys.issubset(entry.keys()):
                 missing_keys = required_keys - entry.keys()
                 raise ValueError(
-                    f"existing_debt_service entry {i} is missing required keys: {missing_keys}"
+                    f"existing_debt_service entry {i} is missing required keys: {missing_keys}"  # noqa: E501
                 )
 
             # Validate data types
@@ -132,10 +132,10 @@ class Debt(MultiLineItem):
             for i in range(1, len(years)):
                 if years[i] <= years[i - 1]:
                     raise ValueError(
-                        "existing_debt_service years must be provided in ascending order"
+                        "existing_debt_service years must be provided in ascending order"  # noqa: E501
                     )
 
-        # Check for sequential years with no gaps (years are already in order and no duplicates)
+        # Check for sequential years with no gaps (years are already in order and no duplicates)  # noqa: E501
         if len(years) > 1:
             for i in range(1, len(years)):
                 if years[i] != years[i - 1] + 1:
@@ -147,7 +147,7 @@ class Debt(MultiLineItem):
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "Debt":
         """Create a Debt instance from a configuration dictionary."""
-        # Convert par_amount keys from strings to integers if it's a dict (for JSON compatibility)
+        # Convert par_amount keys from strings to integers if it's a dict (for JSON compatibility)  # noqa: E501
         par_amount = config["par_amount"]
         if isinstance(par_amount, dict):
             par_amount = {int(k): v for k, v in par_amount.items()}
@@ -183,8 +183,8 @@ class Debt(MultiLineItem):
         Returns a list of all line item names defined by this component.
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.
-        """
+            List[str]: The names of all line items this component can generate values for.  # noqa: E501
+        """  # noqa: E501
         return [
             self._principal_name,
             self._interest_name,
@@ -199,15 +199,15 @@ class Debt(MultiLineItem):
         Get all values for this debt component for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
-                by year, used to prevent circular references and for formula calculations.
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
+                by year, used to prevent circular references and for formula calculations.  # noqa: E501
                 The keys of this dictionary represent all years in the model.
             year (int): The year for which to get the values.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
-                                        component for the specified year, with line item names as keys.
-        """
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this  # noqa: E501
+                                        component for the specified year, with line item names as keys.  # noqa: E501
+        """  # noqa: E501
         # Validate interim values by year
         is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
         if not is_valid:
@@ -302,14 +302,14 @@ class Debt(MultiLineItem):
 
     def get_debt_outstanding(self, year: int) -> float:
         """
-        Get the total outstanding principal at the end of a specific year across all debt issues.
+        Get the total outstanding principal at the end of a specific year across all debt issues.  # noqa: E501
 
         Args:
             year (int): The year for which to calculate the outstanding principal.
 
         Returns:
             float: The total outstanding principal at the end of the specified year.
-        """
+        """  # noqa: E501
         total_outstanding = 0.0
 
         # Calculate outstanding balance from existing debt service
@@ -331,19 +331,19 @@ class Debt(MultiLineItem):
         cls, debt_service_schedule: list[dict], year: int
     ) -> float:
         """
-        Calculate the outstanding principal for a debt service schedule at the end of a specific year.
+        Calculate the outstanding principal for a debt service schedule at the end of a specific year.  # noqa: E501
 
         Args:
-            debt_service_schedule (list[dict]): The debt service schedule containing payment entries.
+            debt_service_schedule (list[dict]): The debt service schedule containing payment entries.  # noqa: E501
             year (int): The year for which to calculate the outstanding principal.
 
         Returns:
             float: The outstanding principal from the debt service schedule.
-        """
+        """  # noqa: E501
         if not debt_service_schedule:
             return 0.0
 
-        # Outstanding principal is just the sum of all principal payments due after this year
+        # Outstanding principal is just the sum of all principal payments due after this year  # noqa: E501
         return sum(
             entry["principal"]
             for entry in debt_service_schedule
@@ -362,13 +362,13 @@ class Debt(MultiLineItem):
 
         Args:
             par (float): The principal amount of the debt.
-            interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).
+            interest_rate (float): Annual interest rate as a decimal (e.g., 0.05 for 5%).  # noqa: E501
             start_year (int): The starting year for the debt service.
             term (int): The term of the debt in years.
 
         Raises:
-            ValueError: If a debt service schedule already exists with the same start_year.
-        """
+            ValueError: If a debt service schedule already exists with the same start_year.  # noqa: E501
+        """  # noqa: E501
         # Check if a schedule with this start_year already exists
         if start_year in self.ds_schedules:
             raise ValueError(
@@ -392,14 +392,14 @@ class Debt(MultiLineItem):
 
         Args:
             par: The principal amount of the debt.
-            interest_rate (float): Annual interest rate (as a decimal, e.g., 0.05 for 5%).
+            interest_rate (float): Annual interest rate (as a decimal, e.g., 0.05 for 5%).  # noqa: E501
             start_year (int): The starting year for the debt service.
             term (int): The term of the debt in years.
 
         Returns:
             list: A list of dictionaries representing the debt service schedule,
                  with each dictionary containing 'year', 'principal', and 'interest'.
-        """
+        """  # noqa: E501
         schedule = []
 
         if interest_rate == 0:
@@ -438,17 +438,17 @@ class Debt(MultiLineItem):
         Get the interest rate for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
-                by year, used for looking up the interest rate if it's specified as a string.
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
+                by year, used for looking up the interest rate if it's specified as a string.  # noqa: E501
             year (int): The year for which to get the interest rate.
 
         Returns:
             float: The interest rate as a float value.
 
         Raises:
-            ValueError: If the interest_rate is a string but the value cannot be found in interim_values_by_year.
+            ValueError: If the interest_rate is a string but the value cannot be found in interim_values_by_year.  # noqa: E501
             TypeError: If the interest_rate is not a float or string.
-        """
+        """  # noqa: E501
         if isinstance(self._interest_rate, (float, int)):
             return float(self._interest_rate)
         elif isinstance(self._interest_rate, str):
@@ -466,11 +466,11 @@ class Debt(MultiLineItem):
                 return float(value)
             else:
                 raise ValueError(
-                    f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values"
+                    f"Could not find interest rate '{interest_rate_name}' for year {year} in interim values"  # noqa: E501
                 )
         else:
             raise TypeError(
-                f"Interest rate must be a float or string, not {type(self._interest_rate)}"
+                f"Interest rate must be a float or string, not {type(self._interest_rate)}"  # noqa: E501
             )
 
     def _get_par_amount(
@@ -480,17 +480,17 @@ class Debt(MultiLineItem):
         Get the par amount for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
-                by year, used for looking up the par amount if it's specified as a string.
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
+                by year, used for looking up the par amount if it's specified as a string.  # noqa: E501
             year (int): The year for which to get the par amount.
 
         Returns:
-            float: The par amount as a float value, or 0.0 if no par amount for this year.
+            float: The par amount as a float value, or 0.0 if no par amount for this year.  # noqa: E501
 
         Raises:
-            ValueError: If the par_amount is a string but the value cannot be found in interim_values_by_year.
+            ValueError: If the par_amount is a string but the value cannot be found in interim_values_by_year.  # noqa: E501
             TypeError: If the par_amount is not a dict or string.
-        """
+        """  # noqa: E501
         if isinstance(self._par_amount, dict):
             # Direct lookup from the dictionary
             return float(self._par_amount.get(year, 0.0))
@@ -507,7 +507,7 @@ class Debt(MultiLineItem):
                 return float(value)
             else:
                 raise ValueError(
-                    f"Could not find par amount '{par_amount_name}' for year {year} in interim values"
+                    f"Could not find par amount '{par_amount_name}' for year {year} in interim values"  # noqa: E501
                 )
         else:
             raise TypeError(
@@ -521,7 +521,7 @@ class Debt(MultiLineItem):
         Get the term for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
                 by year, used for looking up the term if it's specified as a string.
             year (int): The year for which to get the term.
 
@@ -529,10 +529,10 @@ class Debt(MultiLineItem):
             int: The term as an integer value.
 
         Raises:
-            ValueError: If the term is a string but the value cannot be found in interim_values_by_year,
+            ValueError: If the term is a string but the value cannot be found in interim_values_by_year,  # noqa: E501
                         or if the term is zero, negative, or not a whole number.
             TypeError: If the term is not an int or string.
-        """
+        """  # noqa: E501
         term_value = None
 
         if isinstance(self._term, int):
@@ -550,7 +550,7 @@ class Debt(MultiLineItem):
                 term_value = int(value)
             else:
                 raise ValueError(
-                    f"Could not find term '{term_name}' for year {year} in interim values"
+                    f"Could not find term '{term_name}' for year {year} in interim values"  # noqa: E501
                 )
         else:
             raise TypeError(f"Term must be an int or string, not {type(self._term)}")

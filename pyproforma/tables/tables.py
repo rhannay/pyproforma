@@ -48,7 +48,7 @@ class Tables:
                 generated table. Defaults to False.
 
         Returns:
-            Table: A Table object containing the rows and data as specified by the template.
+            Table: A Table object containing the rows and data as specified by the template.  # noqa: E501
 
         Example:
             >>> template = [
@@ -57,7 +57,7 @@ class Tables:
             ...     rt.ItemRow(name='other_revenue')
             ... ]
             >>> table = tables.from_template(template, include_name=True)
-        """
+        """  # noqa: E501
         table = generate_table_from_template(
             self._model, template, include_name=include_name
         )
@@ -78,8 +78,8 @@ class Tables:
                 - LINE ITEM GENERATOR ITEMS: All generated line items
 
         Examples:
-            >>> table = model.tables.all()  # Returns a comprehensive table with all model components
-        """
+            >>> table = model.tables.all()  # Returns a comprehensive table with all model components  # noqa: E501
+        """  # noqa: E501
         rows = []
         # Line Items (including all categories)
         if self._model.category_names:
@@ -103,8 +103,8 @@ class Tables:
         followed by its line items, and includes category totals if configured.
 
         Args:
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.  # noqa: E501
+                                           If provided, cells with hardcoded values will be  # noqa: E501
                                            displayed in this color. Defaults to None.
 
         Returns:
@@ -113,7 +113,7 @@ class Tables:
         Examples:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(hardcoded_color='blue')
-        """
+        """  # noqa: E501
         rows = self._line_item_rows(hardcoded_color=hardcoded_color)
         return self.from_template(rows)
 
@@ -172,15 +172,15 @@ class Tables:
 
         Args:
             category_name (str): The name of the category to generate the table for.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
-            include_total (bool, optional): Whether to include category totals if the category has them configured. Defaults to True.
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
+            include_name (bool, optional): Whether to include the name column. Defaults to False.  # noqa: E501
+            include_total (bool, optional): Whether to include category totals if the category has them configured. Defaults to True.  # noqa: E501
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.  # noqa: E501
+                                           If provided, cells with hardcoded values will be  # noqa: E501
                                            displayed in this color. Defaults to None.
 
         Returns:
             Table: A Table object containing the category items.
-        """
+        """  # noqa: E501
         rows = self._category_rows(
             category_name, include_total=include_total, hardcoded_color=hardcoded_color
         )
@@ -197,14 +197,14 @@ class Tables:
 
         Args:
             name (str): The name of the line item to generate the table for.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
+            include_name (bool, optional): Whether to include the name column. Defaults to False.  # noqa: E501
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.  # noqa: E501
+                                           If provided, cells with hardcoded values will be  # noqa: E501
                                            displayed in this color. Defaults to None.
 
         Returns:
-            Table: A Table object containing the line item's label and values across years.
-        """
+            Table: A Table object containing the line item's label and values across years.  # noqa: E501
+        """  # noqa: E501
         rows = [
             rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label="% Change"),
@@ -215,15 +215,15 @@ class Tables:
 
     def constraint(self, constraint_name: str, color_code: bool = True) -> Table:
         """
-        Generate a table for a specific constraint showing its line item, target, variance, and pass/fail status.
+        Generate a table for a specific constraint showing its line item, target, variance, and pass/fail status.  # noqa: E501
 
         Args:
             constraint_name (str): The name of the constraint to generate the table for.
-            color_code (bool, optional): Whether to apply color coding to the table. Defaults to True.
+            color_code (bool, optional): Whether to apply color coding to the table. Defaults to True.  # noqa: E501
 
         Returns:
-            Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.
-        """
+            Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.  # noqa: E501
+        """  # noqa: E501
         constraint = self._model.constraint_definition(constraint_name)
         rows = [
             rt.LabelRow(label=constraint.label, bold=True),

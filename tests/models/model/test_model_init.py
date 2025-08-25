@@ -5,7 +5,7 @@ from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestModelInitWithDuplicateGenerators:
-    """Test that Model initialization handles duplicate generator names appropriately."""
+    """Test that Model initialization handles duplicate generator names appropriately."""  # noqa: E501
 
     @pytest.fixture
     def basic_line_items(self):
@@ -30,14 +30,14 @@ class TestModelInitWithDuplicateGenerators:
     def test_duplicate_generator_names_should_raise_error(
         self, basic_line_items, basic_categories
     ):
-        """Test that providing two generators with the same name should raise a ValueError.
+        """Test that providing two generators with the same name should raise a ValueError.  # noqa: E501
 
         This test demonstrates that duplicate generator names should not be allowed,
         even if they are different types of generators, because it creates ambiguity
         and potential conflicts in the model namespace.
 
-        Currently this test WILL FAIL because the code doesn't validate generator names directly.
-        """
+        Currently this test WILL FAIL because the code doesn't validate generator names directly.  # noqa: E501
+        """  # noqa: E501
         # Create two debt generators with the same name but different configurations
         debt_generator_1 = Debt(
             name="company_debt", par_amount={2023: 100000}, interest_rate=0.05, term=5
@@ -67,7 +67,7 @@ class TestModelInitWithDuplicateGenerators:
     def test_generator_name_same_as_line_item_is_allowed(
         self, basic_line_items, basic_categories
     ):
-        """Test that a generator name same as line item name is allowed since they have different namespaces."""
+        """Test that a generator name same as line item name is allowed since they have different namespaces."""  # noqa: E501
         # Create a generator with the same name as a line item
         debt_generator = Debt(
             name="revenue",  # Same name as line item
@@ -76,7 +76,7 @@ class TestModelInitWithDuplicateGenerators:
             term=5,
         )
 
-        # This should work because generator creates names like "revenue.principal", "revenue.interest"
+        # This should work because generator creates names like "revenue.principal", "revenue.interest"  # noqa: E501
         # which don't conflict with line item "revenue"
         model = Model(
             line_items=basic_line_items,
@@ -135,13 +135,13 @@ class TestModelInitWithDuplicateGenerators:
     def test_different_generator_types_same_name_should_raise_error(
         self, basic_line_items, basic_categories
     ):
-        """Test that different types of generators with the same name should raise a ValueError.
+        """Test that different types of generators with the same name should raise a ValueError.  # noqa: E501
 
-        This test demonstrates that even different types of generators should not be allowed
+        This test demonstrates that even different types of generators should not be allowed  # noqa: E501
         to have the same name, as it creates confusion and potential conflicts.
 
-        Currently this test WILL FAIL because the code doesn't validate generator names directly.
-        """
+        Currently this test WILL FAIL because the code doesn't validate generator names directly.  # noqa: E501
+        """  # noqa: E501
         from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
 
         # Create a debt generator
@@ -189,13 +189,13 @@ class TestModelInitWithDuplicateCategories:
         ]
 
     def test_duplicate_category_names_should_raise_error(self, basic_line_items):
-        """Test that providing two categories with the same name should raise a ValueError.
+        """Test that providing two categories with the same name should raise a ValueError.  # noqa: E501
 
         This test demonstrates that duplicate category names should not be allowed,
         as it creates ambiguity and potential conflicts in the model.
 
-        Currently this test WILL FAIL if the code doesn't validate category names directly.
-        """
+        Currently this test WILL FAIL if the code doesn't validate category names directly.  # noqa: E501
+        """  # noqa: E501
         # Create two categories with the same name but different labels
         category_1 = Category(name="income", label="Income")
         category_2 = Category(
@@ -314,7 +314,7 @@ class TestModelInitWithConstraints:
     def test_duplicate_constraint_names_should_raise_error(
         self, basic_line_items, basic_categories
     ):
-        """Test that providing two constraints with the same name should raise a ValueError."""
+        """Test that providing two constraints with the same name should raise a ValueError."""  # noqa: E501
         from pyproforma.models.constraint import Constraint
 
         constraint1 = Constraint(
@@ -409,7 +409,7 @@ class TestModelInitWithConstraints:
     def test_constraint_with_invalid_line_item_name_should_raise_error(
         self, basic_line_items, basic_categories
     ):
-        """Test that a constraint referencing a non-existent line item should raise a ValueError."""
+        """Test that a constraint referencing a non-existent line item should raise a ValueError."""  # noqa: E501
 
         constraint = Constraint(
             name="invalid_reference",
@@ -418,10 +418,10 @@ class TestModelInitWithConstraints:
             operator="gt",
         )
 
-        # This should raise a ValueError because the constraint references a line item that doesn't exist
+        # This should raise a ValueError because the constraint references a line item that doesn't exist  # noqa: E501
         with pytest.raises(
             ValueError,
-            match="Constraint 'invalid_reference' references unknown line item 'nonexistent_item'",
+            match="Constraint 'invalid_reference' references unknown line item 'nonexistent_item'",  # noqa: E501
         ):
             Model(
                 line_items=basic_line_items,
@@ -433,7 +433,7 @@ class TestModelInitWithConstraints:
     def test_multiple_constraints_with_invalid_line_item_names(
         self, basic_line_items, basic_categories
     ):
-        """Test that multiple constraints with invalid line item names raise appropriate errors."""
+        """Test that multiple constraints with invalid line item names raise appropriate errors."""  # noqa: E501
 
         constraint1 = Constraint(
             name="invalid_ref_1",
@@ -452,7 +452,7 @@ class TestModelInitWithConstraints:
         # Should raise error for the first invalid reference found
         with pytest.raises(
             ValueError,
-            match="Constraint 'invalid_ref_1' references unknown line item 'nonexistent_item_1'",
+            match="Constraint 'invalid_ref_1' references unknown line item 'nonexistent_item_1'",  # noqa: E501
         ):
             Model(
                 line_items=basic_line_items,
@@ -464,7 +464,7 @@ class TestModelInitWithConstraints:
     def test_mixed_valid_and_invalid_constraint_references(
         self, basic_line_items, basic_categories
     ):
-        """Test that having both valid and invalid constraint references raises error for invalid ones."""
+        """Test that having both valid and invalid constraint references raises error for invalid ones."""  # noqa: E501
 
         valid_constraint = Constraint(
             name="valid_ref",
@@ -483,7 +483,7 @@ class TestModelInitWithConstraints:
         # Should raise error for the invalid reference
         with pytest.raises(
             ValueError,
-            match="Constraint 'invalid_ref' references unknown line item 'nonexistent_item'",
+            match="Constraint 'invalid_ref' references unknown line item 'nonexistent_item'",  # noqa: E501
         ):
             Model(
                 line_items=basic_line_items,

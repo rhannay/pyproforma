@@ -215,7 +215,7 @@ class CumulativePercentChangeRow(BaseRow):
     bold: bool = False
 
     def generate_row(self, model: "Model") -> Row:
-        """Create a row showing cumulative percent change of a line item from the base year."""
+        """Create a row showing cumulative percent change of a line item from the base year."""  # noqa: E501
         # Get the original item's label if no custom label provided
         if self.label is None:
             original_label = model.line_item(self.name).label
@@ -322,11 +322,11 @@ class ConstraintVarianceRow(BaseRow):
     bold: bool = False
 
     def generate_row(self, model: "Model") -> Row:
-        """Create a row showing constraint variance (actual - target) across all years."""
+        """Create a row showing constraint variance (actual - target) across all years."""  # noqa: E501
         # Get the constraint object
         constraint = model.constraint_definition(self.constraint_name)
 
-        # Use constraint name with "Variance" suffix as label if no custom label provided
+        # Use constraint name with "Variance" suffix as label if no custom label provided  # noqa: E501
         label = self.label or f"{self.constraint_name} Variance"
 
         # Default to same format as the constraint's target line item if not specified
@@ -410,7 +410,7 @@ class LabelRow(BaseRow):
     bold: bool = False
 
     def generate_row(self, model: "Model") -> Row:
-        """Create a row with just a label in the leftmost column and empty cells for all years."""
+        """Create a row with just a label in the leftmost column and empty cells for all years."""  # noqa: E501
         # Create cells for this row
         cells = [Cell(value=self.label, bold=self.bold, align="left")]
         if self.include_name:

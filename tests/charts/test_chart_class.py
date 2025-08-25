@@ -47,7 +47,7 @@ class TestChartDataSet:
         assert scatter_dataset.type == "scatter"
 
     def test_init_with_invalid_chart_type(self):
-        """Test ChartDataSet initialization with invalid chart type raises ValueError."""
+        """Test ChartDataSet initialization with invalid chart type raises ValueError."""  # noqa: E501
         data = [1, 2, 3]
 
         with pytest.raises(ValueError, match="Invalid chart type 'pies'"):

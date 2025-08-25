@@ -264,7 +264,7 @@ def test_scenario_mixed_updates(basic_model):
 
 
 def test_scenario_preserves_model_structure(basic_model):
-    """Test that scenario preserves all model structure (categories, constraints, etc.)."""
+    """Test that scenario preserves all model structure (categories, constraints, etc.)."""  # noqa: E501
     scenario_model = basic_model.scenario(
         [("revenue", {"updated_values": {2023: 200}})]
     )

@@ -373,7 +373,7 @@ class TestOtherMisc:
 
         # Test that it's equivalent to line_item() method
         line_item_result = sample_line_item_set.line_item("item1")
-        assert type(result) == type(line_item_result)
+        assert isinstance(result, type(line_item_result))
         assert result.item_name == line_item_result.item_name
         assert result.source_type == line_item_result.source_type
 

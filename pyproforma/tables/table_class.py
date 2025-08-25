@@ -14,19 +14,19 @@ class Cell:
 
     The Cell class represents an individual cell within a table, containing both
     the data value and its presentation formatting. Cells support various styling
-    options including bold text, alignment, background colors, font colors, top borders, bottom borders, and value formatting
+    options including bold text, alignment, background colors, font colors, top borders, bottom borders, and value formatting  # noqa: E501
     for numbers, percentages, and strings.
 
     Attributes:
         value (Optional[Any]): The raw data value stored in the cell. Can be any type.
-        bold (bool): Whether the cell text should be displayed in bold. Defaults to False.
-        align (str): Text alignment for the cell ('left', 'center', 'right'). Defaults to 'right'.
+        bold (bool): Whether the cell text should be displayed in bold. Defaults to False.  # noqa: E501
+        align (str): Text alignment for the cell ('left', 'center', 'right'). Defaults to 'right'.  # noqa: E501
         value_format (Optional[ValueFormat]): Formatting type for the value display.
-            Options: 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
+            Options: 'str', 'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.  # noqa: E501
         background_color (Optional[str]): CSS color string for cell background.
         font_color (Optional[str]): CSS color string for font color.
-        bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.
-        top_border (Optional[str]): Top border style. Can be None, 'single', or 'double'.
+        bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.  # noqa: E501
+        top_border (Optional[str]): Top border style. Can be None, 'single', or 'double'.  # noqa: E501
 
     Examples:
         >>> cell = Cell(value=1000, bold=True, value_format='no_decimals')
@@ -48,7 +48,7 @@ class Cell:
         >>> cell = Cell(value="Header", top_border='single')
         >>> 'border-top: 1px solid black' in cell.df_css
         True
-    """
+    """  # noqa: E501
 
     value: Optional[Any] = None
     bold: bool = False
@@ -78,7 +78,7 @@ class Cell:
                 styles.append("border-bottom: 3px double black")
             else:
                 raise ValueError(
-                    f"Invalid bottom_border value: '{self.bottom_border}'. Must be None, 'single', or 'double'."
+                    f"Invalid bottom_border value: '{self.bottom_border}'. Must be None, 'single', or 'double'."  # noqa: E501
                 )
         if self.top_border:
             if self.top_border == "single":
@@ -87,7 +87,7 @@ class Cell:
                 styles.append("border-top: 3px double black")
             else:
                 raise ValueError(
-                    f"Invalid top_border value: '{self.top_border}'. Must be None, 'single', or 'double'."
+                    f"Invalid top_border value: '{self.top_border}'. Must be None, 'single', or 'double'."  # noqa: E501
                 )
         return "; ".join(styles) + (";" if styles else "")
 
@@ -138,9 +138,9 @@ class Column:
 class Table:
     """A structured table representation with rows, columns, and cell formatting.
 
-    The Table class provides a flexible way to create, manipulate, and export tabular data
-    with support for cell-level formatting including styling, alignment, and value formatting.
-    Tables can be converted to pandas DataFrames, styled DataFrames, or exported to Excel
+    The Table class provides a flexible way to create, manipulate, and export tabular data  # noqa: E501
+    with support for cell-level formatting including styling, alignment, and value formatting.  # noqa: E501
+    Tables can be converted to pandas DataFrames, styled DataFrames, or exported to Excel  # noqa: E501
     with preserved formatting.
 
     Attributes:
@@ -157,7 +157,7 @@ class Table:
     Note:
         The number of cells in each row must match the number of columns.
         This is validated automatically during initialization.
-    """
+    """  # noqa: E501
 
     columns: list[Column]
     rows: list[Row]
@@ -193,19 +193,19 @@ class Table:
     def to_styled_df(self) -> Styler:
         """Convert the Table to a styled pandas DataFrame with formatting preserved.
 
-        Creates a pandas Styler object that includes all cell-level formatting from the Table,
+        Creates a pandas Styler object that includes all cell-level formatting from the Table,  # noqa: E501
         including bold text, text alignment, background colors, and value formatting.
         This is useful for rich display in Jupyter notebooks or HTML output.
 
         Returns:
             pd.io.formats.style.Styler: A styled DataFrame object with CSS formatting
-                                       applied based on the cell properties (bold, align,
+                                       applied based on the cell properties (bold, align,  # noqa: E501
                                        background_color) and formatted values.
 
         Note:
-            The returned Styler preserves all visual formatting from the original Table cells,
+            The returned Styler preserves all visual formatting from the original Table cells,  # noqa: E501
             making it ideal for presentation purposes where formatting matters.
-        """
+        """  # noqa: E501
         # get a dataframe with formatted values
         df = self._to_value_formatted_df()
         style_map = self._get_style_map()
@@ -241,8 +241,8 @@ class Table:
 
         Note:
             This is a magic method that enables automatic rich display when a Table
-            object is the last expression in a Jupyter cell or when explicitly displayed.
-        """
+            object is the last expression in a Jupyter cell or when explicitly displayed.  # noqa: E501
+        """  # noqa: E501
         styled_df = self.to_styled_df()
         return styled_df.to_html()
 
@@ -253,7 +253,7 @@ class Table:
         for i, row in enumerate(self.rows):
             if len(row.cells) != num_columns:
                 raise ValueError(
-                    f"Row {i} has {len(row.cells)} cells, expected {num_columns} based on the number of columns."
+                    f"Row {i} has {len(row.cells)} cells, expected {num_columns} based on the number of columns."  # noqa: E501
                 )
 
     def _to_value_formatted_df(self) -> pd.DataFrame:
@@ -285,7 +285,7 @@ def format_value(
     if value_format == "str":
         return str(value)
     elif value_format == "no_decimals":
-        return f"{int(round(value)):,}"  # Format as rounded number with commas, no decimals
+        return f"{int(round(value)):,}"  # Format as rounded number with commas, no decimals  # noqa: E501
     elif value_format == "two_decimals":
         return f"{value:,.2f}"
     elif value_format == "percent":

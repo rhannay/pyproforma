@@ -55,7 +55,7 @@ class TestConstraintInit:
         for name in invalid_names:
             with pytest.raises(
                 ValueError,
-                match="Constraint name must only contain letters, numbers, underscores, or hyphens",
+                match="Constraint name must only contain letters, numbers, underscores, or hyphens",  # noqa: E501
             ):
                 Constraint(
                     name=name, line_item_name="revenue", target=1000.0, operator="eq"

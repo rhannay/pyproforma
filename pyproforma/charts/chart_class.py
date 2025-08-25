@@ -21,7 +21,7 @@ class ChartDataSet:
         valid_types = {"line", "bar", "scatter", "pie"}
         if type not in valid_types:
             raise ValueError(
-                f"Invalid chart type '{type}'. Must be one of: {', '.join(sorted(valid_types))}"
+                f"Invalid chart type '{type}'. Must be one of: {', '.join(sorted(valid_types))}"  # noqa: E501
             )
 
         self.label = label
@@ -31,7 +31,7 @@ class ChartDataSet:
         self.dashed = dashed
 
     def __repr__(self):
-        return f"ChartDataSet(label='{self.label}', type='{self.type}', color='{self.color}')"
+        return f"ChartDataSet(label='{self.label}', type='{self.type}', color='{self.color}')"  # noqa: E501
 
 
 class Chart:
@@ -220,6 +220,6 @@ class Chart:
 
         if has_pie and (len(self.data_sets) > 1 or has_other):
             raise ValueError(
-                "Pie charts cannot be combined with other chart types or multiple datasets. "
+                "Pie charts cannot be combined with other chart types or multiple datasets. "  # noqa: E501
                 "Use a single ChartDataSet with type='pie' for pie charts."
             )

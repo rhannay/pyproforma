@@ -5,9 +5,9 @@ from .formula import calculate_formula
 
 class LineItem:
     """
-    Defines a line item specification for a financial model with values across multiple years.
+    Defines a line item specification for a financial model with values across multiple years.  # noqa: E501
 
-    A LineItem defines the structure and calculation logic for a line item, storing explicit
+    A LineItem defines the structure and calculation logic for a line item, storing explicit  # noqa: E501
     values for specific years or using formulas to calculate values dynamically. Once a
     LineItem is part of a model, the calculated results are available in
     [LineItemResults][pyproforma.models.results.LineItemResults] instances. It's a core
@@ -17,13 +17,13 @@ class LineItem:
         name (str): Unique identifier for the line item. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
         category (str): Category or type classification for the line item.
-        label (str, optional): Human-readable display name. Defaults to name if not provided.
-        values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
+        label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
+        values (dict[int, float | None], optional): Dictionary mapping years to explicit values.  # noqa: E501
             Values can be numbers or None. Defaults to empty dict if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
-        value_format (ValueFormat, optional): Format specification for displaying values.
-            Must be one of the values in VALUE_FORMATS constant: None, 'str', 'no_decimals',
+        value_format (ValueFormat, optional): Format specification for displaying values.  # noqa: E501
+            Must be one of the values in VALUE_FORMATS constant: None, 'str', 'no_decimals',  # noqa: E501
             'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
             Defaults to 'no_decimals'.
 
@@ -45,7 +45,7 @@ class LineItem:
         ...     category="income",
         ...     formula="revenue * 0.1"
         ... )
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -58,7 +58,7 @@ class LineItem:
     ):
         if not check_name(name):
             raise ValueError(
-                "LineItem name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."
+                "LineItem name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."  # noqa: E501
             )
         self.name = name
         self.category = category
@@ -78,22 +78,22 @@ class LineItem:
         Get the value for this line item in a specific year.
 
         The method follows this precedence:
-        1. Check if value already exists in interim_values_by_year (raises error if found)
-        2. Return explicit value from self.values if available for the year (including None)
+        1. Check if value already exists in interim_values_by_year (raises error if found)  # noqa: E501
+        2. Return explicit value from self.values if available for the year (including None)  # noqa: E501
         3. Calculate value using formula if formula is defined
         4. Return None if no value or formula is available
 
         Args:
             interim_values_by_year (dict): Dictionary containing calculated values
-                by year, used to prevent circular references and for formula calculations.
+                by year, used to prevent circular references and for formula calculations.  # noqa: E501
             year (int): The year for which to get the value.
 
         Returns:
-            float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
+            float or None: The calculated/stored value for the specified year, or None if no value/formula exists.  # noqa: E501
 
         Raises:
-            ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
-        """
+            ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.  # noqa: E501
+        """  # noqa: E501
         # Validate interim values by year
         is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
         if not is_valid:
@@ -102,7 +102,7 @@ class LineItem:
         # If interim_values_by_year[year][self.name] already exists, raise an error
         if year in interim_values_by_year and self.name in interim_values_by_year[year]:
             raise ValueError(
-                f"Value for {self.name} in year {year} already exists in interim values."
+                f"Value for {self.name} in year {year} already exists in interim values."  # noqa: E501
             )
 
         # If value for this year is in .values, return that value (including None)
@@ -123,8 +123,8 @@ class LineItem:
             year (int): The year to check for hardcoded values.
 
         Returns:
-            bool: True if the year has a hardcoded value in self.values, False otherwise.
-        """
+            bool: True if the year has a hardcoded value in self.values, False otherwise.  # noqa: E501
+        """  # noqa: E501
         return year in self.values
 
     def to_dict(self) -> dict:
@@ -141,7 +141,7 @@ class LineItem:
     @classmethod
     def from_dict(cls, item_dict: dict) -> "LineItem":
         """Create LineItem from dictionary."""
-        # Convert string keys back to integers for values dict (JSON converts int keys to strings)
+        # Convert string keys back to integers for values dict (JSON converts int keys to strings)  # noqa: E501
         values = item_dict.get("values", {})
         if values:
             values = {int(k): v for k, v in values.items()}
