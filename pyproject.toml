@@ -40,7 +40,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/rhannay/pyproforma"
 Repository = "https://github.com/rhannay/pyproforma"
-Documentation = "https://github.com/rhannay/pyproforma#readme"
+Documentation = "https://pyproforma.readthedocs.io/en/latest/"
 Issues = "https://github.com/rhannay/pyproforma/issues"
 
 [project.optional-dependencies]
