@@ -183,7 +183,7 @@ class TestConstraintSerialization:
         assert model_dict["constraints"] == []
 
     def test_from_dict_with_no_constraints(self):
-        """Test that from_dict works correctly when there are no constraints in the dict."""  # noqa: E501
+        """Test that from_dict works correctly when there are no constraints in the dict."""
         model_dict = {
             "years": [2023],
             "line_items": [

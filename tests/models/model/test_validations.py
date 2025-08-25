@@ -185,7 +185,7 @@ class TestValidateLineItems:
             validate_line_items(line_items, categories)
 
     def test_multiple_line_items_with_invalid_categories_raises_error(self):
-        """Test that multiple line items with undefined categories raise appropriate error."""  # noqa: E501
+        """Test that multiple line items with undefined categories raise appropriate error."""
         categories = [Category("income")]
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 1000}),
@@ -325,7 +325,7 @@ class TestValidateConstraints:
         assert "Constraint 'check1' references unknown line item 'costs'" in error_msg
 
     def test_constraint_names_case_sensitive(self):
-        """Test that constraint names are case sensitive (no duplicates when different case)."""  # noqa: E501
+        """Test that constraint names are case sensitive (no duplicates when different case)."""
         line_items = [LineItem(name="revenue", category="income", values={2023: 1000})]
         constraints = [
             Constraint(
@@ -452,7 +452,7 @@ class TestValidateMultiLineItems:
         assert "short1" in error_msg
 
     def test_mixed_types_with_same_names_raise_error(self):
-        """Test that different multi line item types with same names raise ValueError."""  # noqa: E501
+        """Test that different multi line item types with same names raise ValueError."""
         categories = [Category("income"), Category("expense")]
         multi_line_items = [
             Debt(name="debt_item", par_amount={2023: 1000}, interest_rate=0.05, term=5),
@@ -530,7 +530,7 @@ class TestValidateMultiLineItems:
         validate_multi_line_items(multi_line_items, categories)
 
     def test_multi_line_item_name_conflicts_with_category(self):
-        """Test that multi line item names that conflict with category names raise ValueError."""  # noqa: E501
+        """Test that multi line item names that conflict with category names raise ValueError."""
         categories = [Category("income"), Category("debt_service")]
         multi_line_items = [
             Debt(
@@ -545,7 +545,7 @@ class TestValidateMultiLineItems:
             validate_multi_line_items(multi_line_items, categories)
 
     def test_multiple_multi_line_item_category_conflicts(self):
-        """Test that multiple multi line item names conflicting with categories are reported."""  # noqa: E501
+        """Test that multiple multi line item names conflicting with categories are reported."""
         categories = [
             Category("income"),
             Category("debt_service"),

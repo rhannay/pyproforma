@@ -6,7 +6,7 @@ import numexpr as ne
 
 def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     """
-    Validate that all variable names in a formula are included in the provided list of valid names.  # noqa: E501
+    Validate that all variable names in a formula are included in the provided list of valid names.
 
     This function checks both regular variable references (e.g., 'revenue') and time-offset  # noqa: E501
     references (e.g., 'revenue[-1]') to ensure all variables exist in the model. It also
@@ -15,12 +15,12 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     and ensures no positive time offsets are used (future references are not allowed).
 
     Args:
-        formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")  # noqa: E501
+        formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
         name (str): The name of the line item this formula belongs to
         valid_names (List[str]): List of valid variable names available in the model
 
     Raises:
-        ValueError: If the line item name is not in valid_names, if any variable referenced  # noqa: E501
+        ValueError: If the line item name is not in valid_names, if any variable referenced
                    in the formula is not found in the valid_names list, if the formula
                    contains a circular reference to its own name without a time offset or  # noqa: E501
                    with [0] offset, or if the formula contains positive time offsets (future references)  # noqa: E501
@@ -34,7 +34,7 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         # Raises ValueError - circular reference without time offset
         >>> validate_formula("revenue[1] + expenses", "projection", ["revenue", "expenses", "projection"])  # noqa: E501
         # Raises ValueError - positive time offset not allowed
-    """  # noqa: E501
+    """
     # Check that the line item name is in valid_names
     if name not in valid_names:
         raise ValueError(f"Line item name '{name}' is not found in valid names")
@@ -88,14 +88,14 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         pattern = rf"\b{re.escape(name)}\b(?!\[)"
         if re.search(pattern, formula):
             raise ValueError(
-                f"Circular reference detected: formula for '{name}' references itself without a time offset"  # noqa: E501
+                f"Circular reference detected: formula for '{name}' references itself without a time offset"
             )
 
     # Check for circular reference with [0] time offset (which is equivalent to no offset)  # noqa: E501
     pattern_with_zero_offset = rf"\b{re.escape(name)}\[0\]"
     if re.search(pattern_with_zero_offset, formula):
         raise ValueError(
-            f"Circular reference detected: formula for '{name}' references itself with [0] time offset, which is equivalent to no time offset"  # noqa: E501
+            f"Circular reference detected: formula for '{name}' references itself with [0] time offset, which is equivalent to no time offset"
         )
 
     # Check for positive time offsets (future references) which are not allowed
@@ -130,8 +130,8 @@ def calculate_formula(
     and support time-based offsets (e.g., revenue[-1] for previous year's revenue).
 
     Args:
-        formula (str): The formula string to evaluate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")  # noqa: E501
-        value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year and variable name  # noqa: E501
+        formula (str): The formula string to evaluate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
+        value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year and variable name
         year (int): The current year for which to evaluate the formula
 
     Returns:
@@ -141,12 +141,12 @@ def calculate_formula(
         ValueError: If a referenced variable or year is not found in the value matrix
 
     Examples:
-        >>> matrix = {2023: {'revenue': 1000, 'expenses': 800}, 2024: {'revenue': 1100, 'expenses': 850}}  # noqa: E501
+        >>> matrix = {2023: {'revenue': 1000, 'expenses': 800}, 2024: {'revenue': 1100, 'expenses': 850}}
         >>> calculate_formula("revenue - expenses", matrix, 2024)
         250.0
         >>> calculate_formula("revenue[-1] * 1.1", matrix, 2024)  # Previous year's revenue * 1.1  # noqa: E501
         1100.0
-    """  # noqa: E501
+    """
     # strip whitespace from the formula
     formula = formula.strip()
 

@@ -44,9 +44,9 @@ class UpdateNamespace:
         Args:
             category (Category, optional): An already-created Category instance to add
             name (str, optional): Name for new Category - required if category is None
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            total_label (str, optional): Label for the category total. Defaults to "Total {label}"  # noqa: E501
-            include_total (bool, optional): Whether to include a total for this category. Defaults to True  # noqa: E501
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
+            include_total (bool, optional): Whether to include a total for this category. Defaults to True
 
         Returns:
             None
@@ -54,7 +54,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If the category cannot be added (validation fails), or if both
                 category and name are provided, or if neither is provided
-        """  # noqa: E501
+        """
         # Validate that exactly one of category or name is provided
         if category is not None and name is not None:
             raise ValueError(
@@ -122,16 +122,16 @@ class UpdateNamespace:
             model.update.add_line_item(existing_line_item)
 
             # Method 2: Create from parameters
-            model.update.add_line_item(name="revenue", category="income", values={2023: 100000})  # noqa: E501
+            model.update.add_line_item(name="revenue", category="income", values={2023: 100000})
 
         Args:
             line_item (LineItem, optional): An already-created LineItem instance to add
             name (str, optional): Name for new LineItem - required if line_item is None
-            category (str, optional): Category for new LineItem - required if line_item is None  # noqa: E501
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            values (dict[int, float], optional): Dictionary mapping years to explicit values  # noqa: E501
+            category (str, optional): Category for new LineItem - required if line_item is None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'  # noqa: E501
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
 
         Returns:
             None
@@ -140,7 +140,7 @@ class UpdateNamespace:
             ValueError: If the line item cannot be added (validation fails), or if both
                 line_item and name are provided, or if neither is provided
             TypeError: If name is provided but category is missing
-        """  # noqa: E501
+        """
         # Validate that exactly one of line_item or name is provided
         if line_item is not None and name is not None:
             raise ValueError(
@@ -229,7 +229,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing category to update
-            category (Category, optional): New Category instance to replace the existing one  # noqa: E501
+            category (Category, optional): New Category instance to replace the existing one
             new_name (str, optional): New name for the category
             label (str, optional): New label for the category
             total_label (str, optional): New total label for the category
@@ -241,7 +241,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If the category cannot be updated (validation fails)
             KeyError: If the category with the given name is not found
-        """  # noqa: E501
+        """
         # Find the existing category
         existing_category = None
         for category_item in self._model._category_definitions:
@@ -331,7 +331,7 @@ class UpdateNamespace:
 
         Usage:
             # Update specific attributes
-            model.update.update_line_item("revenue", values={2023: 150000}, label="New Revenue")  # noqa: E501
+            model.update.update_line_item("revenue", values={2023: 150000}, label="New Revenue")
 
             # Rename a line item
             model.update.update_line_item("old_name", new_name="new_name")
@@ -341,7 +341,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing line item to update
-            line_item (LineItem, optional): New LineItem instance to replace the existing one  # noqa: E501
+            line_item (LineItem, optional): New LineItem instance to replace the existing one
             new_name (str, optional): New name for the line item
             category (str, optional): New category for the line item
             label (str, optional): New label for the line item
@@ -355,7 +355,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If the line item cannot be updated (validation fails)
             KeyError: If the line item with the given name is not found
-        """  # noqa: E501
+        """
         # Find the existing line item
         try:
             existing_item = self._model.line_item_definition(name)
@@ -417,11 +417,11 @@ class UpdateNamespace:
 
         This method takes a list of tuples, where each tuple contains a line item name
         and a dictionary of parameters to update for that line item. It applies all updates  # noqa: E501
-        in a single transaction, validating the entire set of changes before applying them.  # noqa: E501
+        in a single transaction, validating the entire set of changes before applying them.
 
         When using 'updated_values', the provided values are merged with existing values,  # noqa: E501
-        rather than replacing them completely. To replace all values, use 'values' instead.  # noqa: E501
-        Note: You cannot specify both 'values' and 'updated_values' for the same line item.  # noqa: E501
+        rather than replacing them completely. To replace all values, use 'values' instead.
+        Note: You cannot specify both 'values' and 'updated_values' for the same line item.
 
         Usage:
             model.update.update_multiple_line_items([
@@ -429,7 +429,7 @@ class UpdateNamespace:
                 ("revenue", {"values": {2023: 150000}, "label": "New Revenue"}),
 
                 # Update only specific years (2023) while preserving other years
-                ("expenses", {"updated_values": {2023: 105000}, "formula": "revenue * 0.7"}),  # noqa: E501
+                ("expenses", {"updated_values": {2023: 105000}, "formula": "revenue * 0.7"}),
 
                 # Only update formatting without touching values
                 ("profit", {"value_format": "percentage"})
@@ -448,7 +448,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If any of the updates would result in an invalid model
             KeyError: If any line item name is not found in model
-        """  # noqa: E501
+        """
         if not item_updates:
             return
 
@@ -547,7 +547,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If the years list is invalid (empty, non-integers, etc.)
             TypeError: If new_years is not a list
-        """  # noqa: E501
+        """
         # Validate input
         if not isinstance(new_years, list):
             raise TypeError(f"Expected list, got {type(new_years).__name__}")
@@ -618,7 +618,7 @@ class UpdateNamespace:
         if line_items_using_category:
             item_names = [item.name for item in line_items_using_category]
             raise ValueError(
-                f"Cannot delete category '{name}' because it is used by line items: {', '.join(item_names)}"  # noqa: E501
+                f"Cannot delete category '{name}' because it is used by line items: {', '.join(item_names)}"
             )
 
         # Test on a copy of the model first
@@ -726,21 +726,21 @@ class UpdateNamespace:
             )
 
         Args:
-            constraint (Constraint, optional): An already-created Constraint instance to add  # noqa: E501
-            name (str, optional): Name for new Constraint - required if constraint is None  # noqa: E501
-            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None  # noqa: E501
-            target (float, optional): Target value for constraint - required if constraint is None  # noqa: E501
-            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None  # noqa: E501
-            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0  # noqa: E501
-            label (str, optional): Display label for the constraint. Defaults to name if not provided  # noqa: E501
+            constraint (Constraint, optional): An already-created Constraint instance to add
+            name (str, optional): Name for new Constraint - required if constraint is None
+            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None
+            target (float, optional): Target value for constraint - required if constraint is None
+            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None
+            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0
+            label (str, optional): Display label for the constraint. Defaults to name if not provided
 
         Returns:
             None
 
         Raises:
             ValueError: If the constraint cannot be added (validation fails)
-            TypeError: If neither constraint instance nor required parameters are provided  # noqa: E501
-        """  # noqa: E501
+            TypeError: If neither constraint instance nor required parameters are provided
+        """
         if constraint is not None:
             # Method 1: Add an existing constraint
             new_constraint = constraint
@@ -817,7 +817,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing constraint to update
-            constraint (Constraint, optional): Complete constraint instance to replace existing one  # noqa: E501
+            constraint (Constraint, optional): Complete constraint instance to replace existing one
             new_name (str, optional): New name for the constraint
             line_item_name (str, optional): New line item name for the constraint
             target (float, optional): New target value for the constraint
@@ -831,7 +831,7 @@ class UpdateNamespace:
         Raises:
             ValueError: If the constraint cannot be updated (validation fails)
             KeyError: If the constraint with the given name is not found
-        """  # noqa: E501
+        """
         # Find the existing constraint
         constraint_index = None
         existing_constraint = None
@@ -844,7 +844,7 @@ class UpdateNamespace:
         if existing_constraint is None:
             available_constraints = [c.name for c in self._model.constraints]
             raise KeyError(
-                f"Constraint '{name}' not found. Available constraints: {available_constraints}"  # noqa: E501
+                f"Constraint '{name}' not found. Available constraints: {available_constraints}"
             )
 
         if constraint is not None:
@@ -924,7 +924,7 @@ class UpdateNamespace:
         if not constraint_exists:
             available_constraints = [c.name for c in self._model.constraints]
             raise KeyError(
-                f"Constraint '{name}' not found. Available constraints: {available_constraints}"  # noqa: E501
+                f"Constraint '{name}' not found. Available constraints: {available_constraints}"
             )
 
         # Test on a copy of the model first

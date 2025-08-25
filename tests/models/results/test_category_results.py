@@ -80,7 +80,7 @@ class TestCategoryResultsInitialization:
         assert "service_revenue" in category_results.line_item_names
 
     def test_init_category_without_total(self, model_with_categories):
-        """Test CategoryResults initialization with category that doesn't include totals."""  # noqa: E501
+        """Test CategoryResults initialization with category that doesn't include totals."""
         # Add a line item to the metrics category
         metrics_item = LineItem(
             name="conversion_rate",

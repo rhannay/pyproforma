@@ -25,7 +25,7 @@ class TestGenerateValueMatrix:
         ]
 
     def test_order_of_line_items_does_not_matter(self, basic_categories):
-        """Test that the order of line items in the list does not affect the calculation results."""  # noqa: E501
+        """Test that the order of line items in the list does not affect the calculation results."""
         # Create line items with dependencies - net_income depends on revenue and expenses  # noqa: E501
         revenue = LineItem(
             name="revenue", category="revenue", values={2023: 1000, 2024: 1200}
@@ -171,7 +171,7 @@ class TestGenerateValueMatrix:
     def test_formula_with_invalid_variable_in_formula_calculation(
         self, basic_categories
     ):
-        """Test that the underlying formula calculation raises a clear error for unknown variables."""  # noqa: E501
+        """Test that the underlying formula calculation raises a clear error for unknown variables."""
         from pyproforma.models.formula import calculate_formula
 
         # Test the formula calculation directly to ensure it gives useful errors
@@ -341,7 +341,7 @@ class TestGenerateValueMatrix:
         assert "good2" not in error_msg
 
     def test_generate_value_matrix_with_line_item_generators(self, basic_categories):
-        """Test that line item generators are included in the value matrix and order doesn't matter."""  # noqa: E501
+        """Test that line item generators are included in the value matrix and order doesn't matter."""
         # Create a debt line item generator
         debt_generator = Debt(
             name="loan", par_amount={2023: 100000}, interest_rate=0.05, term=5
@@ -400,7 +400,7 @@ class TestGenerateValueMatrix:
         assert matrix1[2023]["net_income"] == 150000 - matrix1[2023][debt_payment_var]
 
     def test_generate_value_matrix_with_assumptions(self, basic_categories):
-        """Test that assumptions (now as line items) are included in the value matrix."""  # noqa: E501
+        """Test that assumptions (now as line items) are included in the value matrix."""
         # Create assumptions as line items
         growth_rate = LineItem(
             name="growth_rate", category="assumptions", values={2023: 0.05, 2024: 0.07}
@@ -484,7 +484,7 @@ class TestGenerateValueMatrix:
     def test_formula_referencing_own_category_total_raises_error(
         self, basic_categories
     ):
-        """Test that a formula referencing its own category total raises a clear error."""  # noqa: E501
+        """Test that a formula referencing its own category total raises a clear error."""
         # Suppose the convention is that category totals are referenced as e.g. 'revenue_total'  # noqa: E501
         revenue = LineItem(name="revenue", category="revenue", values={2023: 1000})
         # This line item tries to reference its own category total, which should not be allowed  # noqa: E501
@@ -522,7 +522,7 @@ class TestGenerateValueMatrix:
         assert "not found" in error_msg or "not allowed" in error_msg
 
     def test_order_with_category_total_dependencies(self, basic_categories):
-        """Test that order of line items does not affect calculation when using category totals."""  # noqa: E501
+        """Test that order of line items does not affect calculation when using category totals."""
         # Add two revenue and two expense line items
         rev1 = LineItem(name="rev1", category="revenue", values={2023: 100, 2024: 200})
         rev2 = LineItem(name="rev2", category="revenue", values={2023: 300, 2024: 400})

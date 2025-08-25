@@ -10,8 +10,8 @@ class TestDebtParamsFromValueMatrix:
     Tests for Debt line item generator integration with the Model.
 
     These tests verify that Debt instances can reference values from other line items in the model  # noqa: E501
-    and that their calculated values are correctly integrated into the model's value matrix.  # noqa: E501
-    """  # noqa: E501
+    and that their calculated values are correctly integrated into the model's value matrix.
+    """
 
     def test_debt_par_amounts_from_value_matrix(self):
         """
@@ -19,8 +19,8 @@ class TestDebtParamsFromValueMatrix:
 
         This test creates a Model with a line item 'par_amount' and a Debt line item generator  # noqa: E501
         that references this line item for its par_amount. It then verifies that the model  # noqa: E501
-        correctly calculates principal, interest, and bond proceeds values for each year.  # noqa: E501
-        """  # noqa: E501
+        correctly calculates principal, interest, and bond proceeds values for each year.
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 
@@ -78,13 +78,13 @@ class TestDebtParamsFromValueMatrix:
 
     def test_all_debt_params_from_value_matrix(self):
         """
-        Test debt where all parameters (par_amount, interest_rate, term) are string references.  # noqa: E501
+        Test debt where all parameters (par_amount, interest_rate, term) are string references.
 
         This test creates a Model with line items for 'par_amount', 'interest_rate', and 'term',  # noqa: E501
         then adds a Debt line item generator that references all three line items. It verifies  # noqa: E501
         that the model correctly calculates debt values considering the different parameters  # noqa: E501
         for each issuance year.
-        """  # noqa: E501
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 
@@ -162,16 +162,16 @@ class TestDebtParamsFromValueMatrix:
 
     def test_debt_par_amounts_from_value_matrix_multi_layer(self):
         """
-        Test debt where par_amount is a string reference to a multi-layered chain of formulas in the model.  # noqa: E501
+        Test debt where par_amount is a string reference to a multi-layered chain of formulas in the model.
 
         This test creates a Model with a line item 'par_amount' and then multiple layers of LineItems  # noqa: E501
         with formulas that reference each other (par_amount_2 references par_amount, par_amount_3 references  # noqa: E501
-        par_amount_2, etc.). The Debt line item generator references the last LineItem in the chain (par_amount_4).  # noqa: E501
+        par_amount_2, etc.). The Debt line item generator references the last LineItem in the chain (par_amount_4).
 
         This tests the model's ability to correctly resolve multi-level dependencies during value matrix iterations  # noqa: E501
         and calculate debt values accurately. Initially, the debt cannot be calculated because the chain of values  # noqa: E501
-        needs to be resolved through multiple iterations of the value matrix calculation.  # noqa: E501
-        """  # noqa: E501
+        needs to be resolved through multiple iterations of the value matrix calculation.
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 

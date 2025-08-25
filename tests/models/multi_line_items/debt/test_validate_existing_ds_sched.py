@@ -93,7 +93,7 @@ class TestValidateExistingDebtService:
         ]
         with pytest.raises(
             ValueError,
-            match="existing_debt_service entry 0 is missing required keys: {'principal'}",  # noqa: E501
+            match="existing_debt_service entry 0 is missing required keys: {'principal'}",
         ):
             Debt._validate_existing_debt_service(invalid_data)
 
@@ -104,7 +104,7 @@ class TestValidateExistingDebtService:
         ]
         with pytest.raises(
             ValueError,
-            match="existing_debt_service entry 0 is missing required keys: {'interest'}",  # noqa: E501
+            match="existing_debt_service entry 0 is missing required keys: {'interest'}",
         ):
             Debt._validate_existing_debt_service(invalid_data)
 

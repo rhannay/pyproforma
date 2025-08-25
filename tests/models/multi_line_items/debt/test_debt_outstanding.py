@@ -13,7 +13,7 @@ class TestCalculateDebtOutstandingForIssue:
         assert Debt._calculate_debt_outstanding_for_issue(None, 2030) == 0.0
 
     def test_empty_debt_service_schedule(self):
-        """Test that outstanding debt is 0 when debt service schedule is an empty list."""  # noqa: E501
+        """Test that outstanding debt is 0 when debt service schedule is an empty list."""
         assert Debt._calculate_debt_outstanding_for_issue([], 2024) == 0.0
         assert Debt._calculate_debt_outstanding_for_issue([], 2025) == 0.0
 
@@ -182,7 +182,7 @@ class TestGetDebtOutstanding:
     """Test cases for the get_debt_outstanding method."""
 
     def test_no_debt_at_all(self):
-        """Test that outstanding debt is 0 when there's no existing debt or new issues."""  # noqa: E501
+        """Test that outstanding debt is 0 when there's no existing debt or new issues."""
         debt = Debt(
             name="test_debt",
             par_amount={},  # No new debt issues
