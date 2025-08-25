@@ -204,7 +204,7 @@ class Tables:
 
         Returns:
             Table: A Table object containing the line item's label and values across years.
-        """
+        """  # noqa: E501
         rows = [
             rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label="% Change"),
