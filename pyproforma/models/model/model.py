@@ -427,7 +427,7 @@ class Model(SerializationMixin):
             >>> print(debt_constraint)  # Shows summary information
             >>> debt_constraint.values()  # Returns dict of year: value
             >>> debt_constraint.table()  # Returns Table object
-        """  # noqa: E501
+        """
         if constraint_name is None or constraint_name == "":
             available_constraints = [constraint.name for constraint in self.constraints]
             if available_constraints:
@@ -480,7 +480,7 @@ class Model(SerializationMixin):
             # (equivalent to model.line_item("revenue"))
             ```
 
-        """  # noqa: E501
+        """
         if item_name is None or item_name == "":
             available_items = sorted([item["name"] for item in self.line_item_metadata])
             if available_items:
@@ -615,7 +615,7 @@ class Model(SerializationMixin):
 
         Raises:
             KeyError: If the category total is not found in defined names or value matrix
-        """  # noqa: E501
+        """
         # find category total name
         total_name_lookup = {
             x["source_name"]: x["name"]
@@ -669,7 +669,7 @@ class Model(SerializationMixin):
                 - multi_line_item_names: List of multi line item names
                 - constraint_names: List of constraint names
                 - defined_names_count: Total number of defined names (items that can be referenced)
-        """  # noqa: E501
+        """
         # Count items by category
         line_items_by_category = {}
         for category in self.category_metadata:
@@ -756,7 +756,7 @@ class Model(SerializationMixin):
         Examples:
             >>> original_model = Model(line_items, years=[2023, 2024])
             >>> copied_model = original_model.copy()  # Changes won't affect original
-        """  # noqa: E501
+        """
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
         copied_categories = copy.deepcopy(self._category_definitions)
@@ -825,7 +825,7 @@ class Model(SerializationMixin):
             The scenario method preserves all model structure including categories,
             constraints, and line item generators. Only the specified line items
             are modified according to the provided parameters.
-        """  # noqa: E501
+        """
         # Create a copy of the current model
         scenario_model = self.copy()
 

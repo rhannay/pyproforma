@@ -21,12 +21,12 @@ def validate_line_items(line_items: List[LineItem], categories: List[Category]):
 
     Args:
         line_items (List[LineItem]): List of line items to validate
-        categories (List[Category]): List of category definitions to validate references against  # noqa: E501
+        categories (List[Category]): List of category definitions to validate references against
 
     Raises:
         ValueError: If two or more line items have the same name, or if a line item
                    references a category that is not defined.
-    """  # noqa: E501
+    """
     if not line_items:
         return
 
@@ -109,7 +109,7 @@ def validate_multi_line_items(
     multi_line_items: List[MultiLineItem], categories: List[Category]
 ):
     """
-    Validates that all multi line items have unique names and don't conflict with category names.  # noqa: E501
+    Validates that all multi line items have unique names and don't conflict with category names.
 
     Args:
         multi_line_items (List[MultiLineItem]): List of multi line items to validate
@@ -118,7 +118,7 @@ def validate_multi_line_items(
     Raises:
         ValueError: If two or more multi line items have the same name, or if a multi
                    line item name conflicts with a category name.
-    """  # noqa: E501
+    """
     if not multi_line_items:
         return
 
@@ -129,7 +129,7 @@ def validate_multi_line_items(
 
     if duplicates:
         raise ValueError(
-            f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}"  # noqa: E501
+            f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}"
         )
 
     # Validate that multi line item names don't conflict with category names
@@ -138,7 +138,7 @@ def validate_multi_line_items(
 
     if conflicts:
         raise ValueError(
-            f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}"  # noqa: E501
+            f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}"
         )
 
 
@@ -152,11 +152,11 @@ def validate_formulas(line_items: List[LineItem], line_item_metadata: List[dict]
 
     Args:
         line_items (List[LineItem]): List of line items to validate
-        line_item_metadata (List[dict]): List of metadata dictionaries containing defined names  # noqa: E501
+        line_item_metadata (List[dict]): List of metadata dictionaries containing defined names
 
     Raises:
         ValueError: If any formula contains undefined variable names
-    """  # noqa: E501
+    """
     if not line_items:
         return
 

@@ -21,7 +21,7 @@ class ChartDataSet:
         valid_types = {"line", "bar", "scatter", "pie"}
         if type not in valid_types:
             raise ValueError(
-                f"Invalid chart type '{type}'. Must be one of: {', '.join(sorted(valid_types))}"  # noqa: E501
+                f"Invalid chart type '{type}'. Must be one of: {', '.join(sorted(valid_types))}"
             )
 
         self.label = label
@@ -202,7 +202,7 @@ class Chart:
         )
 
     def _assign_colors(self) -> None:
-        """Assign colors to datasets that don't have colors defined using Plotly's color palette."""  # noqa: E501
+        """Assign colors to datasets that don't have colors defined using Plotly's color palette."""
         color_index = 0
         for dataset in self.data_sets:
             if dataset.color is None:

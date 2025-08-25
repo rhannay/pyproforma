@@ -42,11 +42,11 @@ class SerializationMixin:
         Export model configuration to YAML format.
 
         Args:
-            file_path (str, optional): Path to save YAML file. If None, returns YAML string.  # noqa: E501
+            file_path (str, optional): Path to save YAML file. If None, returns YAML string.
 
         Returns:
-            str: YAML string representation of the model if file_path is None, otherwise None  # noqa: E501
-        """  # noqa: E501
+            str: YAML string representation of the model if file_path is None, otherwise None
+        """
         config_dict = self.to_dict()
         yaml_str = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
 
@@ -61,12 +61,12 @@ class SerializationMixin:
         Export model configuration to JSON format.
 
         Args:
-            file_path (str, optional): Path to save JSON file. If None, returns JSON string.  # noqa: E501
+            file_path (str, optional): Path to save JSON file. If None, returns JSON string.
             indent (int): Number of spaces for JSON indentation
 
         Returns:
             str: JSON string representation of the model
-        """  # noqa: E501
+        """
         config_dict = self.to_dict()
         json_str = json.dumps(config_dict, indent=indent)
 

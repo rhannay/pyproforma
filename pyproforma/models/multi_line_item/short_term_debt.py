@@ -15,25 +15,25 @@ class ShortTermDebt(MultiLineItem):
 
     This class calculates debt outstanding balances, draws, principal payments, and interest  # noqa: E501
     expenses over time based on specified draw and paydown schedules. It supports flexible  # noqa: E501
-    modeling of debt facilities where the outstanding balance can vary based on business needs.  # noqa: E501
+    modeling of debt facilities where the outstanding balance can vary based on business needs.
 
     The start year is automatically determined from the minimum year in interim_values_by_year  # noqa: E501
     when get_values() is called.
 
     Args:
-        name (str): Unique identifier for the debt instrument. Must contain only letters,  # noqa: E501
+        name (str): Unique identifier for the debt instrument. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
-        draws (dict | str): Dictionary mapping years (int) to draw amounts (float), or string  # noqa: E501
+        draws (dict | str): Dictionary mapping years (int) to draw amounts (float), or string
             representing a line item name to look up in interim_values_by_year. Represents  # noqa: E501
             additional borrowings in each year. Empty dict if no draws.
-        paydown (dict | str): Dictionary mapping years (int) to paydown amounts (float), or string  # noqa: E501
+        paydown (dict | str): Dictionary mapping years (int) to paydown amounts (float), or string
             representing a line item name to look up in interim_values_by_year. Represents  # noqa: E501
             principal payments in each year. Empty dict if no paydowns.
-        begin_balance (float): Initial outstanding debt balance at the start of the model.  # noqa: E501
+        begin_balance (float): Initial outstanding debt balance at the start of the model.
         interest_rate (float | dict | str): Annual interest rate. Can be:
             - float: Fixed rate for all years (e.g., 0.05 for 5%)
-            - dict: Dictionary mapping years (int) to rates (float) for year-specific rates  # noqa: E501
-            - str: String representing a line item name to look up in interim_values_by_year  # noqa: E501
+            - dict: Dictionary mapping years (int) to rates (float) for year-specific rates
+            - str: String representing a line item name to look up in interim_values_by_year
 
     Examples:
         >>> # Credit line with fixed parameters
@@ -62,7 +62,7 @@ class ShortTermDebt(MultiLineItem):
         ...     begin_balance=1000000,
         ...     interest_rate='prime_rate'  # Look up from interim_values_by_year
         ... )
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -160,8 +160,8 @@ class ShortTermDebt(MultiLineItem):
         Returns a list of all line item names defined by this component.
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.  # noqa: E501
-        """  # noqa: E501
+            List[str]: The names of all line items this component can generate values for.
+        """
         return [
             self._debt_outstanding_name,
             self._draw_name,
@@ -176,19 +176,19 @@ class ShortTermDebt(MultiLineItem):
         Get all values for this short-term debt component for a specific year.
 
         Args:
-            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
-                by year, used to prevent circular references and for formula calculations.  # noqa: E501
+            interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values
+                by year, used to prevent circular references and for formula calculations.
                 The keys of this dictionary represent all years in the model.
             year (int): The year for which to get the values.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this  # noqa: E501
-                                        component for the specified year, with line item names as keys.  # noqa: E501
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this
+                                        component for the specified year, with line item names as keys.
 
         Raises:
-            ValueError: If value already exists in interim_values_by_year to prevent circular references.  # noqa: E501
+            ValueError: If value already exists in interim_values_by_year to prevent circular references.
             ValueError: If draws or paydowns are prior to the start year.
-        """  # noqa: E501
+        """
         # Validate interim values by year
         is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
         if not is_valid:
@@ -265,7 +265,7 @@ class ShortTermDebt(MultiLineItem):
     def _get_interest_rate(
         self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int
     ) -> float:
-        """Get the interest rate, from a fixed value, dict lookup by year, or interim_values_by_year lookup."""  # noqa: E501
+        """Get the interest rate, from a fixed value, dict lookup by year, or interim_values_by_year lookup."""
         if isinstance(self._interest_rate, (float, int)):
             return float(self._interest_rate)
         elif isinstance(self._interest_rate, dict):
@@ -300,7 +300,7 @@ class ShortTermDebt(MultiLineItem):
     def _get_draws_for_year(
         self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int
     ) -> float:
-        """Get the draws for a specific year, either from dict or interim_values_by_year lookup."""  # noqa: E501
+        """Get the draws for a specific year, either from dict or interim_values_by_year lookup."""
         if isinstance(self._draws, dict):
             return float(self._draws.get(year, 0.0))
         elif isinstance(self._draws, str):
@@ -323,7 +323,7 @@ class ShortTermDebt(MultiLineItem):
     def _get_paydown_for_year(
         self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int
     ) -> float:
-        """Get the paydown for a specific year, either from dict or interim_values_by_year lookup."""  # noqa: E501
+        """Get the paydown for a specific year, either from dict or interim_values_by_year lookup."""
         if isinstance(self._paydown, dict):
             return float(self._paydown.get(year, 0.0))
         elif isinstance(self._paydown, str):
@@ -437,8 +437,8 @@ class ShortTermDebt(MultiLineItem):
     ) -> float:
         """
         Calculate the interest expense for a given year.
-        Interest is calculated based on the debt outstanding at the beginning of the year.  # noqa: E501
-        """  # noqa: E501
+        Interest is calculated based on the debt outstanding at the beginning of the year.
+        """
         start_year = self._get_start_year(interim_values_by_year, year)
 
         # Check if year is before start_year

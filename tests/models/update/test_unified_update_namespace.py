@@ -5,7 +5,7 @@ from pyproforma.models.model.model_update import UpdateNamespace
 
 
 class TestUnifiedUpdateNamespace:
-    """Test the new unified UpdateNamespace class that combines add, update, and delete functionality."""  # noqa: E501
+    """Test the new unified UpdateNamespace class that combines add, update, and delete functionality."""
 
     @pytest.fixture
     def sample_model(self):
@@ -39,7 +39,7 @@ class TestUnifiedUpdateNamespace:
         assert update_namespace._model is sample_model
 
     def test_model_has_only_update_namespace(self, sample_model: Model):
-        """Test that the model only has the update namespace, not separate add/delete namespaces."""  # noqa: E501
+        """Test that the model only has the update namespace, not separate add/delete namespaces."""
         # Should have update namespace
         assert hasattr(sample_model, "update")
         assert isinstance(sample_model.update, UpdateNamespace)

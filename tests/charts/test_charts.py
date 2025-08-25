@@ -414,7 +414,7 @@ class TestCharts:
         assert result is mock_fig
 
     def test_colors_cycling(self, charts, mock_model):
-        """Test that ChartDataSet objects are created without colors (colors are assigned by Chart class)."""  # noqa: E501
+        """Test that ChartDataSet objects are created without colors (colors are assigned by Chart class)."""
         # Create a scenario with multiple items
         item_names = ["item1", "item2", "item3", "item4", "item5"]
 

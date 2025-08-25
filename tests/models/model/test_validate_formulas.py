@@ -29,7 +29,7 @@ class TestModelValidateFormulas:
         assert model.value("profit", 2023) == 200.0
 
     def test_invalid_formula_raises_error(self):
-        """Test that models with invalid formulas raise ValueError during initialization."""  # noqa: E501
+        """Test that models with invalid formulas raise ValueError during initialization."""
         revenue = LineItem(name="revenue", category="income", values={2023: 1000})
         invalid_expense = LineItem(
             name="expenses", category="expense", formula="revenue * unknown_variable"

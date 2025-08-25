@@ -34,7 +34,7 @@ class TestValueFormatToExcelFormat:
 
     def test_typo_in_format_name(self):
         """Test that the typo 'percent_two_decinals' is handled correctly."""
-        # The original test file has a typo: 'percent_two_decinals' instead of 'percent_two_decimals'  # noqa: E501
+        # The original test file has a typo: 'percent_two_decinals' instead of 'percent_two_decimals'
         # Our function should handle this typo and return the same format as the correct spelling  # noqa: E501
         assert value_format_to_excel_format("percent_two_decinals") == "0.00%"
 

@@ -130,9 +130,9 @@ class TestDebtParAmountsDefined:
         assert value_dict["test_with_existing.bond_proceeds"] == 1_000_000
 
         # interim_values[2020] = {
-        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],  # noqa: E501
+        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],
         #     'test_with_existing.interest': value_dict['test_with_existing.interest'],
-        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']  # noqa: E501
+        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']
         # }
 
         # Test second year (2021) - both issuances + existing schedule
@@ -146,9 +146,9 @@ class TestDebtParAmountsDefined:
         assert value_dict["test_with_existing.bond_proceeds"] == 1_500_000
 
         # interim_values[2021] = {
-        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],  # noqa: E501
+        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],
         #     'test_with_existing.interest': value_dict['test_with_existing.interest'],
-        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']  # noqa: E501
+        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']
         # }
 
         # Test future year (2022) - both issuances + existing schedule, no new proceeds
@@ -162,9 +162,9 @@ class TestDebtParAmountsDefined:
         assert value_dict["test_with_existing.bond_proceeds"] == 0.0
 
         # interim_values[2022] = {
-        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],  # noqa: E501
+        #     'test_with_existing.principal': value_dict['test_with_existing.principal'],
         #     'test_with_existing.interest': value_dict['test_with_existing.interest'],
-        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']  # noqa: E501
+        #     'test_with_existing.bond_proceeds': value_dict['test_with_existing.bond_proceeds']
         # }
 
         # Test last year of existing schedule (2023)
@@ -180,7 +180,7 @@ class TestDebtParAmountsDefined:
 
 class TestDebtParamsFromValueMatrix:
     def test_debt_par_amounts_from_value_matrix(self):
-        """Test debt where par_amount is a string reference to a value in interim_values_by_year."""  # noqa: E501
+        """Test debt where par_amount is a string reference to a value in interim_values_by_year."""
         # Create a debt object with par_amount as a string reference
         debt = Debt(
             name="test_from_matrix",
@@ -230,7 +230,7 @@ class TestDebtParamsFromValueMatrix:
         assert value_dict["test_from_matrix.bond_proceeds"] == 0
 
     def test_all_debt_params_from_value_matrix(self):
-        """Test debt where all parameters (par_amount, interest_rate, term) are string references."""  # noqa: E501
+        """Test debt where all parameters (par_amount, interest_rate, term) are string references."""
         # Create a debt object with all parameters as string references
         debt = Debt(
             name="test_all_params",
@@ -296,7 +296,7 @@ class TestDebtParamsFromValueMatrix:
         assert value_dict["test_all_params.bond_proceeds"] == 0
 
     def test_interest_rate_missing(self):
-        """Test debt where one of the parameters is missing in interim_values_by_year."""  # noqa: E501
+        """Test debt where one of the parameters is missing in interim_values_by_year."""
         # Create a debt object with par_amount as a string reference
         debt = Debt(
             name="test_missing_param",

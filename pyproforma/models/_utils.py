@@ -21,13 +21,13 @@ def check_interim_values_by_year(
     - The last year may contain a subset of the variables from previous years
 
     Args:
-        values_by_year (Dict[int, Dict[str, Any]]): Dictionary mapping years to value dictionaries  # noqa: E501
+        values_by_year (Dict[int, Dict[str, Any]]): Dictionary mapping years to value dictionaries
 
     Returns:
         tuple[bool, str | None]: A tuple containing:
             - bool: True if the structure is valid, False otherwise
             - str | None: Error message if invalid, None if valid
-    """  # noqa: E501
+    """
     if not values_by_year:
         return True, None  # Empty dict is valid
 
@@ -75,7 +75,7 @@ def check_interim_values_by_year(
     if extra_keys:
         return (
             False,
-            f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}",  # noqa: E501
+            f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}",
         )
 
     return True, None

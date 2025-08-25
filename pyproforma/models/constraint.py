@@ -5,7 +5,7 @@ from ._utils import check_name
 
 class Constraint:
     """
-    Represents a constraint in a financial model that compares a line item value to a target value.  # noqa: E501
+    Represents a constraint in a financial model that compares a line item value to a target value.
 
     A Constraint defines a relationship between a line item and a target value using comparison  # noqa: E501
     operators like equal to, less than, greater than, etc. It's used to enforce business rules  # noqa: E501
@@ -15,22 +15,22 @@ class Constraint:
         name (str): Unique identifier for the constraint. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
         line_item_name (str): Name of the line item this constraint applies to.
-        target (Union[float, Dict[int, float]]): The target value for the constraint comparison.  # noqa: E501
+        target (Union[float, Dict[int, float]]): The target value for the constraint comparison.
             Can be a single float value or a dictionary mapping years to target values.
-        operator (Literal['eq', 'lt', 'le', 'gt', 'ge', 'ne']): The comparison operator. Must be one of: 'eq' (equal to),  # noqa: E501
+        operator (Literal['eq', 'lt', 'le', 'gt', 'ge', 'ne']): The comparison operator. Must be one of: 'eq' (equal to),
             'lt' (less than), 'le' (less than or equal), 'gt' (greater than),
             'ge' (greater than or equal), 'ne' (not equal).
-        tolerance (float, optional): The tolerance for approximate comparisons. Defaults to 0.0.  # noqa: E501
+        tolerance (float, optional): The tolerance for approximate comparisons. Defaults to 0.0.
             For 'eq': constraint passes if |actual - target| <= tolerance
             For 'lt': constraint passes if actual < target - tolerance
             For 'le': constraint passes if actual <= target + tolerance
             For 'gt': constraint passes if actual > target + tolerance
             For 'ge': constraint passes if actual >= target - tolerance
             For 'ne': constraint passes if |actual - target| > tolerance
-        label (str, optional): Display label for the constraint. If None, the name will be used as the label.  # noqa: E501
+        label (str, optional): Display label for the constraint. If None, the name will be used as the label.
 
     Raises:
-        ValueError: If name contains invalid characters, operator is not valid, or tolerance is negative.  # noqa: E501
+        ValueError: If name contains invalid characters, operator is not valid, or tolerance is negative.
 
     Examples:
         >>> # Create a constraint that revenue must be greater than 50000
@@ -58,7 +58,7 @@ class Constraint:
         ...     operator="lt",
         ...     tolerance=1000.0  # Must be at least $1000 under budget
         ... )
-    """  # noqa: E501
+    """
 
     VALID_OPERATORS = {"eq", "lt", "le", "gt", "ge", "ne"}
     OPERATOR_SYMBOLS = {
@@ -122,7 +122,7 @@ class Constraint:
 
     def evaluate(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> bool:
         """
-        Evaluate the constraint against a line item value from the value matrix for a specific year.  # noqa: E501
+        Evaluate the constraint against a line item value from the value matrix for a specific year.
 
         Args:
             value_matrix: Dictionary mapping years to line_item_name:value dictionaries
@@ -132,8 +132,8 @@ class Constraint:
             bool: True if the constraint is satisfied, False otherwise
 
         Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available  # noqa: E501
-        """  # noqa: E501
+            ValueError: If year or line item is not found in value_matrix, or no target available
+        """
         if year not in value_matrix:
             raise ValueError(f"Year {year} not found in value_matrix")
 
@@ -165,7 +165,7 @@ class Constraint:
 
     def variance(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> float:
         """
-        Calculate the variance (difference) between line item value and target for a specific year.  # noqa: E501
+        Calculate the variance (difference) between line item value and target for a specific year.
 
         Args:
             value_matrix: Dictionary mapping years to line_item_name:value dictionaries
@@ -175,8 +175,8 @@ class Constraint:
             float: The variance (actual - target) for the specified year
 
         Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available  # noqa: E501
-        """  # noqa: E501
+            ValueError: If year or line item is not found in value_matrix, or no target available
+        """
         if year not in value_matrix:
             raise ValueError(f"Year {year} not found in value_matrix")
 

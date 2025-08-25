@@ -174,7 +174,7 @@ class TestGetValueValidation:
         assert "All keys must be integers representing years" in str(excinfo.value)
 
     def test_get_value_validates_interim_values_by_year_unordered_years(self):
-        """Test that get_value validates interim_values_by_year has years in ascending order."""  # noqa: E501
+        """Test that get_value validates interim_values_by_year has years in ascending order."""
         item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
 
         # Invalid: years not in ascending order
@@ -411,7 +411,7 @@ class TestIsHardcoded:
         )  # Even None values are considered hardcoded
 
     def test_is_hardcoded_returns_false_when_year_not_in_values(self):
-        """Test that is_hardcoded returns False when year doesn't exist in values dict."""  # noqa: E501
+        """Test that is_hardcoded returns False when year doesn't exist in values dict."""
         item = LineItem(
             name="test_item", category="revenue", values={2020: 100.0, 2021: 200.0}
         )

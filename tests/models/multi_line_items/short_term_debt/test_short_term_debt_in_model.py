@@ -10,8 +10,8 @@ class TestShortTermDebtInModel:
     Tests for ShortTermDebt line item generator integration with the Model.
 
     These tests verify that ShortTermDebt instances can reference values from other line items  # noqa: E501
-    in the model and that their calculated values are correctly integrated into the model's value matrix.  # noqa: E501
-    """  # noqa: E501
+    in the model and that their calculated values are correctly integrated into the model's value matrix.
+    """
 
     def test_short_term_debt_fixed_parameters_in_model(self):
         """
@@ -20,7 +20,7 @@ class TestShortTermDebtInModel:
         This test creates a Model with a ShortTermDebt line item generator using fixed parameters  # noqa: E501
         and verifies that the model correctly calculates debt outstanding, draws, principal, and  # noqa: E501
         interest values for each year.
-        """  # noqa: E501
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 
@@ -68,12 +68,12 @@ class TestShortTermDebtInModel:
 
     def test_short_term_debt_dynamic_interest_rate_in_model(self):
         """
-        Test short-term debt where interest_rate is a string reference to a value in the model.  # noqa: E501
+        Test short-term debt where interest_rate is a string reference to a value in the model.
 
         This test creates a Model with a line item 'prime_rate' and a ShortTermDebt line item generator  # noqa: E501
         that references this line item for its interest_rate. It verifies that the model correctly  # noqa: E501
         calculates interest values using the dynamic rate for each year.
-        """  # noqa: E501
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 
@@ -130,12 +130,12 @@ class TestShortTermDebtInModel:
 
     def test_short_term_debt_dynamic_draws_and_paydown_in_model(self):
         """
-        Test short-term debt where draws and paydown are string references to values in the model.  # noqa: E501
+        Test short-term debt where draws and paydown are string references to values in the model.
 
         This test creates a Model with line items for draws and paydowns, and a ShortTermDebt line  # noqa: E501
         item generator that references these line items. It verifies that the model correctly  # noqa: E501
         calculates all debt-related values using the dynamic parameters.
-        """  # noqa: E501
+        """
         # Define years for our model
         years = [2020, 2021, 2022]
 

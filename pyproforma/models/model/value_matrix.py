@@ -51,7 +51,7 @@ def _calculate_category_total(
             and metadata.get("category") is not None
         )
         raise KeyError(
-            f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"  # noqa: E501
+            f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"
         )
 
     # Find all line items that belong to this category and sum their values
@@ -89,7 +89,7 @@ def generate_value_matrix(
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items  # noqa: E501
+        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
         category_definitions (list[Category]): List of category definitions
         line_item_metadata (list[dict]): Metadata for all defined names
 
@@ -100,7 +100,7 @@ def generate_value_matrix(
     Raises:
         ValueError: If circular dependencies are detected or items cannot be calculated
         KeyError: If defined names are missing from the value matrix
-    """  # noqa: E501
+    """
     value_matrix = {}
     for year in years:
         value_matrix[year] = {}
@@ -171,7 +171,7 @@ def generate_value_matrix(
                                 item_name = getattr(item, "name", str(item))
                                 formula = getattr(item, "formula", "N/A")
                                 raise ValueError(
-                                    f"Error calculating line item '{item_name}' for year {year}. Formula: '{formula}'. Line item '{var_name}' not found in model."  # noqa: E501
+                                    f"Error calculating line item '{item_name}' for year {year}. Formula: '{formula}'. Line item '{var_name}' not found in model."
                                 ) from e
                     # Item depends on something not yet calculated, skip for now
                     continue
@@ -232,7 +232,7 @@ def generate_value_matrix(
                     failed_items.append(str(item))
 
             raise ValueError(
-                f"Could not calculate line items due to missing dependencies or circular references: {failed_items}"  # noqa: E501
+                f"Could not calculate line items due to missing dependencies or circular references: {failed_items}"
             )
 
         # Ensure all defined names are present in the value matrix

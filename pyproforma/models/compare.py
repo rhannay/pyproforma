@@ -64,15 +64,15 @@ class Compare:
 
         Args:
             item_name (str): Name of the item to compare
-            year (int, optional): Year to compare. If None, returns differences for all common years.  # noqa: E501
+            year (int, optional): Year to compare. If None, returns differences for all common years.
 
         Returns:
             float: Absolute difference (compare_model - base_model) if year is specified
             dict: Dictionary of year:difference pairs if year is None
 
         Raises:
-            KeyError: If item not found in both models, or if year specified but not found in both models  # noqa: E501
-        """  # noqa: E501
+            KeyError: If item not found in both models, or if year specified but not found in both models
+        """
         if item_name not in self.common_items:
             raise KeyError(f"Item '{item_name}' not found in both models")
 
@@ -113,18 +113,18 @@ class Compare:
 
     def cumulative_difference(self, item_name: str, year: int) -> float:
         """
-        Calculate cumulative difference between models for a specific item up through the specified year.  # noqa: E501
+        Calculate cumulative difference between models for a specific item up through the specified year.
 
         Args:
             item_name (str): Name of the item to compare
             year (int): Year up through which to sum differences (inclusive)
 
         Returns:
-            float: Cumulative difference (sum of all differences from first common year through specified year)  # noqa: E501
+            float: Cumulative difference (sum of all differences from first common year through specified year)
 
         Raises:
-            KeyError: If item not found in both models, or if year is before the first common year  # noqa: E501
-        """  # noqa: E501
+            KeyError: If item not found in both models, or if year is before the first common year
+        """
         if item_name not in self.common_items:
             raise KeyError(f"Item '{item_name}' not found in both models")
 
@@ -214,11 +214,11 @@ class Compare:
 
     def all_differences(self) -> pd.DataFrame:
         """
-        Get a DataFrame showing differences for all common items across all common years.  # noqa: E501
+        Get a DataFrame showing differences for all common items across all common years.
 
         Returns:
-            pd.DataFrame: DataFrame with items as rows, years as columns, values as differences  # noqa: E501
-        """  # noqa: E501
+            pd.DataFrame: DataFrame with items as rows, years as columns, values as differences
+        """
         data = {}
 
         for year in self.common_years:
@@ -374,11 +374,11 @@ class Compare:
         Export comparison data to a structured DataFrame.
 
         Args:
-            metric (str): Type of comparison ('difference', 'percent_difference', 'ratio')  # noqa: E501
+            metric (str): Type of comparison ('difference', 'percent_difference', 'ratio')
 
         Returns:
             pd.DataFrame: DataFrame with comparison data
-        """  # noqa: E501
+        """
         if metric == "difference":
             return self.all_differences()
 
@@ -467,7 +467,7 @@ Top Changes:
 
         Args:
             item_name (str or list): Name of the item to compare, or list of item names
-            include_cumulative (bool): If True, includes a row showing cumulative differences  # noqa: E501
+            include_cumulative (bool): If True, includes a row showing cumulative differences
 
         Returns:
             Table: A formatted table with rows for each item showing base model values,
@@ -475,7 +475,7 @@ Top Changes:
 
         Raises:
             KeyError: If any item not found in both models
-        """  # noqa: E501
+        """
         # Handle both single item and list of items
         if isinstance(item_name, str):
             item_names = [item_name]

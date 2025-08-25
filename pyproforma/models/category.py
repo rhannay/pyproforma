@@ -53,7 +53,7 @@ class Category:
         ...     label="Operating Expenses",
         ...     total_label="Total OpEx"
         ... )
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class Category:
 
         if name in RESERVED_CATEGORY_NAMES:
             raise ValueError(
-                f"Category name '{name}' is reserved and cannot be used. Reserved names are: "  # noqa: E501
+                f"Category name '{name}' is reserved and cannot be used. Reserved names are: "
                 f"{', '.join(RESERVED_CATEGORY_NAMES)}"
             )
 
