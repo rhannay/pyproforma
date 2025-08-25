@@ -15,7 +15,7 @@ class LineItemResults:
     a specific named item (line item, assumption, generator, etc.) in a financial model.
 
     This class is typically instantiated through the Model.item() method and
-    provides an intuitive interface for notebook exploration and analysis of individual items.  # noqa: E501
+    provides an intuitive interface for notebook exploration and analysis of individual items.
 
     Args:
         model: The parent Model instance
@@ -47,7 +47,10 @@ class LineItemResults:
         return self.summary()
 
     def __repr__(self) -> str:
-        return f"LineItemResults(item_name='{self.item_name}', source_type='{self._line_item_metadata['source_type']}')"  # noqa: E501
+        return (
+            f"LineItemResults(item_name='{self.item_name}', "
+            f"source_type='{self._line_item_metadata['source_type']}')"
+        )
 
     def values(self) -> dict[int, float]:
         """
@@ -123,8 +126,8 @@ class LineItemResults:
         Return a Table object for this item using the tables.line_item() function.
 
         Args:
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.  # noqa: E501
-                                           If provided, cells with hardcoded values will be  # noqa: E501
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
 
         Returns:
@@ -148,7 +151,7 @@ class LineItemResults:
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')  # noqa: E501
+            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
 
         Returns:
             go.Figure: The Plotly chart figure
@@ -191,14 +194,14 @@ class LineItemResults:
 
     def percent_change(self, year: int) -> float:
         """
-        Calculate the percent change of this line item from the previous year to the given year.  # noqa: E501
+        Calculate the percent change of this line item from the previous year to the given year.
 
         Args:
             year (int): The year to calculate percent change for
 
         Returns:
             float: The percent change as a decimal (e.g., 0.1 for 10% increase)
-                   None if calculation is not possible (first year, zero previous value, or None values)  # noqa: E501
+                   None if calculation is not possible (first year, zero previous value, or None values)
 
         Raises:
             KeyError: If the year is not found in the model
@@ -230,15 +233,15 @@ class LineItemResults:
 
     def cumulative_percent_change(self, year: int, start_year: int = None) -> float:
         """
-        Calculate the cumulative percent change of this item from a base year to the given year.  # noqa: E501
+        Calculate the cumulative percent change of this item from a base year to the given year.
 
         Args:
             year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.  # noqa: E501
+            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
 
         Returns:
-            float: The cumulative percent change as a decimal (e.g., 0.1 for 10% increase)  # noqa: E501
-                   None if calculation is not possible (same as start year, zero start year value, or None values)  # noqa: E501
+            float: The cumulative percent change as a decimal (e.g., 0.1 for 10% increase)
+                   None if calculation is not possible (same as start year, zero start year value, or None values)
 
         Raises:
             KeyError: If the year or start_year is not found in the model
@@ -273,15 +276,15 @@ class LineItemResults:
 
     def cumulative_change(self, year: int, start_year: int = None) -> float:
         """
-        Calculate the cumulative absolute change of this item from a base year to the given year.  # noqa: E501
+        Calculate the cumulative absolute change of this item from a base year to the given year.
 
         Args:
             year (int): The year to calculate cumulative change for
-            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.  # noqa: E501
+            start_year (int, optional): The base year for calculation. If None, uses the first year in the model.
 
         Returns:
             float: The cumulative absolute change (current value - base year value)
-                   None if calculation is not possible (same as start year or None values)  # noqa: E501
+                   None if calculation is not possible (same as start year or None values)
 
         Raises:
             KeyError: If the year or start_year is not found in the model
@@ -314,16 +317,16 @@ class LineItemResults:
 
     def index_to_year(self, year: int, start_year: int = None) -> float:
         """
-        Calculate an indexed value where the start year is set to 100 and other years are indexed from there.  # noqa: E501
+        Calculate an indexed value where the start year is set to 100 and other years are indexed from there.
 
         Args:
             year (int): The year to calculate indexed value for
-            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.  # noqa: E501
+            start_year (int, optional): The base year for indexing. If None, uses the first year in the model.
 
         Returns:
-            float: The indexed value (e.g., 110 for 10% increase from base year, 90 for 10% decrease)  # noqa: E501
+            float: The indexed value (e.g., 110 for 10% increase from base year, 90 for 10% decrease)
                    100 if same as start year
-                   None if calculation is not possible (zero start year value or None values)  # noqa: E501
+                   None if calculation is not possible (zero start year value or None values)
 
         Raises:
             KeyError: If the year or start_year is not found in the model
@@ -357,10 +360,10 @@ class LineItemResults:
         Calculate the cumulative sum of this item's values for the specified years.
 
         Args:
-            years (list[int], optional): List of years to sum. If None, uses all years in the model.  # noqa: E501
+            years (list[int], optional): List of years to sum. If None, uses all years in the model.
 
         Returns:
-            float: The cumulative sum of values for the specified years. None values are treated as zero.  # noqa: E501
+            float: The cumulative sum of values for the specified years. None values are treated as zero.
 
         Raises:
             KeyError: If any year in the years list is not found in the model
@@ -390,7 +393,7 @@ class LineItemResults:
         Return a summary string with key information about the line item.
 
         Args:
-            html (bool, optional): If True, returns HTML formatted output. Defaults to False.  # noqa: E501
+            html (bool, optional): If True, returns HTML formatted output. Defaults to False.
 
         Returns:
             str: Formatted summary of the line item
@@ -503,7 +506,10 @@ class CategoryResults:
         return self.summary()
 
     def __repr__(self) -> str:
-        return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_item_names)})"  # noqa: E501
+        return (
+            f"CategoryResults(category_name='{self.category_name}', "
+            f"num_items={len(self.line_item_names)})"
+        )
 
     def totals(self) -> dict[int, float]:
         """
@@ -529,10 +535,10 @@ class CategoryResults:
 
     def values(self) -> dict[str, dict[int, float]]:
         """
-        Return a nested dictionary of item_name: {year: value} for all items in category.  # noqa: E501
+        Return a nested dictionary of item_name: {year: value} for all items in category.
 
         Returns:
-            dict[str, dict[int, float]]: Nested dictionary with values for each item by year  # noqa: E501
+            dict[str, dict[int, float]]: Nested dictionary with values for each item by year
         """  # noqa: E501
         values = {}
         for item_name in self.line_item_names:
@@ -578,8 +584,8 @@ class CategoryResults:
         Return a Table object for this category using the tables.category() function.
 
         Args:
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.  # noqa: E501
-                                           If provided, cells with hardcoded values will be  # noqa: E501
+            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
+                                           If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
 
         Returns:
@@ -601,7 +607,7 @@ class CategoryResults:
         Return a summary string with key statistics about the category.
 
         Args:
-            html (bool, optional): If True, returns HTML formatted output. Defaults to False.  # noqa: E501
+            html (bool, optional): If True, returns HTML formatted output. Defaults to False.
 
         Returns:
             str: Formatted summary of the category
@@ -642,7 +648,7 @@ class ConstraintResults:
     constraints in a financial model.
 
     This class is typically instantiated through the Model.constraint() method and
-    provides an intuitive interface for notebook exploration and analysis of constraints.  # noqa: E501
+    provides an intuitive interface for notebook exploration and analysis of constraints.
 
     Args:
         model: The parent Model instance
@@ -666,7 +672,9 @@ class ConstraintResults:
         self.value_format = line_item_definition.value_format
 
     def __str__(self) -> str:
-        """Return a string representation showing key information about the constraint."""  # noqa: E501
+        """
+        Return a string representation showing key information about the constraint.
+        """
         return self.summary()
 
     def __repr__(self) -> str:
@@ -704,7 +712,7 @@ class ConstraintResults:
 
     def table(self):
         """
-        Return a Table object for this constraint using the tables.constraint() function.  # noqa: E501
+        Return a Table object for this constraint using the tables.constraint() function.
 
         Returns:
             Table: A Table object containing the constraint formatted for display
@@ -726,7 +734,7 @@ class ConstraintResults:
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')  # noqa: E501
+            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
 
         Returns:
             go.Figure: The Plotly chart figure
@@ -754,7 +762,7 @@ class ConstraintResults:
             bool: True if the constraint is satisfied, False otherwise
 
         Raises:
-            ValueError: If year or line item is not found in the model, or no target available  # noqa: E501
+            ValueError: If year or line item is not found in the model, or no target available
         """  # noqa: E501
         return self.constraint_definition.evaluate(self.model._value_matrix, year)
 
@@ -788,7 +796,7 @@ class ConstraintResults:
         Return a summary string with key information about the constraint.
 
         Args:
-            html (bool, optional): If True, returns HTML formatted output. Defaults to False.  # noqa: E501
+            html (bool, optional): If True, returns HTML formatted output. Defaults to False.
 
         Returns:
             str: Formatted summary of the constraint
@@ -829,20 +837,30 @@ class ConstraintResults:
         failing_info = ""
         if failing_years_list:
             if html:
-                failing_info = f"\n<span style='color: red;'>Failing Years: {', '.join(map(str, failing_years_list))}</span>"  # noqa: E501
+                failing_years_str = ", ".join(map(str, failing_years_list))
+                failing_info = (
+                    f"\n<span style='color: red;'>Failing Years: "
+                    f"{failing_years_str}</span>"
+                )
             else:
                 failing_info = (
                     f"\nFailing Years: {', '.join(map(str, failing_years_list))}"
                 )
         else:
             if html:
-                failing_info = "\n<span style='color: green;'>Status: All years pass constraint check</span>"  # noqa: E501
+                failing_info = (
+                    "\n<span style='color: green;'>Status: All years pass "
+                    "constraint check</span>"
+                )
             else:
                 failing_info = "\nStatus: All years pass constraint check"
 
+        constraint_label = getattr(
+            self.constraint_definition, "label", self.constraint_name
+        )
         summary_text = (
             f"ConstraintResults('{self.constraint_name}')\n"
-            f"Label: {getattr(self.constraint_definition, 'label', self.constraint_name)}\n"  # noqa: E501
+            f"Label: {constraint_label}\n"
             f"Line Item: {self.line_item_name}"
             f"{target_info}{value_info}{failing_info}"
         )
