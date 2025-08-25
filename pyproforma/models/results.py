@@ -6,7 +6,8 @@ from pyproforma.tables.table_class import format_value, Table
 
 if TYPE_CHECKING:
     from .model import Model
-    from .line_item import LineItem, Category
+    from .line_item import LineItem
+    from .category import Category
     from .constraint import Constraint
 
 
@@ -39,7 +40,7 @@ class LineItemResults:
         self.label = self._line_item_metadata['label']
         self.value_format = self._line_item_metadata['value_format']
         if self.source_type == 'line_item':
-            self._line_item_definition = model.get_line_item_definition(item_name)
+            self._line_item_definition = model.line_item_definition(item_name)
         else:
             self._line_item_definition = None
 
@@ -387,7 +388,7 @@ class LineItemResults:
         formula_info = ""
         if self.source_type == "line_item":
             try:
-                line_item = self.model.get_line_item_definition(self.item_name)
+                line_item = self.model.line_item_definition(self.item_name)
                 if line_item.formula:
                     formula_info = f"\nFormula: {line_item.formula}"
                 else:
@@ -432,9 +433,42 @@ class CategoryResults:
     def __init__(self, model: 'Model', category_name: str):
         self.model = model
         self.category_name = category_name
-        self.category_obj = model.get_category_definition(category_name)
-        self.line_items_definitions = model.get_line_item_definitions_by_category(category_name)
-        self.line_item_names = model.get_line_item_names_by_category(category_name)
+        self.category_metadata = model._metadata_for_category(category_name)
+        if self.category_metadata['system_generated'] is False:
+            self.category_obj = model.category_definition(category_name)
+        else:
+            self.category_obj = None
+        self.line_item_names = model.line_item_names_by_category(category_name)
+    
+    @property
+    def name(self) -> str:
+        """The category name."""
+        return self.category_metadata['name']
+    
+    @property
+    def label(self) -> str:
+        """The display label for the category."""
+        return self.category_metadata['label']
+    
+    @property
+    def include_total(self) -> bool:
+        """Whether the category includes a total row."""
+        return self.category_metadata['include_total']
+    
+    @property
+    def total_name(self) -> str:
+        """The name used for the category total."""
+        return self.category_metadata['total_name']
+    
+    @property
+    def total_label(self) -> str:
+        """The display label for the category total."""
+        return self.category_metadata['total_label']
+    
+    @property
+    def system_generated(self) -> bool:
+        """Whether the category was auto-generated."""
+        return self.category_metadata['system_generated']
     
     def __str__(self) -> str:
         """
@@ -443,7 +477,7 @@ class CategoryResults:
         return self.summary()
     
     def __repr__(self) -> str:
-        return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_items_definitions)})"
+        return f"CategoryResults(category_name='{self.category_name}', num_items={len(self.line_item_names)})"
         
     def totals(self) -> dict[int, float]:
         """
@@ -455,7 +489,7 @@ class CategoryResults:
         Raises:
             ValueError: If the category doesn't include totals
         """
-        if not self.category_obj.include_total:
+        if not self.include_total:
             raise ValueError(f"Category '{self.category_name}' does not include totals")
         
         totals = {}
@@ -475,13 +509,13 @@ class CategoryResults:
             dict[str, dict[int, float]]: Nested dictionary with values for each item by year
         """
         values = {}
-        for item in self.line_items_definitions:
-            values[item.name] = {}
+        for item_name in self.line_item_names:
+            values[item_name] = {}
             for year in self.model.years:
                 try:
-                    values[item.name][year] = self.model.value(item.name, year)
+                    values[item_name][year] = self.model.value(item_name, year)
                 except KeyError:
-                    values[item.name][year] = 0.0
+                    values[item_name][year] = 0.0
         
         return values
     
@@ -497,15 +531,15 @@ class CategoryResults:
         # Create DataFrame with line items as index and years as columns
         df_data = {}
         for year in self.model.years:
-            df_data[year] = [values_dict[item.name][year] for item in self.line_items_definitions]
+            df_data[year] = [values_dict[item_name][year] for item_name in self.line_item_names]
         
-        df = pd.DataFrame(df_data, index=[item.name for item in self.line_items_definitions])
+        df = pd.DataFrame(df_data, index=self.line_item_names)
         
         # Add total row if category includes totals
-        if self.category_obj.include_total:
+        if self.include_total:
             try:
                 total_row = self.totals()
-                df.loc[self.category_obj.total_name] = [total_row[year] for year in self.model.years]
+                df.loc[self.total_name] = [total_row[year] for year in self.model.years]
             except (ValueError, KeyError):
                 pass
         
@@ -542,12 +576,12 @@ class CategoryResults:
         Returns:
             str: Formatted summary of the category
         """
-        num_items = len(self.line_items_definitions)
-        item_names = [item.name for item in self.line_items_definitions]
-        
+        num_items = len(self.line_item_names)
+        item_names = self.line_item_names
+
         # Get totals for all years if category includes totals
         total_info = ""
-        if self.category_obj.include_total and self.model.years:
+        if self.include_total and self.model.years:
             try:
                 totals_list = []
                 for year in self.model.years:
@@ -559,7 +593,7 @@ class CategoryResults:
                 total_info = "\nTotals: Not available"
         
         summary_text = (f"CategoryResults('{self.category_name}')\n"
-                f"Label: {self.category_obj.label}\n"
+                f"Label: {self.label}\n"
                 f"Line Items: {num_items}\n"
                 f"Items: {', '.join(item_names)}{total_info}")
         
@@ -593,10 +627,10 @@ class ConstraintResults:
     def __init__(self, model: 'Model', constraint_name: str):
         self.model = model
         self.constraint_name = constraint_name
-        self.constraint_definition = model.get_constraint_definition(constraint_name)
+        self.constraint_definition = model.constraint_definition(constraint_name)
         self.line_item_name = self.constraint_definition.line_item_name
         
-        line_item_definition = model.get_line_item_definition(self.line_item_name)
+        line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
     
     def __str__(self) -> str:

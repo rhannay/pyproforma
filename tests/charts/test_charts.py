@@ -76,8 +76,7 @@ class TestCharts:
                 return line_item_result
             raise KeyError(f"Name '{name}' not found in model defined names.")
         
-        model.li.side_effect = mock_li
-        model.line_item.side_effect = mock_li  # Also support the full method name
+        model.line_item.side_effect = mock_li  # Support the line_item method
         
         # Mock value responses
         def mock_value(name, year):
@@ -168,7 +167,7 @@ class TestCharts:
             assert result is mock_fig
             
             # Verify model interactions - should be called for both items plus value_format check
-            assert mock_model.li.call_count == 3  # 1 for value_format + 2 for items
+            assert mock_model.line_item.call_count == 3  # 1 for value_format + 2 for items
         assert mock_model.value.call_count == 6  # 2 items × 3 years
 
     def test_line_items_empty_list(self, charts):
@@ -395,7 +394,7 @@ class TestCharts:
         def mock_value_extended(name, year):
             return 100.0  # Simple value for all
         
-        mock_model.li.side_effect = mock_li_extended
+        mock_model.line_item.side_effect = mock_li_extended
         mock_model.value.side_effect = mock_value_extended
         
         with patch('pyproforma.charts.charts.Chart') as mock_chart_class:

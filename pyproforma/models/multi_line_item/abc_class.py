@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Type
 
-class LineItemGenerator(ABC):
+class MultiLineItem(ABC):
     """
     Abstract base class for components that define and generate multiple line items.
     
@@ -15,37 +15,37 @@ class LineItemGenerator(ABC):
     - RevenueBreakdown (generating revenue line items by product/service)
     """
     
-    # Registry to store line item generator subclasses by type
-    _registry: Dict[str, Type['LineItemGenerator']] = {}
+    # Registry to store multi line item subclasses by type
+    _registry: Dict[str, Type['MultiLineItem']] = {}
     
     @classmethod
     def register(cls, generator_type: str):
-        """Decorator to register a line item generator subclass with a specific type."""
-        def decorator(subclass: Type['LineItemGenerator']):
+        """Decorator to register a multi line item subclass with a specific type."""
+        def decorator(subclass: Type['MultiLineItem']):
             cls._registry[generator_type] = subclass
             return subclass
         return decorator
     
     @classmethod
-    def from_dict(cls, config: Dict[str, Any]) -> 'LineItemGenerator':
+    def from_dict(cls, config: Dict[str, Any]) -> 'MultiLineItem':
         """
-        Create a line item generator instance from a configuration dictionary.
+        Create a multi line item instance from a configuration dictionary.
         
         Args:
             config (Dict[str, Any]): Configuration dictionary with 'type' key
             
         Returns:
-            LineItemGenerator: Instance of the appropriate line item generator subclass
+            MultiLineItem: Instance of the appropriate multi line item subclass
             
         Raises:
-            ValueError: If the line item generator type is not registered
+            ValueError: If the multi line item type is not registered
         """
         generator_type = config.get('type')
         if not generator_type:
             raise ValueError("Configuration must include a 'type' field")
         
         if generator_type not in cls._registry:
-            raise ValueError(f"Unknown line item generator type: {generator_type}. "
+            raise ValueError(f"Unknown multi line item type: {generator_type}. "
                            f"Available types: {list(cls._registry.keys())}")
         
         generator_class = cls._registry[generator_type]
@@ -53,7 +53,7 @@ class LineItemGenerator(ABC):
     
     @classmethod
     @abstractmethod
-    def from_config(cls, config: Dict[str, Any]) -> 'LineItemGenerator':
+    def from_config(cls, config: Dict[str, Any]) -> 'MultiLineItem':
         """
         Create an instance from configuration dictionary.
         Each subclass must implement this method.
@@ -62,14 +62,14 @@ class LineItemGenerator(ABC):
             config (Dict[str, Any]): Configuration dictionary
             
         Returns:
-            LineItemGenerator: Instance of this line item generator
+            MultiLineItem: Instance of this multi line item
         """
         pass
     
     @abstractmethod
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the line item generator instance to a dictionary representation.
+        Convert the multi line item instance to a dictionary representation.
         Each subclass must implement this method.
         
         Returns:
@@ -92,7 +92,7 @@ class LineItemGenerator(ABC):
     def get_values(self, interim_values_by_year: Dict[int, Dict[str, Any]],
                   year: int) -> Dict[str, Optional[float]]:
         """
-        Get all values for this line item generator for a specific year.
+        Get all values for this multi line item for a specific year.
         
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values

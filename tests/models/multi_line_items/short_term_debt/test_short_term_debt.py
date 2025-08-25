@@ -1,4 +1,4 @@
-from pyproforma.models.line_item_generator.short_term_debt import ShortTermDebt
+from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
 from .utils import _is_close, _calculate_interest, _calculate_debt_outstanding
 import pytest
 

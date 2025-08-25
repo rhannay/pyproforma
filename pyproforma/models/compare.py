@@ -246,8 +246,8 @@ class Compare:
                 if (base_item_meta['source_type'] == 'line_item' and 
                     compare_item_meta['source_type'] == 'line_item'):
                     
-                    base_line_item = self.base_model.get_line_item_definition(item_name)
-                    compare_line_item = self.compare_model.get_line_item_definition(item_name)
+                    base_line_item = self.base_model.line_item_definition(item_name)
+                    compare_line_item = self.compare_model.line_item_definition(item_name)
                     
                     if base_line_item.formula != compare_line_item.formula:
                         result['formula_changes'].append(item_name)

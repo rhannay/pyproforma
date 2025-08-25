@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .model import Model 
 
-from ..line_item import LineItem, Category
+from ..line_item import LineItem
+from ..category import Category
 from ..constraint import Constraint
 from ...constants import ValueFormat
 
@@ -83,12 +84,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy._category_definitions.append(new_category)
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._category_definitions.append(new_category)
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -169,12 +170,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy._line_item_definitions.append(new_line_item)
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions.append(new_line_item)
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -271,7 +272,7 @@ class UpdateNamespace:
                     if line_item.category == name:
                         line_item.category = updated_category.name
             
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
@@ -286,7 +287,7 @@ class UpdateNamespace:
                     if line_item.category == name:
                         line_item.category = updated_category.name
             
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -341,7 +342,7 @@ class UpdateNamespace:
         """
         # Find the existing line item
         try:
-            existing_item = self._model.get_line_item_definition(name)
+            existing_item = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
         
@@ -371,7 +372,7 @@ class UpdateNamespace:
                 if item.name == name:
                     model_copy._line_item_definitions[i] = updated_item
                     break
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
@@ -379,7 +380,7 @@ class UpdateNamespace:
                 if item.name == name:
                     self._model._line_item_definitions[i] = updated_item
                     break
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -430,7 +431,7 @@ class UpdateNamespace:
             return
         
         # Helper function to apply updates to a model
-        def apply_updates(model, updates):
+        def apply_updates(model: 'Model', updates: list[tuple[str, dict]]):
             for item_name, update_params in updates:
                 # Find the existing line item
                 existing_item = None
@@ -476,7 +477,7 @@ class UpdateNamespace:
                 model._line_item_definitions[item_index] = updated_item
             
             # Recalculate the model with all changes
-            model._reclalculate()
+            model._recalculate()
         
         # Test on a copy of the model first
         try:
@@ -537,12 +538,12 @@ class UpdateNamespace:
             model_copy = self._model.copy()
             # Update years and recalculate (remove duplicates and sort)
             model_copy.years = sorted(list(set(new_years)))
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model.years = sorted(list(set(new_years)))
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -598,12 +599,12 @@ class UpdateNamespace:
             model_copy = self._model.copy()
             # Remove the category from the copy
             model_copy._category_definitions = [category for category in model_copy._category_definitions if category.name != name]
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model._category_definitions = [category for category in self._model._category_definitions if category.name != name]
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -631,7 +632,7 @@ class UpdateNamespace:
         """
         # Verify the line item exists
         try:
-            line_item_to_delete = self._model.get_line_item_definition(name)
+            line_item_to_delete = self._model.line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
         
@@ -640,12 +641,12 @@ class UpdateNamespace:
             model_copy = self._model.copy()
             # Remove the line item from the copy
             model_copy._line_item_definitions = [item for item in model_copy._line_item_definitions if item.name != name]
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions = [item for item in self._model._line_item_definitions if item.name != name]
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -727,12 +728,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy.constraints.append(new_constraint)
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model.constraints.append(new_constraint)
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -823,12 +824,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy.constraints[constraint_index] = updated_constraint
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model.constraints[constraint_index] = updated_constraint
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error
@@ -869,12 +870,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy.constraints = [c for c in model_copy.constraints if c.name != name]
-            model_copy._reclalculate()
+            model_copy._recalculate()
             
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model.constraints = [c for c in self._model.constraints if c.name != name]
-            self._model._reclalculate()
+            self._model._recalculate()
             
         except Exception as e:
             # If validation fails, raise an informative error

@@ -75,9 +75,9 @@ class ItemsByCategoryRow(BaseRow):
         """Create rows for all line items in a specific category."""
         rows = []
         # Get all line items in the specified category
-        for item in model.get_line_item_definitions_by_category(self.category):
+        for item_name in model.line_item_names_by_category(self.category):
             item_config = ItemRow(
-                name=item.name,
+                name=item_name,
                 include_name=self.include_name,
                 bold=self.bold,
                 value_format=self.value_format
@@ -227,7 +227,7 @@ class ConstraintPassRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint evaluation results across all years."""
         # Get the constraint object
-        constraint = model.get_constraint_definition(self.constraint_name)
+        constraint = model.constraint_definition(self.constraint_name)
         
         # Use constraint name as label if no custom label provided
         label = self.label or self.constraint_name
@@ -269,7 +269,7 @@ class ConstraintVarianceRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint variance (actual - target) across all years."""
         # Get the constraint object
-        constraint = model.get_constraint_definition(self.constraint_name)
+        constraint = model.constraint_definition(self.constraint_name)
         
         # Use constraint name with "Variance" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Variance"
@@ -307,7 +307,7 @@ class ConstraintTargetRow(BaseRow):
     def generate_row(self, model: 'Model') -> Row:
         """Create a row showing constraint target values across all years."""
         # Get the constraint object
-        constraint = model.get_constraint_definition(self.constraint_name)
+        constraint = model.constraint_definition(self.constraint_name)
         
         # Use constraint name with "Target" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Target"

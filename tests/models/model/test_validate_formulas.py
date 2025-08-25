@@ -123,7 +123,7 @@ class TestModelValidateFormulas:
         
         # _recalculate should catch the invalid formula
         with pytest.raises(ValueError) as exc_info:
-            model._reclalculate()
+            model._recalculate()
         
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'invalid'" in error_msg

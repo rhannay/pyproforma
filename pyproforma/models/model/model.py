@@ -1,12 +1,15 @@
 from typing import Union
-from ..line_item import LineItem, Category
-from pyproforma.models.line_item_generator import LineItemGenerator
+from ..line_item import LineItem
+from ..category import Category
+from pyproforma.models.multi_line_item import MultiLineItem
 from ..results import CategoryResults, LineItemResults, ConstraintResults
 from ..constraint import Constraint
 from .serialization import SerializationMixin
 import copy
 from ..compare import Compare
-from ..formula import validate_formula
+from .value_matrix import generate_value_matrix
+from .validations import validate_categories, validate_constraints, validate_multi_line_items, validate_formulas, validate_line_items
+from .metadata import collect_category_metadata, collect_line_item_metadata
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -17,7 +20,7 @@ class Model(SerializationMixin):
     """
     Core financial modeling framework for building pro forma financial statements.
     
-    Creates structured financial models with line items, categories, line item generators, and constraints.
+    Creates structured financial models with line items, categories, multi line items, and constraints.
     Supports multi-year modeling, automatic dependency resolution, and rich output formatting.
     
     Args:
@@ -25,7 +28,7 @@ class Model(SerializationMixin):
         years (list[int]): Years for the model time horizon (required)
         categories (list[Category], optional): Category definitions (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
-        line_item_generators (list[LineItemGenerator], optional): Components that generate multiple line items
+        multi_line_items (list[MultiLineItem], optional): Components that generate multiple line items
     
     Examples:
         >>> from pyproforma import Model, LineItem
@@ -72,7 +75,7 @@ class Model(SerializationMixin):
         years: list[int] = None,
         categories: list[Category] = None,
         constraints: list[Constraint] = None,
-        line_item_generators: list[LineItemGenerator] = None
+        multi_line_items: list[MultiLineItem] = None
     ):
         
         if years is None:
@@ -81,310 +84,78 @@ class Model(SerializationMixin):
             raise ValueError("Years cannot be an empty list.")
         self.years = sorted(years)
         
+        self._category_definitions = self._collect_category_definitions(line_items, categories)
         self._line_item_definitions = line_items
-
-        # if no categories provided, gather unique categories from line_items
-        if categories is None:
-            category_names = set([item.category for item in line_items])
-            self._category_definitions = [
-                Category(name=name, label=name)
-                for name in category_names
-            ]
-        else:
-            self._category_definitions = categories
-
+        self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
-        self.line_item_generators = line_item_generators if line_item_generators is not None else []
 
-        self._validate_categories()
-        self._validate_constraints()
-        self._validate_line_item_generators()
-
-        self.line_item_metadata = self._gather_line_item_metadata()
-        self._validate_formulas()
-
-        self._value_matrix = self._generate_value_matrix()
-
-    def _validate_categories(self):
-        """
-        Validates that all categories referenced by line items are defined in the model's categories,
-        and that all category names are unique.
-
-        Raises:
-            ValueError: If a line item's category is not present in the list of defined categories,
-                       or if duplicate category names are found.
-        """
-        # Validate that all category names are unique
-        category_names = [category.name for category in self._category_definitions]
-        duplicates = set([name for name in category_names if category_names.count(name) > 1])
+        validate_categories(self._category_definitions)
+        validate_line_items(self._line_item_definitions, self._category_definitions)
+        validate_multi_line_items(self.multi_line_items, self._category_definitions)
+        validate_constraints(self.constraints, self._line_item_definitions)
         
-        if duplicates:
-            raise ValueError(f"Duplicate category names not allowed: {', '.join(sorted(duplicates))}")
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
+        self.line_item_metadata = collect_line_item_metadata(
+            self._line_item_definitions, self.category_metadata, self.multi_line_items
+        )
+        validate_formulas(self._line_item_definitions, self.line_item_metadata)
+
+        self._value_matrix = generate_value_matrix(
+            self.years,
+            self._line_item_definitions + self.multi_line_items,
+            self._category_definitions,
+            self.line_item_metadata
+        )
+
+    @staticmethod
+    def _collect_category_definitions(
+        line_items: list[LineItem], 
+        categories: list[Category] = None
+    ) -> list[Category]:
+        """
+        Collect category definitions from provided categories or infer from line items.
         
-        # Validate that all item types in line_items are defined in categories        
-        for item in self._line_item_definitions:
-            if item.category not in category_names:
-                raise ValueError(f"Category '{item.category}' for LineItem '{item.name}' is not defined category.")
-
-
-    def _validate_constraints(self):
-        """
-        Validates that all constraints have unique names and reference existing line items.
-
-        Raises:
-            ValueError: If two or more constraints have the same name, or if a constraint
-                       references a line item that doesn't exist.
-        """
-        if not self.constraints:
-            return
+        If categories are provided, use them as the base. If not, automatically infer 
+        categories from the unique category names used in the line items.
+        Multi-line items are no longer added as category definitions - they are only 
+        captured in metadata.
+        
+        Args:
+            line_items (list[LineItem]): Line items to infer categories from
+            categories (list[Category], optional): Explicit category definitions
             
-        constraint_names = [constraint.name for constraint in self.constraints]
-        duplicates = set([name for name in constraint_names if constraint_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate constraint names not allowed: {', '.join(sorted(duplicates))}")
-        
-        # Validate that all constraint line_item_names reference existing line items
-        line_item_names = [item.name for item in self._line_item_definitions]
-        for constraint in self.constraints:
-            if constraint.line_item_name not in line_item_names:
-                raise ValueError(f"Constraint '{constraint.name}' references unknown line item '{constraint.line_item_name}'")
-
-    def _validate_line_item_generators(self):
-        """
-        Validates that all line item generators have unique names.
-
-        Raises:
-            ValueError: If two or more line item generators have the same name.
-        """
-        if not self.line_item_generators:
-            return
-            
-        generator_names = [generator.name for generator in self.line_item_generators]
-        duplicates = set([name for name in generator_names if generator_names.count(name) > 1])
-        
-        if duplicates:
-            raise ValueError(f"Duplicate line item generator names not allowed: {', '.join(sorted(duplicates))}")
-
-    def _validate_formulas(self):
-        """
-        Validates that all line item formulas reference only defined variables.
-        
-        This method checks each line item that has a formula to ensure all variables
-        referenced in the formula exist in the model's defined names. This includes
-        line items, category totals, and line item generator outputs.
-        
-        Raises:
-            ValueError: If any formula contains undefined variable names
-        """
-        if not self._line_item_definitions:
-            return
-            
-        # Get all defined names that can be used in formulas
-        defined_variable_names = [name['name'] for name in self.line_item_metadata]
-        
-        # Validate each line item's formula
-        for line_item in self._line_item_definitions:
-            if line_item.formula is not None and line_item.formula.strip():
-                try:
-                    validate_formula(line_item.formula, line_item.name, defined_variable_names)
-                except ValueError as e:
-                    # Enhance the error message to include the line item name
-                    raise ValueError(f"Error in formula for line item '{line_item.name}': {str(e)}") from e
-
-    def _gather_line_item_metadata(self) -> list[dict]:
-        """
-        Collects all defined names across the model to create a comprehensive 
-        namespace.
-        
-        This method aggregates identifiers from all model components including 
-        line items, category totals, and line item generators to 
-        build a unified namespace for value lookups and validation.
-        
         Returns:
-            list[dict]: A list of dictionaries, each containing:
-                - 'name' (str): The identifier name used for lookups
-                - 'label' (str): The display label for this identifier
-                - 'value_format' (str): The formatting type for values 
-                  (None, 'str', 'no_decimals', 'two_decimals', 'percent', 
-                  'percent_one_decimal', 'percent_two_decimals')
-                - 'source_type' (str): The component type that defines this name
-                  ('line_item', 'category', 'line_item_generator')
-                - 'source_name' (str): The original source object's name
-                
-        Raises:
-            ValueError: If duplicate names are found across different components
-                       
-        Example:
-            For a model with revenue line item and revenue category:
-            [
-                {'name': 'revenue', 'label': 'Revenue', 
-                 'value_format': 'no_decimals', 'source_type': 'line_item', 
-                 'source_name': 'revenue'},
-                {'name': 'total_revenue', 'label': 'Total Revenue', 
-                 'value_format': 'no_decimals', 'source_type': 'category', 
-                 'source_name': 'revenue'}
-            ]
+            list[Category]: List of category definitions to use in the model
         """
-        defined_names = []
-        for item in self._line_item_definitions:
-            defined_names.append({
-                'name': item.name, 
-                'label': item.label, 
-                'value_format': item.value_format, 
-                'source_type': 'line_item', 
-                'source_name': item.name,
-            })
-        for category in self._category_definitions:
-            if category.include_total:
-                # Only include category total if there are line items in category
-                items_in_category = [
-                    item for item in self._line_item_definitions 
-                    if item.category == category.name
-                ]
-                if items_in_category:  # Only add total if category has items
-                    defined_names.append({
-                        'name': category.total_name, 
-                        'label': category.total_label, 
-                        'value_format': 'no_decimals', 
-                        'source_type': 'category', 
-                        'source_name': category.name
-                    })
-        for generator in self.line_item_generators:
-            for gen_name in generator.defined_names:
-                defined_names.append({
-                    'name': gen_name, 
-                    'label': gen_name, 
-                    'value_format': 'no_decimals', 
-                    'source_type': 'line_item_generator', 
-                    'source_name': generator.name
-                })
+        if categories is None:
+            # Auto-infer categories from line items
+            category_names = set([item.category for item in line_items])
+            category_definitions = []
+            for name in category_names:
+                category = Category(name=name, label=name)
+                category_definitions.append(category)
+        else:
+            # Use provided categories as base
+            category_definitions = list(categories)
         
-        # Check for duplicate names in defined_names
-        # and raise ValueError if any duplicates are found.
-        names_list = [item['name'] for item in defined_names]
-        duplicates = set([
-            name for name in names_list if names_list.count(name) > 1
-        ])
-        if duplicates:
-            raise ValueError(
-                f"Duplicate defined names found in Model: {', '.join(duplicates)}"
-            )
-        return defined_names
+        return category_definitions
 
-    def _generate_value_matrix(self) -> dict[int, dict[str, float]]:
-        value_matrix = {}
-        for year in self.years:
-            value_matrix[year] = {}
-        
-            # Calculate line items in dependency order
-            calculated_items = set()
-            remaining_items = self._line_item_definitions.copy()
-            max_iterations = len(self._line_item_definitions) + 1  # Safety valve
-            iteration = 0
-            
-            # Track which line item generators have been successfully calculated
-            remaining_generators = self.line_item_generators.copy() if self.line_item_generators else []
-            
-            while (remaining_items or remaining_generators) and iteration < max_iterations:
-                iteration += 1
-                items_calculated_this_round = []
-                generators_calculated_this_round = []
-                
-                # Try to calculate line item generators for this year
-                for generator in remaining_generators:
-                    try:
-                        # Try to calculate values for this line item generator
-                        generated_values = generator.get_values(value_matrix, year)
-                        
-                        # Update value matrix with the generated values
-                        value_matrix[year].update(generated_values)
-                        
-                        # Mark this generator as calculated
-                        generators_calculated_this_round.append(generator)
-                    except (KeyError, ValueError):
-                        # Skip if dependencies are not yet met
-                        # Will try again in the next iteration
-                        continue
-                
-                # Remove successfully calculated generators from remaining list
-                for generator in generators_calculated_this_round:
-                    remaining_generators.remove(generator)
-                
-                for item in remaining_items:
-                    try:
-                        # Try to calculate the item
-                        value_matrix[year][item.name] = item.get_value(value_matrix, year)
-                        calculated_items.add(item.name)
-                        items_calculated_this_round.append(item)
-                                
-                    except (KeyError, ValueError) as e:
-                        # Check if this is a None value error - these should be raised immediately
-                        if isinstance(e, ValueError) and "has None value" in str(e) and "Cannot use None values in formulas" in str(e):
-                            raise e
-                        
-                        # Check if this is a missing variable error vs dependency issue
-                        if isinstance(e, ValueError) and "not found for year" in str(e):
-                            # Extract variable name from error message
-                            import re as error_re
-                            match = error_re.search(r"Variable '(\w+)' not found for year", str(e))
-                            if match:
-                                var_name = match.group(1)
-                                # Check if this variable exists in our defined names
-                                all_defined_names = [name['name'] for name in self.line_item_metadata]
-                                if var_name not in all_defined_names:
-                                    # Variable truly doesn't exist, create enhanced error message
-                                    raise ValueError(f"Error calculating line item '{item.name}' for year {year}. Formula: '{item.formula}'. Line item '{var_name}' not found in model.") from e
-                        # Item depends on something not yet calculated, skip for now
-                        continue
-            
-                # Remove successfully calculated items from remaining list
-                for item in items_calculated_this_round:
-                    remaining_items.remove(item)
-                
-                # After each round, check if we can calculate any category totals
-                for category in self._category_definitions:
-                    if category.include_total and category.total_name not in value_matrix[year]:
-                        # Check if all items in this category have been calculated
-                        items_in_category = [item for item in self._line_item_definitions if item.category == category.name]
-                        all_items_calculated = all(item.name in calculated_items for item in items_in_category)
-                        
-                        if all_items_calculated and items_in_category:  # Only if category has items
-                            category_total = self._category_total(value_matrix, category.name, year)
-                            total_name = category.total_name
-                            value_matrix[year][total_name] = category_total
-                
-                # If no progress was made this round, we have circular dependencies
-                if not items_calculated_this_round and not generators_calculated_this_round:
-                    break
-            
-            # Check if all items and generators were calculated
-            errors = []
-            if remaining_items:
-                failed_items = [item.name for item in remaining_items]
-                errors.append(f"Could not calculate line items due to missing dependencies or circular references: {failed_items}")
-                
-            if remaining_generators:
-                failed_generators = [generator.name for generator in remaining_generators]
-                errors.append(f"Could not calculate line item generators due to missing dependencies or circular references: {failed_generators}")
-                
-            if errors:
-                raise ValueError("\n".join(errors))
-        
-            # Ensure all defined names are present in the value matrix
-            for name in self.line_item_metadata:
-                if name['name'] not in value_matrix[year]:
-                    raise KeyError(f"Defined name '{name['name']}' not found in value matrix for year {year}.")
-    
-        return value_matrix
-
-    def _reclalculate(self):
-        self._validate_categories()
-        self._validate_constraints()
-        self._validate_line_item_generators()
-        self.line_item_metadata = self._gather_line_item_metadata()
-        self._validate_formulas()
-        self._value_matrix = self._generate_value_matrix()
+    def _recalculate(self):
+        validate_categories(self._category_definitions)
+        validate_line_items(self._line_item_definitions, self._category_definitions)
+        validate_constraints(self.constraints, self._line_item_definitions)
+        validate_multi_line_items(self.multi_line_items, self._category_definitions)
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
+        self.line_item_metadata = collect_line_item_metadata(
+            self._line_item_definitions, self.category_metadata, self.multi_line_items
+        )
+        validate_formulas(self._line_item_definitions, self.line_item_metadata)
+        self._value_matrix = generate_value_matrix(
+            self.years,
+            self._line_item_definitions + self.multi_line_items,
+            self._category_definitions,
+            self.line_item_metadata
+        )
 
     # ============================================================================
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
@@ -496,7 +267,7 @@ class Model(SerializationMixin):
         Returns:
             list[str]: List of line item names
         """
-        return [item.name for item in self._line_item_definitions]
+        return [item['name'] for item in self.line_item_metadata]
 
     @property
     def category_definitions(self) -> tuple[Category, ...]:
@@ -516,7 +287,7 @@ class Model(SerializationMixin):
         Returns:
             list[str]: List of category names
         """
-        return [category.name for category in self._category_definitions]
+        return [category['name'] for category in self.category_metadata]
 
     # ============================================================================
     # LOOKUP/GETTER METHODS
@@ -540,6 +311,26 @@ class Model(SerializationMixin):
             if defined_name['name'] == item_name:
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
+
+    def _metadata_for_category(self, category_name: str) -> dict:
+        """
+        Get category metadata for a specific category name.
+        
+        Args:
+            category_name (str): The name of the category to get metadata for
+            
+        Returns:
+            dict: Dictionary containing category metadata including name, label,
+                  include_total, total_name, total_label, and system_generated
+                  
+        Raises:
+            KeyError: If the category name is not found in category metadata
+        """
+        for category_meta in self.category_metadata:
+            if category_meta['name'] == category_name:
+                return category_meta
+        available_categories = [cat['name'] for cat in self.category_metadata]
+        raise KeyError(f"Category '{category_name}' not found in model. Available categories: {available_categories}")
 
     def category(self, category_name: str = None) -> CategoryResults:
         """
@@ -566,14 +357,12 @@ class Model(SerializationMixin):
             >>> revenue.to_dataframe()  # Returns pandas DataFrame
         """
         if category_name is None or category_name == "":
-            available_categories = [category.name for category in self._category_definitions]
+            available_categories = [category['name'] for category in self.category_metadata]
             if available_categories:
                 raise ValueError(f"Category name is required. Available category names are: {available_categories}")
             else:
                 raise ValueError("Category name is required, but no categories are defined in this model.")
         
-        # Validate that the category exists
-        self.get_category_definition(category_name)  # This will raise KeyError if not found
         return CategoryResults(self, category_name)
     
     def constraint(self, constraint_name: str = None) -> ConstraintResults:
@@ -650,11 +439,7 @@ class Model(SerializationMixin):
         
         return LineItemResults(self, item_name)
     
-    def li(self, item_name: str = None) -> LineItemResults:
-        """Shorthand for line_item() - see line_item() for full documentation."""
-        return self.line_item(item_name)
-    
-    def get_line_item_definition(self, name: str) -> LineItem:
+    def line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
         
@@ -674,11 +459,11 @@ class Model(SerializationMixin):
         valid_line_items = [item.name for item in self._line_item_definitions]
         raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
     
-    def get_category_definition(self, name: str) -> Category:
+    def category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
-        
-        This method retrieves the [`Category`][pyproforma.models.line_item.Category] object that defines
+
+        This method retrieves the Category object that defines
         a specific category in the model. This is useful for accessing the category's
         properties such as label, total name, and whether it includes totals.
         
@@ -691,18 +476,10 @@ class Model(SerializationMixin):
         for category in self._category_definitions:
             if category.name == name:
                 return category
-        valid_categories = [category.name for category in self._category_definitions]
+        valid_categories = [category['name'] for category in self.category_metadata]
         raise KeyError(f"Category item '{name}' not found. Valid categories are: {valid_categories}")
     
-    def get_line_item_definitions_by_category(self, category_name: str) -> list[LineItem]:
-        """Get all line items in a specific category."""
-        items = []
-        for item in self._line_item_definitions:
-            if item.category == category_name:
-                items.append(item)
-        return items
-
-    def get_line_item_names_by_category(self, category_name: str) -> list[str]:
+    def line_item_names_by_category(self, category_name: str) -> list[str]:
         """
         Get all line item names in a specific category.
         
@@ -716,7 +493,9 @@ class Model(SerializationMixin):
             KeyError: If the category name is not found
         """
         # Validate that the category exists
-        self.get_category_definition(category_name)  # This will raise KeyError if not found
+        if category_name not in self.category_names:
+            available_categories = sorted(self.category_names)
+            raise KeyError(f"Category '{category_name}' not found. Available categories: {available_categories}")
         
         # Get all line item names that belong to this category
         line_item_names = []
@@ -726,7 +505,7 @@ class Model(SerializationMixin):
         
         return line_item_names
 
-    def get_constraint_definition(self, name: str) -> Constraint:
+    def constraint_definition(self, name: str) -> Constraint:
         """Get a constraint definition by name.
         
         Args:
@@ -788,7 +567,7 @@ class Model(SerializationMixin):
         Returns:
             float: The calculated sum of all line items in the category
         """
-        category_item = self.get_category_definition(category)
+        category_item = self.category_definition(category)
         total = 0
         for item in self._line_item_definitions:
             if item.category == category_item.name:
@@ -812,30 +591,30 @@ class Model(SerializationMixin):
                 - years: List of years in the model
                 - line_items_count: Number of line items
                 - categories_count: Number of categories  
-                - line_item_generators_count: Number of line item generators
+                - multi_line_items_count: Number of multi line items
                 - constraints_count: Number of constraints
                 - line_items_by_category: Dictionary mapping category names to lists of line item names
-                - line_item_generator_names: List of line item generator names
+                - multi_line_item_names: List of multi line item names
                 - constraint_names: List of constraint names
                 - defined_names_count: Total number of defined names (items that can be referenced)
         """
         # Count items by category
         line_items_by_category = {}
-        for category in self._category_definitions:
-            items_in_category = [item.name for item in self._line_item_definitions if item.category == category.name]
+        for category in self.category_metadata:
+            items_in_category = [item.name for item in self._line_item_definitions if item.category == category['name']]
             if items_in_category:  # Only include categories that have items
-                line_items_by_category[category.name] = items_in_category
+                line_items_by_category[category['name']] = items_in_category
         
         return {
             'years': self.years,
             'years_count': len(self.years),
             'year_range': f"{min(self.years)} - {max(self.years)}" if self.years else "None",
             'line_items_count': len(self._line_item_definitions),
-            'categories_count': len(self._category_definitions),
-            'line_item_generators_count': len(self.line_item_generators),
+            'categories_count': len(self.category_metadata),
+            'multi_line_items_count': len(self.multi_line_items),
             'constraints_count': len(self.constraints),
             'line_items_by_category': line_items_by_category,
-            'line_item_generator_names': [gen.name for gen in self.line_item_generators],
+            'multi_line_item_names': [gen.name for gen in self.multi_line_items],
             'constraint_names': [const.name for const in self.constraints],
             'defined_names_count': len(self.line_item_metadata),
             'category_totals': [item['name'] for item in self.line_item_metadata if item['source_type'] == 'category']
@@ -864,7 +643,7 @@ class Model(SerializationMixin):
                     <span style="color: #666; font-size: 0.9em;">Across {categories_count} categories</span>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
-                    <strong>Line Item Generators:</strong> {line_item_generators_count}<br>
+                    <strong>Multi Line Items:</strong> {multi_line_items_count}<br>
                     <strong>Constraints:</strong> {constraints_count}
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #6f42c1;">
@@ -904,14 +683,14 @@ class Model(SerializationMixin):
             </div>
             """
         
-        # Add line item generators if any
-        if summary['line_item_generator_names']:
+        # Add multi line items if any
+        if summary['multi_line_item_names']:
             html += """
             <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Line Item Generators</h4>
+                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Multi Line Items</h4>
                 <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
             """
-            for gen_name in summary['line_item_generator_names']:
+            for gen_name in summary['multi_line_item_names']:
                 html += f'<span style="display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{gen_name}</span>'
             html += """
                 </div>
@@ -955,7 +734,7 @@ class Model(SerializationMixin):
     def _is_last_item_in_category(self, name: str) -> bool:
         """Check if the given item name is the last item in its category"""
         # Find the item with the given name and get its category
-        target_item = self.get_line_item_definition(name)
+        target_item = self.line_item_definition(name)
         
         # Get all items in the same category
         items_in_category = [item for item in self._line_item_definitions if item.category == target_item.category]
@@ -985,7 +764,7 @@ class Model(SerializationMixin):
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
         copied_categories = copy.deepcopy(self._category_definitions)
-        copied_line_item_generators = copy.deepcopy(self.line_item_generators)
+        copied_multi_line_items = copy.deepcopy(self.multi_line_items)
         copied_constraints = copy.deepcopy(self.constraints)
         copied_years = copy.deepcopy(self.years)
         
@@ -994,7 +773,7 @@ class Model(SerializationMixin):
             line_items=copied_line_items,
             years=copied_years,
             categories=copied_categories,
-            line_item_generators=copied_line_item_generators,
+            multi_line_items=copied_multi_line_items,
             constraints=copied_constraints
         )
         

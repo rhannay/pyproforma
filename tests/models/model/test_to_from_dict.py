@@ -1,6 +1,6 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestModelToFromDict:
@@ -264,7 +264,7 @@ class TestModelToFromDict:
         """Test that from_dict() handles empty line item generators list."""
         model_dict = simple_model.to_dict()
         recreated_model = Model.from_dict(model_dict)
-        assert len(recreated_model.line_item_generators) == 0
+        assert len(recreated_model.multi_line_items) == 0
 
     def test_model_with_generators_round_trip(self):
         """Test that models with generators can be serialized and deserialized successfully."""
@@ -286,7 +286,7 @@ class TestModelToFromDict:
             line_items=line_items,
             years=[2023],
             categories=categories,
-            line_item_generators=[debt_generator]
+            multi_line_items=[debt_generator]
         )
         
         # to_dict should work
@@ -298,8 +298,8 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(result)
         
         # Verify the recreated model has the same structure
-        assert len(recreated_model.line_item_generators) == 1
-        assert recreated_model.line_item_generators[0].name == "loan"
+        assert len(recreated_model.multi_line_items) == 1
+        assert recreated_model.multi_line_items[0].name == "loan"
         
         # Verify the values match
         original_value = model.value("loan.principal", 2023)
@@ -343,7 +343,7 @@ class TestModelToFromDict:
         # Test basic functionality
         assert recreated_model.value("item1", 2023) == 100.0
         assert len(recreated_model._category_definitions) == 1  # Auto-generated
-        assert len(recreated_model.line_item_generators) == 0
+        assert len(recreated_model.multi_line_items) == 0
 
     def test_dict_structure_completeness(self, complex_model):
         """Test that the dictionary structure contains all necessary information."""

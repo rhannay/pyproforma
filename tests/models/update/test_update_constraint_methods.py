@@ -308,7 +308,7 @@ class TestUpdateConstraintMethods:
             operator="gt"
         )
         sample_model.constraints.append(initial_constraint)
-        sample_model._reclalculate()
+        sample_model._recalculate()
         
         # Add another constraint via update method
         sample_model.update.add_constraint(
@@ -326,7 +326,7 @@ class TestUpdateConstraintMethods:
             target=35000.0
         )
         
-        updated = sample_model.get_constraint_definition("initial_constraint")
+        updated = sample_model.constraint_definition("initial_constraint")
         assert updated.target == 35000.0
         
         # Delete one constraint

@@ -1,10 +1,12 @@
 import pytest
 from pyproforma import LineItem, Model, Category
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.model.value_matrix import generate_value_matrix, _calculate_category_total
+from pyproforma.models.model.metadata import collect_line_item_metadata, collect_category_metadata
 
 
 class TestGenerateValueMatrix:
-    """Test cases for the Model._generate_value_matrix() method."""
+    """Test cases for the generate_value_matrix() function."""
     
     @pytest.fixture
     def basic_categories(self):
@@ -42,9 +44,18 @@ class TestGenerateValueMatrix:
         )
         
         # All models should produce the same value matrix
-        matrix1 = model1._generate_value_matrix()
-        matrix2 = model2._generate_value_matrix()
-        matrix3 = model3._generate_value_matrix()
+        matrix1 = generate_value_matrix(
+            model1.years, model1._line_item_definitions + model1.multi_line_items,
+            model1._category_definitions, model1.line_item_metadata
+        )
+        matrix2 = generate_value_matrix(
+            model2.years, model2._line_item_definitions + model2.multi_line_items,
+            model2._category_definitions, model2.line_item_metadata
+        )
+        matrix3 = generate_value_matrix(
+            model3.years, model3._line_item_definitions + model3.multi_line_items,
+            model3._category_definitions, model3.line_item_metadata
+        )
         
         # Verify all matrices are identical
         for year in [2023, 2024]:
@@ -74,8 +85,14 @@ class TestGenerateValueMatrix:
             categories=basic_categories
         )
         
-        matrix1 = model1._generate_value_matrix()
-        matrix2 = model2._generate_value_matrix()
+        matrix1 = generate_value_matrix(
+            model1.years, model1._line_item_definitions + model1.multi_line_items,
+            model1._category_definitions, model1.line_item_metadata
+        )
+        matrix2 = generate_value_matrix(
+            model2.years, model2._line_item_definitions + model2.multi_line_items,
+            model2._category_definitions, model2.line_item_metadata
+        )
         
         assert matrix1[2023] == matrix2[2023]
         assert matrix1[2023]["base"] == 100
@@ -97,11 +114,14 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [revenue, invalid_item]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         # Verify the exception message is useful - should detect invalid variable
         error_msg = str(exc_info.value)
@@ -131,11 +151,14 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []        
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []        
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -157,12 +180,14 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [item_a, item_b, item_c, item_d]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
-
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -183,11 +208,14 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [self_ref]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "Could not calculate line items due to missing dependencies or circular references" in error_msg
@@ -208,11 +236,14 @@ class TestGenerateValueMatrix:
         model._line_item_definitions = [good_item1, good_item2, bad_item1, bad_item2]
         model.years = [2023]
         model._category_definitions = basic_categories
-        model.line_item_generators = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         # Only the circular items should be mentioned
@@ -248,18 +279,18 @@ class TestGenerateValueMatrix:
             line_items=[revenue, net_income],
             years=[2023],
             categories=basic_categories,
-            line_item_generators=[debt_generator]
+            multi_line_items=[debt_generator]
         )
         
         model2 = Model(
             line_items=[net_income, revenue],  # Different order
             years=[2023],
             categories=basic_categories,
-            line_item_generators=[debt_generator]
+            multi_line_items=[debt_generator]
         )
         
-        matrix1 = model1._generate_value_matrix()
-        matrix2 = model2._generate_value_matrix()
+        matrix1 = generate_value_matrix(model1.years, model1._line_item_definitions + model1.multi_line_items, model1._category_definitions, model1.line_item_metadata)
+        matrix2 = generate_value_matrix(model2.years, model2._line_item_definitions + model2.multi_line_items, model2._category_definitions, model2.line_item_metadata)
         
         # Both should produce the same result
         assert matrix1[2023] == matrix2[2023]
@@ -296,7 +327,7 @@ class TestGenerateValueMatrix:
             categories=all_categories
         )
         
-        matrix = model._generate_value_matrix()
+        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         # Verify assumptions are in the matrix
         for year in [2023, 2024]:
@@ -325,11 +356,14 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.line_item_generators = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
         
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
         
         error_msg = str(exc_info.value)
         assert "'nonexistent_variable' not found" in error_msg
@@ -351,11 +385,14 @@ class TestGenerateValueMatrix:
         model.years = [2023]
         model._category_definitions = basic_categories
         model.assumptions = []
-        model.line_item_generators = []
-        model.line_item_metadata = model._gather_line_item_metadata()
+        model.multi_line_items = []
+        model.category_metadata = collect_category_metadata(model._category_definitions, model.multi_line_items)
+        model.line_item_metadata = collect_line_item_metadata(
+            model._line_item_definitions, model.category_metadata, model.multi_line_items
+        )
 
         with pytest.raises(ValueError) as exc_info:
-            model._generate_value_matrix()
+            generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
 
         error_msg = str(exc_info.value)
         # The error should mention that referencing own category total is not allowed or not found
@@ -385,7 +422,7 @@ class TestGenerateValueMatrix:
             categories=basic_categories
         )
 
-        matrix = model._generate_value_matrix()
+        matrix = generate_value_matrix(model.years, model._line_item_definitions + model.multi_line_items, model._category_definitions, model.line_item_metadata)
 
         for year in [2023, 2024]:
             expected_revenue_total = rev1.values[year] + rev2.values[year]
@@ -397,3 +434,174 @@ class TestGenerateValueMatrix:
             assert matrix[year]["total_revenue"] == expected_revenue_total
             assert matrix[year]["total_expenses"] == expected_expenses_total
             assert matrix[year]["net_revenues"] == expected_revenue_total - expected_expenses_total
+
+
+class TestCalculateCategoryTotal:
+    """Test cases for the _calculate_category_total() function."""
+
+    def test_calculate_category_total_basic(self):
+        """Test basic category total calculation with simple values."""
+        values_by_name = {
+            'revenue1': 1000.0,
+            'revenue2': 500.0,
+            'expense1': 300.0
+        }
+        
+        metadata = [
+            {'name': 'revenue1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'revenue2', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'expense1', 'source_type': 'line_item', 'category': 'expenses'}
+        ]
+        
+        # Test income category
+        result = _calculate_category_total(values_by_name, metadata, 'income')
+        assert result == 1500.0
+        
+        # Test expenses category
+        result = _calculate_category_total(values_by_name, metadata, 'expenses')
+        assert result == 300.0
+
+    def test_calculate_category_total_with_none_values(self):
+        """Test that None values are treated as 0 in calculations."""
+        values_by_name = {
+            'item1': 100.0,
+            'item2': None,
+            'item3': 200.0
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'test_category'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'test_category'},
+            {'name': 'item3', 'source_type': 'line_item', 'category': 'test_category'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'test_category')
+        assert result == 300.0  # 100 + 0 + 200
+
+    def test_calculate_category_total_empty_category(self):
+        """Test calculation for a category with no line items."""
+        values_by_name = {
+            'item1': 100.0,
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'total', 'source_type': 'category', 'category': None}
+        ]
+        
+        # Test category that exists in metadata but has no line items
+        with pytest.raises(KeyError, match="Category 'expenses' not found in metadata"):
+            _calculate_category_total(values_by_name, metadata, 'expenses')
+
+    def test_calculate_category_total_invalid_category(self):
+        """Test error handling for non-existent categories."""
+        values_by_name = {'item1': 100.0}
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'}
+        ]
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'nonexistent')
+        
+        assert "Category 'nonexistent' not found in metadata" in str(exc_info.value)
+        assert "Available categories: ['income']" in str(exc_info.value)
+
+    def test_calculate_category_total_missing_item_in_values(self):
+        """Test error handling when line item is missing from values."""
+        values_by_name = {'item1': 100.0}  # item2 is missing
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'income'}
+        ]
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'income')
+        
+        assert "Line item 'item2' in category 'income' not found in values" in str(exc_info.value)
+
+    def test_calculate_category_total_mixed_metadata(self):
+        """Test calculation with mixed metadata containing different source types."""
+        values_by_name = {
+            'revenue': 1000.0,
+            'expenses': 600.0
+        }
+        
+        metadata = [
+            {'name': 'revenue', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'expenses', 'source_type': 'line_item', 'category': 'income'},
+            {'name': 'total_income', 'source_type': 'category', 'category': None},
+            {'name': 'assumption1', 'source_type': 'assumption', 'category': 'income'}
+        ]
+        
+        # Should only sum line_item types
+        result = _calculate_category_total(values_by_name, metadata, 'income')
+        assert result == 1600.0  # Only revenue + expenses
+
+    def test_calculate_category_total_multiple_categories(self):
+        """Test calculation with multiple categories in metadata."""
+        values_by_name = {
+            'rev1': 500.0,
+            'rev2': 300.0,
+            'exp1': 100.0,
+            'exp2': 200.0
+        }
+        
+        metadata = [
+            {'name': 'rev1', 'source_type': 'line_item', 'category': 'revenue'},
+            {'name': 'rev2', 'source_type': 'line_item', 'category': 'revenue'},
+            {'name': 'exp1', 'source_type': 'line_item', 'category': 'expenses'},
+            {'name': 'exp2', 'source_type': 'line_item', 'category': 'expenses'}
+        ]
+        
+        # Test revenue category
+        revenue_total = _calculate_category_total(values_by_name, metadata, 'revenue')
+        assert revenue_total == 800.0
+        
+        # Test expenses category
+        expenses_total = _calculate_category_total(values_by_name, metadata, 'expenses')
+        assert expenses_total == 300.0
+
+    def test_calculate_category_total_zero_values(self):
+        """Test calculation with zero values."""
+        values_by_name = {
+            'item1': 0.0,
+            'item2': 100.0,
+            'item3': 0.0
+        }
+        
+        metadata = [
+            {'name': 'item1', 'source_type': 'line_item', 'category': 'test'},
+            {'name': 'item2', 'source_type': 'line_item', 'category': 'test'},
+            {'name': 'item3', 'source_type': 'line_item', 'category': 'test'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'test')
+        assert result == 100.0
+
+    def test_calculate_category_total_negative_values(self):
+        """Test calculation with negative values."""
+        values_by_name = {
+            'income': 1000.0,
+            'loss': -200.0,
+            'adjustment': -50.0
+        }
+        
+        metadata = [
+            {'name': 'income', 'source_type': 'line_item', 'category': 'net_income'},
+            {'name': 'loss', 'source_type': 'line_item', 'category': 'net_income'},
+            {'name': 'adjustment', 'source_type': 'line_item', 'category': 'net_income'}
+        ]
+        
+        result = _calculate_category_total(values_by_name, metadata, 'net_income')
+        assert result == 750.0  # 1000 + (-200) + (-50)
+
+    def test_calculate_category_total_empty_metadata(self):
+        """Test error handling with empty metadata."""
+        values_by_name = {'item1': 100.0}
+        metadata = []
+        
+        with pytest.raises(KeyError) as exc_info:
+            _calculate_category_total(values_by_name, metadata, 'any_category')
+        
+        assert "Category 'any_category' not found in metadata" in str(exc_info.value)
+        assert "Available categories: []" in str(exc_info.value)

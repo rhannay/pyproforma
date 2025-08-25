@@ -1,7 +1,7 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestConstraintsWithComplexModels:
@@ -55,13 +55,13 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            line_item_generators=line_item_generators,
+            multi_line_items=line_item_generators,
             constraints=constraints
         )
         
         # Test that model functions correctly
         assert len(model.constraints) == 2
-        assert len(model.line_item_generators) == 1
+        assert len(model.multi_line_items) == 1
         assert len(model._line_item_definitions) == 2
         
         # Test that values can be accessed
@@ -184,7 +184,7 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            line_item_generators=line_item_generators,
+            multi_line_items=line_item_generators,
             constraints=constraints
         )
         
@@ -194,9 +194,10 @@ class TestConstraintsWithComplexModels:
         
         # Verify all components are preserved
         assert len(reconstructed_model.constraints) == 2
-        assert len(reconstructed_model.line_item_generators) == 1
+        assert len(reconstructed_model.multi_line_items) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
-        assert len(reconstructed_model._category_definitions) == 2
+        assert len(reconstructed_model._category_definitions) == 2  # Multi-line items no longer create category definitions
+        assert len(reconstructed_model.category_metadata) == 4  # 2 user categories + 1 multi-line item + 1 category_totals
         
         # Verify constraint details
         constraint_names = [c.name for c in reconstructed_model.constraints]

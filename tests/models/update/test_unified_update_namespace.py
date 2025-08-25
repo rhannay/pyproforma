@@ -1,7 +1,7 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.model.model_update import UpdateNamespace
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 
 
 class TestUnifiedUpdateNamespace:

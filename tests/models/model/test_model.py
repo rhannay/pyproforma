@@ -1,7 +1,7 @@
 import pytest
 from pyproforma import LineItem, Model, Category
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.line_item_generator.debt import Debt
+from pyproforma.models.multi_line_item.debt import Debt
 
 class TestItemTypeValidation:
 
@@ -146,7 +146,7 @@ class TestModelWithGenerators:
         return Model(
             line_items=[p, i],
             years=[2020, 2021, 2022],
-            line_item_generators=[debt]
+            multi_line_items=[debt]
         )
     
     def test_line_item_set_with_generators(self, sample_line_item_set_with_generators: Model):
