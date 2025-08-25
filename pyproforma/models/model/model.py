@@ -29,21 +29,26 @@ class Model(SerializationMixin):
     """
     Core financial modeling framework for building pro forma financial statements.
 
-    Creates structured financial models with line items, categories, multi line items, and constraints.
-    Supports multi-year modeling, automatic dependency resolution, and rich output formatting.
+    Creates structured financial models with line items, categories, multi line items,
+    and constraints. Supports multi-year modeling, automatic dependency resolution,
+    and rich output formatting.
 
     Args:
         line_items (list[LineItem]): LineItem objects defining the model structure
         years (list[int]): Years for the model time horizon (required)
-        categories (list[Category], optional): Category definitions (auto-inferred if None)
+        categories (list[Category], optional): Category definitions
+            (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
-        multi_line_items (list[MultiLineItem], optional): Components that generate multiple line items
+        multi_line_items (list[MultiLineItem], optional): Components that generate
+            multiple line items
 
     Examples:
         >>> from pyproforma import Model, LineItem
         >>>
         >>> revenue = LineItem(name="revenue", category="income", formula="1000")
-        >>> expenses = LineItem(name="expenses", category="income", formula="revenue * 0.8")
+        >>> expenses = LineItem(
+        ...     name="expenses", category="income", formula="revenue * 0.8"
+        ... )
         >>>
         >>> model = Model(line_items=[revenue, expenses], years=[2023, 2024, 2025])
         >>>
@@ -92,9 +97,7 @@ class Model(SerializationMixin):
             raise ValueError("Years cannot be an empty list.")
         self.years = sorted(years)
 
-        self._category_definitions = self._collect_category_definitions(
-            line_items, categories
-        )
+        self._category_definitions = self._collect_category_definitions(line_items, categories)
         self._line_item_definitions = line_items
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
@@ -104,9 +107,7 @@ class Model(SerializationMixin):
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
 
-        self.category_metadata = collect_category_metadata(
-            self._category_definitions, self.multi_line_items
-        )
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
@@ -120,9 +121,7 @@ class Model(SerializationMixin):
         )
 
     @staticmethod
-    def _collect_category_definitions(
-        line_items: list[LineItem], categories: list[Category] = None
-    ) -> list[Category]:
+    def _collect_category_definitions(line_items: list[LineItem], categories: list[Category] = None) -> list[Category]:
         """
         Collect category definitions from provided categories or infer from line items.
 
@@ -156,9 +155,7 @@ class Model(SerializationMixin):
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
-        self.category_metadata = collect_category_metadata(
-            self._category_definitions, self.multi_line_items
-        )
+        self.category_metadata = collect_category_metadata(self._category_definitions, self.multi_line_items)
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
@@ -202,9 +199,7 @@ class Model(SerializationMixin):
             return self.value(key_name, year)
         elif isinstance(key, str):
             return self.line_item(key)
-        raise KeyError(
-            "Key must be a tuple of (item_name, year) or a string item_name."
-        )
+        raise KeyError("Key must be a tuple of (item_name, year) or a string item_name.")
 
     def value(self, name: str, year: int) -> float:
         """
@@ -224,7 +219,8 @@ class Model(SerializationMixin):
             float: The calculated value for the specified item and year
 
         Raises:
-            KeyError: If the name is not found in the model's defined names or the year is not in the model's time horizon
+            KeyError: If the name is not found in the model's defined names
+                or the year is not in the model's time horizon
 
         Examples:
             >>> model.value("revenue", 2023)  # Get revenue for 2023
@@ -243,9 +239,7 @@ class Model(SerializationMixin):
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
         if year not in self.years:
-            raise KeyError(
-                f"Year {year} not found in years. Available years: {self.years}"
-            )
+            raise KeyError(f"Year {year} not found in years. Available years: {self.years}")
         return self._value_matrix[year][name]
 
     # ============================================================================
@@ -348,9 +342,7 @@ class Model(SerializationMixin):
             if category_meta["name"] == category_name:
                 return category_meta
         available_categories = [cat["name"] for cat in self.category_metadata]
-        raise KeyError(
-            f"Category '{category_name}' not found in model. Available categories: {available_categories}"
-        )
+        raise KeyError(f"Category '{category_name}' not found in model. Available categories: {available_categories}")
 
     def category(self, category_name: str = None) -> CategoryResults:
         """
@@ -377,17 +369,11 @@ class Model(SerializationMixin):
             >>> revenue.to_dataframe()  # Returns pandas DataFrame
         """
         if category_name is None or category_name == "":
-            available_categories = [
-                category["name"] for category in self.category_metadata
-            ]
+            available_categories = [category["name"] for category in self.category_metadata]
             if available_categories:
-                raise ValueError(
-                    f"Category name is required. Available category names are: {available_categories}"
-                )
+                raise ValueError(f"Category name is required. Available category names are: {available_categories}")
             else:
-                raise ValueError(
-                    "Category name is required, but no categories are defined in this model."
-                )
+                raise ValueError("Category name is required, but no categories are defined in this model.")
 
         return CategoryResults(self, category_name)
 
@@ -422,9 +408,7 @@ class Model(SerializationMixin):
                     f"Constraint name is required. Available constraint names are: {available_constraints}"
                 )
             else:
-                raise ValueError(
-                    "Constraint name is required, but no constraints are defined in this model."
-                )
+                raise ValueError("Constraint name is required, but no constraints are defined in this model.")
 
         return ConstraintResults(self, constraint_name)
 
@@ -463,13 +447,9 @@ class Model(SerializationMixin):
         if item_name is None or item_name == "":
             available_items = sorted([item["name"] for item in self.line_item_metadata])
             if available_items:
-                raise ValueError(
-                    f"Item name is required. Available item names are: {available_items}"
-                )
+                raise ValueError(f"Item name is required. Available item names are: {available_items}")
             else:
-                raise ValueError(
-                    "Item name is required, but no items are defined in this model."
-                )
+                raise ValueError("Item name is required, but no items are defined in this model.")
 
         return LineItemResults(self, item_name)
 
@@ -491,9 +471,7 @@ class Model(SerializationMixin):
             if item.name == name:
                 return item
         valid_line_items = [item.name for item in self._line_item_definitions]
-        raise KeyError(
-            f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}"
-        )
+        raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
 
     def category_definition(self, name: str) -> Category:
         """
@@ -513,9 +491,7 @@ class Model(SerializationMixin):
             if category.name == name:
                 return category
         valid_categories = [category["name"] for category in self.category_metadata]
-        raise KeyError(
-            f"Category item '{name}' not found. Valid categories are: {valid_categories}"
-        )
+        raise KeyError(f"Category item '{name}' not found. Valid categories are: {valid_categories}")
 
     def line_item_names_by_category(self, category_name: str) -> list[str]:
         """
@@ -533,9 +509,7 @@ class Model(SerializationMixin):
         # Validate that the category exists
         if category_name not in self.category_names:
             available_categories = sorted(self.category_names)
-            raise KeyError(
-                f"Category '{category_name}' not found. Available categories: {available_categories}"
-            )
+            raise KeyError(f"Category '{category_name}' not found. Available categories: {available_categories}")
 
         # Get all line item names that belong to this category
         line_item_names = []
@@ -561,9 +535,7 @@ class Model(SerializationMixin):
             if constraint.name == name:
                 return constraint
         valid_constraints = [constraint.name for constraint in self.constraints]
-        raise KeyError(
-            f"Constraint with name '{name}' not found. Valid constraint names are: {valid_constraints}"
-        )
+        raise KeyError(f"Constraint with name '{name}' not found. Valid constraint names are: {valid_constraints}")
 
     # ============================================================================
     # CALCULATION METHODS
@@ -589,9 +561,7 @@ class Model(SerializationMixin):
         """
         # find category total name
         total_name_lookup = {
-            x["source_name"]: x["name"]
-            for x in self.line_item_metadata
-            if x["source_type"] == "category"
+            x["source_name"]: x["name"] for x in self.line_item_metadata if x["source_type"] == "category"
         }
         total_name = total_name_lookup[category]
         return self.value(total_name, year)
@@ -644,20 +614,14 @@ class Model(SerializationMixin):
         # Count items by category
         line_items_by_category = {}
         for category in self.category_metadata:
-            items_in_category = [
-                item.name
-                for item in self._line_item_definitions
-                if item.category == category["name"]
-            ]
+            items_in_category = [item.name for item in self._line_item_definitions if item.category == category["name"]]
             if items_in_category:  # Only include categories that have items
                 line_items_by_category[category["name"]] = items_in_category
 
         return {
             "years": self.years,
             "years_count": len(self.years),
-            "year_range": f"{min(self.years)} - {max(self.years)}"
-            if self.years
-            else "None",
+            "year_range": f"{min(self.years)} - {max(self.years)}" if self.years else "None",
             "line_items_count": len(self._line_item_definitions),
             "categories_count": len(self.category_metadata),
             "multi_line_items_count": len(self.multi_line_items),
@@ -666,11 +630,7 @@ class Model(SerializationMixin):
             "multi_line_item_names": [gen.name for gen in self.multi_line_items],
             "constraint_names": [const.name for const in self.constraints],
             "defined_names_count": len(self.line_item_metadata),
-            "category_totals": [
-                item["name"]
-                for item in self.line_item_metadata
-                if item["source_type"] == "category"
-            ],
+            "category_totals": [item["name"] for item in self.line_item_metadata if item["source_type"] == "category"],
         }
 
     def _repr_html_(self) -> str:
@@ -685,23 +645,32 @@ class Model(SerializationMixin):
         html = """
         <div style="font-family: Arial, sans-serif; margin: 10px;">
             <h3 style="color: #2E8B57; margin-bottom: 15px;">📊 Model Summary</h3>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #007acc;">
+
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; 
+                       margin-bottom: 20px;">
+                <div style="background: #f8f9fa; padding: 12px; 
+                           border-radius: 6px; border-left: 4px solid #007acc;">
                     <strong>Years:</strong> {years_count} years<br>
                     <span style="color: #666; font-size: 0.9em;">{year_range}</span>
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #28a745;">
+                <div style="background: #f8f9fa; padding: 12px; 
+                           border-radius: 6px; border-left: 4px solid #28a745;">
                     <strong>Line Items:</strong> {line_items_count}<br>
-                    <span style="color: #666; font-size: 0.9em;">Across {categories_count} categories</span>
+                    <span style="color: #666; font-size: 0.9em;">
+                        Across {categories_count} categories
+                    </span>
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                <div style="background: #f8f9fa; padding: 12px; 
+                           border-radius: 6px; border-left: 4px solid #ffc107;">
                     <strong>Multi Line Items:</strong> {multi_line_items_count}<br>
                     <strong>Constraints:</strong> {constraints_count}
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #6f42c1;">
+                <div style="background: #f8f9fa; padding: 12px; 
+                           border-radius: 6px; border-left: 4px solid #6f42c1;">
                     <strong>Total Defined Names:</strong> {defined_names_count}<br>
-                    <span style="color: #666; font-size: 0.9em;">Items available for reference</span>
+                    <span style="color: #666; font-size: 0.9em;">
+                        Items available for reference
+                    </span>
                 </div>
             </div>
         """.format(**summary)
@@ -724,9 +693,7 @@ class Model(SerializationMixin):
                 """
 
                 for item in items:
-                    html += (
-                        f'<div style="color: #6c757d; padding: 2px 0;">• {item}</div>'
-                    )
+                    html += f'<div style="color: #6c757d; padding: 2px 0;">• {item}</div>'
 
                 html += """
                         </div>
@@ -877,8 +844,12 @@ class Model(SerializationMixin):
             >>> print(f"Base: {base_profit}, Scenario: {scenario_profit}")
             >>>
             >>> # Chain scenarios for complex analysis
-            >>> optimistic = model.scenario([("revenue", {"updated_values": {2023: 200000}})])
-            >>> pessimistic = model.scenario([("revenue", {"updated_values": {2023: 80000}})])
+            >>> optimistic = model.scenario([
+            ...     ("revenue", {"updated_values": {2023: 200000}})
+            ... ])
+            >>> pessimistic = model.scenario([
+            ...     ("revenue", {"updated_values": {2023: 80000}})
+            ... ])
 
         Note:
             The scenario method preserves all model structure including categories,
