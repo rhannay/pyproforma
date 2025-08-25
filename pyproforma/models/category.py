@@ -1,5 +1,5 @@
-from ._utils import check_name
 from ..constants import RESERVED_CATEGORY_NAMES
+from ._utils import check_name
 
 
 class Category:
@@ -53,7 +53,7 @@ class Category:
         ...     label="Operating Expenses",
         ...     total_label="Total OpEx"
         ... )
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -64,12 +64,14 @@ class Category:
     ):
         if not check_name(name):
             raise ValueError(
-                "Category name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."
+                "Category name must only contain letters, numbers, underscores, "
+                "or hyphens (no spaces or special characters)."
             )
-        
+
         if name in RESERVED_CATEGORY_NAMES:
             raise ValueError(
-                f"Category name '{name}' is reserved and cannot be used. Reserved names are: {', '.join(RESERVED_CATEGORY_NAMES)}"
+                f"Category name '{name}' is reserved and cannot be used. Reserved names are: "  # noqa: E501
+                f"{', '.join(RESERVED_CATEGORY_NAMES)}"
             )
 
         self.name = name
@@ -86,7 +88,15 @@ class Category:
             self.total_name = None
 
     def __str__(self):
-        return f"Category(name='{self.name}', label='{self.label}', total_label='{self.total_label}', total_name='{self.total_name}', include_total={self.include_total})"
+        return (
+            f"Category("
+            f"name='{self.name}', "
+            f"label='{self.label}', "
+            f"total_label='{self.total_label}', "
+            f"total_name='{self.total_name}', "
+            f"include_total={self.include_total}"
+            f")"
+        )
 
     def __repr__(self):
         return self.__str__()
