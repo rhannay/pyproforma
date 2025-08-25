@@ -459,7 +459,7 @@ class Model(SerializationMixin):
         valid_line_items = [item.name for item in self._line_item_definitions]
         raise KeyError(f"LineItem with name '{name}' not found. Valid line item names are: {valid_line_items}")
     
-    def get_category_definition(self, name: str) -> Category:
+    def category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
 
@@ -567,7 +567,7 @@ class Model(SerializationMixin):
         Returns:
             float: The calculated sum of all line items in the category
         """
-        category_item = self.get_category_definition(category)
+        category_item = self.category_definition(category)
         total = 0
         for item in self._line_item_definitions:
             if item.category == category_item.name:
