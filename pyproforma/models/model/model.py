@@ -485,7 +485,10 @@ class Model(SerializationMixin):
             available_items = sorted([item["name"] for item in self.line_item_metadata])
             if available_items:
                 raise ValueError(
-                    f"Item name is required. Available item names are: {available_items}"
+                    (
+                        "Item name is required. "
+                        f"Available item names are: {available_items}"
+                    )
                 )
             else:
                 raise ValueError(
