@@ -53,7 +53,7 @@ class Category:
         ...     label="Operating Expenses",
         ...     total_label="Total OpEx"
         ... )
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -64,12 +64,14 @@ class Category:
     ):
         if not check_name(name):
             raise ValueError(
-                "Category name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."
+                "Category name must only contain letters, numbers, underscores, "
+                "or hyphens (no spaces or special characters)."
             )
 
         if name in RESERVED_CATEGORY_NAMES:
             raise ValueError(
-                f"Category name '{name}' is reserved and cannot be used. Reserved names are: {', '.join(RESERVED_CATEGORY_NAMES)}"
+                f"Category name '{name}' is reserved and cannot be used. Reserved names are: "  # noqa: E501
+                f"{', '.join(RESERVED_CATEGORY_NAMES)}"
             )
 
         self.name = name
