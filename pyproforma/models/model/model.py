@@ -98,8 +98,7 @@ class Model(SerializationMixin):
         self.years = sorted(years)
 
         self._category_definitions = self._collect_category_definitions(
-            line_items,
-            categories
+            line_items, categories
         )
         self._line_item_definitions = line_items
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
@@ -111,8 +110,7 @@ class Model(SerializationMixin):
         validate_constraints(self.constraints, self._line_item_definitions)
 
         self.category_metadata = collect_category_metadata(
-            self._category_definitions,
-            self.multi_line_items
+            self._category_definitions, self.multi_line_items
         )
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
@@ -128,8 +126,7 @@ class Model(SerializationMixin):
 
     @staticmethod
     def _collect_category_definitions(
-        line_items: list[LineItem],
-        categories: list[Category] = None
+        line_items: list[LineItem], categories: list[Category] = None
     ) -> list[Category]:
         """
         Collect category definitions from provided categories or infer from line items.
@@ -165,8 +162,7 @@ class Model(SerializationMixin):
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
         self.category_metadata = collect_category_metadata(
-            self._category_definitions,
-            self.multi_line_items
+            self._category_definitions, self.multi_line_items
         )
         self.line_item_metadata = collect_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
@@ -254,8 +250,7 @@ class Model(SerializationMixin):
             raise KeyError(f"Name '{name}' not found in defined names.")
         if year not in self.years:
             raise KeyError(
-                f"Year {year} not found in years. "
-                f"Available years: {self.years}"
+                f"Year {year} not found in years. Available years: {self.years}"
             )
         return self._value_matrix[year][name]
 
@@ -390,8 +385,7 @@ class Model(SerializationMixin):
         """
         if category_name is None or category_name == "":
             available_categories = [
-                category["name"]
-                for category in self.category_metadata
+                category["name"] for category in self.category_metadata
             ]
             if available_categories:
                 raise ValueError(
@@ -688,8 +682,7 @@ class Model(SerializationMixin):
             "years": self.years,
             "years_count": len(self.years),
             "year_range": (
-                f"{min(self.years)} - {max(self.years)}"
-                if self.years else "None"
+                f"{min(self.years)} - {max(self.years)}" if self.years else "None"
             ),
             "line_items_count": len(self._line_item_definitions),
             "categories_count": len(self.category_metadata),
@@ -711,120 +704,21 @@ class Model(SerializationMixin):
         HTML representation for Jupyter notebooks.
 
         Returns:
-            str: HTML string for rich display in Jupyter notebooks
+            str: Simple HTML string for rich display in Jupyter notebooks
         """
         summary = self.summary()
 
-        html = """
-        <div style="font-family: Arial, sans-serif; margin: 10px;">
-            <h3 style="color: #2E8B57; margin-bottom: 15px;">📊 Model Summary</h3>
+        lines = []
+        lines.append("<strong>Model Summary:</strong><br>")
+        lines.append(
+            f"Years: {summary['year_range']} ({summary['years_count']} years)<br>"
+        )
+        lines.append(f"Line Items: {summary['line_items_count']}<br>")
+        lines.append(f"Categories: {summary['categories_count']}<br>")
+        lines.append(f"Multi Line Items: {summary['multi_line_items_count']}<br>")
+        lines.append(f"Constraints: {summary['constraints_count']}<br>")
 
-            <div style="display: flex; flex-wrap: wrap; gap: 20px; 
-                       margin-bottom: 20px;">
-                <div style="background: #f8f9fa; padding: 12px; 
-                           border-radius: 6px; border-left: 4px solid #007acc;">
-                    <strong>Years:</strong> {years_count} years<br>
-                    <span style="color: #666; font-size: 0.9em;">{year_range}</span>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; 
-                           border-radius: 6px; border-left: 4px solid #28a745;">
-                    <strong>Line Items:</strong> {line_items_count}<br>
-                    <span style="color: #666; font-size: 0.9em;">
-                        Across {categories_count} categories
-                    </span>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; 
-                           border-radius: 6px; border-left: 4px solid #ffc107;">
-                    <strong>Multi Line Items:</strong> {multi_line_items_count}<br>
-                    <strong>Constraints:</strong> {constraints_count}
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; 
-                           border-radius: 6px; border-left: 4px solid #6f42c1;">
-                    <strong>Total Defined Names:</strong> {defined_names_count}<br>
-                    <span style="color: #666; font-size: 0.9em;">
-                        Items available for reference
-                    </span>
-                </div>
-            </div>
-        """.format(**summary)
-
-        # Add categories and their line items
-        if summary["line_items_by_category"]:
-            html += """
-            <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">📋 Categories & Line Items</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-            """
-
-            for category, items in summary["line_items_by_category"].items():
-                html += f"""
-                    <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
-                        <div style="font-weight: bold; color: #495057; margin-bottom: 8px; border-bottom: 1px solid #dee2e6; padding-bottom: 4px;">
-                            {category} ({len(items)} items)
-                        </div>
-                        <div style="font-size: 0.9em; line-height: 1.4;">
-                """
-
-                for item in items:
-                    html += f'<div style="color: #6c757d; padding: 2px 0;">• {item}</div>'
-
-                html += """
-                        </div>
-                    </div>
-                """
-
-            html += """
-                </div>
-            </div>
-            """
-
-        # Add multi line items if any
-        if summary["multi_line_item_names"]:
-            html += """
-            <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">⚙️ Multi Line Items</h4>
-                <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
-            """
-            for gen_name in summary["multi_line_item_names"]:
-                html += f'<span style="display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{gen_name}</span>'
-            html += """
-                </div>
-            </div>
-            """
-
-        # Add constraints if any
-        if summary["constraint_names"]:
-            html += """
-            <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">🔒 Constraints</h4>
-                <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
-            """
-            for const_name in summary["constraint_names"]:
-                html += f'<span style="display: inline-block; background: #fff3e0; color: #f57c00; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{const_name}</span>'
-            html += """
-                </div>
-            </div>
-            """
-
-        # Add category totals if any
-        if summary["category_totals"]:
-            html += """
-            <div style="margin-bottom: 20px;">
-                <h4 style="color: #495057; margin-bottom: 10px;">📈 Category Totals</h4>
-                <div style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px;">
-            """
-            for total_name in summary["category_totals"]:
-                html += f'<span style="display: inline-block; background: #e8f5e8; color: #2e7d32; padding: 4px 8px; border-radius: 4px; margin: 2px; font-size: 0.9em;">{total_name}</span>'
-            html += """
-                </div>
-            </div>
-            """
-
-        html += """
-        </div>
-        """
-
-        return html
+        return "".join(lines)
 
     def _is_last_item_in_category(self, name: str) -> bool:
         """Check if the given item name is the last item in its category"""
