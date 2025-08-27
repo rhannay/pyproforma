@@ -131,13 +131,16 @@ class Column:
 
     Attributes:
         label (str): The display name/header for this column.
+        text_align (str): Text alignment for the column header ('left', 'center', 'right'). Defaults to 'center'.
 
     Examples:
         >>> column = Column(label="Revenue")
+        >>> column = Column(label="Product", text_align="left")
         >>> columns = [Column("Product"), Column("Price"), Column("Quantity")]
     """
 
     label: str
+    text_align: str = "center"
 
 
 @dataclass
@@ -238,6 +241,9 @@ class Table:
             return styled
 
         styled_df = df.style.apply(apply_styles, axis=None)
+
+        # Apply column header styles
+        styled_df = styled_df.set_table_styles(self._get_header_styles())
         return styled_df
 
     def to_excel(self, filename="table.xlsx"):
@@ -282,6 +288,18 @@ class Table:
                 col_name = self.columns[j].label
                 style_map[(i, col_name)] = cell.df_css
         return style_map
+
+    def _get_header_styles(self) -> list[dict]:
+        """Generate header styles based on column text_align property."""
+        styles = []
+        for i, column in enumerate(self.columns):
+            styles.append(
+                {
+                    "selector": f"th.col_heading.level0.col{i}",
+                    "props": [("text-align", column.text_align)],
+                }
+            )
+        return styles
 
 
 def format_value(

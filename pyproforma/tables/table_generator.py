@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 def generate_table_from_template(
-    model: "Model", 
+    model: "Model",
     template: list[Union[dict, BaseRow]],
     include_name: bool = False
 ) -> Table:
@@ -25,10 +25,10 @@ def generate_table_from_template(
     columns = []
     if include_name:
         # Add column to make space for name and label
-        columns.append(Column(label="Label"))
-        columns.append(Column(label="Name"))
+        columns.append(Column(label="Label", text_align="left"))
+        columns.append(Column(label="Name", text_align="left"))
     else:
-        columns = [Column(label="Year")]
+        columns = [Column(label="Year", text_align="left")]
 
     for year in model.years:
         columns.append(Column(label=str(year)))
