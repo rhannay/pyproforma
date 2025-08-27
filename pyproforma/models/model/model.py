@@ -567,9 +567,9 @@ class Model(SerializationMixin):
 
         # Get all line item names that belong to this category
         line_item_names = []
-        for item in self._line_item_definitions:
-            if item.category == category_name:
-                line_item_names.append(item.name)
+        for item in self.line_item_metadata:
+            if item["category"] == category_name:
+                line_item_names.append(item["name"])
 
         return line_item_names
 
