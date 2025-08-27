@@ -78,7 +78,7 @@ def to_excel(table: "Table", filename="table.xlsx"):
         cell = worksheet.cell(row=1, column=col_idx)
         cell.value = column.label
         cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+        cell.alignment = Alignment(horizontal=column.text_align)
 
     # Write data rows
     for row_idx, row in enumerate(
