@@ -130,18 +130,26 @@ class Column:
     Column labels are used as headers in DataFrame conversions and Excel exports.
 
     Attributes:
-        label (str): The display name/header for this column.
+        label (Any): The display name/header for this column.
         text_align (str): Text alignment for the column header
             ('left', 'center', 'right'). Defaults to 'center'.
+        value_format (Optional[ValueFormat]): Formatting type for the column
+            header display. Defaults to 'str'.
 
     Examples:
         >>> column = Column(label="Revenue")
         >>> column = Column(label="Product", text_align="left")
+        >>> column = Column(label=2024, value_format="year")
         >>> columns = [Column("Product"), Column("Price"), Column("Quantity")]
     """
 
-    label: str
+    label: Any
     text_align: str = "center"
+    value_format: Optional[ValueFormat] = "str"
+
+    @property
+    def formatted_label(self) -> Optional[str]:
+        return format_value(self.label, self.value_format)
 
 
 @dataclass
@@ -322,5 +330,7 @@ def format_value(
         return f"{value * 100:.1f}%"
     elif value_format == "percent_two_decimals":
         return f"{value * 100:.2f}%"
+    elif value_format == "year":
+        return str(int(round(value)))
     else:
         raise ValueError(f"Invalid value_format: {value_format}")

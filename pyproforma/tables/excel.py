@@ -58,6 +58,8 @@ def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
         return "0.00%"  # Percentage with 2 decimals (same as correct spelling)
     elif value_format == "str":
         return "@"  # Text format
+    elif value_format == "year":
+        return "0"  # Integer format (no decimals, no commas)
     else:
         return "General"  # Default fallback
 

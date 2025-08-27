@@ -30,8 +30,9 @@ def generate_table_from_template(
     else:
         columns = [Column(label="Year", text_align="left")]
 
+    # Add columns for each year in the model
     for year in model.years:
-        columns.append(Column(label=str(year)))
+        columns.append(Column(label=year, value_format="year"))
 
     # Create rows
     rows = []
