@@ -131,7 +131,8 @@ class Column:
 
     Attributes:
         label (str): The display name/header for this column.
-        text_align (str): Text alignment for the column header ('left', 'center', 'right'). Defaults to 'center'.
+        text_align (str): Text alignment for the column header
+            ('left', 'center', 'right'). Defaults to 'center'.
 
     Examples:
         >>> column = Column(label="Revenue")
