@@ -259,6 +259,82 @@ class Table:
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
 
+    def transpose(self) -> "Table":
+        """Return a new Table with rows and columns transposed.
+        
+        Creates a new Table where:
+        - Column labels become the first cell in each new row
+        - The first cell from each original row becomes new column labels
+        - All other cells are repositioned accordingly
+        
+        Returns:
+            Table: A new Table instance with transposed data. The original table
+                   is not modified.
+        
+        Examples:
+            >>> columns = [Column("A"), Column("B")]
+            >>> rows = [Row([Cell("X"), Cell(1), Cell(2)]), 
+            ...         Row([Cell("Y"), Cell(3), Cell(4)])]
+            >>> table = Table(columns=columns, rows=rows)
+            >>> transposed = table.transpose()
+            # Original:     Transposed:
+            #   A  B           X  Y
+            # X 1  2         A 1  3  
+            # Y 3  4         B 2  4
+        
+        Note:
+            - Empty tables return empty tables
+            - Cell formatting and properties are preserved where possible
+            - The first column of the transposed table uses empty string as label
+        """
+        # Handle empty table case
+        if not self.columns or not self.rows:
+            return Table(columns=[], rows=[])
+        
+        # Create new column labels: empty string + first cell value from each original row
+        new_column_labels = [""]  # First column for the original column labels
+        for row in self.rows:
+            if row.cells:
+                # Use the value from the first cell as the new column label
+                new_column_labels.append(row.cells[0].value)
+            else:
+                new_column_labels.append("")
+        
+        # Create new columns
+        new_columns = [Column(label=label) for label in new_column_labels]
+        
+        # Create new rows: one row for each original column
+        new_rows = []
+        for col_idx, original_column in enumerate(self.columns):
+            # First cell in the new row is the original column label
+            new_row_cells = [Cell(value=original_column.label, align="left")]
+            
+            # Add cells from each original row at the corresponding column position
+            # Note: col_idx + 1 because the first cell (index 0) in each original row is the row label
+            for row in self.rows:
+                target_cell_idx = col_idx + 1  # Skip the first cell which is the row label
+                if target_cell_idx < len(row.cells):
+                    # Copy the cell, preserving all its properties
+                    original_cell = row.cells[target_cell_idx]
+                    new_cell = Cell(
+                        value=original_cell.value,
+                        bold=original_cell.bold,
+                        align=original_cell.align,
+                        value_format=original_cell.value_format,
+                        background_color=original_cell.background_color,
+                        font_color=original_cell.font_color,
+                        bottom_border=original_cell.bottom_border,
+                        top_border=original_cell.top_border
+                    )
+                    new_row_cells.append(new_cell)
+                else:
+                    # If original row doesn't have enough cells, add empty cell
+                    new_row_cells.append(Cell(value=None))
+            
+            new_rows.append(Row(cells=new_row_cells))
+        
+        return Table(columns=new_columns, rows=new_rows)
+
     # Display methods
     def _repr_html_(self) -> str:
         """Return HTML representation for rich display in Jupyter notebooks.
