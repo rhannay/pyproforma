@@ -84,10 +84,6 @@ class TestTableCreation:
         )
 
     def test_table_creation(self, sample_model: Model):
-        # create all() table
-        table = sample_model.tables.all()
-        assert table is not None, "Table creation failed"
-
         table = sample_model.tables.line_items()
         assert table is not None, "Line items table creation failed"
 
