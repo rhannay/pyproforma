@@ -544,19 +544,39 @@ class Model(SerializationMixin):
             f"Valid categories are: {valid_categories}"
         )
 
-    def line_item_names_by_category(self, category_name: str) -> list[str]:
+    def line_item_names_by_category(
+        self, category_name: str = None
+    ) -> Union[list[str], dict[str, list[str]]]:
         """
-        Get all line item names in a specific category.
+        Get line item names by category.
 
         Args:
-            category_name (str): The name of the category to filter by
+            category_name (str, optional): The name of the category to filter by.
+                If None, returns a dictionary mapping all category names to
+                their line items.
 
         Returns:
-            list[str]: List of line item names in the specified category
+            Union[list[str], dict[str, list[str]]]:
+                - If category_name is provided: List of line item names in the
+                  specified category
+                - If category_name is None: Dictionary mapping category names to
+                  lists of line item names
 
         Raises:
-            KeyError: If the category name is not found
+            KeyError: If the category name is not found (when category_name is
+                provided)
         """
+        if category_name is None:
+            # Return dictionary mapping all categories to their line items
+            result = {}
+            for category in self.category_names:
+                line_item_names = []
+                for item in self.line_item_metadata:
+                    if item["category"] == category:
+                        line_item_names.append(item["name"])
+                result[category] = line_item_names
+            return result
+
         # Validate that the category exists
         if category_name not in self.category_names:
             available_categories = sorted(self.category_names)
