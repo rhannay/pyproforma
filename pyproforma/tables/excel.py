@@ -58,6 +58,8 @@ def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
         return "0.00%"  # Percentage with 2 decimals (same as correct spelling)
     elif value_format == "str":
         return "@"  # Text format
+    elif value_format == "year":
+        return "0"  # Integer format (no decimals, no commas)
     else:
         return "General"  # Default fallback
 
@@ -78,7 +80,7 @@ def to_excel(table: "Table", filename="table.xlsx"):
         cell = worksheet.cell(row=1, column=col_idx)
         cell.value = column.label
         cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+        cell.alignment = Alignment(horizontal=column.text_align)
 
     # Write data rows
     for row_idx, row in enumerate(

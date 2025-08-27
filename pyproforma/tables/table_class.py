@@ -130,14 +130,26 @@ class Column:
     Column labels are used as headers in DataFrame conversions and Excel exports.
 
     Attributes:
-        label (str): The display name/header for this column.
+        label (Any): The display name/header for this column.
+        text_align (str): Text alignment for the column header
+            ('left', 'center', 'right'). Defaults to 'center'.
+        value_format (Optional[ValueFormat]): Formatting type for the column
+            header display. Defaults to 'str'.
 
     Examples:
         >>> column = Column(label="Revenue")
+        >>> column = Column(label="Product", text_align="left")
+        >>> column = Column(label=2024, value_format="year")
         >>> columns = [Column("Product"), Column("Price"), Column("Quantity")]
     """
 
-    label: str
+    label: Any
+    text_align: str = "center"
+    value_format: Optional[ValueFormat] = "str"
+
+    @property
+    def formatted_label(self) -> Optional[str]:
+        return format_value(self.label, self.value_format)
 
 
 @dataclass
@@ -171,6 +183,18 @@ class Table:
     # Initialization and validation
     def __post_init__(self):
         self._check_column_and_cell_counts()
+
+    def _check_column_and_cell_counts(self):
+        # Check each number of cells in each row matches the number of columns
+        num_columns = len(self.columns)
+        for i, row in enumerate(self.rows):
+            if len(row.cells) != num_columns:
+                raise ValueError(
+                    (
+                        f"Row {i} has {len(row.cells)} cells, expected {num_columns} "
+                        "based on the number of columns."
+                    )
+                )
 
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
@@ -226,6 +250,9 @@ class Table:
             return styled
 
         styled_df = df.style.apply(apply_styles, axis=None)
+
+        # Apply column header styles
+        styled_df = styled_df.set_table_styles(self._get_header_styles())
         return styled_df
 
     def to_excel(self, filename="table.xlsx"):
@@ -253,18 +280,6 @@ class Table:
         return styled_df.to_html()
 
     # Private helper methods
-    def _check_column_and_cell_counts(self):
-        # Check each number of cells in each row matches the number of columns
-        num_columns = len(self.columns)
-        for i, row in enumerate(self.rows):
-            if len(row.cells) != num_columns:
-                raise ValueError(
-                    (
-                        f"Row {i} has {len(row.cells)} cells, expected {num_columns} "
-                        "based on the number of columns."
-                    )
-                )
-
     def _to_value_formatted_df(self) -> pd.DataFrame:
         data = []
         for row in self.rows:
@@ -282,6 +297,18 @@ class Table:
                 col_name = self.columns[j].label
                 style_map[(i, col_name)] = cell.df_css
         return style_map
+
+    def _get_header_styles(self) -> list[dict]:
+        """Generate header styles based on column text_align property."""
+        styles = []
+        for i, column in enumerate(self.columns):
+            styles.append(
+                {
+                    "selector": f"th.col_heading.level0.col{i}",
+                    "props": [("text-align", column.text_align)],
+                }
+            )
+        return styles
 
 
 def format_value(
@@ -303,5 +330,7 @@ def format_value(
         return f"{value * 100:.1f}%"
     elif value_format == "percent_two_decimals":
         return f"{value * 100:.2f}%"
+    elif value_format == "year":
+        return str(int(round(value)))
     else:
         raise ValueError(f"Invalid value_format: {value_format}")

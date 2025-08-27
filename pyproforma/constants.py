@@ -9,6 +9,7 @@ VALUE_FORMATS = [
     "percent",  # Multiplies by 100 and shows as percentage with no decimals
     "percent_one_decimal",  # Multiplies by 100 and shows as percentage with 1 decimal
     "percent_two_decimals",  # Multiplies by 100 and shows as percentage with 2 decimals
+    "year",  # Shows as a year (integer, no commas or decimals)
 ]
 
 # Type alias for valid value formats (based on VALUE_FORMATS constant)
@@ -21,6 +22,7 @@ ValueFormat = Literal[
     "percent",
     "percent_one_decimal",
     "percent_two_decimals",
+    "year",
 ]
 
 # Reserved category names that cannot be used by users

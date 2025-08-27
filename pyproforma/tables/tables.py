@@ -29,7 +29,6 @@ class Tables:
     Examples:
         >>> model = Model(...)  # Initialize with required parameters
         >>> table = model.tables.category('revenue')
-        >>> all_items_table = model.tables.all()
     """
 
     def __init__(self, model: "Model"):
@@ -63,38 +62,9 @@ class Tables:
         )
         return table
 
-    def all(self) -> Table:
-        """
-        Generate a comprehensive table containing all model items.
-
-        Creates a complete overview table that includes all line items
-        organized by category, and any line item generator items. The table is
-        structured with clear section headers and includes a name column for
-        easy identification of each item.
-
-        Returns:
-            Table: A Table object containing all model items organized by type:
-                - LINE ITEMS: All line items organized by category
-                - LINE ITEM GENERATOR ITEMS: All generated line items
-
-        Examples:
-            >>> table = model.tables.all()  # Returns a comprehensive table with all model components
-        """  # noqa: E501
-        rows = []
-        # Line Items (including all categories)
-        if self._model.category_names:
-            rows.append(rt.LabelRow(label="LINE ITEMS", bold=True))
-            for category_name in self._model.category_names:
-                rows.extend(self._category_rows(category_name, include_total=True))
-        # Multi Line Item items
-        if self._model.multi_line_items:
-            rows.append(rt.LabelRow(label="MULTI LINE ITEM ITEMS", bold=True))
-            for generator in self._model.multi_line_items:
-                for gen_name in generator.defined_names:
-                    rows.append(rt.ItemRow(name=gen_name))
-        return generate_table_from_template(self._model, rows, include_name=True)
-
-    def line_items(self, hardcoded_color: Optional[str] = None) -> Table:
+    def line_items(
+        self, include_name: bool = False, hardcoded_color: Optional[str] = None
+    ) -> Table:
         """
         Generate a table containing all line items organized by category.
 
@@ -103,6 +73,7 @@ class Tables:
         followed by its line items, and includes category totals if configured.
 
         Args:
+            include_name (bool, optional): Whether to include the name column. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -112,10 +83,10 @@ class Tables:
 
         Examples:
             >>> table = model.tables.line_items()
-            >>> table = model.tables.line_items(hardcoded_color='blue')
+            >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
         """  # noqa: E501
         rows = self._line_item_rows(hardcoded_color=hardcoded_color)
-        return self.from_template(rows)
+        return self.from_template(rows, include_name=include_name)
 
     def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
