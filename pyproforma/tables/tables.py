@@ -94,7 +94,9 @@ class Tables:
                     rows.append(rt.ItemRow(name=gen_name))
         return generate_table_from_template(self._model, rows, include_name=True)
 
-    def line_items(self, hardcoded_color: Optional[str] = None) -> Table:
+    def line_items(
+        self, include_name: bool = False, hardcoded_color: Optional[str] = None
+    ) -> Table:
         """
         Generate a table containing all line items organized by category.
 
@@ -103,6 +105,7 @@ class Tables:
         followed by its line items, and includes category totals if configured.
 
         Args:
+            include_name (bool, optional): Whether to include the name column. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -112,10 +115,10 @@ class Tables:
 
         Examples:
             >>> table = model.tables.line_items()
-            >>> table = model.tables.line_items(hardcoded_color='blue')
+            >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
         """  # noqa: E501
         rows = self._line_item_rows(hardcoded_color=hardcoded_color)
-        return self.from_template(rows)
+        return self.from_template(rows, include_name=include_name)
 
     def _line_item_rows(self, hardcoded_color: Optional[str] = None):
         rows = []
