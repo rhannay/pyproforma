@@ -172,6 +172,18 @@ class Table:
     def __post_init__(self):
         self._check_column_and_cell_counts()
 
+    def _check_column_and_cell_counts(self):
+        # Check each number of cells in each row matches the number of columns
+        num_columns = len(self.columns)
+        for i, row in enumerate(self.rows):
+            if len(row.cells) != num_columns:
+                raise ValueError(
+                    (
+                        f"Row {i} has {len(row.cells)} cells, expected {num_columns} "
+                        "based on the number of columns."
+                    )
+                )
+
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the Table to a pandas DataFrame with raw cell values.
@@ -253,18 +265,6 @@ class Table:
         return styled_df.to_html()
 
     # Private helper methods
-    def _check_column_and_cell_counts(self):
-        # Check each number of cells in each row matches the number of columns
-        num_columns = len(self.columns)
-        for i, row in enumerate(self.rows):
-            if len(row.cells) != num_columns:
-                raise ValueError(
-                    (
-                        f"Row {i} has {len(row.cells)} cells, expected {num_columns} "
-                        "based on the number of columns."
-                    )
-                )
-
     def _to_value_formatted_df(self) -> pd.DataFrame:
         data = []
         for row in self.rows:
