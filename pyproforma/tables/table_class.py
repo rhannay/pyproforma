@@ -272,27 +272,27 @@ class Table:
                    is not modified.
         
         Examples:
-            >>> columns = [Column("A"), Column("B")]
-            >>> rows = [Row([Cell("X"), Cell(1), Cell(2)]), 
-            ...         Row([Cell("Y"), Cell(3), Cell(4)])]
+            >>> columns = [Column("Metric"), Column("Q1")]
+            >>> rows = [Row([Cell("Revenue"), Cell(1000), Cell(1200)]), 
+            ...         Row([Cell("Expenses"), Cell(800), Cell(900)])]
             >>> table = Table(columns=columns, rows=rows)
             >>> transposed = table.transpose()
             # Original:     Transposed:
-            #   A  B           X  Y
-            # X 1  2         A 1  3  
-            # Y 3  4         B 2  4
+            #  Metric  Q1      Metric Revenue Expenses
+            # Revenue 1000      Q1    1000     800  
+            # Expenses 800
         
         Note:
             - Empty tables return empty tables
             - Cell formatting and properties are preserved where possible
-            - The first column of the transposed table uses empty string as label
+            - The first column of the transposed table preserves the original first column label
         """
         # Handle empty table case
         if not self.columns or not self.rows:
             return Table(columns=[], rows=[])
         
-        # Create new column labels: empty string + first cell value from each original row
-        new_column_labels = [""]  # First column for the original column labels
+        # Create new column labels: preserve first column label + first cell value from each original row
+        new_column_labels = [self.columns[0].label]  # Preserve the original first column label
         for row in self.rows:
             if row.cells:
                 # Use the value from the first cell as the new column label
@@ -303,19 +303,18 @@ class Table:
         # Create new columns
         new_columns = [Column(label=label) for label in new_column_labels]
         
-        # Create new rows: one row for each original column
+        # Create new rows: one row for each original column (excluding the first column since its label is preserved as column header)
         new_rows = []
-        for col_idx, original_column in enumerate(self.columns):
-            # First cell in the new row is the original column label
+        for col_idx, original_column in enumerate(self.columns[1:], 1):  # Skip first column, start index at 1
+            # First cell in the new row is the original column label  
             new_row_cells = [Cell(value=original_column.label, align="left")]
             
             # Add cells from each original row at the corresponding column position
-            # Note: col_idx + 1 because the first cell (index 0) in each original row is the row label
+            # Note: col_idx because we're now using the actual column index
             for row in self.rows:
-                target_cell_idx = col_idx + 1  # Skip the first cell which is the row label
-                if target_cell_idx < len(row.cells):
+                if col_idx < len(row.cells):
                     # Copy the cell, preserving all its properties
-                    original_cell = row.cells[target_cell_idx]
+                    original_cell = row.cells[col_idx]
                     new_cell = Cell(
                         value=original_cell.value,
                         bold=original_cell.bold,

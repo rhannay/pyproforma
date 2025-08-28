@@ -19,24 +19,19 @@ class TestTableTranspose:
         transposed = table.transpose()
         
         # Check structure
-        assert len(transposed.columns) == 3  # "", "X", "Y"
-        assert len(transposed.rows) == 2     # "A" row, "B" row
+        assert len(transposed.columns) == 3  # "A", "X", "Y"
+        assert len(transposed.rows) == 1     # "B" row
         
         # Check column labels
-        assert transposed.columns[0].label == ""
+        assert transposed.columns[0].label == "A"  # Preserved original first column header
         assert transposed.columns[1].label == "X"  
         assert transposed.columns[2].label == "Y"
         
         # Check row data
-        # First row should be ["A", 1, 2] (values from original first column)
-        assert transposed.rows[0].cells[0].value == "A"
+        # First row should be ["B", 1, 2] (values from original second column)
+        assert transposed.rows[0].cells[0].value == "B"
         assert transposed.rows[0].cells[1].value == 1
         assert transposed.rows[0].cells[2].value == 2
-        
-        # Second row should be ["B", None, None] (values from original second column)  
-        assert transposed.rows[1].cells[0].value == "B"
-        assert transposed.rows[1].cells[1].value is None
-        assert transposed.rows[1].cells[2].value is None
 
     def test_transpose_rectangular_3x2(self):
         """Test transposing a rectangular 3x2 table."""
@@ -49,22 +44,22 @@ class TestTableTranspose:
         
         transposed = table.transpose()
         
-        # Check dimensions: should be 3 columns x 3 rows  
-        assert len(transposed.columns) == 3  # "", "Row1", "Row2"
-        assert len(transposed.rows) == 3     # "Col1", "Col2", "Col3" rows
+        # Check dimensions: should be 3 columns x 2 rows  
+        assert len(transposed.columns) == 3  # "Col1", "Row1", "Row2"
+        assert len(transposed.rows) == 2     # "Col2", "Col3" rows
         
         # Check column labels
-        assert transposed.columns[0].label == ""
+        assert transposed.columns[0].label == "Col1"  # Preserved original first column header
         assert transposed.columns[1].label == "Row1"
         assert transposed.columns[2].label == "Row2"
         
-        # Check first row (original first column data)
-        assert transposed.rows[0].cells[0].value == "Col1"  
+        # Check first row (original second column data)
+        assert transposed.rows[0].cells[0].value == "Col2"  
         assert transposed.rows[0].cells[1].value == 1
         assert transposed.rows[0].cells[2].value == 3
         
-        # Check second row (original second column data)
-        assert transposed.rows[1].cells[0].value == "Col2"
+        # Check second row (original third column data)
+        assert transposed.rows[1].cells[0].value == "Col3"
         assert transposed.rows[1].cells[1].value == 2  
         assert transposed.rows[1].cells[2].value == 4
 
@@ -81,24 +76,22 @@ class TestTableTranspose:
         transposed = table.transpose()
         
         # Check that different data types are preserved
+        assert transposed.columns[0].label == "Numbers"  # Preserved original first column header
         assert transposed.columns[1].label == "Type1"
         assert transposed.columns[2].label == "Type2" 
         assert transposed.columns[3].label == "Type3"
         
-        # Check numbers column
+        # Check strings column (original second column)
+        assert transposed.rows[0].cells[0].value == "Strings"
         assert transposed.rows[0].cells[1].value == 42
         assert transposed.rows[0].cells[2].value == 3.14
         assert transposed.rows[0].cells[3].value is None
         
-        # Check strings column
+        # Check extra column (original third column)
+        assert transposed.rows[1].cells[0].value == "Extra"
         assert transposed.rows[1].cells[1].value == "hello"
         assert transposed.rows[1].cells[2].value == "world"
         assert transposed.rows[1].cells[3].value is None
-        
-        # Check extra column
-        assert transposed.rows[2].cells[1].value is None
-        assert transposed.rows[2].cells[2].value is None
-        assert transposed.rows[2].cells[3].value is None
 
     def test_transpose_preserves_cell_formatting(self):
         """Test that cell formatting is preserved during transpose."""
@@ -128,7 +121,6 @@ class TestTableTranspose:
         
         # Check that row label cells have left alignment (this is set by transpose)
         assert transposed.rows[0].cells[0].align == "left"
-        assert transposed.rows[1].cells[0].align == "left"
 
     def test_transpose_empty_table(self):
         """Test transposing an empty table."""
@@ -146,11 +138,14 @@ class TestTableTranspose:
         
         transposed = table.transpose()
         
-        assert len(transposed.columns) == 2  # "", "Only"
-        assert len(transposed.rows) == 3     # A, B, C
+        assert len(transposed.columns) == 2  # "A", "Only"
+        assert len(transposed.rows) == 2     # B, C
         
+        assert transposed.columns[0].label == "A"  # Preserved original first column header
         assert transposed.columns[1].label == "Only"
+        assert transposed.rows[0].cells[0].value == "B"
         assert transposed.rows[0].cells[1].value == 1
+        assert transposed.rows[1].cells[0].value == "C"
         assert transposed.rows[1].cells[1].value == 2
 
     def test_transpose_single_column(self):
@@ -165,13 +160,13 @@ class TestTableTranspose:
         
         transposed = table.transpose()
         
-        assert len(transposed.columns) == 4  # "", "First", "Second", "Third"  
-        assert len(transposed.rows) == 1     # OnlyCol
+        assert len(transposed.columns) == 4  # "OnlyCol", "First", "Second", "Third"  
+        assert len(transposed.rows) == 0     # No additional columns to create rows from
         
+        assert transposed.columns[0].label == "OnlyCol"  # Preserved original first column header
         assert transposed.columns[1].label == "First"
         assert transposed.columns[2].label == "Second"
         assert transposed.columns[3].label == "Third"
-        assert transposed.rows[0].cells[0].value == "OnlyCol"
 
     def test_transpose_does_not_modify_original(self):
         """Test that transpose creates a new table and doesn't modify the original."""
@@ -217,16 +212,16 @@ class TestTableTranspose:
         
         # The structure should be different from original due to how row labels are handled
         # Original: 2 cols, 2 rows  
-        # After 1st transpose: 3 cols, 2 rows
-        # After 2nd transpose: 3 cols, 3 rows (because first column of transposed_once becomes row labels)
+        # After 1st transpose: 3 cols, 1 row (preserves "A" as first column header)
+        # After 2nd transpose: 2 cols, 2 rows (but different structure)
         assert len(table.columns) == 2
         assert len(table.rows) == 2
         
         assert len(transposed_once.columns) == 3
-        assert len(transposed_once.rows) == 2
+        assert len(transposed_once.rows) == 1
         
-        assert len(transposed_twice.columns) == 3  
-        assert len(transposed_twice.rows) == 3
+        assert len(transposed_twice.columns) == 2  
+        assert len(transposed_twice.rows) == 2
 
     def test_transpose_with_missing_cells(self):
         """Test transpose when some rows have fewer cells than columns (edge case)."""
@@ -235,7 +230,7 @@ class TestTableTranspose:
         columns = [Column(label="A"), Column(label="B"), Column(label="C")]
         
         # This would normally fail validation, but let's create manually for testing
-        rows = [Row(cells=[Cell("X"), Cell(1), Cell(2)])]
+        rows = [Row(cells=[Cell("X"), Cell(1)])]  # Missing third cell
         table = Table.__new__(Table)  # Bypass __init__ validation
         table.columns = columns
         table.rows = rows
@@ -243,12 +238,15 @@ class TestTableTranspose:
         transposed = table.transpose()
         
         # Should handle missing cells gracefully by adding None values
-        assert len(transposed.columns) == 2  # "", "X"
-        assert len(transposed.rows) == 3     # A, B, C
+        assert len(transposed.columns) == 2  # "A", "X"
+        assert len(transposed.rows) == 2     # B, C
         
         # All transposed rows should have the same number of cells
         for row in transposed.rows:
             assert len(row.cells) == 2
+        
+        # Check that missing cells become None
+        assert transposed.rows[1].cells[1].value is None  # C row, X column
 
     def test_transpose_to_dataframe_integration(self):
         """Test that transposed tables work correctly with to_dataframe()."""
@@ -264,13 +262,14 @@ class TestTableTranspose:
         df = transposed.to_dataframe()
         
         # Check DataFrame structure  
-        expected_columns = ["", "Q1", "Q2", "Q3"]
+        expected_columns = ["Metric", "Q1", "Q2", "Q3"]  # First column header preserved
         assert list(df.columns) == expected_columns
         
         # Check DataFrame data
-        assert df.iloc[0, 0] == "Metric"  # First row, first column
-        assert df.iloc[1, 0] == "Value"   # Second row, first column  
-        assert df.iloc[0, 1] == 100       # First row, Q1 column
-        assert df.iloc[0, 2] == 200       # First row, Q2 column
-        assert df.iloc[0, 3] == 300       # First row, Q3 column
-        assert pd.isna(df.iloc[1, 1])     # Second row should have None values
+        assert df.iloc[0, 0] == "Value"   # First row (Value row), first column (Metric)
+        assert df.iloc[0, 1] == 100       # First row (Value row), Q1 column
+        assert df.iloc[0, 2] == 200       # First row (Value row), Q2 column
+        assert df.iloc[0, 3] == 300       # First row (Value row), Q3 column
+        
+        # Verify there's only one row in the transposed table
+        assert len(df) == 1
