@@ -273,3 +273,77 @@ class TestTableTranspose:
         
         # Verify there's only one row in the transposed table
         assert len(df) == 1
+
+    def test_transpose_with_remove_borders_false(self):
+        """Test that borders are preserved when remove_borders=False (default)."""
+        columns = [Column(label="A"), Column(label="B")]
+        rows = [
+            Row(cells=[
+                Cell("X", top_border="single"), 
+                Cell(1, bottom_border="double")
+            ]),
+        ]
+        table = Table(columns=columns, rows=rows)
+        
+        transposed = table.transpose(remove_borders=False)
+        
+        # Check that borders are preserved
+        assert transposed.rows[0].cells[1].bottom_border == "double"
+        
+        # Test default behavior too (should be same as remove_borders=False)
+        transposed_default = table.transpose()
+        assert transposed_default.rows[0].cells[1].bottom_border == "double"
+
+    def test_transpose_with_remove_borders_true(self):
+        """Test that all borders are removed when remove_borders=True."""
+        columns = [Column(label="A"), Column(label="B")]
+        rows = [
+            Row(cells=[
+                Cell("X", top_border="single"), 
+                Cell(1, bottom_border="double")
+            ]),
+        ]
+        table = Table(columns=columns, rows=rows)
+        
+        transposed = table.transpose(remove_borders=True)
+        
+        # Check that all borders are removed from all cells
+        for row in transposed.rows:
+            for cell in row.cells:
+                assert cell.top_border is None
+                assert cell.bottom_border is None
+
+    def test_transpose_remove_borders_preserves_other_formatting(self):
+        """Test that remove_borders only removes borders, preserving other formatting."""
+        columns = [Column(label="Category"), Column(label="Value")]
+        rows = [
+            Row(cells=[
+                Cell("Revenue", bold=True, align="center"), 
+                Cell(1000, 
+                     bottom_border="single", 
+                     top_border="double",
+                     background_color="lightblue",
+                     font_color="red",
+                     value_format="no_decimals")
+            ]),
+        ]
+        table = Table(columns=columns, rows=rows)
+        
+        transposed = table.transpose(remove_borders=True)
+        
+        # Check that non-border formatting is preserved
+        value_cell = transposed.rows[0].cells[1]  # The "1000" cell
+        assert value_cell.value == 1000
+        assert value_cell.background_color == "lightblue"
+        assert value_cell.font_color == "red"
+        assert value_cell.value_format == "no_decimals"
+        
+        # But borders should be removed
+        assert value_cell.top_border is None
+        assert value_cell.bottom_border is None
+        
+        # Check first cell too
+        first_cell = transposed.rows[0].cells[0]  # The "Value" cell
+        assert first_cell.value == "Value"
+        assert first_cell.top_border is None
+        assert first_cell.bottom_border is None

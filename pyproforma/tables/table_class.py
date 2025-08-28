@@ -259,13 +259,17 @@ class Table:
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
 
-    def transpose(self) -> "Table":
+    def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
         
         Creates a new Table where:
         - Column labels become the first cell in each new row
         - The first cell from each original row becomes new column labels
         - All other cells are repositioned accordingly
+        
+        Args:
+            remove_borders (bool): If True, removes all borders from cells in the 
+                                 transposed table. Defaults to False.
         
         Returns:
             Table: A new Table instance with transposed data. The original table
@@ -281,11 +285,15 @@ class Table:
             #  Metric  Q1      Metric Revenue Expenses
             # Revenue 1000      Q1    1000     800  
             # Expenses 800
+            
+            >>> # Remove borders from transposed table
+            >>> transposed_no_borders = table.transpose(remove_borders=True)
         
         Note:
             - Empty tables return empty tables
             - Cell formatting and properties are preserved where possible
             - The first column of the transposed table preserves the original first column label
+            - When remove_borders=True, all top_border and bottom_border properties are set to None
         """
         # Handle empty table case
         if not self.columns or not self.rows:
@@ -307,7 +315,8 @@ class Table:
         new_rows = []
         for col_idx, original_column in enumerate(self.columns[1:], 1):  # Skip first column, start index at 1
             # First cell in the new row is the original column label  
-            new_row_cells = [Cell(value=original_column.label, align="left")]
+            first_cell = Cell(value=original_column.label, align="left")
+            new_row_cells = [first_cell]
             
             # Add cells from each original row at the corresponding column position
             # Note: col_idx because we're now using the actual column index
@@ -322,8 +331,8 @@ class Table:
                         value_format=original_cell.value_format,
                         background_color=original_cell.background_color,
                         font_color=original_cell.font_color,
-                        bottom_border=original_cell.bottom_border,
-                        top_border=original_cell.top_border
+                        bottom_border=None if remove_borders else original_cell.bottom_border,
+                        top_border=None if remove_borders else original_cell.top_border
                     )
                     new_row_cells.append(new_cell)
                 else:
