@@ -20,17 +20,24 @@ pip install pyproforma
 ## Quick Start
 
 ```python
-from pyproforma import Model
+from pyproforma import Model, LineItem
+
+# Create line items
+revenue = LineItem(name="revenue", category="income", values={2023: 100, 2024: 110, 2025: 121})
+costs = LineItem(name="costs", category="expenses", values={2023: 50, 2024: 55, 2025: 60})
+profit = LineItem(name="profit", category="profit", formula="revenue - costs")
 
 # Create a financial model
-model = Model()
+model = Model(
+    line_items=[revenue, costs, profit],
+    years=[2023, 2024, 2025]
+)
 
-# Add line items, formulas, etc.
-model.add_line_item("revenue", [100, 110, 121])
-model.add_line_item("costs", [50, 55, 60])
-model.add_formula("profit", "revenue - costs")
+# Access values
+print(f"Revenue 2023: ${model['revenue', 2023]:,}")
+print(f"Profit 2024: ${model['profit', 2024]:,}")
 
-# Display results
-results = model.calculate()
-print(results)
+# Create analysis objects
+revenue_analysis = model.line_item('revenue')
+print(revenue_analysis.values())
 ```

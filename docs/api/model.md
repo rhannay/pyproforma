@@ -18,12 +18,6 @@
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.li
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
 ::: pyproforma.models.model.model.Model.category
     options:
       show_root_heading: true
@@ -36,19 +30,19 @@
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.get_line_item_definition
+::: pyproforma.models.model.model.Model.line_item_definition
     options:
       show_root_heading: true
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.get_category_definition
+::: pyproforma.models.model.model.Model.category_definition
     options:
       show_root_heading: true
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.get_constraint_definition
+::: pyproforma.models.model.model.Model.constraint_definition
     options:
       show_root_heading: true
       show_root_full_path: false

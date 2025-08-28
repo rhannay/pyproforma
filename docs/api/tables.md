@@ -12,12 +12,6 @@
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.tables.tables.Tables.all
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
 ::: pyproforma.tables.tables.Tables.line_items
     options:
       show_root_heading: true
