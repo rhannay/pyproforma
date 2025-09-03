@@ -574,6 +574,104 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update years: {str(e)}") from e
 
+    def reorder_line_items(self, ordered_names: list[str]):
+        """
+        Reorder LineItem definitions in the model by specifying their names in the desired order.
+
+        This method reorders the LineItem class instances (line item definitions)
+        based on the provided list of names. It only affects the order of LineItem
+        objects in the model, not category totals, multi-line items, or other
+        calculated items. All existing line items must be included in the list -
+        no items can be omitted. The method validates the reordering by first
+        testing it on a copy of the model, then applies the change to the actual
+        model if successful.
+
+        Usage:
+            # Reorder LineItem definitions
+            model.update.reorder_line_items(["revenue", "expenses", "profit"])
+
+        Args:
+            ordered_names (list[str]): List of LineItem names in the desired order.
+                Must contain all existing LineItem names, no more, no less.
+                Only affects LineItem class instances, not other model components.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the reordering is invalid (missing items, extra items, etc.)
+            TypeError: If ordered_names is not a list or contains non-strings
+        """  # noqa: E501
+        # Input validation
+        if not isinstance(ordered_names, list):
+            raise TypeError(f"Expected list, got {type(ordered_names).__name__}")
+
+        if not all(isinstance(name, str) for name in ordered_names):
+            raise TypeError("All line item names must be strings")
+
+        # Get current line item names
+        current_names = [item.name for item in self._model._line_item_definitions]
+        current_names_set = set(current_names)
+        ordered_names_set = set(ordered_names)
+
+        # Check for missing items
+        missing_items = current_names_set - ordered_names_set
+        if missing_items:
+            raise ValueError(
+                f"Missing line items in reorder list: {sorted(missing_items)}. "
+                f"All existing line items must be included."
+            )
+
+        # Check for extra/unknown items
+        unknown_items = ordered_names_set - current_names_set
+        if unknown_items:
+            available_items = sorted(current_names)
+            raise ValueError(
+                f"Unknown line items in reorder list: {sorted(unknown_items)}. "
+                f"Available line items: {available_items}"
+            )
+
+        # Check for duplicates
+        if len(ordered_names) != len(ordered_names_set):
+            duplicates = [
+                name for name in ordered_names if ordered_names.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicate line items in reorder list: {sorted(set(duplicates))}"
+            )
+
+        # If the order is already correct, no need to do anything
+        if ordered_names == current_names:
+            return
+
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+
+            # Create a mapping from name to line item for efficient lookup
+            name_to_item = {
+                item.name: item for item in model_copy._line_item_definitions
+            }
+
+            # Reorder the line items according to the specified order
+            reordered_items = [name_to_item[name] for name in ordered_names]
+            model_copy._line_item_definitions = reordered_items
+
+            model_copy._recalculate()
+
+            # If we get here, the reordering was successful on the copy
+            # Now apply it to the actual model
+            name_to_item = {
+                item.name: item for item in self._model._line_item_definitions
+            }
+            reordered_items = [name_to_item[name] for name in ordered_names]
+            self._model._line_item_definitions = reordered_items
+            self._model._recalculate()
+
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to reorder line items: {str(e)}") from e
+
     # ============================================================================
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
