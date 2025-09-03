@@ -30,16 +30,16 @@ class UpdateNamespace:
         """
         Add a new category to the model.
 
-        This method accepts either an already-created Category instance or the parameters  # noqa: E501
+        This method accepts either an already-created Category instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
         Args:
             category (Category, optional): An already-created Category instance to add
             name (str, optional): Name for new Category - required if category is None
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            total_label (str, optional): Label for the category total. Defaults to "Total {label}"  # noqa: E501
-            include_total (bool, optional): Whether to include a total for this category. Defaults to True  # noqa: E501
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
+            include_total (bool, optional): Whether to include a total for this category. Defaults to True
 
         Returns:
             None
@@ -113,18 +113,18 @@ class UpdateNamespace:
         """
         Add a new line item to the model.
 
-        This method accepts either an already-created LineItem instance or the parameters  # noqa: E501
+        This method accepts either an already-created LineItem instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
         Args:
             line_item (LineItem, optional): An already-created LineItem instance to add
             name (str, optional): Name for new LineItem - required if line_item is None
-            category (str, optional): Category for new LineItem - required if line_item is None  # noqa: E501
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            values (dict[int, float], optional): Dictionary mapping years to explicit values  # noqa: E501
+            category (str, optional): Category for new LineItem - required if line_item is None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'  # noqa: E501
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
 
         Returns:
             None
@@ -219,7 +219,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing category to update
-            category (Category, optional): New Category instance to replace the existing one  # noqa: E501
+            category (Category, optional): New Category instance to replace the existing one
             new_name (str, optional): New name for the category
             label (str, optional): New label for the category
             total_label (str, optional): New total label for the category
@@ -331,7 +331,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing line item to update
-            line_item (LineItem, optional): New LineItem instance to replace the existing one  # noqa: E501
+            line_item (LineItem, optional): New LineItem instance to replace the existing one
             new_name (str, optional): New name for the line item
             category (str, optional): New category for the line item
             label (str, optional): New label for the line item
@@ -416,12 +416,12 @@ class UpdateNamespace:
         Update multiple line items in a single operation.
 
         This method takes a list of tuples, where each tuple contains a line item name
-        and a dictionary of parameters to update for that line item. It applies all updates  # noqa: E501
-        in a single transaction, validating the entire set of changes before applying them.  # noqa: E501
+        and a dictionary of parameters to update for that line item. It applies all updates
+        in a single transaction, validating the entire set of changes before applying them.
 
-        When using 'updated_values', the provided values are merged with existing values,  # noqa: E501
-        rather than replacing them completely. To replace all values, use 'values' instead.  # noqa: E501
-        Note: You cannot specify both 'values' and 'updated_values' for the same line item.  # noqa: E501
+        When using 'updated_values', the provided values are merged with existing values,
+        rather than replacing them completely. To replace all values, use 'values' instead.
+        Note: You cannot specify both 'values' and 'updated_values' for the same line item.
 
         Args:
             item_updates (list[tuple[str, dict]]): List of (name, update_params) tuples.
@@ -524,7 +524,7 @@ class UpdateNamespace:
         """
         Update the years in the model.
 
-        This method updates the model's years attribute and recalculates the value matrix  # noqa: E501
+        This method updates the model's years attribute and recalculates the value matrix
         for the new year range. It validates the update by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
@@ -807,25 +807,25 @@ class UpdateNamespace:
         """
         Add a new constraint to the model.
 
-        This method accepts either an already-created Constraint instance or the parameters  # noqa: E501
+        This method accepts either an already-created Constraint instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
         Args:
-            constraint (Constraint, optional): An already-created Constraint instance to add  # noqa: E501
-            name (str, optional): Name for new Constraint - required if constraint is None  # noqa: E501
-            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None  # noqa: E501
-            target (float, optional): Target value for constraint - required if constraint is None  # noqa: E501
-            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None  # noqa: E501
-            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0  # noqa: E501
-            label (str, optional): Display label for the constraint. Defaults to name if not provided  # noqa: E501
+            constraint (Constraint, optional): An already-created Constraint instance to add
+            name (str, optional): Name for new Constraint - required if constraint is None
+            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None
+            target (float, optional): Target value for constraint - required if constraint is None
+            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None
+            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0
+            label (str, optional): Display label for the constraint. Defaults to name if not provided
 
         Returns:
             None
 
         Raises:
             ValueError: If the constraint cannot be added (validation fails)
-            TypeError: If neither constraint instance nor required parameters are provided  # noqa: E501
+            TypeError: If neither constraint instance nor required parameters are provided
 
         Examples:
             >>> # Method 1: Pass a Constraint instance
@@ -903,7 +903,7 @@ class UpdateNamespace:
 
         Args:
             name (str): Name of the existing constraint to update
-            constraint (Constraint, optional): Complete constraint instance to replace existing one  # noqa: E501
+            constraint (Constraint, optional): Complete constraint instance to replace existing one
             new_name (str, optional): New name for the constraint
             line_item_name (str, optional): New line item name for the constraint
             target (float, optional): New target value for the constraint
