@@ -10,7 +10,7 @@ from ..line_item import LineItem
 
 
 class UpdateNamespace:
-    def __init__(self, model: "Model"):
+    def __init__(self, model: "Model") -> None:
         """Initialize an update namespace for the given Model instance."""
         self._model = model
 
@@ -20,13 +20,13 @@ class UpdateNamespace:
 
     def add_category(
         self,
-        category: Category = None,
+        category: Category | None = None,
         *,
-        name: str = None,
-        label: str = None,
-        total_label: str = None,
+        name: str | None = None,
+        label: str | None = None,
+        total_label: str | None = None,
         include_total: bool = True,
-    ):
+    ) -> None:
         """
         Add a new category to the model.
 
@@ -101,15 +101,15 @@ class UpdateNamespace:
 
     def add_line_item(
         self,
-        line_item: LineItem = None,
+        line_item: LineItem | None = None,
         *,
-        name: str = None,
-        category: str = None,
-        label: str = None,
-        values: dict[int, float] = None,
-        formula: str = None,
+        name: str | None = None,
+        category: str | None = None,
+        label: str | None = None,
+        values: dict[int, float] | None = None,
+        formula: str | None = None,
         value_format: ValueFormat = "no_decimals",
-    ):
+    ) -> None:
         """
         Add a new line item to the model.
 
@@ -206,7 +206,7 @@ class UpdateNamespace:
         label: str = None,
         total_label: str = None,
         include_total: bool = None,
-    ):
+    ) -> None:
         """
         Update a category in the model by name.
 
@@ -320,7 +320,7 @@ class UpdateNamespace:
         values: dict[int, float] = None,
         formula: str = None,
         value_format: ValueFormat = None,
-    ):
+    ) -> None:
         """
         Update a line item in the model by name.
 
@@ -411,7 +411,7 @@ class UpdateNamespace:
     def update_multiple_line_items(
         self,
         item_updates: list[tuple[str, dict]],
-    ):
+    ) -> None:
         """
         Update multiple line items in a single operation.
 
@@ -453,7 +453,7 @@ class UpdateNamespace:
             return
 
         # Helper function to apply updates to a model
-        def apply_updates(model: "Model", updates: list[tuple[str, dict]]):
+        def apply_updates(model: "Model", updates: list[tuple[str, dict]]) -> None:
             for item_name, update_params in updates:
                 # Find the existing line item
                 existing_item = None
@@ -520,7 +520,7 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line items: {str(e)}") from e
 
-    def update_years(self, new_years: list[int]):
+    def update_years(self, new_years: list[int]) -> None:
         """
         Update the years in the model.
 
@@ -574,7 +574,7 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update years: {str(e)}") from e
 
-    def reorder_line_items(self, ordered_names: list[str]):
+    def reorder_line_items(self, ordered_names: list[str]) -> None:
         """
         Reorder LineItem definitions in the model by specifying their names in the desired order.
 
@@ -676,7 +676,7 @@ class UpdateNamespace:
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
 
-    def delete_category(self, name: str):
+    def delete_category(self, name: str) -> None:
         """
         Delete a category from the model by name.
 
@@ -743,7 +743,7 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete category '{name}': {str(e)}") from e
 
-    def delete_line_item(self, name: str):
+    def delete_line_item(self, name: str) -> None:
         """
         Delete a line item from the model by name.
 
@@ -803,7 +803,7 @@ class UpdateNamespace:
         operator: str = None,
         tolerance: float = 0.0,
         label: str = None,
-    ):
+    ) -> None:
         """
         Add a new constraint to the model.
 
@@ -893,7 +893,7 @@ class UpdateNamespace:
         operator: str = None,
         tolerance: float = None,
         label: str = None,
-    ):
+    ) -> None:
         """
         Update an existing constraint in the model.
 
@@ -992,7 +992,7 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update constraint '{name}': {str(e)}") from e
 
-    def delete_constraint(self, name: str):
+    def delete_constraint(self, name: str) -> None:
         """
         Delete a constraint from the model by name.
 
