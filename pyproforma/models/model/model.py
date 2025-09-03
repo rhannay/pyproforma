@@ -273,6 +273,10 @@ class Model(SerializationMixin):
         """Update namespace for adding, updating, and deleting model components"""
         return UpdateNamespace(self)
 
+    # ============================================================================
+    # MODEL PROPERTIES & METADATA ACCESS
+    # ============================================================================
+
     @property
     def line_item_definitions(self) -> tuple[LineItem, ...]:
         """
@@ -314,7 +318,7 @@ class Model(SerializationMixin):
         return [category["name"] for category in self.category_metadata]
 
     # ============================================================================
-    # LOOKUP/GETTER METHODS
+    # RESULTS OBJECTS & ANALYSIS
     # ============================================================================
 
     def _get_item_metadata(self, item_name: str) -> dict:
@@ -336,7 +340,7 @@ class Model(SerializationMixin):
                 return defined_name
         raise KeyError(f"Item '{item_name}' not found in model")
 
-    def _metadata_for_category(self, category_name: str) -> dict:
+    def _get_category_metadata(self, category_name: str) -> dict:
         """
         Get category metadata for a specific category name.
 
@@ -497,6 +501,10 @@ class Model(SerializationMixin):
 
         return LineItemResults(self, item_name)
 
+    # ============================================================================
+    # DEFINITION LOOKUPS
+    # ============================================================================
+
     def line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
@@ -543,6 +551,10 @@ class Model(SerializationMixin):
             f"Category item '{name}' not found. "
             f"Valid categories are: {valid_categories}"
         )
+
+    # ============================================================================
+    # METADATA & INTERNAL LOOKUPS
+    # ============================================================================
 
     def line_item_names_by_category(
         self, category_name: str = None
@@ -615,7 +627,7 @@ class Model(SerializationMixin):
         )
 
     # ============================================================================
-    # CALCULATION METHODS
+    # CALCULATIONS
     # ============================================================================
 
     def category_total(self, category: str, year: int) -> float:
@@ -671,7 +683,7 @@ class Model(SerializationMixin):
         return total
 
     # ============================================================================
-    # HELPER/UTILITY METHODS
+    # UTILITIES & DISPLAY
     # ============================================================================
 
     def summary(self) -> dict:
@@ -759,7 +771,7 @@ class Model(SerializationMixin):
         return items_in_category[-1].name == name
 
     # ============================================================================
-    # CLASS METHODS & ALTERNATIVE CONSTRUCTORS
+    # MODEL OPERATIONS
     # ============================================================================
 
     def copy(self) -> "Model":

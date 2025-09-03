@@ -462,7 +462,7 @@ class CategoryResults:
     def __init__(self, model: "Model", category_name: str):
         self.model = model
         self.category_name = category_name
-        self.category_metadata = model._metadata_for_category(category_name)
+        self.category_metadata = model._get_category_metadata(category_name)
         if self.category_metadata["system_generated"] is False:
             self.category_obj = model.category_definition(category_name)
         else:
