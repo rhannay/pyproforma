@@ -10,7 +10,7 @@ from ..line_item import LineItem
 
 
 class UpdateNamespace:
-    def __init__(self, model: "Model"):
+    def __init__(self, model: "Model") -> None:
         """Initialize an update namespace for the given Model instance."""
         self._model = model
 
@@ -20,33 +20,26 @@ class UpdateNamespace:
 
     def add_category(
         self,
-        category: Category = None,
+        category: Category | None = None,
         *,
-        name: str = None,
-        label: str = None,
-        total_label: str = None,
+        name: str | None = None,
+        label: str | None = None,
+        total_label: str | None = None,
         include_total: bool = True,
-    ):
+    ) -> None:
         """
         Add a new category to the model.
 
-        This method accepts either an already-created Category instance or the parameters  # noqa: E501
+        This method accepts either an already-created Category instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
-
-        Usage:
-            # Method 1: Pass a Category instance
-            model.update.add_category(existing_category)
-
-            # Method 2: Create from parameters
-            model.update.add_category(name="assets", label="Assets", include_total=True)
 
         Args:
             category (Category, optional): An already-created Category instance to add
             name (str, optional): Name for new Category - required if category is None
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            total_label (str, optional): Label for the category total. Defaults to "Total {label}"  # noqa: E501
-            include_total (bool, optional): Whether to include a total for this category. Defaults to True  # noqa: E501
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
+            include_total (bool, optional): Whether to include a total for this category. Defaults to True
 
         Returns:
             None
@@ -54,6 +47,13 @@ class UpdateNamespace:
         Raises:
             ValueError: If the category cannot be added (validation fails), or if both
                 category and name are provided, or if neither is provided
+
+        Examples:
+            >>> # Method 1: Pass a Category instance
+            >>> model.update.add_category(existing_category)
+
+            >>> # Method 2: Create from parameters
+            >>> model.update.add_category(name="assets", label="Assets", include_total=True)
         """  # noqa: E501
         # Validate that exactly one of category or name is provided
         if category is not None and name is not None:
@@ -101,37 +101,30 @@ class UpdateNamespace:
 
     def add_line_item(
         self,
-        line_item: LineItem = None,
+        line_item: LineItem | None = None,
         *,
-        name: str = None,
-        category: str = None,
-        label: str = None,
-        values: dict[int, float] = None,
-        formula: str = None,
+        name: str | None = None,
+        category: str | None = None,
+        label: str | None = None,
+        values: dict[int, float] | None = None,
+        formula: str | None = None,
         value_format: ValueFormat = "no_decimals",
-    ):
+    ) -> None:
         """
         Add a new line item to the model.
 
-        This method accepts either an already-created LineItem instance or the parameters  # noqa: E501
+        This method accepts either an already-created LineItem instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
-
-        Usage:
-            # Method 1: Pass a LineItem instance
-            model.update.add_line_item(existing_line_item)
-
-            # Method 2: Create from parameters
-            model.update.add_line_item(name="revenue", category="income", values={2023: 100000})  # noqa: E501
 
         Args:
             line_item (LineItem, optional): An already-created LineItem instance to add
             name (str, optional): Name for new LineItem - required if line_item is None
-            category (str, optional): Category for new LineItem - required if line_item is None  # noqa: E501
-            label (str, optional): Human-readable display name. Defaults to name if not provided.  # noqa: E501
-            values (dict[int, float], optional): Dictionary mapping years to explicit values  # noqa: E501
+            category (str, optional): Category for new LineItem - required if line_item is None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'  # noqa: E501
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
 
         Returns:
             None
@@ -140,6 +133,13 @@ class UpdateNamespace:
             ValueError: If the line item cannot be added (validation fails), or if both
                 line_item and name are provided, or if neither is provided
             TypeError: If name is provided but category is missing
+
+        Examples:
+            >>> # Method 1: Pass a LineItem instance
+            >>> model.update.add_line_item(existing_line_item)
+
+            >>> # Method 2: Create from parameters
+            >>> model.update.add_line_item(name="revenue", category="income", values={2023: 100000})
         """  # noqa: E501
         # Validate that exactly one of line_item or name is provided
         if line_item is not None and name is not None:
@@ -206,7 +206,7 @@ class UpdateNamespace:
         label: str = None,
         total_label: str = None,
         include_total: bool = None,
-    ):
+    ) -> None:
         """
         Update a category in the model by name.
 
@@ -217,19 +217,9 @@ class UpdateNamespace:
 
         Note: Changing a category name will update all line items that reference it.
 
-        Usage:
-            # Update specific attributes
-            model.update.update_category("income", label="Revenue Streams")
-
-            # Rename a category (this updates line items automatically)
-            model.update.update_category("old_name", new_name="new_name")
-
-            # Replace with a Category instance
-            model.update.update_category("income", category=new_category)
-
         Args:
             name (str): Name of the existing category to update
-            category (Category, optional): New Category instance to replace the existing one  # noqa: E501
+            category (Category, optional): New Category instance to replace the existing one
             new_name (str, optional): New name for the category
             label (str, optional): New label for the category
             total_label (str, optional): New total label for the category
@@ -241,6 +231,16 @@ class UpdateNamespace:
         Raises:
             ValueError: If the category cannot be updated (validation fails)
             KeyError: If the category with the given name is not found
+
+        Examples:
+            >>> # Update specific attributes
+            >>> model.update.update_category("income", label="Revenue Streams")
+
+            >>> # Rename a category (this updates line items automatically)
+            >>> model.update.update_category("old_name", new_name="new_name")
+
+            >>> # Replace with a Category instance
+            >>> model.update.update_category("income", category=new_category)
         """  # noqa: E501
         # Find the existing category
         existing_category = None
@@ -320,7 +320,7 @@ class UpdateNamespace:
         values: dict[int, float] = None,
         formula: str = None,
         value_format: ValueFormat = None,
-    ):
+    ) -> None:
         """
         Update a line item in the model by name.
 
@@ -329,19 +329,9 @@ class UpdateNamespace:
         testing it on a copy of the model, then applies the change to the actual model
         if successful.
 
-        Usage:
-            # Update specific attributes
-            model.update.update_line_item("revenue", values={2023: 150000}, label="New Revenue")  # noqa: E501
-
-            # Rename a line item
-            model.update.update_line_item("old_name", new_name="new_name")
-
-            # Replace with a LineItem instance
-            model.update.update_line_item("revenue", line_item=new_line_item)
-
         Args:
             name (str): Name of the existing line item to update
-            line_item (LineItem, optional): New LineItem instance to replace the existing one  # noqa: E501
+            line_item (LineItem, optional): New LineItem instance to replace the existing one
             new_name (str, optional): New name for the line item
             category (str, optional): New category for the line item
             label (str, optional): New label for the line item
@@ -355,6 +345,16 @@ class UpdateNamespace:
         Raises:
             ValueError: If the line item cannot be updated (validation fails)
             KeyError: If the line item with the given name is not found
+
+        Examples:
+            >>> # Update specific attributes
+            >>> model.update.update_line_item("revenue", values={2023: 150000}, label="New Revenue")
+
+            >>> # Rename a line item
+            >>> model.update.update_line_item("old_name", new_name="new_name")
+
+            >>> # Replace with a LineItem instance
+            >>> model.update.update_line_item("revenue", line_item=new_line_item)
         """  # noqa: E501
         # Find the existing line item
         try:
@@ -411,29 +411,17 @@ class UpdateNamespace:
     def update_multiple_line_items(
         self,
         item_updates: list[tuple[str, dict]],
-    ):
+    ) -> None:
         """
         Update multiple line items in a single operation.
 
         This method takes a list of tuples, where each tuple contains a line item name
-        and a dictionary of parameters to update for that line item. It applies all updates  # noqa: E501
-        in a single transaction, validating the entire set of changes before applying them.  # noqa: E501
+        and a dictionary of parameters to update for that line item. It applies all updates
+        in a single transaction, validating the entire set of changes before applying them.
 
-        When using 'updated_values', the provided values are merged with existing values,  # noqa: E501
-        rather than replacing them completely. To replace all values, use 'values' instead.  # noqa: E501
-        Note: You cannot specify both 'values' and 'updated_values' for the same line item.  # noqa: E501
-
-        Usage:
-            model.update.update_multiple_line_items([
-                # Replace all values
-                ("revenue", {"values": {2023: 150000}, "label": "New Revenue"}),
-
-                # Update only specific years (2023) while preserving other years
-                ("expenses", {"updated_values": {2023: 105000}, "formula": "revenue * 0.7"}),  # noqa: E501
-
-                # Only update formatting without touching values
-                ("profit", {"value_format": "percentage"})
-            ])
+        When using 'updated_values', the provided values are merged with existing values,
+        rather than replacing them completely. To replace all values, use 'values' instead.
+        Note: You cannot specify both 'values' and 'updated_values' for the same line item.
 
         Args:
             item_updates (list[tuple[str, dict]]): List of (name, update_params) tuples.
@@ -448,12 +436,24 @@ class UpdateNamespace:
         Raises:
             ValueError: If any of the updates would result in an invalid model
             KeyError: If any line item name is not found in model
+
+        Examples:
+            >>> model.update.update_multiple_line_items([
+            ...     # Replace all values
+            ...     ("revenue", {"values": {2023: 150000}, "label": "New Revenue"}),
+            ...
+            ...     # Update only specific years (2023) while preserving other years
+            ...     ("expenses", {"updated_values": {2023: 105000}, "formula": "revenue * 0.7"}),
+            ...
+            ...     # Only update formatting without touching values
+            ...     ("profit", {"value_format": "percentage"})
+            ... ])
         """  # noqa: E501
         if not item_updates:
             return
 
         # Helper function to apply updates to a model
-        def apply_updates(model: "Model", updates: list[tuple[str, dict]]):
+        def apply_updates(model: "Model", updates: list[tuple[str, dict]]) -> None:
             for item_name, update_params in updates:
                 # Find the existing line item
                 existing_item = None
@@ -520,23 +520,16 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update line items: {str(e)}") from e
 
-    def update_years(self, new_years: list[int]):
+    def update_years(self, new_years: list[int]) -> None:
         """
         Update the years in the model.
 
-        This method updates the model's years attribute and recalculates the value matrix  # noqa: E501
+        This method updates the model's years attribute and recalculates the value matrix
         for the new year range. It validates the update by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
         Line items with values for years not in the new list will retain those values,
         but they won't be accessible through the model until those years are added back.
-
-        Usage:
-            # Update years to a new range
-            model.update.update_years([2024, 2025, 2026])
-
-            # Extend years
-            model.update.update_years([2023, 2024, 2025, 2026, 2027])
 
         Args:
             new_years (list[int]): New list of years for the model
@@ -547,6 +540,13 @@ class UpdateNamespace:
         Raises:
             ValueError: If the years list is invalid (empty, non-integers, etc.)
             TypeError: If new_years is not a list
+
+        Examples:
+            >>> # Update years to a new range
+            >>> model.update.update_years([2024, 2025, 2026])
+
+            >>> # Extend years
+            >>> model.update.update_years([2023, 2024, 2025, 2026, 2027])
         """  # noqa: E501
         # Validate input
         if not isinstance(new_years, list):
@@ -574,11 +574,109 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update years: {str(e)}") from e
 
+    def reorder_line_items(self, ordered_names: list[str]) -> None:
+        """
+        Reorder LineItem definitions in the model by specifying their names in the desired order.
+
+        This method reorders the LineItem class instances (line item definitions)
+        based on the provided list of names. It only affects the order of LineItem
+        objects in the model, not category totals, multi-line items, or other
+        calculated items. All existing line items must be included in the list -
+        no items can be omitted. The method validates the reordering by first
+        testing it on a copy of the model, then applies the change to the actual
+        model if successful.
+
+        Args:
+            ordered_names (list[str]): List of LineItem names in the desired order.
+                Must contain all existing LineItem names, no more, no less.
+                Only affects LineItem class instances, not other model components.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the reordering is invalid (missing items, extra items, etc.)
+            TypeError: If ordered_names is not a list or contains non-strings
+
+        Examples:
+            >>> # Reorder LineItem definitions
+            >>> model.update.reorder_line_items(["revenue", "expenses", "profit"])
+        """  # noqa: E501
+        # Input validation
+        if not isinstance(ordered_names, list):
+            raise TypeError(f"Expected list, got {type(ordered_names).__name__}")
+
+        if not all(isinstance(name, str) for name in ordered_names):
+            raise TypeError("All line item names must be strings")
+
+        # Get current line item names
+        current_names = [item.name for item in self._model._line_item_definitions]
+        current_names_set = set(current_names)
+        ordered_names_set = set(ordered_names)
+
+        # Check for missing items
+        missing_items = current_names_set - ordered_names_set
+        if missing_items:
+            raise ValueError(
+                f"Missing line items in reorder list: {sorted(missing_items)}. "
+                f"All existing line items must be included."
+            )
+
+        # Check for extra/unknown items
+        unknown_items = ordered_names_set - current_names_set
+        if unknown_items:
+            available_items = sorted(current_names)
+            raise ValueError(
+                f"Unknown line items in reorder list: {sorted(unknown_items)}. "
+                f"Available line items: {available_items}"
+            )
+
+        # Check for duplicates
+        if len(ordered_names) != len(ordered_names_set):
+            duplicates = [
+                name for name in ordered_names if ordered_names.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicate line items in reorder list: {sorted(set(duplicates))}"
+            )
+
+        # If the order is already correct, no need to do anything
+        if ordered_names == current_names:
+            return
+
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+
+            # Create a mapping from name to line item for efficient lookup
+            name_to_item = {
+                item.name: item for item in model_copy._line_item_definitions
+            }
+
+            # Reorder the line items according to the specified order
+            reordered_items = [name_to_item[name] for name in ordered_names]
+            model_copy._line_item_definitions = reordered_items
+
+            model_copy._recalculate()
+
+            # If we get here, the reordering was successful on the copy
+            # Now apply it to the actual model
+            name_to_item = {
+                item.name: item for item in self._model._line_item_definitions
+            }
+            reordered_items = [name_to_item[name] for name in ordered_names]
+            self._model._line_item_definitions = reordered_items
+            self._model._recalculate()
+
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to reorder line items: {str(e)}") from e
+
     # ============================================================================
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
 
-    def delete_category(self, name: str):
+    def delete_category(self, name: str) -> None:
         """
         Delete a category from the model by name.
 
@@ -586,9 +684,6 @@ class UpdateNamespace:
         the model, then applies the change to the actual model if successful.
         Note that deleting a category will fail if there are line items that
         reference this category.
-
-        Usage:
-            model.update.delete_category("old_category")
 
         Args:
             name (str): Name of the category to delete
@@ -600,6 +695,9 @@ class UpdateNamespace:
             ValueError: If the category cannot be deleted (validation fails),
                        such as when line items still reference this category
             KeyError: If the category with the given name is not found
+
+        Examples:
+            >>> model.update.delete_category("old_category")
         """
         # Verify the category exists
         category_to_delete = None
@@ -645,15 +743,12 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete category '{name}': {str(e)}") from e
 
-    def delete_line_item(self, name: str):
+    def delete_line_item(self, name: str) -> None:
         """
         Delete a line item from the model by name.
 
         This method validates the deletion by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
-
-        Usage:
-            model.update.delete_line_item("expense_item")
 
         Args:
             name (str): Name of the line item to delete
@@ -664,6 +759,9 @@ class UpdateNamespace:
         Raises:
             ValueError: If the line item cannot be deleted (validation fails)
             KeyError: If the line item with the given name is not found
+
+        Examples:
+            >>> model.update.delete_line_item("expense_item")
         """
         # Verify the line item exists
         try:
@@ -705,41 +803,41 @@ class UpdateNamespace:
         operator: str = None,
         tolerance: float = 0.0,
         label: str = None,
-    ):
+    ) -> None:
         """
         Add a new constraint to the model.
 
-        This method accepts either an already-created Constraint instance or the parameters  # noqa: E501
+        This method accepts either an already-created Constraint instance or the parameters
         to create a new one. It validates the addition by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
 
-        Usage:
-            # Method 1: Pass a Constraint instance
-            model.update.add_constraint(existing_constraint)
-
-            # Method 2: Create from parameters
-            model.update.add_constraint(
-                name="revenue_min",
-                line_item_name="revenue",
-                target=50000.0,
-                operator="ge"
-            )
-
         Args:
-            constraint (Constraint, optional): An already-created Constraint instance to add  # noqa: E501
-            name (str, optional): Name for new Constraint - required if constraint is None  # noqa: E501
-            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None  # noqa: E501
-            target (float, optional): Target value for constraint - required if constraint is None  # noqa: E501
-            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None  # noqa: E501
-            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0  # noqa: E501
-            label (str, optional): Display label for the constraint. Defaults to name if not provided  # noqa: E501
+            constraint (Constraint, optional): An already-created Constraint instance to add
+            name (str, optional): Name for new Constraint - required if constraint is None
+            line_item_name (str, optional): Name of line item this constraint applies to - required if constraint is None
+            target (float, optional): Target value for constraint - required if constraint is None
+            operator (str, optional): Comparison operator (eq, lt, le, gt, ge, ne) - required if constraint is None
+            tolerance (float, optional): Tolerance for approximate comparisons. Defaults to 0.0
+            label (str, optional): Display label for the constraint. Defaults to name if not provided
 
         Returns:
             None
 
         Raises:
             ValueError: If the constraint cannot be added (validation fails)
-            TypeError: If neither constraint instance nor required parameters are provided  # noqa: E501
+            TypeError: If neither constraint instance nor required parameters are provided
+
+        Examples:
+            >>> # Method 1: Pass a Constraint instance
+            >>> model.update.add_constraint(existing_constraint)
+
+            >>> # Method 2: Create from parameters
+            >>> model.update.add_constraint(
+            ...     name="revenue_min",
+            ...     line_item_name="revenue",
+            ...     target=50000.0,
+            ...     operator="ge"
+            ... )
         """  # noqa: E501
         if constraint is not None:
             # Method 1: Add an existing constraint
@@ -795,7 +893,7 @@ class UpdateNamespace:
         operator: str = None,
         tolerance: float = None,
         label: str = None,
-    ):
+    ) -> None:
         """
         Update an existing constraint in the model.
 
@@ -803,21 +901,9 @@ class UpdateNamespace:
         provide a complete Constraint instance to replace the existing one, or provide
         specific parameters to update while keeping others unchanged.
 
-        Usage:
-            # Update specific parameters
-            model.update.update_constraint(
-                "revenue_min",
-                target=60000.0,
-                operator="gt"
-            )
-
-            # Replace with new constraint instance
-            new_constraint = Constraint(name="revenue_min", ...)
-            model.update.update_constraint("revenue_min", constraint=new_constraint)
-
         Args:
             name (str): Name of the existing constraint to update
-            constraint (Constraint, optional): Complete constraint instance to replace existing one  # noqa: E501
+            constraint (Constraint, optional): Complete constraint instance to replace existing one
             new_name (str, optional): New name for the constraint
             line_item_name (str, optional): New line item name for the constraint
             target (float, optional): New target value for the constraint
@@ -831,6 +917,18 @@ class UpdateNamespace:
         Raises:
             ValueError: If the constraint cannot be updated (validation fails)
             KeyError: If the constraint with the given name is not found
+
+        Examples:
+            >>> # Update specific parameters
+            >>> model.update.update_constraint(
+            ...     "revenue_min",
+            ...     target=60000.0,
+            ...     operator="gt"
+            ... )
+
+            >>> # Replace with new constraint instance
+            >>> new_constraint = Constraint(name="revenue_min", ...)
+            >>> model.update.update_constraint("revenue_min", constraint=new_constraint)
         """  # noqa: E501
         # Find the existing constraint
         constraint_index = None
@@ -894,15 +992,12 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update constraint '{name}': {str(e)}") from e
 
-    def delete_constraint(self, name: str):
+    def delete_constraint(self, name: str) -> None:
         """
         Delete a constraint from the model by name.
 
         This method validates the deletion by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
-
-        Usage:
-            model.update.delete_constraint("revenue_min")
 
         Args:
             name (str): Name of the constraint to delete
@@ -913,6 +1008,9 @@ class UpdateNamespace:
         Raises:
             ValueError: If the constraint cannot be deleted (validation fails)
             KeyError: If the constraint with the given name is not found
+
+        Examples:
+            >>> model.update.delete_constraint("revenue_min")
         """
         # Verify the constraint exists
         constraint_exists = False

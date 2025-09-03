@@ -255,109 +255,58 @@ class Model(SerializationMixin):
         return self._value_matrix[year][name]
 
     # ============================================================================
-    # NAMESPACE PROPERTIES
+    # RESULTS OBJECTS & ANALYSIS
     # ============================================================================
 
-    @property
-    def tables(self):
-        """Tables namespace"""
-        return Tables(self)
-
-    @property
-    def charts(self):
-        """Charts namespace"""
-        return Charts(self)
-
-    @property
-    def update(self):
-        """Update namespace for adding, updating, and deleting model components"""
-        return UpdateNamespace(self)
-
-    @property
-    def line_item_definitions(self) -> tuple[LineItem, ...]:
+    def line_item(self, item_name: str = None) -> LineItemResults:
         """
-        Read-only access to line item definitions.
+        Get a LineItemResults object for exploring and analyzing a specific named item.
 
-        Returns:
-            tuple[LineItem, ...]: Immutable tuple of line item definitions
-        """
-        return self._line_item_definitions
-
-    @property
-    def line_item_names(self) -> list[str]:
-        """
-        Get list of all line item names.
-
-        Returns:
-            list[str]: List of line item names
-        """
-        return [item["name"] for item in self.line_item_metadata]
-
-    @property
-    def category_definitions(self) -> tuple[Category, ...]:
-        """
-        Read-only access to category definitions.
-
-        Returns:
-            tuple[Category, ...]: Immutable tuple of category definitions
-        """
-        return self._category_definitions
-
-    @property
-    def category_names(self) -> list[str]:
-        """
-        Get list of all category names.
-
-        Returns:
-            list[str]: List of category names
-        """
-        return [category["name"] for category in self.category_metadata]
-
-    # ============================================================================
-    # LOOKUP/GETTER METHODS
-    # ============================================================================
-
-    def _get_item_metadata(self, item_name: str) -> dict:
-        """
-        Get item metadata from defined_names.
+        This method returns a [`LineItemResults`][pyproforma.models.results.LineItemResults]
+        instance that provides convenient methods for notebook exploration of individual items
+        including line items, category totals, and generator outputs.
 
         Args:
-            item_name (str): The name of the item to get info for
+            item_name (str): The name of the item to analyze
 
         Returns:
-            dict: Dictionary containing item metadata including name, label,
-                  value_format, source_type, and source_name
+            LineItemResults: An object with methods for exploring the item
 
         Raises:
+            ValueError: If item_name is None or empty
             KeyError: If the item name is not found in defined names
-        """
-        for defined_name in self.line_item_metadata:
-            if defined_name["name"] == item_name:
-                return defined_name
-        raise KeyError(f"Item '{item_name}' not found in model")
 
-    def _metadata_for_category(self, category_name: str) -> dict:
-        """
-        Get category metadata for a specific category name.
+        Examples:
+            >>> revenue_item = model.line_item('revenue')
+            >>> print(revenue_item)  # Shows summary information
+            >>> revenue_item.values()  # Returns dict of year: value
+            >>> revenue_item.to_series()  # Returns pandas Series
 
-        Args:
-            category_name (str): The name of the category to get metadata for
+        Notes:
+            Dictionary-style lookup at the Model level is also supported:
 
-        Returns:
-            dict: Dictionary containing category metadata including name, label,
-                  include_total, total_name, total_label, and system_generated
+            ```python
+            model["revenue"]
+            # Returns LineItemResults object
+            # (equivalent to model.line_item("revenue"))
+            ```
 
-        Raises:
-            KeyError: If the category name is not found in category metadata
-        """
-        for category_meta in self.category_metadata:
-            if category_meta["name"] == category_name:
-                return category_meta
-        available_categories = [cat["name"] for cat in self.category_metadata]
-        raise KeyError(
-            f"Category '{category_name}' not found in model. "
-            f"Available categories: {available_categories}"
-        )
+        """  # noqa: E501
+        if item_name is None or item_name == "":
+            available_items = sorted([item["name"] for item in self.line_item_metadata])
+            if available_items:
+                raise ValueError(
+                    (
+                        "Item name is required. "
+                        f"Available item names are: {available_items}"
+                    )
+                )
+            else:
+                raise ValueError(
+                    "Item name is required, but no items are defined in this model."
+                )
+
+        return LineItemResults(self, item_name)
 
     def category(self, category_name: str = None) -> CategoryResults:
         """
@@ -447,319 +396,27 @@ class Model(SerializationMixin):
 
         return ConstraintResults(self, constraint_name)
 
-    def line_item(self, item_name: str = None) -> LineItemResults:
-        """
-        Get a LineItemResults object for exploring and analyzing a specific named item.
-
-        This method returns a [`LineItemResults`][pyproforma.models.results.LineItemResults]
-        instance that provides convenient methods for notebook exploration of individual items
-        including line items, category totals, and generator outputs.
-
-        Args:
-            item_name (str): The name of the item to analyze
-
-        Returns:
-            LineItemResults: An object with methods for exploring the item
-
-        Raises:
-            ValueError: If item_name is None or empty
-            KeyError: If the item name is not found in defined names
-
-        Examples:
-            >>> revenue_item = model.line_item('revenue')
-            >>> print(revenue_item)  # Shows summary information
-            >>> revenue_item.values()  # Returns dict of year: value
-            >>> revenue_item.to_series()  # Returns pandas Series
-
-        Notes:
-            Dictionary-style lookup at the Model level is also supported:
-
-            ```python
-            model["revenue"]
-            # Returns LineItemResults object
-            # (equivalent to model.line_item("revenue"))
-            ```
-
-        """  # noqa: E501
-        if item_name is None or item_name == "":
-            available_items = sorted([item["name"] for item in self.line_item_metadata])
-            if available_items:
-                raise ValueError(
-                    (
-                        "Item name is required. "
-                        f"Available item names are: {available_items}"
-                    )
-                )
-            else:
-                raise ValueError(
-                    "Item name is required, but no items are defined in this model."
-                )
-
-        return LineItemResults(self, item_name)
-
-    def line_item_definition(self, name: str) -> LineItem:
-        """
-        Get a line item definition by name.
-
-        This method retrieves the
-        [`LineItem`][pyproforma.models.line_item.LineItem] object that defines
-        a specific line item in the model. This is useful for accessing the line item's
-        properties such as formula, category, label, and value format.
-
-        Args:
-            name (str): The name of the line item to retrieve
-
-        Returns:
-            LineItem: The LineItem object with the specified name
-        """
-        for item in self._line_item_definitions:
-            if item.name == name:
-                return item
-        valid_line_items = [item.name for item in self._line_item_definitions]
-        raise KeyError(
-            f"LineItem with name '{name}' not found. "
-            f"Valid line item names are: {valid_line_items}"
-        )
-
-    def category_definition(self, name: str) -> Category:
-        """
-        Get a category definition by name.
-
-        This method retrieves the Category object that defines
-        a specific category in the model. This is useful for accessing the category's
-        properties such as label, total name, and whether it includes totals.
-
-        Args:
-            name (str): The name of the category to retrieve
-
-        Returns:
-            Category: The Category object with the specified name
-        """
-        for category in self._category_definitions:
-            if category.name == name:
-                return category
-        valid_categories = [category["name"] for category in self.category_metadata]
-        raise KeyError(
-            f"Category item '{name}' not found. "
-            f"Valid categories are: {valid_categories}"
-        )
-
-    def line_item_names_by_category(
-        self, category_name: str = None
-    ) -> Union[list[str], dict[str, list[str]]]:
-        """
-        Get line item names by category.
-
-        Args:
-            category_name (str, optional): The name of the category to filter by.
-                If None, returns a dictionary mapping all category names to
-                their line items.
-
-        Returns:
-            Union[list[str], dict[str, list[str]]]:
-                - If category_name is provided: List of line item names in the
-                  specified category
-                - If category_name is None: Dictionary mapping category names to
-                  lists of line item names
-
-        Raises:
-            KeyError: If the category name is not found (when category_name is
-                provided)
-        """
-        if category_name is None:
-            # Return dictionary mapping all categories to their line items
-            result = {}
-            for category in self.category_names:
-                line_item_names = []
-                for item in self.line_item_metadata:
-                    if item["category"] == category:
-                        line_item_names.append(item["name"])
-                result[category] = line_item_names
-            return result
-
-        # Validate that the category exists
-        if category_name not in self.category_names:
-            available_categories = sorted(self.category_names)
-            raise KeyError(
-                f"Category '{category_name}' not found. "
-                f"Available categories: {available_categories}"
-            )
-
-        # Get all line item names that belong to this category
-        line_item_names = []
-        for item in self.line_item_metadata:
-            if item["category"] == category_name:
-                line_item_names.append(item["name"])
-
-        return line_item_names
-
-    def constraint_definition(self, name: str) -> Constraint:
-        """Get a constraint definition by name.
-
-        Args:
-            name (str): The name of the constraint to retrieve
-
-        Returns:
-            Constraint: The constraint object with the specified name
-
-        Raises:
-            KeyError: If no constraint with the given name is found
-        """
-        for constraint in self.constraints:
-            if constraint.name == name:
-                return constraint
-        valid_constraints = [constraint.name for constraint in self.constraints]
-        raise KeyError(
-            f"Constraint with name '{name}' not found. "
-            f"Valid constraint names are: {valid_constraints}"
-        )
-
     # ============================================================================
-    # CALCULATION METHODS
+    # NAMESPACE PROPERTIES
     # ============================================================================
 
-    def category_total(self, category: str, year: int) -> float:
-        """
-        Retrieve a pre-calculated category total from the model's value matrix.
+    @property
+    def tables(self):
+        """Tables namespace"""
+        return Tables(self)
 
-        This is a lookup method that returns the already computed total for a category
-        from the model's value matrix. The total must have been previously calculated
-        during model initialization.
+    @property
+    def charts(self):
+        """Charts namespace"""
+        return Charts(self)
 
-        Args:
-            category (str): The category name to get the total for
-            year (int): The year to get the total for
-
-        Returns:
-            float: The pre-calculated category total
-
-        Raises:
-            KeyError: If the category total is not found in defined names or value matrix
-        """  # noqa: E501
-        # find category total name
-        total_name_lookup = {
-            x["source_name"]: x["name"]
-            for x in self.line_item_metadata
-            if x["source_type"] == "category"
-        }
-        total_name = total_name_lookup[category]
-        return self.value(total_name, year)
-
-    def _category_total(self, value_matrix, category: str, year: int) -> float:
-        """
-        Calculate the sum of all line items in a category for a specific year.
-
-        This is an internal calculation method that computes the category total
-        by summing all line item values in the specified category. Used during
-        model initialization to populate the value matrix. None values are treated as 0.
-
-        Args:
-            value_matrix (dict): The value matrix containing calculated line item values
-            category (str): The category name to calculate the total for
-            year (int): The year to calculate the total for
-
-        Returns:
-            float: The calculated sum of all line items in the category
-        """
-        category_item = self.category_definition(category)
-        total = 0
-        for item in self._line_item_definitions:
-            if item.category == category_item.name:
-                value = value_matrix[year][item.name]
-                if value is not None:
-                    total += value
-        return total
+    @property
+    def update(self):
+        """Update namespace for adding, updating, and deleting model components"""
+        return UpdateNamespace(self)
 
     # ============================================================================
-    # HELPER/UTILITY METHODS
-    # ============================================================================
-
-    def summary(self) -> dict:
-        """
-        Get a comprehensive summary of the model's structure and configuration.
-
-        Returns:
-            dict: Dictionary containing model summary information including:
-                - years: List of years in the model
-                - line_items_count: Number of line items
-                - categories_count: Number of categories
-                - multi_line_items_count: Number of multi line items
-                - constraints_count: Number of constraints
-                - line_items_by_category: Dictionary mapping category names to lists of line item names
-                - multi_line_item_names: List of multi line item names
-                - constraint_names: List of constraint names
-                - defined_names_count: Total number of defined names (items that can be referenced)
-        """  # noqa: E501
-        # Count items by category
-        line_items_by_category = {}
-        for category in self.category_metadata:
-            items_in_category = [
-                item.name
-                for item in self._line_item_definitions
-                if item.category == category["name"]
-            ]
-            if items_in_category:  # Only include categories that have items
-                line_items_by_category[category["name"]] = items_in_category
-
-        return {
-            "years": self.years,
-            "years_count": len(self.years),
-            "year_range": (
-                f"{min(self.years)} - {max(self.years)}" if self.years else "None"
-            ),
-            "line_items_count": len(self._line_item_definitions),
-            "categories_count": len(self.category_metadata),
-            "multi_line_items_count": len(self.multi_line_items),
-            "constraints_count": len(self.constraints),
-            "line_items_by_category": line_items_by_category,
-            "multi_line_item_names": [gen.name for gen in self.multi_line_items],
-            "constraint_names": [const.name for const in self.constraints],
-            "defined_names_count": len(self.line_item_metadata),
-            "category_totals": [
-                item["name"]
-                for item in self.line_item_metadata
-                if item["source_type"] == "category"
-            ],
-        }
-
-    def _repr_html_(self) -> str:
-        """
-        HTML representation for Jupyter notebooks.
-
-        Returns:
-            str: Simple HTML string for rich display in Jupyter notebooks
-        """
-        summary = self.summary()
-
-        lines = []
-        lines.append("<strong>Model Summary:</strong><br>")
-        lines.append(
-            f"Years: {summary['year_range']} ({summary['years_count']} years)<br>"
-        )
-        lines.append(f"Line Items: {summary['line_items_count']}<br>")
-        lines.append(f"Categories: {summary['categories_count']}<br>")
-        lines.append(f"Multi Line Items: {summary['multi_line_items_count']}<br>")
-        lines.append(f"Constraints: {summary['constraints_count']}<br>")
-
-        return "".join(lines)
-
-    def _is_last_item_in_category(self, name: str) -> bool:
-        """Check if the given item name is the last item in its category"""
-        # Find the item with the given name and get its category
-        target_item = self.line_item_definition(name)
-
-        # Get all items in the same category
-        items_in_category = [
-            item
-            for item in self._line_item_definitions
-            if item.category == target_item.category
-        ]
-
-        # Check if this is the last item in the category list
-        return items_in_category[-1].name == name
-
-    # ============================================================================
-    # CLASS METHODS & ALTERNATIVE CONSTRUCTORS
+    # MODEL OPERATIONS
     # ============================================================================
 
     def copy(self) -> "Model":
@@ -911,6 +568,357 @@ class Model(SerializationMixin):
         from ..compare import Compare
 
         return Compare(self, other_model)
+
+    # ============================================================================
+    # MODEL ELEMENTS
+    # ============================================================================
+
+    @property
+    def line_item_names(self) -> list[str]:
+        """
+        Get list of all line item names.
+
+        Returns:
+            list[str]: List of line item names
+        """
+        return [item["name"] for item in self.line_item_metadata]
+
+    def line_item_names_by_category(
+        self, category_name: str = None
+    ) -> Union[list[str], dict[str, list[str]]]:
+        """
+        Get line item names by category.
+
+        Args:
+            category_name (str, optional): The name of the category to filter by.
+                If None, returns a dictionary mapping all category names to
+                their line items.
+
+        Returns:
+            Union[list[str], dict[str, list[str]]]:
+                - If category_name is provided: List of line item names in the
+                  specified category
+                - If category_name is None: Dictionary mapping category names to
+                  lists of line item names
+
+        Raises:
+            KeyError: If the category name is not found (when category_name is
+                provided)
+        """
+        if category_name is None:
+            # Return dictionary mapping all categories to their line items
+            result = {}
+            for category in self.category_names:
+                line_item_names = []
+                for item in self.line_item_metadata:
+                    if item["category"] == category:
+                        line_item_names.append(item["name"])
+                result[category] = line_item_names
+            return result
+
+        # Validate that the category exists
+        if category_name not in self.category_names:
+            available_categories = sorted(self.category_names)
+            raise KeyError(
+                f"Category '{category_name}' not found. "
+                f"Available categories: {available_categories}"
+            )
+
+        # Get all line item names that belong to this category
+        line_item_names = []
+        for item in self.line_item_metadata:
+            if item["category"] == category_name:
+                line_item_names.append(item["name"])
+
+        return line_item_names
+
+    @property
+    def line_item_definitions(self) -> tuple[LineItem, ...]:
+        """
+        Read-only access to line item definitions.
+
+        Returns:
+            tuple[LineItem, ...]: Immutable tuple of line item definitions
+        """
+        return self._line_item_definitions
+
+    def line_item_definition(self, name: str) -> LineItem:
+        """
+        Get a line item definition by name.
+
+        This method retrieves the
+        [`LineItem`][pyproforma.models.line_item.LineItem] object that defines
+        a specific line item in the model. This is useful for accessing the line item's
+        properties such as formula, category, label, and value format.
+
+        Args:
+            name (str): The name of the line item to retrieve
+
+        Returns:
+            LineItem: The LineItem object with the specified name
+        """
+        for item in self._line_item_definitions:
+            if item.name == name:
+                return item
+        valid_line_items = [item.name for item in self._line_item_definitions]
+        raise KeyError(
+            f"LineItem with name '{name}' not found. "
+            f"Valid line item names are: {valid_line_items}"
+        )
+
+    @property
+    def category_names(self) -> list[str]:
+        """
+        Get list of all category names.
+
+        Returns:
+            list[str]: List of category names
+        """
+        return [category["name"] for category in self.category_metadata]
+
+    @property
+    def category_definitions(self) -> tuple[Category, ...]:
+        """
+        Read-only access to category definitions.
+
+        Returns:
+            tuple[Category, ...]: Immutable tuple of category definitions
+        """
+        return self._category_definitions
+
+    def category_definition(self, name: str) -> Category:
+        """
+        Get a category definition by name.
+
+        This method retrieves the Category object that defines
+        a specific category in the model. This is useful for accessing the category's
+        properties such as label, total name, and whether it includes totals.
+
+        Args:
+            name (str): The name of the category to retrieve
+
+        Returns:
+            Category: The Category object with the specified name
+        """
+        for category in self._category_definitions:
+            if category.name == name:
+                return category
+        valid_categories = [category["name"] for category in self.category_metadata]
+        raise KeyError(
+            f"Category item '{name}' not found. "
+            f"Valid categories are: {valid_categories}"
+        )
+
+    def constraint_definition(self, name: str) -> Constraint:
+        """Get a constraint definition by name.
+
+        Args:
+            name (str): The name of the constraint to retrieve
+
+        Returns:
+            Constraint: The constraint object with the specified name
+
+        Raises:
+            KeyError: If no constraint with the given name is found
+        """
+        for constraint in self.constraints:
+            if constraint.name == name:
+                return constraint
+        valid_constraints = [constraint.name for constraint in self.constraints]
+        raise KeyError(
+            f"Constraint with name '{name}' not found. "
+            f"Valid constraint names are: {valid_constraints}"
+        )
+
+    # ============================================================================
+    # METADATA & INTERNAL LOOKUPS
+    # ============================================================================
+
+    def _get_item_metadata(self, item_name: str) -> dict:
+        """
+        Get item metadata from defined_names.
+
+        Args:
+            item_name (str): The name of the item to get info for
+
+        Returns:
+            dict: Dictionary containing item metadata including name, label,
+                  value_format, source_type, and source_name
+
+        Raises:
+            KeyError: If the item name is not found in defined names
+        """
+        for defined_name in self.line_item_metadata:
+            if defined_name["name"] == item_name:
+                return defined_name
+        raise KeyError(f"Item '{item_name}' not found in model")
+
+    def _get_category_metadata(self, category_name: str) -> dict:
+        """
+        Get category metadata for a specific category name.
+
+        Args:
+            category_name (str): The name of the category to get metadata for
+
+        Returns:
+            dict: Dictionary containing category metadata including name, label,
+                  include_total, total_name, total_label, and system_generated
+
+        Raises:
+            KeyError: If the category name is not found in category metadata
+        """
+        for category_meta in self.category_metadata:
+            if category_meta["name"] == category_name:
+                return category_meta
+        available_categories = [cat["name"] for cat in self.category_metadata]
+        raise KeyError(
+            f"Category '{category_name}' not found in model. "
+            f"Available categories: {available_categories}"
+        )
+
+    # ============================================================================
+    # CATEGORY TOTALS
+    # ============================================================================
+
+    def category_total(self, category: str, year: int) -> float:
+        """
+        Retrieve a pre-calculated category total from the model's value matrix.
+
+        This is a lookup method that returns the already computed total for a category
+        from the model's value matrix. The total must have been previously calculated
+        during model initialization.
+
+        Args:
+            category (str): The category name to get the total for
+            year (int): The year to get the total for
+
+        Returns:
+            float: The pre-calculated category total
+
+        Raises:
+            KeyError: If the category total is not found in defined names or value matrix
+        """  # noqa: E501
+        # find category total name
+        total_name_lookup = {
+            x["source_name"]: x["name"]
+            for x in self.line_item_metadata
+            if x["source_type"] == "category"
+        }
+        total_name = total_name_lookup[category]
+        return self.value(total_name, year)
+
+    def _category_total(self, value_matrix, category: str, year: int) -> float:
+        """
+        Calculate the sum of all line items in a category for a specific year.
+
+        This is an internal calculation method that computes the category total
+        by summing all line item values in the specified category. Used during
+        model initialization to populate the value matrix. None values are treated as 0.
+
+        Args:
+            value_matrix (dict): The value matrix containing calculated line item values
+            category (str): The category name to calculate the total for
+            year (int): The year to calculate the total for
+
+        Returns:
+            float: The calculated sum of all line items in the category
+        """
+        category_item = self.category_definition(category)
+        total = 0
+        for item in self._line_item_definitions:
+            if item.category == category_item.name:
+                value = value_matrix[year][item.name]
+                if value is not None:
+                    total += value
+        return total
+
+    # ============================================================================
+    # UTILITIES & DISPLAY
+    # ============================================================================
+
+    def summary(self) -> dict:
+        """
+        Get a comprehensive summary of the model's structure and configuration.
+
+        Returns:
+            dict: Dictionary containing model summary information including:
+                - years: List of years in the model
+                - line_items_count: Number of line items
+                - categories_count: Number of categories
+                - multi_line_items_count: Number of multi line items
+                - constraints_count: Number of constraints
+                - line_items_by_category: Dictionary mapping category names to lists of line item names
+                - multi_line_item_names: List of multi line item names
+                - constraint_names: List of constraint names
+                - defined_names_count: Total number of defined names (items that can be referenced)
+        """  # noqa: E501
+        # Count items by category
+        line_items_by_category = {}
+        for category in self.category_metadata:
+            items_in_category = [
+                item.name
+                for item in self._line_item_definitions
+                if item.category == category["name"]
+            ]
+            if items_in_category:  # Only include categories that have items
+                line_items_by_category[category["name"]] = items_in_category
+
+        return {
+            "years": self.years,
+            "years_count": len(self.years),
+            "year_range": (
+                f"{min(self.years)} - {max(self.years)}" if self.years else "None"
+            ),
+            "line_items_count": len(self._line_item_definitions),
+            "categories_count": len(self.category_metadata),
+            "multi_line_items_count": len(self.multi_line_items),
+            "constraints_count": len(self.constraints),
+            "line_items_by_category": line_items_by_category,
+            "multi_line_item_names": [gen.name for gen in self.multi_line_items],
+            "constraint_names": [const.name for const in self.constraints],
+            "defined_names_count": len(self.line_item_metadata),
+            "category_totals": [
+                item["name"]
+                for item in self.line_item_metadata
+                if item["source_type"] == "category"
+            ],
+        }
+
+    def _repr_html_(self) -> str:
+        """
+        HTML representation for Jupyter notebooks.
+
+        Returns:
+            str: Simple HTML string for rich display in Jupyter notebooks
+        """
+        summary = self.summary()
+
+        lines = []
+        lines.append("<strong>Model Summary:</strong><br>")
+        lines.append(
+            f"Years: {summary['year_range']} ({summary['years_count']} years)<br>"
+        )
+        lines.append(f"Line Items: {summary['line_items_count']}<br>")
+        lines.append(f"Categories: {summary['categories_count']}<br>")
+        lines.append(f"Multi Line Items: {summary['multi_line_items_count']}<br>")
+        lines.append(f"Constraints: {summary['constraints_count']}<br>")
+
+        return "".join(lines)
+
+    def _is_last_item_in_category(self, name: str) -> bool:
+        """Check if the given item name is the last item in its category"""
+        # Find the item with the given name and get its category
+        target_item = self.line_item_definition(name)
+
+        # Get all items in the same category
+        items_in_category = [
+            item
+            for item in self._line_item_definitions
+            if item.category == target_item.category
+        ]
+
+        # Check if this is the last item in the category list
+        return items_in_category[-1].name == name
 
     # ============================================================================
     # SERIALIZATION METHODS
