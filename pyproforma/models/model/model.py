@@ -321,48 +321,6 @@ class Model(SerializationMixin):
     # RESULTS OBJECTS & ANALYSIS
     # ============================================================================
 
-    def _get_item_metadata(self, item_name: str) -> dict:
-        """
-        Get item metadata from defined_names.
-
-        Args:
-            item_name (str): The name of the item to get info for
-
-        Returns:
-            dict: Dictionary containing item metadata including name, label,
-                  value_format, source_type, and source_name
-
-        Raises:
-            KeyError: If the item name is not found in defined names
-        """
-        for defined_name in self.line_item_metadata:
-            if defined_name["name"] == item_name:
-                return defined_name
-        raise KeyError(f"Item '{item_name}' not found in model")
-
-    def _get_category_metadata(self, category_name: str) -> dict:
-        """
-        Get category metadata for a specific category name.
-
-        Args:
-            category_name (str): The name of the category to get metadata for
-
-        Returns:
-            dict: Dictionary containing category metadata including name, label,
-                  include_total, total_name, total_label, and system_generated
-
-        Raises:
-            KeyError: If the category name is not found in category metadata
-        """
-        for category_meta in self.category_metadata:
-            if category_meta["name"] == category_name:
-                return category_meta
-        available_categories = [cat["name"] for cat in self.category_metadata]
-        raise KeyError(
-            f"Category '{category_name}' not found in model. "
-            f"Available categories: {available_categories}"
-        )
-
     def category(self, category_name: str = None) -> CategoryResults:
         """
         Get a CategoryResults object for exploring and analyzing a specific category.
@@ -555,6 +513,48 @@ class Model(SerializationMixin):
     # ============================================================================
     # METADATA & INTERNAL LOOKUPS
     # ============================================================================
+
+    def _get_item_metadata(self, item_name: str) -> dict:
+        """
+        Get item metadata from defined_names.
+
+        Args:
+            item_name (str): The name of the item to get info for
+
+        Returns:
+            dict: Dictionary containing item metadata including name, label,
+                  value_format, source_type, and source_name
+
+        Raises:
+            KeyError: If the item name is not found in defined names
+        """
+        for defined_name in self.line_item_metadata:
+            if defined_name["name"] == item_name:
+                return defined_name
+        raise KeyError(f"Item '{item_name}' not found in model")
+
+    def _get_category_metadata(self, category_name: str) -> dict:
+        """
+        Get category metadata for a specific category name.
+
+        Args:
+            category_name (str): The name of the category to get metadata for
+
+        Returns:
+            dict: Dictionary containing category metadata including name, label,
+                  include_total, total_name, total_label, and system_generated
+
+        Raises:
+            KeyError: If the category name is not found in category metadata
+        """
+        for category_meta in self.category_metadata:
+            if category_meta["name"] == category_name:
+                return category_meta
+        available_categories = [cat["name"] for cat in self.category_metadata]
+        raise KeyError(
+            f"Category '{category_name}' not found in model. "
+            f"Available categories: {available_categories}"
+        )
 
     def line_item_names_by_category(
         self, category_name: str = None
