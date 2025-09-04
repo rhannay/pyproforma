@@ -7,10 +7,14 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 
+class TableGenerationError(Exception):
+    """Exception raised when a table cannot be generated."""
+
+    pass
+
+
 def generate_table_from_template(
-    model: "Model",
-    template: list[Union[dict, BaseRow]],
-    include_name: bool = False
+    model: "Model", template: list[Union[dict, BaseRow]], include_name: bool = False
 ) -> Table:
     """Generate a table from a model using a template specification.
 
@@ -21,7 +25,17 @@ def generate_table_from_template(
 
     Returns:
         Table: A formatted table ready for display or export
+
+    Raises:
+        TableGenerationError: If model has no years defined
     """
+    # Check if years are defined
+    if not model.years:
+        raise TableGenerationError(
+            "Cannot generate table: model has no years defined. "
+            "Please add years to the model before generating tables."
+        )
+
     columns = []
     if include_name:
         # Add column to make space for name and label
@@ -62,14 +76,24 @@ def generate_multi_model_table(model_row_pairs: list[tuple["Model", BaseRow]]) -
 
     Returns:
         Table: A formatted table ready for display or export
+
+    Raises:
+        TableGenerationError: If no models provided or all models have empty years
     """
     if not model_row_pairs:
-        return Table(columns=[], rows=[])
+        raise TableGenerationError("Cannot generate table: no models provided.")
 
     # Collect all unique years from all models and sort them
     all_years = set()
     for model, _ in model_row_pairs:
         all_years.update(model.years)
+
+    if not all_years:
+        raise TableGenerationError(
+            "Cannot generate table: all models have empty years. "
+            "Please add years to at least one model before generating tables."
+        )
+
     sorted_years = sorted(all_years)
 
     # Create columns - "Year" as first column, then each year
