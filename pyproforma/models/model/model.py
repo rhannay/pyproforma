@@ -34,8 +34,11 @@ class Model(SerializationMixin):
     and rich output formatting.
 
     Args:
-        line_items (list[LineItem]): LineItem objects defining the model structure
-        years (list[int]): Years for the model time horizon (required)
+        line_items (list[LineItem], optional): LineItem objects defining the model
+            structure. If None, creates an empty model. Default: None
+        years (list[int], optional): Years for the model time horizon.
+            If None, defaults to empty list []. If line_items are provided,
+            years must be specified. Default: None
         categories (list[Category], optional): Category definitions
             (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
@@ -45,6 +48,10 @@ class Model(SerializationMixin):
     Examples:
         >>> from pyproforma import Model, LineItem
         >>>
+        >>> # Create an empty model
+        >>> empty_model = Model()
+        >>>
+        >>> # Create a model with line items
         >>> revenue = LineItem(name="revenue", category="income", formula="1000")
         >>> expenses = LineItem(
         ...     name="expenses", category="income", formula="revenue * 0.8"
@@ -85,16 +92,22 @@ class Model(SerializationMixin):
 
     def __init__(
         self,
-        line_items: list[LineItem],
+        line_items: list[LineItem] = None,
         years: list[int] = None,
         categories: list[Category] = None,
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
+        # Set defaults for empty model initialization
+        if line_items is None:
+            line_items = []
         if years is None:
-            raise ValueError("Years must be provided as a list of integers.")
-        if years == []:
-            raise ValueError("Years cannot be an empty list.")
+            years = []
+
+        # Only require years if there are line items that need calculation
+        if line_items and not years:
+            raise ValueError("Years must be provided when line_items are specified.")
+
         self.years = sorted(years)
 
         self._category_definitions = self._collect_category_definitions(

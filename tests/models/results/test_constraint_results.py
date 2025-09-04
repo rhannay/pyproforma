@@ -146,7 +146,10 @@ class TestConstraintResultsStringRepresentation:
     ):
         """Test that creating a Model with no years raises ValueError."""
         # Model should raise ValueError when years is empty
-        with pytest.raises(ValueError, match="Years cannot be an empty list"):
+        with pytest.raises(
+            ValueError,
+            match="Years must be provided when line_items are specified."
+        ):
             Model(
                 line_items=basic_line_items,
                 years=[],
@@ -784,7 +787,10 @@ class TestConstraintResultsEdgeCases:
         ]
 
         # Model should raise ValueError when years is empty
-        with pytest.raises(ValueError, match="Years cannot be an empty list"):
+        with pytest.raises(
+            ValueError,
+            match="Years must be provided when line_items are specified."
+        ):
             Model(
                 line_items=line_items,
                 years=[],
