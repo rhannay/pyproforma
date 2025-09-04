@@ -37,8 +37,8 @@ class Model(SerializationMixin):
         line_items (list[LineItem], optional): LineItem objects defining the model
             structure. If None, creates an empty model. Default: None
         years (list[int], optional): Years for the model time horizon.
-            If None, defaults to empty list []. If line_items are provided,
-            years must be specified. Default: None
+            If None, defaults to empty list []. Models can be created with
+            line items but empty years for template/workflow purposes. Default: None
         categories (list[Category], optional): Category definitions
             (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
@@ -104,9 +104,9 @@ class Model(SerializationMixin):
         if years is None:
             years = []
 
-        # Only require years if there are line items that need calculation
-        if line_items and not years:
-            raise ValueError("Years must be provided when line_items are specified.")
+        # Allow empty years even with line items - enables template creation
+        # and dynamic workflows. Models with empty years will have empty value
+        # matrices but maintain structural integrity
 
         self.years = sorted(years)
 

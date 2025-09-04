@@ -96,29 +96,45 @@ class TestEmptyModelInitialization:
         assert "Model Summary" in str_repr
         assert "Line Items: 0" in str_repr
 
-    def test_model_with_line_items_requires_years(self):
-        """Test that providing line_items but no years raises an error."""
+    def test_model_with_line_items_but_no_years_now_allowed(self):
+        """Test that providing line_items but no years now works (creates template)."""
         from pyproforma.models.line_item import LineItem
 
         line_item = LineItem(name="test", category="test_cat", formula="100")
 
-        with pytest.raises(
-            ValueError,
-            match="Years must be provided when line_items are specified",
-        ):
-            Model(line_items=[line_item])
+        # This should now work - creates a model with empty years
+        model = Model(line_items=[line_item])
 
-    def test_model_with_line_items_and_empty_years_raises_error(self):
-        """Test that providing line_items with empty years list raises an error."""
+        assert model.years == []
+        assert len(model.line_item_names) == 2  # test + category total
+        assert model.line_item_names[0] == "test"
+
+        # Structural access should work
+        assert model.line_item("test") is not None
+
+        # But value access should fail since no years
+        with pytest.raises(KeyError, match="Year .* not found in years"):
+            model.value("test", 2023)
+
+    def test_model_with_line_items_and_empty_years_now_allowed(self):
+        """Test that providing line_items with empty years list now works."""
         from pyproforma.models.line_item import LineItem
 
         line_item = LineItem(name="test", category="test_cat", formula="100")
 
-        with pytest.raises(
-            ValueError,
-            match="Years must be provided when line_items are specified",
-        ):
-            Model(line_items=[line_item], years=[])
+        # This should now work - creates a model with empty years
+        model = Model(line_items=[line_item], years=[])
+
+        assert model.years == []
+        assert len(model.line_item_names) == 2  # test + category total
+        assert model.line_item_names[0] == "test"
+
+        # Test that we can add years later and make it functional
+        model.years = [2023, 2024]
+        model._recalculate()
+
+        assert model.value("test", 2023) == 100.0
+        assert model.value("test", 2024) == 100.0
 
     def test_normal_model_creation_still_works(self):
         """Test that normal model creation with line_items and years still works."""
