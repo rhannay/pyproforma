@@ -95,7 +95,7 @@ class Model(SerializationMixin):
         self,
         line_items: list[LineItem] = None,
         years: list[int] = None,
-        categories: list[Category] = None,
+        categories: Union[list[Category], list[str]] = None,
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
@@ -104,10 +104,6 @@ class Model(SerializationMixin):
             line_items = []
         if years is None:
             years = []
-
-        # Allow empty years even with line items - enables template creation
-        # and dynamic workflows. Models with empty years will have empty value
-        # matrices but maintain structural integrity
 
         self._years = sorted(years)
 
@@ -140,33 +136,48 @@ class Model(SerializationMixin):
 
     @staticmethod
     def _collect_category_definitions(
-        line_items: list[LineItem], categories: list[Category] = None
+        line_items: list[LineItem], categories: Union[list[Category], list[str]] = None
     ) -> list[Category]:
         """
         Collect category definitions from provided categories or infer from line items.
 
-        If categories are provided, use them as the base. If not, automatically infer
-        categories from the unique category names used in the line items.
-        Multi-line items are no longer added as category definitions - they are only
-        captured in metadata.
+        If categories are provided, use them as the base. Categories can be provided
+        as Category objects or as strings (which will be converted to Category objects
+        with name=label). If not provided, automatically infer categories from the
+        unique category names used in the line items. Multi-line items are no longer
+        added as category definitions - they are only captured in metadata.
 
         Args:
             line_items (list[LineItem]): Line items to infer categories from
-            categories (list[Category], optional): Explicit category definitions
+            categories (Union[list[Category], list[str]], optional): Explicit category
+                definitions as Category objects or strings
 
         Returns:
             list[Category]: List of category definitions to use in the model
         """
-        if categories is None:
-            # Auto-infer categories from line items
+        if categories is None or len(categories) == 0:
+            # Auto-infer categories from line items when None or empty list
             category_names = set([item.category for item in line_items])
             category_definitions = []
             for name in category_names:
                 category = Category(name=name, label=name)
                 category_definitions.append(category)
         else:
-            # Use provided categories as base
-            category_definitions = list(categories)
+            # Handle provided categories - could be Category objects or strings
+            category_definitions = []
+            for cat in categories:
+                if isinstance(cat, Category):
+                    # Already a Category object, use as-is
+                    category_definitions.append(cat)
+                elif isinstance(cat, str):
+                    # String category name, convert to Category object
+                    category = Category(name=cat, label=cat)
+                    category_definitions.append(category)
+                else:
+                    raise TypeError(
+                        f"Categories must be Category objects or strings, "
+                        f"got {type(cat)} for value: {cat}"
+                    )
 
         return category_definitions
 

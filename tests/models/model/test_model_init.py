@@ -491,3 +491,194 @@ class TestModelInitWithConstraints:
                 categories=basic_categories,
                 constraints=[valid_constraint, invalid_constraint],
             )
+
+
+class TestModelInitWithStringCategories:
+    """Test that Model initialization handles string categories appropriately."""
+
+    @pytest.fixture
+    def basic_line_items(self):
+        """Create basic line items for testing."""
+        return [
+            LineItem(
+                name="revenue", category="income", values={2023: 100000, 2024: 120000}
+            ),
+            LineItem(
+                name="expenses", category="costs", values={2023: 50000, 2024: 60000}
+            ),
+        ]
+
+    def test_model_with_string_categories(self, basic_line_items):
+        """Test that Model can be created with categories as strings."""
+        string_categories = ["income", "costs", "assets"]
+
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024],
+            categories=string_categories,
+        )
+
+        # Verify that string categories were converted to Category objects
+        assert len(model._category_definitions) == 3
+        category_names = [cat.name for cat in model._category_definitions]
+        category_labels = [cat.label for cat in model._category_definitions]
+
+        assert "income" in category_names
+        assert "costs" in category_names
+        assert "assets" in category_names
+
+        # When created from strings, name and label should be the same
+        assert "income" in category_labels
+        assert "costs" in category_labels
+        assert "assets" in category_labels
+
+        # Verify the categories are actual Category objects with proper attributes
+        for category in model._category_definitions:
+            assert isinstance(category, Category)
+            # Should be equal for string-created categories
+            assert category.name == category.label
+            assert category.include_total is True  # Default value
+
+    def test_model_with_mixed_category_types(self, basic_line_items):
+        """Test that Model can handle a mix of Category objects and strings."""
+        mixed_categories = [
+            Category(name="income", label="Revenue Streams"),  # Category object
+            "costs",  # String
+            # Category object with custom settings
+            Category(name="assets", label="Company Assets", include_total=False),
+        ]
+
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024],
+            categories=mixed_categories,
+        )
+
+        # Verify all categories were processed correctly
+        assert len(model._category_definitions) == 3
+        category_names = [cat.name for cat in model._category_definitions]
+        assert "income" in category_names
+        assert "costs" in category_names
+        assert "assets" in category_names
+
+        # Check that properties were preserved correctly
+        income_cat = next(
+            cat for cat in model._category_definitions if cat.name == "income"
+        )
+        costs_cat = next(
+            cat for cat in model._category_definitions if cat.name == "costs"
+        )
+        assets_cat = next(
+            cat for cat in model._category_definitions if cat.name == "assets"
+        )
+
+        # Category object should preserve original properties
+        assert income_cat.label == "Revenue Streams"
+        assert income_cat.include_total is True
+
+        # String category should have name=label
+        assert costs_cat.label == "costs"
+        assert costs_cat.include_total is True
+
+        # Category object with custom settings should preserve them
+        assert assets_cat.label == "Company Assets"
+        assert assets_cat.include_total is False
+
+    def test_empty_string_categories_list(self, basic_line_items):
+        """Test that Model can handle empty list of string categories."""
+        # When categories is an empty list, it should auto-infer from line items
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024],
+            categories=[],
+        )
+
+        # Should have auto-inferred categories from line items
+        assert len(model._category_definitions) == 2  # "income" and "costs"
+        category_names = [cat.name for cat in model._category_definitions]
+        assert "income" in category_names
+        assert "costs" in category_names
+
+    def test_invalid_category_type_should_raise_error(self, basic_line_items):
+        """Test that providing invalid category types raises TypeError."""
+        invalid_categories = [
+            "income",  # Valid string
+            Category(name="costs", label="Costs"),  # Valid Category
+            123,  # Invalid - should raise error
+        ]
+
+        expected_error = (
+            "Categories must be Category objects or strings, "
+            "got <class 'int'> for value: 123"
+        )
+        with pytest.raises(TypeError, match=expected_error):
+            Model(
+                line_items=basic_line_items,
+                years=[2023, 2024],
+                categories=invalid_categories,
+            )
+
+    def test_mixed_invalid_types_shows_first_error(self, basic_line_items):
+        """Test that multiple invalid types show error for first invalid item."""
+        invalid_categories = [
+            "income",  # Valid
+            {"name": "costs"},  # Invalid - dict
+            None,  # Invalid - None
+        ]
+
+        expected_error = (
+            "Categories must be Category objects or strings, got <class 'dict'>"
+        )
+        with pytest.raises(TypeError, match=expected_error):
+            Model(
+                line_items=basic_line_items,
+                years=[2023, 2024],
+                categories=invalid_categories,
+            )
+
+    def test_duplicate_string_category_names_should_raise_error(self, basic_line_items):
+        """Test that duplicate string category names raise ValueError."""
+        # "income" appears twice
+        duplicate_string_categories = ["income", "costs", "income"]
+
+        # Should raise error for duplicate category names
+        with pytest.raises(ValueError, match="Duplicate category names not allowed"):
+            Model(
+                line_items=basic_line_items,
+                years=[2023, 2024],
+                categories=duplicate_string_categories,
+            )
+
+    def test_duplicate_mixed_category_names_should_raise_error(self, basic_line_items):
+        """Test that duplicate names between strings and Categories raise error."""
+        mixed_categories = [
+            Category(name="income", label="Income Streams"),
+            "income",  # Same name as above Category
+        ]
+
+        with pytest.raises(ValueError, match="Duplicate category names not allowed"):
+            Model(
+                line_items=basic_line_items,
+                years=[2023, 2024],
+                categories=mixed_categories,
+            )
+
+    def test_string_categories_work_with_model_operations(self, basic_line_items):
+        """Test that string-based categories work with normal model operations."""
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024],
+            categories=["income", "costs"],
+        )
+
+        # Test normal model operations work
+        assert model.value("revenue", 2023) == 100000
+        assert model.value("expenses", 2023) == 50000
+
+        # Test category access works
+        income_category = model.category("income")
+        assert income_category.category_name == "income"
+
+        # Test that category totals work
+        assert model.category_total("income", 2023) == 100000  # Just revenue
+        assert model.category_total("costs", 2023) == 50000  # Just expenses
