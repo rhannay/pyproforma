@@ -41,6 +41,9 @@ from .row_types import (
 )
 from .table_class import format_value as format_value
 from .table_generator import (
+    TableGenerationError as TableGenerationError,
+)
+from .table_generator import (
     generate_table_from_template as generate_table_from_template,
 )
 from .tables import Tables as Tables

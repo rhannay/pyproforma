@@ -1,7 +1,10 @@
+# Exceptions
+from .charts import ChartGenerationError as ChartGenerationError
 from .models import Category as Category
 from .models import Constraint as Constraint
 from .models import LineItem as LineItem
 from .models import Model as Model
+from .tables import TableGenerationError as TableGenerationError
 
 # Bringing in row types for easy table generation
 from .tables import row_types as row_types

@@ -562,17 +562,29 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             # Update years and recalculate (remove duplicates and sort)
-            model_copy.years = sorted(list(set(new_years)))
+            model_copy._years = sorted(list(set(new_years)))
             model_copy._recalculate()
 
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
-            self._model.years = sorted(list(set(new_years)))
+            self._model._years = sorted(list(set(new_years)))
             self._model._recalculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to update years: {str(e)}") from e
+
+    def years(self, new_years: list[int]) -> None:
+        """
+        Convenience method to update years (alias for update_years).
+
+        Args:
+            new_years (list[int]): New list of years for the model
+
+        Examples:
+            >>> model.update.years([2024, 2025, 2026])
+        """
+        self.update_years(new_years)
 
     def reorder_line_items(self, ordered_names: list[str]) -> None:
         """

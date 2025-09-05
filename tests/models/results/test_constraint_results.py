@@ -141,18 +141,26 @@ class TestConstraintResultsStringRepresentation:
         assert "Label: Minimum Revenue" in summary
         assert "Value (2023): 100,000.00" in summary
 
-    def test_summary_with_no_years_raises_error(
+    def test_summary_with_no_years_now_allowed(
         self, basic_line_items, basic_categories, basic_constraints
     ):
-        """Test that creating a Model with no years raises ValueError."""
-        # Model should raise ValueError when years is empty
-        with pytest.raises(ValueError, match="Years cannot be an empty list"):
-            Model(
-                line_items=basic_line_items,
-                years=[],
-                categories=basic_categories,
-                constraints=basic_constraints,
-            )
+        """Test that creating a Model with no years now works."""
+        # Model should now work with empty years (creating a template)
+        model = Model(
+            line_items=basic_line_items,
+            years=[],
+            categories=basic_categories,
+            constraints=basic_constraints,
+        )
+
+        # Model should exist but be empty
+        assert model.years == []
+        assert len(model.line_item_names) > 0
+
+        # ConstraintResults should be accessible
+        constraint_result = model.constraint(basic_constraints[0].name)
+        assert constraint_result.constraint_name == basic_constraints[0].name
+        assert constraint_result.failing_years() == []  # No years, no failing years
 
 
 class TestConstraintResultsTableMethod:
@@ -768,8 +776,8 @@ class TestConstraintResultsIntegration:
 class TestConstraintResultsEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_constraint_results_with_empty_model_years_raises_error(self):
-        """Test that creating a Model with empty years raises ValueError."""
+    def test_constraint_results_with_empty_model_years_now_allowed(self):
+        """Test that creating a Model with empty years now works."""
         line_items = [LineItem(name="revenue", category="income", values={})]
 
         categories = [Category(name="income", label="Income")]
@@ -783,14 +791,19 @@ class TestConstraintResultsEdgeCases:
             )
         ]
 
-        # Model should raise ValueError when years is empty
-        with pytest.raises(ValueError, match="Years cannot be an empty list"):
-            Model(
-                line_items=line_items,
-                years=[],
-                categories=categories,
-                constraints=constraints,
-            )
+        # Model should now work with empty years
+        model = Model(
+            line_items=line_items,
+            years=[],
+            categories=categories,
+            constraints=constraints,
+        )
+
+        # Should be able to create ConstraintResults
+        constraint_result = model.constraint("test_constraint")
+        assert constraint_result.constraint_name == "test_constraint"
+        assert constraint_result.line_item_name == "revenue"
+        assert constraint_result.failing_years() == []  # No years, no failing years
 
     def test_constraint_results_with_special_characters_in_name(self):
         """Test ConstraintResults with constraint names containing special characters."""  # noqa: E501

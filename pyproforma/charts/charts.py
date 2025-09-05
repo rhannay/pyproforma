@@ -9,6 +9,12 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 
+class ChartGenerationError(Exception):
+    """Exception raised when a chart cannot be generated."""
+
+    pass
+
+
 class Charts:
     """Charts namespace for a PyProforma model.
 
@@ -51,8 +57,16 @@ class Charts:
             Chart figure: The Plotly chart figure
 
         Raises:
+            ChartGenerationError: If the model has no years defined
             KeyError: If the name is not found in the model
         """  # noqa: E501
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
+
         # Get the item info and label for display
         try:
             label = self._model.line_item(name).label
@@ -111,10 +125,18 @@ class Charts:
             Chart figure: The Plotly chart figure with multiple lines
 
         Raises:
+            ValueError: If item_names list is empty or if the model has no years defined
             KeyError: If any name is not found in the model
         """  # noqa: E501
         if not item_names:
             raise ValueError("item_names list cannot be empty")
+
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
 
         # Get years once for all items
         years = self._model.years
@@ -190,8 +212,9 @@ class Charts:
             Chart figure: The Plotly chart figure showing cumulative percent change
 
         Raises:
+            ValueError: If item_names is empty
+            ChartGenerationError: If the model has no years defined
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for cumulative percent change)
         """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
@@ -199,6 +222,13 @@ class Charts:
 
         if not item_names:
             raise ValueError("item_names cannot be empty")
+
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
 
         # Get years once for all items
         years = self._model.years
@@ -292,8 +322,9 @@ class Charts:
             Chart figure: The Plotly chart figure showing cumulative absolute change
 
         Raises:
+            ValueError: If item_names is empty
+            ChartGenerationError: If the model has no years defined
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for cumulative change)
         """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
@@ -301,6 +332,13 @@ class Charts:
 
         if not item_names:
             raise ValueError("item_names cannot be empty")
+
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
 
         # Get years once for all items
         years = self._model.years
@@ -397,8 +435,9 @@ class Charts:
             Chart figure: The Plotly chart figure showing indexed values
 
         Raises:
+            ValueError: If item_names is empty
+            ChartGenerationError: If the model has no years defined
             KeyError: If any name is not found in the model
-            ValueError: If any name refers to an assumption (not supported for index_to_year)
         """  # noqa: E501
         # Convert single item to list for uniform processing
         if isinstance(item_names, str):
@@ -406,6 +445,13 @@ class Charts:
 
         if not item_names:
             raise ValueError("item_names cannot be empty")
+
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
 
         # Get years once for all items
         years = self._model.years
@@ -496,11 +542,18 @@ class Charts:
             Chart figure: The Plotly pie chart figure
 
         Raises:
+            ValueError: If item_names list is empty, if the model has no years defined, or if year is not in model years
             KeyError: If any name is not found in the model
-            ValueError: If item_names list is empty or if year is not in model years
         """  # noqa: E501
         if not item_names:
             raise ValueError("item_names list cannot be empty")
+
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
 
         # Validate year is in model years
         years = self._model.years
@@ -584,8 +637,16 @@ class Charts:
             Chart figure: The Plotly chart figure with both datasets
 
         Raises:
+            ChartGenerationError: If the model has no years defined
             KeyError: If the constraint name is not found in the model
         """  # noqa: E501
+        # Check if years are defined
+        if not self._model.years:
+            raise ChartGenerationError(
+                "Cannot create chart: model has no years defined. "
+                "Please add years to the model before creating charts."
+            )
+
         # Get the constraint
         try:
             constraint = self._model.constraint_definition(constraint_name)

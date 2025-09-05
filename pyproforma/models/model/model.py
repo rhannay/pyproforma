@@ -34,8 +34,11 @@ class Model(SerializationMixin):
     and rich output formatting.
 
     Args:
-        line_items (list[LineItem]): LineItem objects defining the model structure
-        years (list[int]): Years for the model time horizon (required)
+        line_items (list[LineItem], optional): LineItem objects defining the model
+            structure. If None, creates an empty model. Default: None
+        years (list[int], optional): Years for the model time horizon.
+            If None, defaults to empty list []. Models can be created with
+            line items but empty years for template/workflow purposes. Default: None
         categories (list[Category], optional): Category definitions
             (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
@@ -45,6 +48,10 @@ class Model(SerializationMixin):
     Examples:
         >>> from pyproforma import Model, LineItem
         >>>
+        >>> # Create an empty model
+        >>> empty_model = Model()
+        >>>
+        >>> # Create a model with line items
         >>> revenue = LineItem(name="revenue", category="income", formula="1000")
         >>> expenses = LineItem(
         ...     name="expenses", category="income", formula="revenue * 0.8"
@@ -77,6 +84,7 @@ class Model(SerializationMixin):
         - copy(): Create independent model copies
         - summary(): Model structure overview
         - tables/charts: Rich output generation
+        - update.years(): Update years through the update namespace
     """
 
     # ============================================================================
@@ -85,17 +93,23 @@ class Model(SerializationMixin):
 
     def __init__(
         self,
-        line_items: list[LineItem],
+        line_items: list[LineItem] = None,
         years: list[int] = None,
         categories: list[Category] = None,
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
+        # Set defaults for empty model initialization
+        if line_items is None:
+            line_items = []
         if years is None:
-            raise ValueError("Years must be provided as a list of integers.")
-        if years == []:
-            raise ValueError("Years cannot be an empty list.")
-        self.years = sorted(years)
+            years = []
+
+        # Allow empty years even with line items - enables template creation
+        # and dynamic workflows. Models with empty years will have empty value
+        # matrices but maintain structural integrity
+
+        self._years = sorted(years)
 
         self._category_definitions = self._collect_category_definitions(
             line_items, categories
@@ -118,7 +132,7 @@ class Model(SerializationMixin):
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
-            self.years,
+            self._years,
             self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata,
@@ -169,11 +183,33 @@ class Model(SerializationMixin):
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
-            self.years,
+            self._years,
             self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata,
         )
+
+    @property
+    def years(self) -> list[int]:
+        """
+        Get or set the model's years.
+
+        Setting years will trigger model recalculation.
+
+        Returns:
+            list[int]: Sorted list of years in the model
+        """
+        return self._years.copy()  # Return copy to prevent external modification
+
+    @years.setter
+    def years(self, new_years: list[int]) -> None:
+        """
+        Set the model's years and trigger recalculation.
+
+        Args:
+            new_years (list[int]): New years for the model
+        """
+        self.update.years(new_years)
 
     # ============================================================================
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
@@ -248,9 +284,9 @@ class Model(SerializationMixin):
         name_lookup = {item["name"]: item for item in self.line_item_metadata}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
-        if year not in self.years:
+        if year not in self._years:
             raise KeyError(
-                f"Year {year} not found in years. Available years: {self.years}"
+                f"Year {year} not found in years. Available years: {self._years}"
             )
         return self._value_matrix[year][name]
 
@@ -439,7 +475,7 @@ class Model(SerializationMixin):
         copied_categories = copy.deepcopy(self._category_definitions)
         copied_multi_line_items = copy.deepcopy(self.multi_line_items)
         copied_constraints = copy.deepcopy(self.constraints)
-        copied_years = copy.deepcopy(self.years)
+        copied_years = copy.deepcopy(self._years)
 
         # Create new Model instance with copied objects
         copied_model = Model(
@@ -864,10 +900,10 @@ class Model(SerializationMixin):
                 line_items_by_category[category["name"]] = items_in_category
 
         return {
-            "years": self.years,
-            "years_count": len(self.years),
+            "years": self._years,
+            "years_count": len(self._years),
             "year_range": (
-                f"{min(self.years)} - {max(self.years)}" if self.years else "None"
+                f"{min(self._years)} - {max(self._years)}" if self._years else "None"
             ),
             "line_items_count": len(self._line_item_definitions),
             "categories_count": len(self.category_metadata),
