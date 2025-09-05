@@ -141,27 +141,28 @@ class TestGenerateValueMatrix:
             formula="revenue - unknown_variable",
         )
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [revenue, invalid_item]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [revenue, invalid_item]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         # Verify the exception message is useful - should detect invalid variable
@@ -189,27 +190,28 @@ class TestGenerateValueMatrix:
         item_a = LineItem(name="item_a", category="revenue", formula="item_b + 10")
         item_b = LineItem(name="item_b", category="revenue", formula="item_a - 5")
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [item_a, item_b]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [item_a, item_b]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)
@@ -230,27 +232,28 @@ class TestGenerateValueMatrix:
         # Add a non-circular item to ensure it still gets calculated
         item_d = LineItem(name="item_d", category="revenue", values={2023: 100})
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [item_a, item_b, item_c, item_d]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [item_a, item_b, item_c, item_d]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)
@@ -270,27 +273,28 @@ class TestGenerateValueMatrix:
         # Item that references itself
         self_ref = LineItem(name="self_ref", category="revenue", formula="self_ref + 1")
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [self_ref]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [self_ref]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)
@@ -310,27 +314,28 @@ class TestGenerateValueMatrix:
         bad_item1 = LineItem(name="bad1", category="expenses", formula="bad2 + 10")
         bad_item2 = LineItem(name="bad2", category="expenses", formula="bad1 - 5")
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [good_item1, good_item2, bad_item1, bad_item2]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [good_item1, good_item2, bad_item1, bad_item2]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)
@@ -454,28 +459,28 @@ class TestGenerateValueMatrix:
             formula="revenue + nonexistent_variable",
         )
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [revenue, dependent]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.assumptions = []
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [revenue, dependent]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)
@@ -492,28 +497,28 @@ class TestGenerateValueMatrix:
             name="bad_item", category="revenue", formula="revenue_total + 100"
         )
 
-        # Create model without triggering _generate_value_matrix in constructor
-        model = Model.__new__(Model)
-        model._line_item_definitions = [revenue, bad_item]
-        model.years = [2023]
-        model._category_definitions = basic_categories
-        model.assumptions = []
-        model.multi_line_items = []
-        model.category_metadata = collect_category_metadata(
-            model._category_definitions, model.multi_line_items
+        # Prepare parameters for generate_value_matrix directly
+        years = [2023]
+        line_item_definitions = [revenue, bad_item]
+        category_definitions = basic_categories
+        multi_line_items = []
+
+        # Create metadata needed for generate_value_matrix
+        category_metadata = collect_category_metadata(
+            category_definitions, multi_line_items
         )
-        model.line_item_metadata = collect_line_item_metadata(
-            model._line_item_definitions,
-            model.category_metadata,
-            model.multi_line_items,
+        line_item_metadata = collect_line_item_metadata(
+            line_item_definitions,
+            category_metadata,
+            multi_line_items,
         )
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
-                model.years,
-                model._line_item_definitions + model.multi_line_items,
-                model._category_definitions,
-                model.line_item_metadata,
+                years,
+                line_item_definitions + multi_line_items,
+                category_definitions,
+                line_item_metadata,
             )
 
         error_msg = str(exc_info.value)

@@ -84,6 +84,7 @@ class Model(SerializationMixin):
         - copy(): Create independent model copies
         - summary(): Model structure overview
         - tables/charts: Rich output generation
+        - update.years(): Update years through the update namespace
     """
 
     # ============================================================================
@@ -108,7 +109,7 @@ class Model(SerializationMixin):
         # and dynamic workflows. Models with empty years will have empty value
         # matrices but maintain structural integrity
 
-        self.years = sorted(years)
+        self._years = sorted(years)
 
         self._category_definitions = self._collect_category_definitions(
             line_items, categories
@@ -131,7 +132,7 @@ class Model(SerializationMixin):
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
-            self.years,
+            self._years,
             self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata,
@@ -182,11 +183,33 @@ class Model(SerializationMixin):
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
         self._value_matrix = generate_value_matrix(
-            self.years,
+            self._years,
             self._line_item_definitions + self.multi_line_items,
             self._category_definitions,
             self.line_item_metadata,
         )
+
+    @property
+    def years(self) -> list[int]:
+        """
+        Get or set the model's years.
+
+        Setting years will trigger model recalculation.
+
+        Returns:
+            list[int]: Sorted list of years in the model
+        """
+        return self._years.copy()  # Return copy to prevent external modification
+
+    @years.setter
+    def years(self, new_years: list[int]) -> None:
+        """
+        Set the model's years and trigger recalculation.
+
+        Args:
+            new_years (list[int]): New years for the model
+        """
+        self.update.years(new_years)
 
     # ============================================================================
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
@@ -261,9 +284,9 @@ class Model(SerializationMixin):
         name_lookup = {item["name"]: item for item in self.line_item_metadata}
         if name not in name_lookup:
             raise KeyError(f"Name '{name}' not found in defined names.")
-        if year not in self.years:
+        if year not in self._years:
             raise KeyError(
-                f"Year {year} not found in years. Available years: {self.years}"
+                f"Year {year} not found in years. Available years: {self._years}"
             )
         return self._value_matrix[year][name]
 
@@ -452,7 +475,7 @@ class Model(SerializationMixin):
         copied_categories = copy.deepcopy(self._category_definitions)
         copied_multi_line_items = copy.deepcopy(self.multi_line_items)
         copied_constraints = copy.deepcopy(self.constraints)
-        copied_years = copy.deepcopy(self.years)
+        copied_years = copy.deepcopy(self._years)
 
         # Create new Model instance with copied objects
         copied_model = Model(
@@ -877,10 +900,10 @@ class Model(SerializationMixin):
                 line_items_by_category[category["name"]] = items_in_category
 
         return {
-            "years": self.years,
-            "years_count": len(self.years),
+            "years": self._years,
+            "years_count": len(self._years),
             "year_range": (
-                f"{min(self.years)} - {max(self.years)}" if self.years else "None"
+                f"{min(self._years)} - {max(self._years)}" if self._years else "None"
             ),
             "line_items_count": len(self._line_item_definitions),
             "categories_count": len(self.category_metadata),
