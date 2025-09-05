@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from pyproforma.models._utils import check_interim_values_by_year, check_name
+from pyproforma.models._utils import check_name
+from pyproforma.models.model.value_matrix import validate_value_matrix
 from pyproforma.models.multi_line_item.abc_class import MultiLineItem
 
 
@@ -209,9 +210,7 @@ class Debt(MultiLineItem):
                                         component for the specified year, with line item names as keys.  # noqa: E501
         """  # noqa: E501
         # Validate interim values by year
-        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
-        if not is_valid:
-            raise ValueError(f"Invalid interim values by year: {error_msg}")
+        validate_value_matrix(interim_values_by_year)
 
         result = {}
 

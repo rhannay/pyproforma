@@ -1,6 +1,9 @@
 import pytest
 
-from pyproforma.models.model.value_matrix import calculate_line_item_value
+from pyproforma.models.model.value_matrix import (
+    ValueMatrixValidationError,
+    calculate_line_item_value,
+)
 
 
 class TestCalculateLineItemValue:
@@ -152,11 +155,10 @@ class TestCalculateLineItemValueValidation:
         # Invalid: non-integer keys
         invalid_interim_values = {"2020": {"other_item": 50.0}}
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
                 hardcoded_values, None, invalid_interim_values, 2020, "test_item"
             )
-        assert "Invalid interim values by year" in str(excinfo.value)
         assert "All keys must be integers representing years" in str(excinfo.value)
 
     def test_calculate_line_item_value_validates_interim_values_by_year_unordered_years(
@@ -172,11 +174,10 @@ class TestCalculateLineItemValueValidation:
             2020: {"another_item": 25.0},
         }
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
                 hardcoded_values, None, invalid_interim_values, 2020, "test_item"
             )
-        assert "Invalid interim values by year" in str(excinfo.value)
         assert "Years must be in ascending order" in str(excinfo.value)
 
     def test_calculate_line_item_value_validates_interim_values_by_year_non_dict_values(
@@ -189,11 +190,10 @@ class TestCalculateLineItemValueValidation:
         # Invalid: values are not dictionaries
         invalid_interim_values = {2020: "not_a_dict"}
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
                 hardcoded_values, None, invalid_interim_values, 2020, "test_item"
             )
-        assert "Invalid interim values by year" in str(excinfo.value)
         assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
 
     def test_calculate_line_item_value_validates_interim_values_by_year_inconsistent_keys(
@@ -209,11 +209,10 @@ class TestCalculateLineItemValueValidation:
             2022: {"var1": 20.0},  # last year can be subset
         }
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
                 hardcoded_values, None, invalid_interim_values, 2020, "test_item"
             )
-        assert "Invalid interim values by year" in str(excinfo.value)
         assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
 
     def test_calculate_line_item_value_validates_interim_values_by_year_extra_keys_in_last_year(
@@ -228,11 +227,10 @@ class TestCalculateLineItemValueValidation:
             2021: {"var1": 15.0, "var2": 25.0},  # var2 is extra
         }
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
                 hardcoded_values, None, invalid_interim_values, 2020, "test_item"
             )
-        assert "Invalid interim values by year" in str(excinfo.value)
         assert "Last year (2021) contains extra variables" in str(excinfo.value)
 
     def test_calculate_line_item_value_accepts_valid_interim_values_by_year(self):

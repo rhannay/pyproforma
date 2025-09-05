@@ -6,9 +6,8 @@ that stores all calculated values for line items, categories, and generators
 across all years in a financial model.
 """
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 
-from .._utils import check_interim_values_by_year
 from ..formula import calculate_formula
 
 if TYPE_CHECKING:
@@ -16,6 +15,82 @@ if TYPE_CHECKING:
 
     from ..category import Category
     from ..line_item import LineItem
+
+
+class ValueMatrixValidationError(Exception):
+    """Raised when value matrix validation fails."""
+
+    pass
+
+
+def validate_value_matrix(
+    values_by_year: Dict[int, Dict[str, Any]],
+) -> None:
+    """
+    Validates a dictionary of interim values organized by year.
+
+    Requirements:
+    - Keys must be years (integers) and in ascending order
+    - Values must be dictionaries mapping variable names to values
+    - All years except the last must contain the same set of variables
+    - The last year may contain a subset of the variables from previous years
+
+    Args:
+        values_by_year (Dict[int, Dict[str, Any]]): Dictionary mapping years to value dictionaries  # noqa: E501
+
+    Raises:
+        ValueMatrixValidationError: If the structure is invalid
+    """  # noqa: E501
+    if not values_by_year:
+        return  # Empty dict is valid
+
+    # Check if keys are years and in ascending order
+    years = list(values_by_year.keys())
+    if not all(isinstance(year, int) for year in years):
+        raise ValueMatrixValidationError("All keys must be integers representing years")
+
+    sorted_years = sorted(years)
+    if sorted_years != years:
+        raise ValueMatrixValidationError("Years must be in ascending order")
+
+    # Check if all values are dictionaries
+    non_dict_years = [
+        year for year in years if not isinstance(values_by_year[year], dict)
+    ]
+    if non_dict_years:
+        raise ValueMatrixValidationError(
+            f"Values for years {non_dict_years} must be dictionaries"
+        )
+
+    # If there's only one year, nothing more to check
+    if len(years) <= 1:
+        return
+
+    # Get the set of variable names from the first year
+    reference_year = years[0]
+    reference_names = set(values_by_year[reference_year].keys())
+
+    # Check that all years except the last one have the same variable names
+    for year in years[1:-1]:
+        current_names = set(values_by_year[year].keys())
+        if current_names != reference_names:
+            missing = reference_names - current_names
+            extra = current_names - reference_names
+            error_msg = f"Year {year} has inconsistent variable names with the first year ({reference_year})"  # noqa: E501
+            if missing:
+                error_msg += f", missing: {', '.join(missing)}"
+            if extra:
+                error_msg += f", extra: {', '.join(extra)}"
+            raise ValueMatrixValidationError(error_msg)
+
+    # Check that the last year only has keys that are within the reference set
+    last_year = years[-1]
+    last_year_names = set(values_by_year[last_year].keys())
+    extra_keys = last_year_names - reference_names
+    if extra_keys:
+        raise ValueMatrixValidationError(
+            f"Last year ({last_year}) contains extra variables not present in previous years: {', '.join(extra_keys)}"  # noqa: E501
+        )
 
 
 def calculate_line_item_value(
@@ -50,9 +125,7 @@ def calculate_line_item_value(
         ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
     """  # noqa: E501
     # Validate interim values by year
-    is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
-    if not is_valid:
-        raise ValueError(f"Invalid interim values by year: {error_msg}")
+    validate_value_matrix(interim_values_by_year)
 
     # If interim_values_by_year[year][name] already exists, raise an error
     if year in interim_values_by_year and name in interim_values_by_year[year]:
