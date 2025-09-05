@@ -1,6 +1,5 @@
 from ..constants import ValueFormat
-from ._utils import check_interim_values_by_year, check_name
-from .formula import calculate_formula
+from ._utils import check_name
 
 
 class LineItem:
@@ -59,10 +58,8 @@ class LineItem:
         if not check_name(name):
             raise ValueError(
                 (
-                    (
-                        "LineItem name must only contain letters, numbers, underscores,"
-                        " or hyphens (no spaces or special characters)."
-                    )
+                    "LineItem name must only contain letters, numbers, underscores,"
+                    " or hyphens (no spaces or special characters)."
                 )
             )
         self.name = name
@@ -77,51 +74,6 @@ class LineItem:
             self.values = values
         self.formula = formula
         self.value_format = value_format
-
-    def get_value(self, interim_values_by_year: dict, year: int) -> float | None:
-        """
-        Get the value for this line item in a specific year.
-
-        The method follows this precedence:
-        1. Check if value already exists in interim_values_by_year (raises error if found)
-        2. Return explicit value from self.values if available for the year (including None)
-        3. Calculate value using formula if formula is defined
-        4. Return None if no value or formula is available
-
-        Args:
-            interim_values_by_year (dict): Dictionary containing calculated values
-                by year, used to prevent circular references and for formula calculations.
-            year (int): The year for which to get the value.
-
-        Returns:
-            float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
-
-        Raises:
-            ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
-        """  # noqa: E501
-        # Validate interim values by year
-        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
-        if not is_valid:
-            raise ValueError(f"Invalid interim values by year: {error_msg}")
-
-        # If interim_values_by_year[year][self.name] already exists, raise an error
-        if year in interim_values_by_year and self.name in interim_values_by_year[year]:
-            raise ValueError(
-                (
-                    f"Value for {self.name} in year {year} "
-                    "already exists in interim values."
-                )
-            )
-
-        # If value for this year is in .values, return that value (including None)
-        if year in self.values:
-            return self.values[year]
-
-        # No value exists, so use a formula
-        if self.formula:
-            return calculate_formula(self.formula, interim_values_by_year, year)
-        # If no formula is defined, return None
-        return None
 
     def is_hardcoded(self, year: int) -> bool:
         """

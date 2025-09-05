@@ -8,11 +8,67 @@ across all years in a financial model.
 
 from typing import TYPE_CHECKING, Union
 
+from .._utils import check_interim_values_by_year
+from ..formula import calculate_formula
+
 if TYPE_CHECKING:
     from pyproforma.models.multi_line_item import MultiLineItem
 
     from ..category import Category
     from ..line_item import LineItem
+
+
+def calculate_line_item_value(
+    hardcoded_values: dict[int, float | None],
+    formula: str | None,
+    interim_values_by_year: dict,
+    year: int,
+    name: str,
+) -> float | None:
+    """
+    Calculate the value for a line item in a specific year.
+
+    The function follows this precedence:
+    1. Check if value already exists in interim_values_by_year (raises error if found)
+    2. Return explicit value from hardcoded_values if available for the year (including None)
+    3. Calculate value using formula if formula is defined
+    4. Return None if no value or formula is available
+
+    Args:
+        hardcoded_values (dict[int, float | None]): Dictionary mapping years to explicit values.
+        formula (str | None): Formula string for calculating values when explicit
+            values are not available.
+        interim_values_by_year (dict): Dictionary containing calculated values
+            by year, used to prevent circular references and for formula calculations.
+        year (int): The year for which to get the value.
+        name (str): The name of the line item (used for error messages and duplicate checking).
+
+    Returns:
+        float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
+
+    Raises:
+        ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
+    """  # noqa: E501
+    # Validate interim values by year
+    is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
+    if not is_valid:
+        raise ValueError(f"Invalid interim values by year: {error_msg}")
+
+    # If interim_values_by_year[year][name] already exists, raise an error
+    if year in interim_values_by_year and name in interim_values_by_year[year]:
+        raise ValueError(
+            f"Value for {name} in year {year} already exists in interim values."
+        )
+
+    # If value for this year is in hardcoded_values, return that value (including None)
+    if year in hardcoded_values:
+        return hardcoded_values[year]
+
+    # No value exists, so use a formula
+    if formula:
+        return calculate_formula(formula, interim_values_by_year, year)
+    # If no formula is defined, return None
+    return None
 
 
 def _calculate_category_total(
@@ -118,7 +174,7 @@ def generate_value_matrix(
             for item in remaining_items:
                 try:
                     # Check if this is a MultiLineItem or LineItem
-                    # MultiLineItems have get_values() and defined_names, LineItems have get_value() and name  # noqa: E501
+                    # MultiLineItems have get_values() and defined_names, LineItems have name attribute  # noqa: E501
 
                     if hasattr(item, "get_values") and hasattr(item, "defined_names"):
                         # Handle MultiLineItem - get multiple values
@@ -132,10 +188,10 @@ def generate_value_matrix(
 
                         # Mark this generator as calculated
                         items_calculated_this_round.append(item)
-                    elif hasattr(item, "get_value") and hasattr(item, "name"):
+                    elif hasattr(item, "name"):
                         # Handle LineItem - get single value
-                        value_matrix[year][item.name] = item.get_value(
-                            value_matrix, year
+                        value_matrix[year][item.name] = calculate_line_item_value(
+                            item.values, item.formula, value_matrix, year, item.name
                         )
                         calculated_items.add(item.name)
                         items_calculated_this_round.append(item)
@@ -191,7 +247,7 @@ def generate_value_matrix(
                     line_items_only = [
                         item
                         for item in line_item_definitions
-                        if hasattr(item, "get_value") and hasattr(item, "name")
+                        if hasattr(item, "name") and not hasattr(item, "defined_names")
                     ]
                     items_in_category = [
                         item
@@ -224,7 +280,7 @@ def generate_value_matrix(
                     failed_items.extend(
                         item.defined_names
                     )  # Add all names from the generator
-                elif hasattr(item, "get_value") and hasattr(item, "name"):
+                elif hasattr(item, "name") and not hasattr(item, "defined_names"):
                     # LineItem
                     failed_items.append(item.name)  # Add the single line item name
                 else:

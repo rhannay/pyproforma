@@ -55,209 +55,6 @@ class TestLineItemInit:
         assert item2.values[2020] is None
 
 
-class TestGetValue:
-    def test_get_value_no_formula(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: 2.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) == 2.0
-
-        # Should return None when no value and no formula
-        result = item.get_value(vals, 2022)
-        assert result is None
-
-    def test_get_value_with_formula(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: 2.0},
-            formula="test_item[-1] * 1.05",
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) == 2.0
-        vals = {2021: {"test_item": 2.0}}
-        assert item.get_value(vals, 2022) == 2.0 * 1.05
-        val = {2022: {"test_item": 2.1}}
-        assert item.get_value(val, 2023) == 2.1 * 1.05
-
-        # Test for year referening [-1] but previous value does not exist
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(vals, 2019)
-        assert "2018 not found" in str(excinfo.value)
-
-    def test_get_value_with_gap_in_yers(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2022: 2.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-
-        # Should return None when no value and no formula
-        result = item.get_value(vals, 2021)
-        assert result is None
-
-        assert item.get_value(vals, 2022) == 2.0
-
-        # add formula
-        item.formula = "test_item[-1] * 1.05"
-        vals = {2020: {"test_item": 2.0}}
-        assert item.get_value(vals, 2021) == 2.0 * 1.05
-
-    def test_get_value_formula_referendes_other_item(self):
-        item2 = LineItem(
-            name="item2",
-            label="Item 2",
-            category="expense",
-            values={2020: 3.0},
-            formula="item1 * 2",
-        )
-        vals = {2021: {"item1": 5.0}}
-        assert item2.get_value(vals, 2021) == 5.0 * 2
-
-    def test_get_value_returns_none_from_values(self):
-        """Test that None values in values dict are returned correctly."""
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: None, 2022: 3.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) is None
-        assert item.get_value(vals, 2022) == 3.0
-
-    def test_get_value_none_in_formula_raises_error(self):
-        """Test that None values in formulas raise appropriate errors."""
-        from pyproforma.models.formula import calculate_formula
-
-        # Test with None value in value matrix
-        value_matrix = {2023: {"revenue": None, "costs": 100}}
-
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue + costs", value_matrix, 2023)
-        assert "has None value for year 2023" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
-
-        # Test with offset reference to None value
-        value_matrix = {2022: {"revenue": None}, 2023: {"revenue": 100, "costs": 50}}
-
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue[-1] + costs", value_matrix, 2023)
-        assert "has None value for year 2022" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
-
-
-class TestGetValueValidation:
-    """Test validation of interim_values_by_year parameter in get_value method."""
-
-    def test_get_value_validates_interim_values_by_year_non_integer_keys(self):
-        """Test that get_value validates interim_values_by_year has integer keys."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: non-integer keys
-        invalid_interim_values = {"2020": {"other_item": 50.0}}
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "All keys must be integers representing years" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_unordered_years(self):
-        """Test that get_value validates interim_values_by_year has years in ascending order."""  # noqa: E501
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: years not in ascending order
-        invalid_interim_values = {
-            2022: {"other_item": 50.0},
-            2020: {"another_item": 25.0},
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Years must be in ascending order" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_non_dict_values(self):
-        """Test that get_value validates interim_values_by_year has dict values."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: values are not dictionaries
-        invalid_interim_values = {2020: "not_a_dict"}
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_inconsistent_keys(self):
-        """Test that get_value validates consistent variable names across years."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: inconsistent variable names between years
-        invalid_interim_values = {
-            2020: {"var1": 10.0, "var2": 20.0},
-            2021: {"var1": 15.0, "var3": 25.0},  # var2 missing, var3 extra
-            2022: {"var1": 20.0},  # last year can be subset
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_extra_keys_in_last_year(self):
-        """Test that get_value validates last year doesn't have extra variables."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: last year has extra variables not in previous years
-        invalid_interim_values = {
-            2020: {"var1": 10.0},
-            2021: {"var1": 15.0, "var2": 25.0},  # var2 is extra
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Last year (2021) contains extra variables" in str(excinfo.value)
-
-    def test_get_value_accepts_valid_interim_values_by_year(self):
-        """Test that get_value accepts valid interim_values_by_year."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Valid interim values
-        valid_interim_values = {
-            2020: {"var1": 10.0, "var2": 20.0},
-            2021: {"var1": 15.0, "var2": 25.0},
-            2022: {"var1": 20.0},  # last year can be subset
-        }
-
-        # Should not raise an error
-        result = item.get_value(valid_interim_values, 2020)
-        assert result == 100.0
-
-    def test_get_value_accepts_empty_interim_values_by_year(self):
-        """Test that get_value accepts empty interim_values_by_year."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Empty interim values should be valid
-        empty_interim_values = {}
-
-        # Should not raise an error
-        result = item.get_value(empty_interim_values, 2020)
-        assert result == 100.0
-
-
 class TestLineItemMisc:
     def test_validate_sorted_and_sequential_accepts_sequential_years(
         self, sample_line_item: LineItem
@@ -489,41 +286,6 @@ class TestLineItemNoneValues:
         )
         assert all(value is None for value in item.values.values())
 
-    def test_get_value_returns_none_from_values_dict(self):
-        """Test that get_value returns None when None is stored in values."""
-        item = LineItem(
-            name="none_test",
-            category="revenue",
-            values={2020: 100.0, 2021: None, 2022: 200.0},
-        )
-
-        interim_values = {}
-        assert item.get_value(interim_values, 2020) == 100.0
-        assert item.get_value(interim_values, 2021) is None
-        assert item.get_value(interim_values, 2022) == 200.0
-
-    def test_get_value_returns_none_when_no_data(self):
-        """Test that get_value returns None when no value exists and no formula."""
-        item = LineItem(name="empty", category="revenue")
-
-        interim_values = {}
-        result = item.get_value(interim_values, 2020)
-        assert result is None
-
-    def test_get_value_formula_overrides_none_values(self):
-        """Test that formulas work even when values dict contains None."""
-        item = LineItem(
-            name="formula_test",
-            category="revenue",
-            values={2020: None},  # None in values
-            formula="test_item * 2",  # But has formula
-        )
-
-        # Formula should be used since year not in values (None doesn't count as having a value)  # noqa: E501
-        interim_values = {2021: {"test_item": 50.0}}
-        result = item.get_value(interim_values, 2021)
-        assert result == 100.0  # 50 * 2
-
     def test_none_values_in_model_category_totals(self):
         """Test that None values are treated as 0 in category totals."""
         from pyproforma import Category, Model
@@ -614,6 +376,8 @@ class TestLineItemNoneValues:
 
     def test_mixed_none_and_formula_behavior(self):
         """Test complex scenario with None values and formulas."""
+        from pyproforma.models.model.value_matrix import calculate_line_item_value
+
         item = LineItem(
             name="complex_test",
             category="revenue",
@@ -624,19 +388,34 @@ class TestLineItemNoneValues:
         interim_values = {}
 
         # 2020: explicit value
-        assert item.get_value(interim_values, 2020) == 100.0
+        assert (
+            calculate_line_item_value(
+                item.values, item.formula, interim_values, 2020, item.name
+            )
+            == 100.0
+        )
 
         # 2021: explicit None value
-        assert item.get_value(interim_values, 2021) is None
+        assert (
+            calculate_line_item_value(
+                item.values, item.formula, interim_values, 2021, item.name
+            )
+            is None
+        )
 
         # 2022: no explicit value, should use formula with 2021 value
         interim_values = {2021: {"complex_test": None}}
         with pytest.raises(ValueError) as excinfo:
-            item.get_value(interim_values, 2022)
+            calculate_line_item_value(
+                item.values, item.formula, interim_values, 2022, item.name
+            )
         assert "has None value for year 2021" in str(excinfo.value)
 
         # 2023: explicit value (should override formula)
-        assert item.get_value({}, 2023) == 300.0
+        assert (
+            calculate_line_item_value(item.values, item.formula, {}, 2023, item.name)
+            == 300.0
+        )
 
     def test_none_values_in_complex_model(self):
         """Test None values in a more complex model scenario."""
