@@ -157,6 +157,7 @@ class LineItemResults:
             go.Figure: The Plotly chart figure
 
         Raises:
+            ChartGenerationError: If the model has no years defined
             KeyError: If the item name is not found in the model
         """  # noqa: E501
         return self.model.charts.line_item(
@@ -180,6 +181,9 @@ class LineItemResults:
 
         Returns:
             go.Figure: The Plotly chart figure showing cumulative change percentages
+
+        Raises:
+            ChartGenerationError: If the model has no years defined
         """
         return self.model.charts.cumulative_percent_change(
             self.item_name, width=width, height=height, template=template
@@ -740,6 +744,7 @@ class ConstraintResults:
             go.Figure: The Plotly chart figure
 
         Raises:
+            ChartGenerationError: If the model has no years defined
             KeyError: If the constraint name is not found in the model
         """  # noqa: E501
         return self.model.charts.constraint(

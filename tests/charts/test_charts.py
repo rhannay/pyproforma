@@ -5,7 +5,7 @@ import pytest
 
 from pyproforma import LineItem, Model
 from pyproforma.charts.chart_class import Chart
-from pyproforma.charts.charts import Charts
+from pyproforma.charts.charts import ChartGenerationError, Charts
 
 
 class TestCharts:
@@ -524,3 +524,35 @@ class TestChartsIntegration:
 
         with pytest.raises(KeyError):
             charts.line_item("non_existent_item")
+
+    def test_empty_years_raises_error_for_all_methods(self):
+        """Test that all chart methods raise ValueError when model has empty years."""
+        # Create a mock model with empty years
+        mock_model = Mock(spec=Model)
+        mock_model.years = []
+
+        charts = Charts(mock_model)
+
+        # Test all chart methods that should validate for empty years
+        methods_to_test = [
+            ("line_item", ("test_item",), {}),
+            ("line_items", (["test_item"],), {}),
+            ("cumulative_percent_change", ("test_item",), {}),
+            ("cumulative_change", ("test_item",), {}),
+            ("index_to_year", ("test_item",), {}),
+            ("line_items_pie", (["test_item"], 2020), {}),
+            ("constraint", ("test_constraint",), {}),
+        ]
+
+        for method_name, args, kwargs in methods_to_test:
+            method = getattr(charts, method_name)
+
+            with pytest.raises(ChartGenerationError) as excinfo:
+                method(*args, **kwargs)
+
+            assert "Cannot create chart: model has no years defined" in str(
+                excinfo.value
+            )
+            assert "Please add years to the model before creating charts" in str(
+                excinfo.value
+            )
