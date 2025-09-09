@@ -12,7 +12,7 @@ from ..compare import Compare
 from ..constraint import Constraint
 from ..line_item import LineItem
 from ..results import CategoryResults, ConstraintResults, LineItemResults
-from .metadata import collect_category_metadata, collect_line_item_metadata
+from .metadata import generate_category_metadata, generate_line_item_metadata
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
 from .validations import (
@@ -119,10 +119,10 @@ class Model(SerializationMixin):
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
 
-        self.category_metadata = collect_category_metadata(
+        self.category_metadata = generate_category_metadata(
             self._category_definitions, self.multi_line_items
         )
-        self.line_item_metadata = collect_line_item_metadata(
+        self.line_item_metadata = generate_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
@@ -187,10 +187,10 @@ class Model(SerializationMixin):
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
-        self.category_metadata = collect_category_metadata(
+        self.category_metadata = generate_category_metadata(
             self._category_definitions, self.multi_line_items
         )
-        self.line_item_metadata = collect_line_item_metadata(
+        self.line_item_metadata = generate_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)

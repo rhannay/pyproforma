@@ -13,7 +13,7 @@ from ..category import Category
 from ..line_item import LineItem
 
 
-def collect_category_metadata(
+def generate_category_metadata(
     category_definitions: List[Category], multi_line_items: List[MultiLineItem] = None
 ) -> List[Dict]:
     """
@@ -86,7 +86,7 @@ def collect_category_metadata(
     return category_metadata
 
 
-def collect_line_item_metadata(
+def generate_line_item_metadata(
     line_item_definitions: List[LineItem],
     category_metadata: List[Dict],
     multi_line_items: List[MultiLineItem],
