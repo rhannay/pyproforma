@@ -262,9 +262,18 @@ def generate_value_matrix(
                         # Mark this generator as calculated
                         items_calculated_this_round.append(item)
                     elif hasattr(item, "name"):
+                        li_metadata = next(
+                            metadata
+                            for metadata in line_item_metadata
+                            if metadata["name"] == item.name
+                        )
                         # Handle LineItem - get single value
                         value_matrix[year][item.name] = calculate_line_item_value(
-                            item.values, item.formula, value_matrix, year, item.name
+                            li_metadata["hardcoded_values"],
+                            item.formula,
+                            value_matrix,
+                            year,
+                            item.name,
                         )
                         calculated_items.add(item.name)
                         items_calculated_this_round.append(item)

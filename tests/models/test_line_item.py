@@ -38,7 +38,7 @@ class TestLineItemInit:
         item = LineItem(
             name="no_values_item", label="No Values Item", category="revenue"
         )
-        assert item.values == {}
+        assert item.values is None
 
     def test_values_can_contain_none(self):
         # Test that None values are now allowed

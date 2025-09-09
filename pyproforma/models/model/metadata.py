@@ -140,7 +140,11 @@ def generate_line_item_metadata(
 
     # Add line item definitions
     for item in line_item_definitions:
+        # If label is None, use name as label
         label = item.label if item.label is not None else item.name
+
+        # If hardcoded values are None, use {}
+        hardcoded_values = item.values if item.values is not None else {}
 
         defined_names.append(
             {
@@ -151,7 +155,7 @@ def generate_line_item_metadata(
                 "source_name": item.name,
                 "category": item.category,
                 "formula": item.formula,
-                "hardcoded_values": item.values,
+                "hardcoded_values": hardcoded_values,
             }
         )
 

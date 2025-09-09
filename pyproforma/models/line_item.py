@@ -58,16 +58,8 @@ class LineItem:
         validate_name(name)
         self.name = name
         self.category = category
-        # # if label is None:
-        # #     self.label = name
-        # else:
-        #     self.label = label
         self.label = label
-
-        if values is None:
-            self.values = {}
-        else:
-            self.values = values
+        self.values = values
         self.formula = formula
         self.value_format = value_format
 
@@ -101,8 +93,11 @@ class LineItem:
         )
 
     def __str__(self):
-        years = sorted(self.values.keys())
-        values_str = ", ".join(f"{year}: {self.values[year]}" for year in years)
+        if self.values is None:
+            values_str = "None"
+        else:
+            years = sorted(self.values.keys())
+            values_str = ", ".join(f"{year}: {self.values[year]}" for year in years)
         return (
             f"LineItem(name='{self.name}', label='{self.label}', "
             f"category='{self.category}', values={{ {values_str} }})"
