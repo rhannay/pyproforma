@@ -90,11 +90,11 @@ class LineItemResults:
 
         Returns:
             bool: True if the year has a hardcoded value, False otherwise.
-                  Returns False if _line_item_definition is None.
+                  Returns False if hardcoded_values is None or empty.
         """
-        if self._line_item_definition is None:
+        if self.hardcoded_values is None:
             return False
-        return self._line_item_definition.is_hardcoded(year)
+        return year in self.hardcoded_values
 
     def __getitem__(self, year: int) -> float:
         """
