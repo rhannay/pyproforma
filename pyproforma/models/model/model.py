@@ -21,6 +21,7 @@ from .validations import (
     validate_formulas,
     validate_line_items,
     validate_multi_line_items,
+    validate_years,
 )
 from .value_matrix import generate_value_matrix
 
@@ -102,10 +103,8 @@ class Model(SerializationMixin):
         # Set defaults for empty model initialization
         if line_items is None:
             line_items = []
-        if years is None:
-            years = []
 
-        self._years = sorted(years)
+        self._years = years if years is not None else []
 
         self._category_definitions = self._collect_category_definitions(
             line_items, categories
@@ -114,6 +113,7 @@ class Model(SerializationMixin):
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
+        validate_years(self._years)
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
@@ -182,6 +182,7 @@ class Model(SerializationMixin):
         return category_definitions
 
     def _recalculate(self):
+        validate_years(self._years)
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)

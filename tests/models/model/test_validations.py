@@ -11,6 +11,7 @@ from pyproforma.models.model.validations import (
     validate_formulas,
     validate_line_items,
     validate_multi_line_items,
+    validate_years,
 )
 from pyproforma.models.multi_line_item import Debt, ShortTermDebt
 
@@ -1082,3 +1083,179 @@ class TestValidateFormulas:
         # Should catch the first formula error
         assert "Error in formula for line item 'costs1'" in error_msg
         assert "unknown_var1" in error_msg
+
+
+class TestValidateYears:
+    """Test the validate_years function."""
+
+    def test_empty_years_pass_validation(self):
+        """Test that empty years list passes validation."""
+        # Empty years should be allowed for template models
+        validate_years([])
+
+    def test_single_year_passes_validation(self):
+        """Test that a single year passes validation."""
+        validate_years([2023])
+
+    def test_valid_sequential_years_pass_validation(self):
+        """Test that valid sequential years pass validation."""
+        validate_years([2020, 2021, 2022, 2023])
+        validate_years([2023, 2024])
+        validate_years([1999, 2000, 2001])
+
+    def test_non_integer_years_raise_error(self):
+        """Test that non-integer years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020.5, 2021, 2022])
+
+        error_msg = str(exc_info.value)
+        assert "All years must be integers" in error_msg
+        assert "2020.5" in error_msg
+        assert "float" in error_msg
+
+    def test_string_years_raise_error(self):
+        """Test that string years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years(["2020", 2021, 2022])
+
+        error_msg = str(exc_info.value)
+        assert "All years must be integers" in error_msg
+        assert "2020" in error_msg
+        assert "str" in error_msg
+
+    def test_mixed_type_years_raise_error(self):
+        """Test that mixed type years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2021.0, "2022", 2023])
+
+        error_msg = str(exc_info.value)
+        assert "All years must be integers" in error_msg
+        # Should catch the first non-integer type
+        assert "2021.0" in error_msg
+
+    def test_unsorted_years_raise_error(self):
+        """Test that unsorted years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2023, 2020, 2021, 2022])
+
+        error_msg = str(exc_info.value)
+        assert "Years must be in ascending order" in error_msg
+        assert "[2023, 2020, 2021, 2022]" in error_msg
+
+    def test_reverse_sorted_years_raise_error(self):
+        """Test that reverse sorted years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2023, 2022, 2021, 2020])
+
+        error_msg = str(exc_info.value)
+        assert "Years must be in ascending order" in error_msg
+
+    def test_partially_unsorted_years_raise_error(self):
+        """Test that partially unsorted years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2022, 2021, 2023])
+
+        error_msg = str(exc_info.value)
+        assert "Years must be in ascending order" in error_msg
+
+    def test_gap_in_years_raises_error(self):
+        """Test that gaps in sequential years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2022, 2023])  # Missing 2021
+
+        error_msg = str(exc_info.value)
+        assert "Years must be sequential with no gaps" in error_msg
+        assert "Gap found between 2020 and 2022" in error_msg
+
+    def test_multiple_gaps_in_years_raise_error(self):
+        """Test that the first gap is reported when multiple gaps exist."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2022, 2024])  # Missing 2021 and 2023
+
+        error_msg = str(exc_info.value)
+        assert "Years must be sequential with no gaps" in error_msg
+        assert "Gap found between 2020 and 2022" in error_msg
+
+    def test_large_gap_in_years_raises_error(self):
+        """Test that large gaps in years raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2025])  # 4-year gap
+
+        error_msg = str(exc_info.value)
+        assert "Years must be sequential with no gaps" in error_msg
+        assert "Gap found between 2020 and 2025" in error_msg
+
+    def test_duplicate_years_raise_error(self):
+        """Test that duplicate years raise ValueError (via sorting check)."""
+        # Duplicate years will fail the sorting check since
+        # [2020, 2020, 2021] != sorted([2020, 2020, 2021])
+        # Actually, sorted([2020, 2020, 2021]) == [2020, 2020, 2021],
+        # so this might not fail sorting
+        # Let's test what actually happens
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2020, 2021])
+
+        error_msg = str(exc_info.value)
+        # This should fail on the gap check since 2020 != 2020 + 1
+        assert "Years must be sequential with no gaps" in error_msg
+
+    def test_negative_years_pass_validation(self):
+        """Test that negative years are allowed if they are sequential."""
+        validate_years([-2, -1, 0, 1])
+        validate_years([-10, -9, -8])
+
+    def test_negative_years_with_gaps_raise_error(self):
+        """Test that negative years with gaps raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([-5, -3, -2])  # Missing -4
+
+        error_msg = str(exc_info.value)
+        assert "Years must be sequential with no gaps" in error_msg
+        assert "Gap found between -5 and -3" in error_msg
+
+    def test_very_large_years_pass_validation(self):
+        """Test that very large years pass validation if sequential."""
+        validate_years([9998, 9999, 10000])
+
+    def test_very_small_years_pass_validation(self):
+        """Test that very small years pass validation if sequential."""
+        validate_years([-1000, -999, -998])
+
+    def test_none_years_list_raises_error(self):
+        """Test that None as years list raises TypeError."""
+        with pytest.raises(TypeError) as exc_info:
+            validate_years(None)
+
+        error_msg = str(exc_info.value)
+        assert "Years cannot be None" in error_msg
+
+    def test_years_comprehensive_validation_order(self):
+        """Test that validation checks happen in the expected order."""
+        # Integer check should happen first
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020.5, 2019, 2021])  # Float, unsorted, gap
+
+        error_msg = str(exc_info.value)
+        # Should fail on integer check first
+        assert "All years must be integers" in error_msg
+
+    def test_sorted_but_with_gaps_fails_appropriately(self):
+        """Test that years that are sorted but have gaps fail with gap message."""
+        with pytest.raises(ValueError) as exc_info:
+            validate_years([2020, 2021, 2023, 2024])  # Missing 2022
+
+        error_msg = str(exc_info.value)
+        assert "Years must be sequential with no gaps" in error_msg
+        assert "Gap found between 2021 and 2023" in error_msg
+
+    def test_zero_year_included_in_sequence(self):
+        """Test that year zero can be included in valid sequences."""
+        validate_years([-1, 0, 1])
+        validate_years([0, 1, 2])
+
+    def test_boundary_conditions_with_single_elements(self):
+        """Test boundary conditions with various single year values."""
+        validate_years([0])
+        validate_years([-1])
+        validate_years([2023])
+        validate_years([10000])
