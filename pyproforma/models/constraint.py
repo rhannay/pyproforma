@@ -1,6 +1,6 @@
 from typing import Dict, Literal, Union
 
-from ._utils import check_name
+from ._utils import validate_name
 
 
 class Constraint:
@@ -79,13 +79,7 @@ class Constraint:
         tolerance: float = 0.0,
         label: str = None,
     ):
-        if not check_name(name):
-            raise ValueError(
-                (
-                    "Constraint name must only contain letters, numbers, underscores, "
-                    "or hyphens (no spaces or special characters)."
-                )
-            )
+        validate_name(name)
         if operator not in self.VALID_OPERATORS:
             raise ValueError(
                 f"Operator must be one of: {', '.join(self.VALID_OPERATORS)}"

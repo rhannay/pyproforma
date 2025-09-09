@@ -1,25 +1,38 @@
 import pytest
 
-from pyproforma.models._utils import check_name
+from pyproforma.models._utils import validate_name
 
 
-class TestCheckName:
+class TestValidateName:
     @pytest.mark.parametrize(
-        "name,expected",
+        "name",
         [
-            ("valid_name", True),
-            ("anotherValidName123", True),
-            ("", False),
-            ("name with spaces", False),
-            ("name-with-dash", True),
-            ("name_with_underscore", True),
-            ("name.with.dot", False),
-            ("name$", False),
-            ("123name", True),
-            ("_leading_underscore", True),
-            ("trailing_underscore_", True),
-            ("name!", False),
+            "valid_name",
+            "anotherValidName123",
+            "name-with-dash",
+            "name_with_underscore",
+            "123name",
+            "_leading_underscore",
+            "trailing_underscore_",
         ],
     )
-    def test_check_name(self, name, expected):
-        assert check_name(name) == expected
+    def test_validate_name_valid_names(self, name):
+        # Should not raise an exception for valid names
+        validate_name(name)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "",
+            "name with spaces",
+            "name.with.dot",
+            "name$",
+            "name!",
+        ],
+    )
+    def test_validate_name_invalid_names(self, name):
+        # Should raise ValueError for invalid names
+        with pytest.raises(
+            ValueError, match="Name must only contain letters, numbers, underscores"
+        ):
+            validate_name(name)

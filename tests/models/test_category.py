@@ -40,7 +40,7 @@ class TestCategory:
     def test_item_type_validate_name_rejects_invalid_names(self, name):
         with pytest.raises(ValueError) as excinfo:
             Category(name=name)
-        assert "Category name must only contain" in str(excinfo.value)
+        assert "Name must only contain" in str(excinfo.value)
 
     def test_item_type_total_name_returns_expected_string(self):
         category = Category(name="revenue")

@@ -1,5 +1,5 @@
 from ..constants import ValueFormat
-from ._utils import check_name
+from ._utils import validate_name
 
 
 class LineItem:
@@ -55,13 +55,7 @@ class LineItem:
         formula: str = None,
         value_format: ValueFormat = "no_decimals",
     ):
-        if not check_name(name):
-            raise ValueError(
-                (
-                    "LineItem name must only contain letters, numbers, underscores,"
-                    " or hyphens (no spaces or special characters)."
-                )
-            )
+        validate_name(name)
         self.name = name
         self.category = category
         if label is None:
