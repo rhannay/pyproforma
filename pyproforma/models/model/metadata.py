@@ -115,6 +115,10 @@ def generate_line_item_metadata(
               ('line_item', 'category', 'multi_line_item')
             - 'source_name' (str): The original source object's name
             - 'category' (str): The category name
+            - 'formula' (str or None): The formula string for line items
+              (None for other types)
+            - 'hardcoded_values' (dict or None): Dictionary of year->value
+              mappings for line items (None for other types)
 
     Raises:
         ValueError: If duplicate names are found across different components
@@ -124,10 +128,12 @@ def generate_line_item_metadata(
         [
             {'name': 'revenue', 'label': 'Revenue',
              'value_format': 'no_decimals', 'source_type': 'line_item',
-             'source_name': 'revenue', 'category': 'income'},
+             'source_name': 'revenue', 'category': 'income',
+             'formula': 'sales * price', 'hardcoded_values': {2023: 100000}},
             {'name': 'total_revenue', 'label': 'Total Revenue',
              'value_format': 'no_decimals', 'source_type': 'category',
-             'source_name': 'revenue', 'category': 'category_totals'}
+             'source_name': 'revenue', 'category': 'category_totals',
+             'formula': None, 'hardcoded_values': None}
         ]
     """
     defined_names = []
@@ -142,6 +148,8 @@ def generate_line_item_metadata(
                 "source_type": "line_item",
                 "source_name": item.name,
                 "category": item.category,
+                "formula": item.formula,
+                "hardcoded_values": item.values,
             }
         )
 
@@ -163,6 +171,8 @@ def generate_line_item_metadata(
                         "source_type": "category",
                         "source_name": category_meta["name"],
                         "category": "category_totals",
+                        "formula": None,
+                        "hardcoded_values": None,
                     }
                 )
 
@@ -177,6 +187,8 @@ def generate_line_item_metadata(
                     "source_type": "multi_line_item",
                     "source_name": generator.name,
                     "category": generator.name,
+                    "formula": None,
+                    "hardcoded_values": None,
                 }
             )
 

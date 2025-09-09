@@ -243,6 +243,8 @@ class TestGenerateLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
+                "formula": None,
+                "hardcoded_values": {2020: 1000},
             }
         ]
         assert result == expected
@@ -287,6 +289,8 @@ class TestGenerateLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
+                "formula": None,
+                "hardcoded_values": {2020: 1000},
             },
             {
                 "name": "growth_rate",
@@ -295,6 +299,8 @@ class TestGenerateLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "growth_rate",
                 "category": "assumptions",
+                "formula": None,
+                "hardcoded_values": {2020: 0.05},
             },
             {
                 "name": "description",
@@ -303,7 +309,74 @@ class TestGenerateLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "description",
                 "category": "notes",
+                "formula": None,
+                "hardcoded_values": {2020: "test"},
             },
+        ]
+        assert result == expected
+
+    def test_line_item_with_formula(self):
+        """Test with a line item that has a formula."""
+        line_items = [
+            LineItem(
+                name="profit",
+                label="Profit",
+                category="income",
+                formula="revenue * 0.1",
+                values={2020: 100, 2021: 200},
+                value_format="no_decimals",
+            )
+        ]
+        category_metadata = []
+        multi_line_items = []
+
+        result = generate_line_item_metadata(
+            line_items, category_metadata, multi_line_items
+        )
+
+        expected = [
+            {
+                "name": "profit",
+                "label": "Profit",
+                "value_format": "no_decimals",
+                "source_type": "line_item",
+                "source_name": "profit",
+                "category": "income",
+                "formula": "revenue * 0.1",
+                "hardcoded_values": {2020: 100, 2021: 200},
+            }
+        ]
+        assert result == expected
+
+    def test_line_item_formula_only_no_hardcoded_values(self):
+        """Test with a line item that has only a formula and no hardcoded values."""
+        line_items = [
+            LineItem(
+                name="calculated_value",
+                label="Calculated Value",
+                category="calculations",
+                formula="base_value + adjustment",
+                value_format="two_decimals",
+            )
+        ]
+        category_metadata = []
+        multi_line_items = []
+
+        result = generate_line_item_metadata(
+            line_items, category_metadata, multi_line_items
+        )
+
+        expected = [
+            {
+                "name": "calculated_value",
+                "label": "Calculated Value",
+                "value_format": "two_decimals",
+                "source_type": "line_item",
+                "source_name": "calculated_value",
+                "category": "calculations",
+                "formula": "base_value + adjustment",
+                "hardcoded_values": {},
+            }
         ]
         assert result == expected
 
@@ -356,6 +429,8 @@ class TestGenerateLineItemMetadata:
             "source_type": "category",
             "source_name": "revenue",
             "category": "category_totals",
+            "formula": None,
+            "hardcoded_values": None,
         }
 
     def test_category_totals_excluded_if_no_items(self):
@@ -420,6 +495,8 @@ class TestGenerateLineItemMetadata:
                 "source_type": "multi_line_item",
                 "source_name": "debt",
                 "category": "debt",
+                "formula": None,
+                "hardcoded_values": None,
             }
 
     def test_duplicate_names_raise_error(self):

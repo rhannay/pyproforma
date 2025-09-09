@@ -100,16 +100,11 @@ class Model(SerializationMixin):
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
-        # Set defaults for empty model initialization
-        if line_items is None:
-            line_items = []
-
         self._years = years if years is not None else []
-
+        self._line_item_definitions = line_items if line_items is not None else []
         self._category_definitions = self._collect_category_definitions(
-            line_items, categories
+            self._line_item_definitions, categories
         )
-        self._line_item_definitions = line_items
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
