@@ -37,6 +37,8 @@ class LineItemResults:
         self.source_type = self._line_item_metadata["source_type"]
         self.label = self._line_item_metadata["label"]
         self.value_format = self._line_item_metadata["value_format"]
+        self.formula = self._line_item_metadata["formula"]
+        self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
         if self.source_type == "line_item":
             self._line_item_definition = model.line_item_definition(item_name)
         else:
@@ -417,17 +419,12 @@ class LineItemResults:
 
         # Get formula information based on source type
         formula_info = ""
-        if self.source_type == "line_item":
-            try:
-                line_item = self.model.line_item_definition(self.item_name)
-                if line_item.formula:
-                    formula_info = f"\nFormula: {line_item.formula}"
-                else:
-                    formula_info = "\nFormula: None (explicit values)"
-            except KeyError:
-                formula_info = "\nFormula: Not available"
-        elif self.source_type == "category":
+        if self.source_type == "category":
             formula_info = f"\nFormula: Sum of items in category '{self.item_name}'"
+        elif self.formula:
+            formula_info = f"\nFormula: {self.formula}"
+        else:
+            formula_info = "\nFormula: None (explicit values)"
 
         summary_text = (
             f"LineItemResults('{self.item_name}')\n"
