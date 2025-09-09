@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 from ..constants import ValueFormat
 from ._utils import validate_name
 
 
+@dataclass
 class LineItem:
     """
     Defines a line item specification for a financial model with values across multiple years.
@@ -46,22 +49,15 @@ class LineItem:
         ... )
     """  # noqa: E501
 
-    def __init__(
-        self,
-        name: str,
-        category: str,
-        label: str = None,
-        values: dict[int, float | None] = None,
-        formula: str = None,
-        value_format: ValueFormat = "no_decimals",
-    ):
-        validate_name(name)
-        self.name = name
-        self.category = category
-        self.label = label
-        self.values = values
-        self.formula = formula
-        self.value_format = value_format
+    name: str
+    category: str
+    label: str = None
+    values: dict[int, float | None] = None
+    formula: str = None
+    value_format: ValueFormat = "no_decimals"
+
+    def __post_init__(self):
+        validate_name(self.name)
 
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""
