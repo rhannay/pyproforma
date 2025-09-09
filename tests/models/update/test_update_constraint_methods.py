@@ -300,7 +300,7 @@ class TestUpdateConstraintMethods:
             operator="gt",
         )
         sample_model.constraints.append(initial_constraint)
-        sample_model._recalculate()
+        sample_model._build_and_calculate()
 
         # Add another constraint via update method
         sample_model.update.add_constraint(

@@ -86,12 +86,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy._category_definitions.append(new_category)
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._category_definitions.append(new_category)
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -180,12 +180,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy._line_item_definitions.append(new_line_item)
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions.append(new_line_item)
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -288,7 +288,7 @@ class UpdateNamespace:
                     if line_item.category == name:
                         line_item.category = updated_category.name
 
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
@@ -303,7 +303,7 @@ class UpdateNamespace:
                     if line_item.category == name:
                         line_item.category = updated_category.name
 
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -394,7 +394,7 @@ class UpdateNamespace:
                 if item.name == name:
                     model_copy._line_item_definitions[i] = updated_item
                     break
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
@@ -402,7 +402,7 @@ class UpdateNamespace:
                 if item.name == name:
                     self._model._line_item_definitions[i] = updated_item
                     break
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -505,7 +505,7 @@ class UpdateNamespace:
                 model._line_item_definitions[item_index] = updated_item
 
             # Recalculate the model with all changes
-            model._recalculate()
+            model._build_and_calculate()
 
         # Test on a copy of the model first
         try:
@@ -563,12 +563,12 @@ class UpdateNamespace:
             model_copy = self._model.copy()
             # Update years and recalculate (remove duplicates and sort)
             model_copy._years = sorted(list(set(new_years)))
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model._years = sorted(list(set(new_years)))
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -669,7 +669,7 @@ class UpdateNamespace:
             reordered_items = [name_to_item[name] for name in ordered_names]
             model_copy._line_item_definitions = reordered_items
 
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the reordering was successful on the copy
             # Now apply it to the actual model
@@ -678,7 +678,7 @@ class UpdateNamespace:
             }
             reordered_items = [name_to_item[name] for name in ordered_names]
             self._model._line_item_definitions = reordered_items
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -740,7 +740,7 @@ class UpdateNamespace:
                 for category in model_copy._category_definitions
                 if category.name != name
             ]
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
@@ -749,7 +749,7 @@ class UpdateNamespace:
                 for category in self._model._category_definitions
                 if category.name != name
             ]
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -788,14 +788,14 @@ class UpdateNamespace:
             model_copy._line_item_definitions = [
                 item for item in model_copy._line_item_definitions if item.name != name
             ]
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model._line_item_definitions = [
                 item for item in self._model._line_item_definitions if item.name != name
             ]
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -881,12 +881,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy.constraints.append(new_constraint)
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the addition was successful on the copy
             # Now apply it to the actual model
             self._model.constraints.append(new_constraint)
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -993,12 +993,12 @@ class UpdateNamespace:
         try:
             model_copy = self._model.copy()
             model_copy.constraints[constraint_index] = updated_constraint
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the update was successful on the copy
             # Now apply it to the actual model
             self._model.constraints[constraint_index] = updated_constraint
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
@@ -1043,14 +1043,14 @@ class UpdateNamespace:
             model_copy.constraints = [
                 c for c in model_copy.constraints if c.name != name
             ]
-            model_copy._recalculate()
+            model_copy._build_and_calculate()
 
             # If we get here, the deletion was successful on the copy
             # Now apply it to the actual model
             self._model.constraints = [
                 c for c in self._model.constraints if c.name != name
             ]
-            self._model._recalculate()
+            self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error

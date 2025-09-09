@@ -142,7 +142,7 @@ class TestModelValidateFormulas:
         assert model.value("whitespace", 2023) == 25
 
     def test_formula_validation_called_in_recalculate(self):
-        """Test that _validate_formulas is called during _recalculate."""
+        """Test that _validate_formulas is called during _build_and_calculate."""
         revenue = LineItem(name="revenue", category="income", values={2023: 1000})
         expenses = LineItem(
             name="expenses", category="expense", formula="revenue * 0.8"
@@ -156,9 +156,9 @@ class TestModelValidateFormulas:
         )
         model._line_item_definitions.append(invalid_item)
 
-        # _recalculate should catch the invalid formula
+        # _build_and_calculate should catch the invalid formula
         with pytest.raises(ValueError) as exc_info:
-            model._recalculate()
+            model._build_and_calculate()
 
         error_msg = str(exc_info.value)
         assert "Error in formula for line item 'invalid'" in error_msg

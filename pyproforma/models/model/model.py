@@ -113,26 +113,7 @@ class Model(SerializationMixin):
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
-        validate_years(self._years)
-        validate_categories(self._category_definitions)
-        validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_multi_line_items(self.multi_line_items, self._category_definitions)
-        validate_constraints(self.constraints, self._line_item_definitions)
-
-        self.category_metadata = generate_category_metadata(
-            self._category_definitions, self.multi_line_items
-        )
-        self.line_item_metadata = generate_line_item_metadata(
-            self._line_item_definitions, self.category_metadata, self.multi_line_items
-        )
-        validate_formulas(self._line_item_definitions, self.line_item_metadata)
-
-        self._value_matrix = generate_value_matrix(
-            self._years,
-            self._line_item_definitions + self.multi_line_items,
-            self._category_definitions,
-            self.line_item_metadata,
-        )
+        self._build_and_calculate()
 
     @staticmethod
     def _collect_category_definitions(
@@ -181,12 +162,13 @@ class Model(SerializationMixin):
 
         return category_definitions
 
-    def _recalculate(self):
+    def _build_and_calculate(self):
         validate_years(self._years)
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
+        validate_constraints(self.constraints, self._line_item_definitions)
+
         self.category_metadata = generate_category_metadata(
             self._category_definitions, self.multi_line_items
         )
@@ -194,6 +176,7 @@ class Model(SerializationMixin):
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
+
         self._value_matrix = generate_value_matrix(
             self._years,
             self._line_item_definitions + self.multi_line_items,

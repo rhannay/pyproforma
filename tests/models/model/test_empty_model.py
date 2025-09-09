@@ -131,7 +131,7 @@ class TestEmptyModelInitialization:
 
         # Test that we can add years later and make it functional
         model.years = [2023, 2024]
-        model._recalculate()
+        model._build_and_calculate()
 
         assert model.value("test", 2023) == 100.0
         assert model.value("test", 2024) == 100.0
