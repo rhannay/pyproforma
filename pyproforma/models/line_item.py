@@ -58,10 +58,12 @@ class LineItem:
         validate_name(name)
         self.name = name
         self.category = category
-        if label is None:
-            self.label = name
-        else:
-            self.label = label
+        # # if label is None:
+        # #     self.label = name
+        # else:
+        #     self.label = label
+        self.label = label
+
         if values is None:
             self.values = {}
         else:

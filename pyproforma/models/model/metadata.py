@@ -140,10 +140,12 @@ def generate_line_item_metadata(
 
     # Add line item definitions
     for item in line_item_definitions:
+        label = item.label if item.label is not None else item.name
+
         defined_names.append(
             {
                 "name": item.name,
-                "label": item.label,
+                "label": label,
                 "value_format": item.value_format,
                 "source_type": "line_item",
                 "source_name": item.name,

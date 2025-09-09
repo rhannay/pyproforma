@@ -35,7 +35,7 @@ def test_lineitem_formula_init_without_label():
     f = LineItem(name="test2", category="calculated", formula="b - c")
     assert f.name == "test2"
     assert f.formula == "b - c"
-    assert f.label == "test2"
+    assert f.label is None
 
 
 def test_lineitem_formula_from_dict():
@@ -55,7 +55,7 @@ def test_lineitem_formula_from_dict():
     f = LineItem.from_dict(data)
     assert f.name == "test3"
     assert f.formula == "a * b"
-    assert f.label == "test3"
+    assert f.label is None
 
 
 def test_lineitem_formula_calc_simple_addition():

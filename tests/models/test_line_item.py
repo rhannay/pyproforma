@@ -32,7 +32,7 @@ class TestLineItemInit:
         item = LineItem(
             name="default_label_item", category="expense", values={2020: 3.0, 2021: 4.0}
         )
-        assert item.label == "default_label_item"
+        assert item.label is None
 
     def test_no_values(self):
         item = LineItem(
@@ -139,11 +139,11 @@ class TestLineItemMisc:
         assert item.category == "revenue"
         assert item.values == {2020: 10.0, 2021: 20.0}
 
-    def test_line_item_from_dict_label_defaults_to_name(self):
+    def test_line_item_from_dict_label_is_none(self):
         data = {"name": "item2", "category": "expense", "values": {2020: 5.0}}
         item = LineItem.from_dict(data)
         assert item.name == "item2"
-        assert item.label == "item2"
+        assert item.label is None
         assert item.category == "expense"
         assert item.values == {2020: 5.0}
 
