@@ -4,6 +4,17 @@ from ..constants import ValueFormat
 from ._utils import validate_name
 
 
+def _validate_values_keys(values: dict[int, float | None] | None):
+    """Validate that all keys in the values dictionary are integers."""
+    if values is not None:
+        for key in values.keys():
+            if not isinstance(key, int):
+                raise ValueError(
+                    f"Values dictionary key '{key}' must be an integer (year), "
+                    f"got {type(key).__name__}"
+                )
+
+
 @dataclass
 class LineItem:
     """
@@ -58,6 +69,7 @@ class LineItem:
 
     def __post_init__(self):
         validate_name(self.name)
+        _validate_values_keys(self.values)
 
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""

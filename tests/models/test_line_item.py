@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import LineItem, Model
+from pyproforma.models.line_item import _validate_values_keys
 
 
 @pytest.fixture
@@ -53,6 +54,41 @@ class TestLineItemInit:
         # Test with single None value
         item2 = LineItem(name="test_item2", category="expense", values={2020: None})
         assert item2.values[2020] is None
+
+    def test_values_keys_must_be_integers(self):
+        """Test that values dictionary keys must be integers (years)."""
+        # String keys should raise ValueError
+        with pytest.raises(ValueError) as excinfo:
+            LineItem(
+                name="string_keys",
+                category="revenue",
+                values={"2020": 100.0, "2021": 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
+
+        # Float keys should raise ValueError
+        with pytest.raises(ValueError) as excinfo:
+            LineItem(
+                name="float_keys",
+                category="revenue",
+                values={2020.5: 100.0, 2021: 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got float" in error_msg
+
+        # Mixed key types should raise ValueError
+        with pytest.raises(ValueError) as excinfo:
+            LineItem(
+                name="mixed_keys",
+                category="revenue",
+                values={2020: 100.0, "2021": 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
 
 
 class TestLineItemMisc:
@@ -391,3 +427,106 @@ class TestLineItemNoneValues:
         assert simple_model["total_income", 2021] == 0  # revenue: None treated as 0
         assert simple_model["total_expenses", 2020] == 0  # costs: None treated as 0
         assert simple_model["total_expenses", 2021] == 600  # costs: 600
+
+
+class TestValidateValuesKeys:
+    """Test class for the _validate_values_keys function."""
+
+    def test_validate_values_keys_with_none(self):
+        """Test that None values dictionary is accepted."""
+        # Should not raise any exception
+        _validate_values_keys(None)
+
+    def test_validate_values_keys_with_empty_dict(self):
+        """Test that empty dictionary is accepted."""
+        # Should not raise any exception
+        _validate_values_keys({})
+
+    def test_validate_values_keys_with_valid_integer_keys(self):
+        """Test that dictionary with integer keys is accepted."""
+        values = {2020: 100.0, 2021: 200.0, 2022: None, 2023: 300.0}
+        # Should not raise any exception
+        _validate_values_keys(values)
+
+    def test_validate_values_keys_rejects_string_keys(self):
+        """Test that string keys are rejected."""
+        values = {"2020": 100.0, "2021": 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
+
+    def test_validate_values_keys_rejects_float_keys(self):
+        """Test that float keys are rejected."""
+        values = {2020.5: 100.0, 2021: 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got float" in error_msg
+
+    def test_validate_values_keys_rejects_mixed_key_types(self):
+        """Test that mixed key types are rejected."""
+        values = {2020: 100.0, "2021": 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
+
+    def test_validate_values_keys_error_message_includes_key_value(self):
+        """Test that error message includes the problematic key value."""
+        values = {"invalid_year": 100.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "'invalid_year'" in error_msg
+        assert "must be an integer (year)" in error_msg
+
+    def test_validate_values_keys_accepts_boolean_keys(self):
+        """Test that boolean keys are accepted since bool is subclass of int."""
+        # This should work because isinstance(True, int) returns True in Python
+        values = {True: 100.0, False: 200.0}
+        # Should not raise any exception
+        _validate_values_keys(values)
+
+    def test_validate_values_keys_with_various_invalid_types(self):
+        """Test various invalid key types."""
+        # Test None key
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({None: 100.0})
+        assert "got NoneType" in str(excinfo.value)
+
+        # Test tuple key
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({(2020,): 100.0})
+        assert "got tuple" in str(excinfo.value)
+
+        # Test list key (unhashable type will cause TypeError, but let's test dict key)
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({"key": 100.0})
+        assert "got str" in str(excinfo.value)
+
+    def test_validate_values_keys_integration_with_line_item(self):
+        """Test that LineItem creation properly validates values keys."""
+        # Valid integer keys should work
+        item = LineItem(
+            name="test_valid", category="revenue", values={2020: 100.0, 2021: 200.0}
+        )
+        assert item.values == {2020: 100.0, 2021: 200.0}
+
+        # Invalid string keys should raise ValueError during LineItem creation
+        with pytest.raises(ValueError) as excinfo:
+            LineItem(
+                name="test_invalid",
+                category="revenue",
+                values={"2020": 100.0, "2021": 200.0},
+            )
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
