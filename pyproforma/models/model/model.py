@@ -35,8 +35,11 @@ class Model(SerializationMixin):
     and rich output formatting.
 
     Args:
-        line_items (list[LineItem], optional): LineItem objects defining the model
-            structure. If None, creates an empty model. Default: None
+        line_items (Union[list[LineItem], list[str], list[dict]], optional):
+            LineItem objects defining the model structure. Can be LineItem objects,
+            strings (which will be converted to LineItems with those names),
+            or dictionaries (which will be used with LineItem.from_dict).
+            If None, creates an empty model. Default: None
         years (list[int], optional): Years for the model time horizon.
             If None, defaults to empty list []. Models can be created with
             line items but empty years for template/workflow purposes. Default: None
@@ -52,13 +55,22 @@ class Model(SerializationMixin):
         >>> # Create an empty model
         >>> empty_model = Model()
         >>>
-        >>> # Create a model with line items
-        >>> revenue = LineItem(name="revenue", category="income", formula="1000")
-        >>> expenses = LineItem(
-        ...     name="expenses", category="income", formula="revenue * 0.8"
-        ... )
+        >>> # Create a model with line items as strings
+        >>> model = Model(line_items=["revenue", "expenses"], years=[2023, 2024])
         >>>
-        >>> model = Model(line_items=[revenue, expenses], years=[2023, 2024, 2025])
+        >>> # Create a model with line items as dictionaries
+        >>> line_items = [
+        ...     {"name": "revenue", "category": "income", "formula": "1000"},
+        ...     {"name": "expenses", "category": "costs", "formula": "revenue * 0.8"}
+        ... ]
+        >>> model = Model(line_items=line_items, years=[2023, 2024])
+        >>>
+        >>> # Create a model with mixed line item types
+        >>> revenue = LineItem(name="revenue", category="income", formula="1000")
+        >>> model = Model(
+        ...     line_items=[revenue, {"name": "expenses", "formula": "800"}, "profit"],
+        ...     years=[2023, 2024]
+        ... )
         >>>
         >>> # Access values
         >>> model.value("revenue", 2023)  # 1000
@@ -94,14 +106,14 @@ class Model(SerializationMixin):
 
     def __init__(
         self,
-        line_items: list[LineItem] = None,
+        line_items: Union[list[LineItem], list[str], list[dict]] = None,
         years: list[int] = None,
         categories: Union[list[Category], list[str]] = None,
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
         self._years = years if years is not None else []
-        self._line_item_definitions = line_items if line_items is not None else []
+        self._line_item_definitions = self._collect_line_item_definitions(line_items)
         self._category_definitions = self._collect_category_definitions(
             self._line_item_definitions, categories
         )
@@ -109,6 +121,54 @@ class Model(SerializationMixin):
         self.constraints = constraints if constraints is not None else []
 
         self._build_and_calculate()
+
+    @staticmethod
+    def _collect_line_item_definitions(
+        line_items: Union[list[LineItem], list[str], list[dict]] = None,
+    ) -> list[LineItem]:
+        """
+        Collect and convert line item definitions from various input formats.
+
+        This method handles three input formats for line items:
+        1. List of LineItem objects - used as-is
+        2. List of strings - converted to LineItem objects with those names
+        3. List of dictionaries - converted using LineItem.from_dict()
+
+        Args:
+            line_items (Union[list[LineItem], list[str], list[dict]], optional):
+                Line items in various formats. If None, returns empty list.
+
+        Returns:
+            list[LineItem]: List of LineItem objects
+
+        Raises:
+            TypeError: If line_items contains unsupported types
+            ValueError: If string names are invalid or dictionaries are malformed
+        """
+        if line_items is None or len(line_items) == 0:
+            return []
+
+        line_item_definitions = []
+
+        for item in line_items:
+            if isinstance(item, LineItem):
+                # Already a LineItem object, use as-is
+                line_item_definitions.append(item)
+            elif isinstance(item, str):
+                # String name, create LineItem with that name
+                line_item = LineItem(name=item)
+                line_item_definitions.append(line_item)
+            elif isinstance(item, dict):
+                # Dictionary, use from_dict to create LineItem
+                line_item = LineItem.from_dict(item)
+                line_item_definitions.append(line_item)
+            else:
+                raise TypeError(
+                    f"Line items must be LineItem objects, strings, or dictionaries, "
+                    f"got {type(item)} for value: {item}"
+                )
+
+        return line_item_definitions
 
     @staticmethod
     def _collect_category_definitions(

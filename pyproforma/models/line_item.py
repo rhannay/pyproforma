@@ -93,7 +93,19 @@ class LineItem:
 
     @classmethod
     def from_dict(cls, item_dict: dict) -> "LineItem":
-        """Create LineItem from dictionary."""
+        """
+        Create LineItem from dictionary.
+
+        Args:
+            item_dict (dict): Dictionary containing LineItem properties
+
+        Returns:
+            LineItem: New LineItem instance
+
+        Notes:
+            If 'category' is missing, None, empty string, or whitespace-only,
+            it defaults to "general".
+        """
         # Convert string keys back to integers for values dict (JSON converts int keys
         # to strings)
         values = item_dict.get("values", {})
@@ -102,7 +114,7 @@ class LineItem:
 
         return cls(
             name=item_dict["name"],
-            category=item_dict["category"],
+            category=(item_dict.get("category") or "").strip() or "general",
             label=item_dict.get("label"),
             values=values,
             formula=item_dict.get("formula"),
