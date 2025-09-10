@@ -29,7 +29,8 @@ class LineItem:
     Args:
         name (str): Unique identifier for the line item. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
-        category (str): Category or type classification for the line item.
+        category (str, optional): Category or type classification for the line item.
+            Defaults to "general" if not provided.
         label (str, optional): Human-readable display name. Defaults to name if not provided.
         values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
             Values can be numbers or None. Defaults to empty dict if not provided.
@@ -58,10 +59,18 @@ class LineItem:
         ...     category="income",
         ...     formula="revenue * 0.1"
         ... )
+
+        >>> # Create a line item using default category
+        >>> misc_item = LineItem(
+        ...     name="misc_expense",
+        ...     values={2023: 1000, 2024: 1100}
+        ... )
+        >>> misc_item.category
+        'general'
     """  # noqa: E501
 
     name: str
-    category: str
+    category: str = "general"
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None

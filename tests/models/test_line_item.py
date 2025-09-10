@@ -35,6 +35,13 @@ class TestLineItemInit:
         )
         assert item.label is None
 
+    def test_line_item_init_with_default_category(self):
+        """Test that LineItem uses 'general' as default category when not specified."""
+        item = LineItem(name="default_category_item", values={2020: 5.0, 2021: 6.0})
+        assert item.category == "general"
+        assert item.name == "default_category_item"
+        assert item.values == {2020: 5.0, 2021: 6.0}
+
     def test_no_values(self):
         item = LineItem(
             name="no_values_item", label="No Values Item", category="revenue"
