@@ -35,7 +35,7 @@ class LineItemResults:
         self.item_name = item_name
         self._line_item_metadata = model._get_item_metadata(item_name)
         self.source_type = self._line_item_metadata["source_type"]
-        self.label = self._line_item_metadata["label"]
+        self._label = self._line_item_metadata["label"]
         self.value_format = self._line_item_metadata["value_format"]
         self.formula = self._line_item_metadata["formula"]
         self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
@@ -43,6 +43,23 @@ class LineItemResults:
             self._line_item_definition = model.line_item_definition(item_name)
         else:
             self._line_item_definition = None
+
+    @property
+    def label(self) -> str:
+        """Get the label for this line item."""
+        return self._label
+
+    @label.setter
+    def label(self, value: str) -> None:
+        """Set the label for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set label on {self.source_type} item '{self.item_name}'. "
+                f"Only line_item types support label modification."
+            )
+        self._label = value
+        # Update the line item in the model to persist the change
+        self.model.update.update_line_item(self.item_name, label=value)
 
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
