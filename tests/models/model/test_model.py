@@ -368,19 +368,19 @@ class TestOtherMisc:
         # Test string key returns LineItemResults
         result = sample_line_item_set["item1"]
         assert isinstance(result, LineItemResults)
-        assert result.item_name == "item1"
+        assert result.name == "item1"
         assert result.source_type == "line_item"
 
         # Test that it's equivalent to line_item() method
         line_item_result = sample_line_item_set.line_item("item1")
         assert isinstance(result, type(line_item_result))
-        assert result.item_name == line_item_result.item_name
+        assert result.name == line_item_result.name
         assert result.source_type == line_item_result.source_type
 
         # Test with different item
         result2 = sample_line_item_set["item2"]
         assert isinstance(result2, LineItemResults)
-        assert result2.item_name == "item2"
+        assert result2.name == "item2"
 
         # Test invalid item name raises KeyError
         with pytest.raises(KeyError):

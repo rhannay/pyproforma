@@ -32,7 +32,7 @@ class LineItemResults:
 
     def __init__(self, model: "Model", item_name: str):
         self.model = model
-        self.item_name = item_name
+        self._name = item_name
         self._line_item_metadata = model._get_item_metadata(item_name)
         self.source_type = self._line_item_metadata["source_type"]
         self._label = self._line_item_metadata["label"]
@@ -54,12 +54,12 @@ class LineItemResults:
         """Set the label for this line item and update it in the model."""
         if self.source_type != "line_item":
             raise ValueError(
-                f"Cannot set label on {self.source_type} item '{self.item_name}'. "
+                f"Cannot set label on {self.source_type} item '{self.name}'. "
                 f"Only line_item types support label modification."
             )
         # Update the line item in the model first - if this fails, we don't change
         # local state
-        self.model.update.update_line_item(self.item_name, label=value)
+        self.model.update.update_line_item(self.name, label=value)
         # Only update local state if model update succeeded
         self._label = value
 
@@ -73,14 +73,33 @@ class LineItemResults:
         """Set the formula for this line item and update it in the model."""
         if self.source_type != "line_item":
             raise ValueError(
-                f"Cannot set formula on {self.source_type} item '{self.item_name}'. "
+                f"Cannot set formula on {self.source_type} item '{self.name}'. "
                 f"Only line_item types support formula modification."
             )
         # Update the line item in the model first - if this fails, we don't change
         # local state
-        self.model.update.update_line_item(self.item_name, formula=value)
+        self.model.update.update_line_item(self.name, formula=value)
         # Only update local state if model update succeeded
         self._formula = value
+
+    @property
+    def name(self) -> str:
+        """Get the name of this line item."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set name on {self.source_type} item '{self.name}'. "
+                f"Only line_item types support name modification."
+            )
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_line_item(self.name, new_name=value)
+        # Only update local state if model update succeeded
+        self._name = value
 
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
@@ -88,7 +107,7 @@ class LineItemResults:
 
     def __repr__(self) -> str:
         return (
-            f"LineItemResults(item_name='{self.item_name}', "
+            f"LineItemResults(name='{self.name}', "
             f"source_type='{self._line_item_metadata['source_type']}')"
         )
 
@@ -101,7 +120,7 @@ class LineItemResults:
         """
         values = {}
         for year in self.model.years:
-            values[year] = self.model.value(self.item_name, year)
+            values[year] = self.model.value(self.name, year)
         return values
 
     def value(self, year: int) -> float:
@@ -117,7 +136,7 @@ class LineItemResults:
         Raises:
             KeyError: If the year is not in the model's years
         """
-        return self.model.value(self.item_name, year)
+        return self.model.value(self.name, year)
 
     def is_hardcoded(self, year: int) -> bool:
         """
@@ -149,7 +168,7 @@ class LineItemResults:
             pd.Series: Series with years as index and item values
         """
         values_dict = self.values()
-        return pd.Series(values_dict, name=self.item_name)
+        return pd.Series(values_dict, name=self.name)
 
     def to_dataframe(self) -> pd.DataFrame:
         """
@@ -159,7 +178,7 @@ class LineItemResults:
             pd.DataFrame: DataFrame with one row containing the item values across years
         """
         values_dict = self.values()
-        return pd.DataFrame([values_dict], index=[self.item_name])
+        return pd.DataFrame([values_dict], index=[self.name])
 
     def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
@@ -174,7 +193,7 @@ class LineItemResults:
             Table: A Table object containing the item formatted for display
         """  # noqa: E501
         return self.model.tables.line_item(
-            self.item_name, include_name=False, hardcoded_color=hardcoded_color
+            self.name, include_name=False, hardcoded_color=hardcoded_color
         )
 
     def chart(
@@ -201,7 +220,7 @@ class LineItemResults:
             KeyError: If the item name is not found in the model
         """  # noqa: E501
         return self.model.charts.line_item(
-            self.item_name,
+            self.name,
             width=width,
             height=height,
             template=template,
@@ -226,7 +245,7 @@ class LineItemResults:
             ChartGenerationError: If the model has no years defined
         """
         return self.model.charts.cumulative_percent_change(
-            self.item_name, width=width, height=height, template=template
+            self.name, width=width, height=height, template=template
         )
 
     def _repr_html_(self) -> str:
@@ -263,8 +282,8 @@ class LineItemResults:
         previous_year = self.model.years[year_index - 1]
 
         # Get values for current and previous years
-        current_value = self.model.value(self.item_name, year)
-        previous_value = self.model.value(self.item_name, previous_year)
+        current_value = self.model.value(self.name, year)
+        previous_value = self.model.value(self.name, previous_year)
 
         # Handle None values or zero previous value
         if previous_value is None or current_value is None:
@@ -306,8 +325,8 @@ class LineItemResults:
             return 0
 
         # Get values for current and base years
-        current_value = self.model.value(self.item_name, year)
-        base_year_value = self.model.value(self.item_name, base_year)
+        current_value = self.model.value(self.name, year)
+        base_year_value = self.model.value(self.name, base_year)
 
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -345,8 +364,8 @@ class LineItemResults:
             )
 
         # Get values for current and base years
-        current_value = self.model.value(self.item_name, year)
-        base_year_value = self.model.value(self.item_name, base_year)
+        current_value = self.model.value(self.name, year)
+        base_year_value = self.model.value(self.name, base_year)
 
         # Handle None values
         if base_year_value is None or current_value is None:
@@ -387,8 +406,8 @@ class LineItemResults:
             )
 
         # Get values for current and base years
-        current_value = self.model.value(self.item_name, year)
-        base_year_value = self.model.value(self.item_name, base_year)
+        current_value = self.model.value(self.name, year)
+        base_year_value = self.model.value(self.name, base_year)
 
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -425,7 +444,7 @@ class LineItemResults:
         # Sum values for all specified years
         cumulative_sum = 0
         for year in years_to_sum:
-            value = self.model.value(self.item_name, year)
+            value = self.model.value(self.name, year)
             if value is None:
                 value = 0  # Treat None values as zero
             cumulative_sum += value
@@ -448,7 +467,7 @@ class LineItemResults:
             try:
                 values_list = []
                 for year in self.model.years:
-                    value = self.model.value(self.item_name, year)
+                    value = self.model.value(self.name, year)
                     formatted_value = format_value(value, self.value_format)
                     values_list.append(formatted_value)
                 value_info = f"\nValues: {', '.join(values_list)}"
@@ -458,14 +477,14 @@ class LineItemResults:
         # Get formula information based on source type
         formula_info = ""
         if self.source_type == "category":
-            formula_info = f"\nFormula: Sum of items in category '{self.item_name}'"
+            formula_info = f"\nFormula: Sum of items in category '{self.name}'"
         elif self.formula:
             formula_info = f"\nFormula: {self.formula}"
         else:
             formula_info = "\nFormula: None (explicit values)"
 
         summary_text = (
-            f"LineItemResults('{self.item_name}')\n"
+            f"LineItemResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Source Type: {self.source_type}\n"
             f"Value Format: {self.value_format}{formula_info}{value_info}"

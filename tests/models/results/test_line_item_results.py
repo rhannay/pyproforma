@@ -63,7 +63,7 @@ class TestLineItemResultsInitialization:
         line_item_results = LineItemResults(model_with_line_items, "revenue")
 
         assert line_item_results.model is model_with_line_items
-        assert line_item_results.item_name == "revenue"
+        assert line_item_results.name == "revenue"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Revenue"
         assert line_item_results.value_format == "no_decimals"
@@ -73,7 +73,7 @@ class TestLineItemResultsInitialization:
         line_item_results = LineItemResults(model_with_line_items, "profit")
 
         assert line_item_results.model is model_with_line_items
-        assert line_item_results.item_name == "profit"
+        assert line_item_results.name == "profit"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Profit"
         assert line_item_results.value_format == "no_decimals"
@@ -113,7 +113,7 @@ class TestLineItemResultsStringRepresentation:
 
         assert (
             repr_result
-            == "LineItemResults(item_name='revenue', source_type='line_item')"
+            == "LineItemResults(name='revenue', source_type='line_item')"
         )
 
     def test_summary_method(self, line_item_results):
@@ -483,7 +483,7 @@ class TestLineItemResultsIntegration:
         line_item_results = integrated_model.line_item("revenue")
 
         assert isinstance(line_item_results, LineItemResults)
-        assert line_item_results.item_name == "revenue"
+        assert line_item_results.name == "revenue"
         assert line_item_results.model is integrated_model
 
         # Test that methods work
@@ -560,7 +560,7 @@ class TestLineItemResultsEdgeCases:
 
         line_item_results = LineItemResults(model, "revenue_2024")
 
-        assert line_item_results.item_name == "revenue_2024"
+        assert line_item_results.name == "revenue_2024"
         summary = line_item_results.summary()
         assert "LineItemResults('revenue_2024')" in summary
         assert "Label: Revenue 2024" in summary
