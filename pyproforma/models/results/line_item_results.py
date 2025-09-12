@@ -37,7 +37,7 @@ class LineItemResults:
         self.source_type = self._line_item_metadata["source_type"]
         self._label = self._line_item_metadata["label"]
         self.value_format = self._line_item_metadata["value_format"]
-        self.formula = self._line_item_metadata["formula"]
+        self._formula = self._line_item_metadata["formula"]
         self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
         if self.source_type == "line_item":
             self._line_item_definition = model.line_item_definition(item_name)
@@ -57,9 +57,30 @@ class LineItemResults:
                 f"Cannot set label on {self.source_type} item '{self.item_name}'. "
                 f"Only line_item types support label modification."
             )
-        self._label = value
-        # Update the line item in the model to persist the change
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
         self.model.update.update_line_item(self.item_name, label=value)
+        # Only update local state if model update succeeded
+        self._label = value
+
+    @property
+    def formula(self) -> str | None:
+        """Get the formula for this line item."""
+        return self._formula
+
+    @formula.setter
+    def formula(self, value: str | None) -> None:
+        """Set the formula for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set formula on {self.source_type} item '{self.item_name}'. "
+                f"Only line_item types support formula modification."
+            )
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_line_item(self.item_name, formula=value)
+        # Only update local state if model update succeeded
+        self._formula = value
 
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
