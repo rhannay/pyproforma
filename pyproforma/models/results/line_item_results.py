@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import plotly.graph_objects as go
 
+from pyproforma.constants import ValueFormat
 from pyproforma.tables.table_class import Table, format_value
 
 if TYPE_CHECKING:
@@ -36,7 +37,7 @@ class LineItemResults:
         self._line_item_metadata = model._get_item_metadata(item_name)
         self.source_type = self._line_item_metadata["source_type"]
         self._label = self._line_item_metadata["label"]
-        self.value_format = self._line_item_metadata["value_format"]
+        self._value_format = self._line_item_metadata["value_format"]
         self._formula = self._line_item_metadata["formula"]
         self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
         if self.source_type == "line_item":
@@ -100,6 +101,25 @@ class LineItemResults:
         self.model.update.update_line_item(self.name, new_name=value)
         # Only update local state if model update succeeded
         self._name = value
+
+    @property
+    def value_format(self) -> ValueFormat:
+        """Get the value format for this line item."""
+        return self._value_format
+
+    @value_format.setter
+    def value_format(self, value: ValueFormat) -> None:
+        """Set the value format for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set value_format on {self.source_type} item '{self.name}'. "
+                f"Only line_item types support value_format modification."
+            )
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_line_item(self.name, value_format=value)
+        # Only update local state if model update succeeded
+        self._value_format = value
 
     def __str__(self) -> str:
         """Return a string representation showing key information about the item."""
