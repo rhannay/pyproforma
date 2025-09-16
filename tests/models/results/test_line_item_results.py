@@ -111,10 +111,7 @@ class TestLineItemResultsStringRepresentation:
         """Test __repr__ method returns expected format."""
         repr_result = repr(line_item_results)
 
-        assert (
-            repr_result
-            == "LineItemResults(name='revenue', source_type='line_item')"
-        )
+        assert repr_result == "LineItemResults(name='revenue', source_type='line_item')"
 
     def test_summary_method(self, line_item_results):
         """Test summary method returns formatted line item information."""
@@ -899,3 +896,149 @@ class TestLineItemResultsCalculationMethods:
 
             # Should work fine with years that don't include the None value
             assert revenue_item.cumulative([2020, 2022]) == 250
+
+
+class TestLineItemResultsDeleteMethod:
+    """Test the delete method of LineItemResults."""
+
+    @pytest.fixture
+    def delete_test_model(self):
+        """Create a model for testing delete functionality."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="profit",
+                category="income",
+                formula="revenue - expenses",
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_delete_method_successfully_deletes_line_item(self, delete_test_model):
+        """Test that delete method successfully removes line item from model."""
+        # Get initial count
+        initial_count = len(delete_test_model.line_item_definitions)
+
+        # Delete profit first (it references other items, so delete it first)
+        profit_item = delete_test_model['profit']
+        profit_item.delete()
+
+        # Now delete revenue (which is no longer referenced)
+        revenue_item = delete_test_model['revenue']
+
+        # Verify the item exists
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "revenue" in item_names
+
+        # Delete the item
+        revenue_item.delete()
+
+        # Verify the item was deleted
+        assert len(delete_test_model.line_item_definitions) == initial_count - 2
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "revenue" not in item_names
+
+    @pytest.fixture
+    def simple_delete_test_model(self):
+        """Create a simple model without formula dependencies for testing delete."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_delete_method_raises_error_for_non_line_item_types(
+        self, delete_test_model
+    ):
+        """Test that delete method raises ValueError for non-line_item source types."""
+        # Create a LineItemResults for a category (non-line_item type)
+        category_results = LineItemResults.__new__(LineItemResults)
+        category_results.model = delete_test_model
+        category_results._name = "income"
+        category_results.source_type = "category"
+
+        with pytest.raises(ValueError) as excinfo:
+            category_results.delete()
+
+        assert "Cannot delete category item 'income'" in str(excinfo.value)
+        assert "Only line_item types support deletion" in str(excinfo.value)
+
+    def test_delete_method_raises_error_for_generator_types(self, delete_test_model):
+        """Test that delete method raises ValueError for generator source types."""
+        # Create a LineItemResults for a generator (non-line_item type)
+        generator_results = LineItemResults.__new__(LineItemResults)
+        generator_results.model = delete_test_model
+        generator_results._name = "test_generator"
+        generator_results.source_type = "multi_line_item_generator"
+
+        with pytest.raises(ValueError) as excinfo:
+            generator_results.delete()
+
+        error_msg = str(excinfo.value)
+        expected_msg = "Cannot delete multi_line_item_generator item 'test_generator'"
+        assert expected_msg in error_msg
+        assert "Only line_item types support deletion" in error_msg
+
+    def test_delete_method_integration_with_formulas(self, delete_test_model):
+        """Test deleting a line item that is referenced by other formulas."""
+        # The profit line item has formula "revenue - expenses"
+        # Try to delete revenue (which is referenced in the formula)
+        revenue_item = delete_test_model['revenue']
+
+        # This should raise an error because revenue is referenced by profit
+        with pytest.raises(ValueError):
+            revenue_item.delete()
+
+    def test_delete_method_allows_deletion_of_unreferenced_items(
+        self, delete_test_model
+    ):
+        """Test that deletion works for items not referenced by other formulas."""
+        # Delete profit first (which has the formula referencing other items)
+        profit_item = LineItemResults(delete_test_model, "profit")
+        profit_item.delete()
+
+        # Now we can delete expenses since it's no longer referenced
+        expenses_item = LineItemResults(delete_test_model, "expenses")
+        initial_count = len(delete_test_model.line_item_definitions)
+
+        expenses_item.delete()
+
+        # Verify deletion was successful
+        assert len(delete_test_model.line_item_definitions) == initial_count - 1
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "expenses" not in item_names
+

@@ -153,6 +153,32 @@ class LineItemResults:
         # Only update local state if model update succeeded
         self._value_format = value
 
+    def delete(self) -> None:
+        """
+        Delete this line item from the model.
+
+        This method removes the line item from the model entirely. After calling this
+        method, the LineItemResults object should not be used as the underlying line
+        item no longer exists.
+
+        Raises:
+            ValueError: If the item cannot be deleted (validation fails) or if this is
+                       not a line_item type (only line_item types can be deleted)
+            KeyError: If the line item is not found in the model
+
+        Examples:
+            >>> revenue_item = model.line_item('revenue')
+            >>> revenue_item.delete()  # Removes 'revenue' line item from the model
+        """
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot delete {self.source_type} item '{self.name}'. "
+                f"Only line_item types support deletion."
+            )
+
+        # Delete the line item from the model
+        self.model.update.delete_line_item(self.name)
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================
