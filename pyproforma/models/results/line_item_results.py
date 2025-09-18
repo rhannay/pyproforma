@@ -34,10 +34,13 @@ class LineItemResults:
     def __init__(self, model: "Model", item_name: str):
         self.model = model
         self._name = item_name
-        if self.source_type == "line_item":
-            self._line_item_definition = model.line_item_definition(item_name)
-        else:
-            self._line_item_definition = None
+
+        # Validate that item_name exists in the model by attempting to get its metadata
+        # This will raise a KeyError if the item doesn't exist
+        try:
+            _ = self._line_item_metadata
+        except KeyError:
+            raise KeyError(f"Item '{item_name}' not found in model")
 
     # ============================================================================
     # INTERNAL/PRIVATE METHODS
