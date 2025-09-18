@@ -25,7 +25,7 @@ class LineItemResults:
     Examples:
         >>> revenue_item = model.line_item('revenue')
         >>> print(revenue_item)  # Shows summary info
-        >>> revenue_item.values()  # Returns dict of year: value
+        >>> revenue_item.values  # Returns dict of year: value
         >>> revenue_item.to_series()  # Returns pandas Series
         >>> revenue_item.table()  # Returns Table object
         >>> revenue_item.chart()  # Returns Plotly chart
@@ -197,6 +197,7 @@ class LineItemResults:
     # VALUE ACCESS METHODS
     # ============================================================================
 
+    @property
     def values(self) -> dict[int, float]:
         """
         Return a dictionary of year: value for this item.
@@ -494,7 +495,7 @@ class LineItemResults:
         Returns:
             pd.Series: Series with years as index and item values
         """
-        values_dict = self.values()
+        values_dict = self.values
         return pd.Series(values_dict, name=self.name)
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -504,7 +505,7 @@ class LineItemResults:
         Returns:
             pd.DataFrame: DataFrame with one row containing the item values across years
         """
-        values_dict = self.values()
+        values_dict = self.values
         return pd.DataFrame([values_dict], index=[self.name])
 
     def table(self, hardcoded_color: Optional[str] = None) -> Table:
