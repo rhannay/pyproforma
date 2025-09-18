@@ -60,6 +60,17 @@ class LineItemResults:
         """
         return self.value(year)
 
+    def __setitem__(self, year: int, value: float) -> None:
+        """
+        Allow bracket assignment to set item value for a specific year.
+        Equivalent to self.set_value(year, value).
+
+        Args:
+            year (int): The year to set the value for
+            value (float): The value to set
+        """
+        self.set_value(year, value)
+
     def _repr_html_(self) -> str:
         """
         Return HTML representation for Jupyter notebooks.
@@ -227,6 +238,46 @@ class LineItemResults:
         if self.hardcoded_values is None:
             return False
         return year in self.hardcoded_values
+
+    def set_value(self, year: int, value: float) -> None:
+        """
+        Set the value for this item for a specific year as a hardcoded value.
+
+        This method sets a hardcoded value for the specified year, which will
+        override any formula calculation for that year.
+
+        Args:
+            year (int): The year to set the value for
+            value (float): The value to set
+
+        Raises:
+            ValueError: If this is not a line_item type (only line_item types support
+                       value modification)
+            KeyError: If the year is not in the model's years
+
+        Examples:
+            >>> revenue_item = model.line_item('revenue')
+            >>> revenue_item.set_value(2024, 99)  # Sets hardcoded value for 2024
+            >>> revenue_item[2025] = 150  # Alternative bracket syntax
+        """
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set value on {self.source_type} item '{self.name}'. "
+                f"Only line_item types support value modification."
+            )
+
+        if year not in self.model.years:
+            raise KeyError(f"Year {year} not found in model years: {self.model.years}")
+
+        # Get current values from the line item definition
+        line_item_def = self.model.line_item_definition(self.name)
+        current_values = line_item_def.values or {}
+
+        # Add/update the value for this year
+        updated_values = {**current_values, year: value}
+
+        # Update the line item in the model
+        self.model.update.update_line_item(self.name, values=updated_values)
 
     # ============================================================================
     # ANALYSIS AND CALCULATION METHODS

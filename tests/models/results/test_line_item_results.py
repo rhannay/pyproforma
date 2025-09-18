@@ -1057,3 +1057,165 @@ class TestLineItemResultsDeleteMethod:
         assert len(delete_test_model.line_item_definitions) == initial_count - 1
         item_names = [item.name for item in delete_test_model.line_item_definitions]
         assert "expenses" not in item_names
+
+
+class TestLineItemResultsValueSetting:
+    """Test value setting functionality (__setitem__ and set_value methods)."""
+
+    @pytest.fixture
+    def value_setting_model(self):
+        """Create a model for testing value setting functionality."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                label="Revenue",
+                values={2023: 100000, 2024: 120000, 2025: 140000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                label="Expenses",
+                values={2023: 50000, 2024: 60000, 2025: 70000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="profit",
+                category="income",
+                label="Profit",
+                formula="revenue - expenses",
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(
+            line_items=line_items,
+            years=[2023, 2024, 2025],
+            categories=categories,
+        )
+
+    def test_setitem_method_calls_set_value(self, value_setting_model):
+        """Test that __setitem__ method calls set_value correctly."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        with patch.object(revenue_item, "set_value") as mock_set_value:
+            revenue_item[2024] = 99999
+
+            mock_set_value.assert_called_once_with(2024, 99999)
+
+    def test_set_value_integration_test(self, value_setting_model):
+        """Test set_value with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original value
+        original_value = revenue_item.value(2024)
+        assert original_value == 120000
+
+        # Set new value
+        revenue_item.set_value(2024, 99999)
+
+        # Verify the value was updated in the model
+        new_value = revenue_item.value(2024)
+        assert new_value == 99999
+
+        # Verify other years are preserved
+        assert revenue_item.value(2023) == 100000
+        assert revenue_item.value(2025) == 140000
+
+    def test_setitem_integration_test(self, value_setting_model):
+        """Test __setitem__ with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original value
+        original_value = revenue_item[2024]
+        assert original_value == 120000
+
+        # Set new value using bracket notation
+        revenue_item[2024] = 88888
+
+        # Verify the value was updated in the model
+        new_value = revenue_item[2024]
+        assert new_value == 88888
+
+        # Verify other years are preserved
+        assert revenue_item[2023] == 100000
+        assert revenue_item[2025] == 140000
+
+    def test_set_value_method_raises_error_for_non_line_item(self, value_setting_model):
+        """Test that set_value raises ValueError for non-line_item types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            value_setting_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(value_setting_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.set_value(2024, 99999)
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set value on category item 'income'" in error_msg
+        assert "Only line_item types support value modification" in error_msg
+
+    def test_set_value_method_raises_error_for_invalid_year(self, value_setting_model):
+        """Test that set_value raises KeyError for invalid year."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.set_value(2026, 99999)
+
+        error_msg = str(excinfo.value)
+        assert "Year 2026 not found in model years" in error_msg
+
+    def test_value_setting_with_different_value_types(self, value_setting_model):
+        """Test value setting with different numeric types."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Test with integer
+        revenue_item.set_value(2023, 100)
+        assert revenue_item.value(2023) == 100
+
+        # Test with float
+        revenue_item.set_value(2024, 100.5)
+        assert revenue_item.value(2024) == 100.5
+
+        # Test with negative value
+        revenue_item.set_value(2025, -50)
+        assert revenue_item.value(2025) == -50
+
+    def test_set_value_with_zero_value(self, value_setting_model):
+        """Test setting value to zero."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        revenue_item.set_value(2024, 0)
+        assert revenue_item.value(2024) == 0
+
+    def test_set_value_overwrites_formula_calculation(self, value_setting_model):
+        """Test that setting hardcoded value overwrites formula calculation."""
+        # Test setting hardcoded value on a line item with formula
+        profit_item = LineItemResults(value_setting_model, "profit")
+
+        # Get calculated value first
+        calculated_value = profit_item.value(2024)
+        expected_calculated = 120000 - 60000  # revenue - expenses
+        assert calculated_value == expected_calculated
+
+        # Set hardcoded value
+        profit_item.set_value(2024, 99999)
+
+        # Should now return hardcoded value instead of calculated
+        hardcoded_value = profit_item.value(2024)
+        assert hardcoded_value == 99999
