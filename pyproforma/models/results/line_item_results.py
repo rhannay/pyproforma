@@ -34,10 +34,6 @@ class LineItemResults:
     def __init__(self, model: "Model", item_name: str):
         self.model = model
         self._name = item_name
-        self.source_type = self._line_item_metadata["source_type"]
-        self._value_format = self._line_item_metadata["value_format"]
-        self._formula = self._line_item_metadata["formula"]
-        self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
         if self.source_type == "line_item":
             self._line_item_definition = model.line_item_definition(item_name)
         else:
@@ -52,10 +48,7 @@ class LineItemResults:
         return self.summary()
 
     def __repr__(self) -> str:
-        return (
-            f"LineItemResults(name='{self.name}', "
-            f"source_type='{self._line_item_metadata['source_type']}')"
-        )
+        return f"LineItemResults(name='{self.name}', source_type='{self.source_type}')"
 
     def __getitem__(self, year: int) -> float:
         """
@@ -79,6 +72,16 @@ class LineItemResults:
     def _line_item_metadata(self) -> dict:
         """Get the metadata for this line item from the model."""
         return self.model._get_item_metadata(self._name)
+
+    @property
+    def source_type(self) -> str:
+        """Get the source type for this line item."""
+        return self._line_item_metadata["source_type"]
+
+    @property
+    def hardcoded_values(self) -> dict | None:
+        """Get the hardcoded values for this line item."""
+        return self._line_item_metadata["hardcoded_values"]
 
     @property
     def name(self) -> str:
@@ -119,7 +122,7 @@ class LineItemResults:
     @property
     def formula(self) -> str | None:
         """Get the formula for this line item."""
-        return self._formula
+        return self._line_item_metadata["formula"]
 
     @formula.setter
     def formula(self, value: str | None) -> None:
@@ -132,13 +135,11 @@ class LineItemResults:
         # Update the line item in the model first - if this fails, we don't change
         # local state
         self.model.update.update_line_item(self.name, formula=value)
-        # Only update local state if model update succeeded
-        self._formula = value
 
     @property
     def value_format(self) -> ValueFormat:
         """Get the value format for this line item."""
-        return self._value_format
+        return self._line_item_metadata["value_format"]
 
     @value_format.setter
     def value_format(self, value: ValueFormat) -> None:
@@ -151,8 +152,6 @@ class LineItemResults:
         # Update the line item in the model first - if this fails, we don't change
         # local state
         self.model.update.update_line_item(self.name, value_format=value)
-        # Only update local state if model update succeeded
-        self._value_format = value
 
     def delete(self) -> None:
         """

@@ -938,11 +938,11 @@ class TestLineItemResultsDeleteMethod:
         initial_count = len(delete_test_model.line_item_definitions)
 
         # Delete profit first (it references other items, so delete it first)
-        profit_item = delete_test_model['profit']
+        profit_item = delete_test_model["profit"]
         profit_item.delete()
 
         # Now delete revenue (which is no longer referenced)
-        revenue_item = delete_test_model['revenue']
+        revenue_item = delete_test_model["revenue"]
 
         # Verify the item exists
         item_names = [item.name for item in delete_test_model.line_item_definitions]
@@ -985,28 +985,44 @@ class TestLineItemResultsDeleteMethod:
         self, delete_test_model
     ):
         """Test that delete method raises ValueError for non-line_item source types."""
-        # Create a LineItemResults for a category (non-line_item type)
-        category_results = LineItemResults.__new__(LineItemResults)
-        category_results.model = delete_test_model
-        category_results._name = "income"
-        category_results.source_type = "category"
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
 
-        with pytest.raises(ValueError) as excinfo:
-            category_results.delete()
+        with patch.object(
+            delete_test_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(delete_test_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.delete()
 
         assert "Cannot delete category item 'income'" in str(excinfo.value)
         assert "Only line_item types support deletion" in str(excinfo.value)
 
     def test_delete_method_raises_error_for_generator_types(self, delete_test_model):
         """Test that delete method raises ValueError for generator source types."""
-        # Create a LineItemResults for a generator (non-line_item type)
-        generator_results = LineItemResults.__new__(LineItemResults)
-        generator_results.model = delete_test_model
-        generator_results._name = "test_generator"
-        generator_results.source_type = "multi_line_item_generator"
+        # Mock metadata to simulate a generator item
+        mock_metadata = {
+            "source_type": "multi_line_item_generator",
+            "label": "Test Generator",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
 
-        with pytest.raises(ValueError) as excinfo:
-            generator_results.delete()
+        with patch.object(
+            delete_test_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            generator_results = LineItemResults(delete_test_model, "test_generator")
+
+            with pytest.raises(ValueError) as excinfo:
+                generator_results.delete()
 
         error_msg = str(excinfo.value)
         expected_msg = "Cannot delete multi_line_item_generator item 'test_generator'"
@@ -1017,7 +1033,7 @@ class TestLineItemResultsDeleteMethod:
         """Test deleting a line item that is referenced by other formulas."""
         # The profit line item has formula "revenue - expenses"
         # Try to delete revenue (which is referenced in the formula)
-        revenue_item = delete_test_model['revenue']
+        revenue_item = delete_test_model["revenue"]
 
         # This should raise an error because revenue is referenced by profit
         with pytest.raises(ValueError):
@@ -1041,4 +1057,3 @@ class TestLineItemResultsDeleteMethod:
         assert len(delete_test_model.line_item_definitions) == initial_count - 1
         item_names = [item.name for item in delete_test_model.line_item_definitions]
         assert "expenses" not in item_names
-
