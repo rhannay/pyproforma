@@ -34,9 +34,7 @@ class LineItemResults:
     def __init__(self, model: "Model", item_name: str):
         self.model = model
         self._name = item_name
-        self._line_item_metadata = model._get_item_metadata(item_name)
         self.source_type = self._line_item_metadata["source_type"]
-        self._label = self._line_item_metadata["label"]
         self._value_format = self._line_item_metadata["value_format"]
         self._formula = self._line_item_metadata["formula"]
         self.hardcoded_values = self._line_item_metadata["hardcoded_values"]
@@ -78,6 +76,11 @@ class LineItemResults:
     # ============================================================================
 
     @property
+    def _line_item_metadata(self) -> dict:
+        """Get the metadata for this line item from the model."""
+        return self.model._get_item_metadata(self._name)
+
+    @property
     def name(self) -> str:
         """Get the name of this line item."""
         return self._name
@@ -99,7 +102,7 @@ class LineItemResults:
     @property
     def label(self) -> str:
         """Get the label for this line item."""
-        return self._label
+        return self._line_item_metadata["label"]
 
     @label.setter
     def label(self, value: str) -> None:
@@ -112,8 +115,6 @@ class LineItemResults:
         # Update the line item in the model first - if this fails, we don't change
         # local state
         self.model.update.update_line_item(self.name, label=value)
-        # Only update local state if model update succeeded
-        self._label = value
 
     @property
     def formula(self) -> str | None:
