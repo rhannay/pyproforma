@@ -601,7 +601,7 @@ class TestLineItemResultsCalculationMethods:
     """Test the calculation methods added to LineItemResults."""
 
     @pytest.fixture
-    def calculation_model(self):
+    def calculation_model(self) -> Model:
         """Create a model for testing calculation methods."""
         line_items = [
             LineItem(
@@ -634,7 +634,7 @@ class TestLineItemResultsCalculationMethods:
             line_items=line_items, years=[2020, 2021, 2022, 2023], categories=categories
         )
 
-    def test_percent_change_method(self, calculation_model):
+    def test_percent_change_method(self, calculation_model: Model):
         """Test percent_change method on LineItemResults."""
         revenue_item = calculation_model.line_item("revenue")
 
@@ -650,7 +650,7 @@ class TestLineItemResultsCalculationMethods:
         # First year should return None
         assert revenue_item.percent_change(2020) is None
 
-    def test_percent_change_with_zero_previous_value(self, calculation_model):
+    def test_percent_change_with_zero_previous_value(self, calculation_model: Model):
         """Test percent_change when previous value is zero."""
         zero_item = calculation_model.line_item("zero_item")
 
@@ -660,7 +660,7 @@ class TestLineItemResultsCalculationMethods:
         # zero_item: 0 -> 5, can't calculate percent change from zero
         assert zero_item.percent_change(2023) is None
 
-    def test_cumulative_percent_change_method(self, calculation_model):
+    def test_cumulative_percent_change_method(self, calculation_model: Model):
         """Test cumulative_percent_change method on LineItemResults."""
         revenue_item = calculation_model.line_item("revenue")
 
