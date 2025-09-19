@@ -145,7 +145,7 @@ class TestLineItemResultsValueMethods:
 
     def test_values_method_returns_correct_values(self, line_item_results):
         """Test values method returns correct values for all years."""
-        values = line_item_results.values()
+        values = line_item_results.values
 
         expected_values = {2023: 100000, 2024: 120000, 2025: 140000}
         assert values == expected_values
@@ -177,7 +177,7 @@ class TestLineItemResultsValueMethods:
         with patch.object(line_item_results.model, "value") as mock_value:
             mock_value.side_effect = [100000, 120000, 140000]
 
-            line_item_results.values()
+            line_item_results.values
 
             expected_calls = [
                 (("revenue", 2023),),
@@ -225,27 +225,6 @@ class TestLineItemResultsDataFrameMethods:
         assert df.index.tolist() == ["revenue"]
         assert df.columns.tolist() == [2023, 2024, 2025]
         assert df.loc["revenue"].values.tolist() == [100000, 120000, 140000]
-
-    def test_to_series_uses_values_method(self, line_item_results):
-        """Test that to_series method uses values method."""
-        with patch.object(line_item_results, "values") as mock_values:
-            mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
-
-            series = line_item_results.to_series()
-
-            mock_values.assert_called_once()
-            assert series.name == "revenue"
-
-    def test_to_dataframe_uses_values_method(self, line_item_results):
-        """Test that to_dataframe method uses values method."""
-        with patch.object(line_item_results, "values") as mock_values:
-            mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
-
-            df = line_item_results.to_dataframe()
-
-            mock_values.assert_called_once()
-            assert df.index.tolist() == ["revenue"]
-
 
 class TestLineItemResultsTableMethod:
     """Test table method of LineItemResults."""
@@ -514,7 +493,7 @@ class TestLineItemResultsIntegration:
         """Test values method with real model data."""
         line_item_results = integrated_model.line_item("revenue")
 
-        values = line_item_results.values()
+        values = line_item_results.values
         assert values == {2023: 100000, 2024: 120000}
 
     def test_line_item_results_pandas_integration(self, integrated_model):
@@ -580,7 +559,7 @@ class TestLineItemResultsEdgeCases:
 
         line_item_results = LineItemResults(model, "revenue")
 
-        values = line_item_results.values()
+        values = line_item_results.values
         assert values == {2024: 100000}
 
         series = line_item_results.to_series()
