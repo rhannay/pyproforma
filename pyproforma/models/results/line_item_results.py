@@ -18,6 +18,10 @@ class LineItemResults:
     This class is typically instantiated through the Model.item() method and
     provides an intuitive interface for notebook exploration and analysis of individual items.
 
+    The class supports bracket notation for both getting and setting values by year:
+    - Use `item[year]` to get the value for a specific year
+    - Use `item[year] = value` to set a hardcoded value for a specific year
+
     Args:
         model: The parent Model instance
         item_name: The name of the item to analyze
@@ -26,6 +30,8 @@ class LineItemResults:
         >>> revenue_item = model.line_item('revenue')
         >>> print(revenue_item)  # Shows summary info
         >>> revenue_item.values  # Returns dict of year: value
+        >>> revenue_item[2024]  # Get value for 2024 using bracket notation
+        >>> revenue_item[2025] = 150  # Set hardcoded value for 2025 using bracket notation
         >>> revenue_item.to_series()  # Returns pandas Series
         >>> revenue_item.table()  # Returns Table object
         >>> revenue_item.chart()  # Returns Plotly chart
