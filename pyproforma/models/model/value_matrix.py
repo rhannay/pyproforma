@@ -105,14 +105,15 @@ def calculate_line_item_value(
 
     The function follows this precedence:
     1. Check if value already exists in interim_values_by_year (raises error if found)
-    2. Return explicit value from hardcoded_values if available for the year (including None)
-    3. Calculate value using formula if formula is defined
+    2. Return explicit value from hardcoded_values if available for the year and not None
+    3. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
     4. Return None if no value or formula is available
 
     Args:
         hardcoded_values (dict[int, float | None]): Dictionary mapping years to explicit values.
+            None values will be ignored and formulas will be used instead.
         formula (str | None): Formula string for calculating values when explicit
-            values are not available.
+            values are not available or are None.
         interim_values_by_year (dict): Dictionary containing calculated values
             by year, used to prevent circular references and for formula calculations.
         year (int): The year for which to get the value.
@@ -133,11 +134,11 @@ def calculate_line_item_value(
             f"Value for {name} in year {year} already exists in interim values."
         )
 
-    # If value for this year is in hardcoded_values, return that value (including None)
-    if year in hardcoded_values:
+    # If value for this year is in hardcoded_values and is not None, return that value
+    if year in hardcoded_values and hardcoded_values[year] is not None:
         return hardcoded_values[year]
 
-    # No value exists, so use a formula
+    # If no explicit value (missing key or None value), use formula
     if formula:
         return calculate_formula(formula, interim_values_by_year, year)
     # If no formula is defined, return None

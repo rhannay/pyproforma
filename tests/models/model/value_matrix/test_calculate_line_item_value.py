@@ -105,21 +105,33 @@ class TestCalculateLineItemValue:
         )
 
     def test_calculate_line_item_value_returns_none_from_values(self):
-        """Test that None values in values dict are returned correctly."""
+        """Test that None values in values dict now trigger formula usage when available."""
         hardcoded_values = {2020: 1.0, 2021: None, 2022: 3.0}
         vals = {}
+
+        # Non-None values still work as before
         assert (
             calculate_line_item_value(hardcoded_values, None, vals, 2020, "test_item")
             == 1.0
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_item")
-            is None
-        )
-        assert (
             calculate_line_item_value(hardcoded_values, None, vals, 2022, "test_item")
             == 3.0
         )
+
+        # None value with no formula returns None
+        assert (
+            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_item")
+            is None
+        )
+
+        # None value with formula should use formula
+        formula = "test_item[-1] * 2"
+        vals_with_prev = {2020: {"test_item": 1.0}}
+        result = calculate_line_item_value(
+            hardcoded_values, formula, vals_with_prev, 2021, "test_item"
+        )
+        assert result == 2.0  # 1.0 * 2
 
     def test_calculate_line_item_value_none_in_formula_raises_error(self):
         """Test that None values in formulas raise appropriate errors."""
@@ -282,26 +294,40 @@ class TestCalculateLineItemValueNoneValues:
     """Test class specifically for None value functionality in calculate_line_item_value."""
 
     def test_calculate_line_item_value_accepts_none_values(self):
-        """Test that calculate_line_item_value can work with None values in hardcoded_values dict."""
+        """Test that calculate_line_item_value can work with None values."""
         hardcoded_values = {2020: 100.0, 2021: None, 2022: 200.0}
         vals = {}
+
+        # Non-None values work as before
         assert (
             calculate_line_item_value(hardcoded_values, None, vals, 2020, "test_none")
             == 100.0
-        )
-        assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_none")
-            is None
         )
         assert (
             calculate_line_item_value(hardcoded_values, None, vals, 2022, "test_none")
             == 200.0
         )
 
+        # None value with no formula returns None
+        assert (
+            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_none")
+            is None
+        )
+
+        # None value with formula should use formula
+        formula = "test_none[-1] * 1.5"
+        vals_with_prev = {2020: {"test_none": 100.0}}
+        result = calculate_line_item_value(
+            hardcoded_values, formula, vals_with_prev, 2021, "test_none"
+        )
+        assert result == 150.0  # 100.0 * 1.5
+
     def test_calculate_line_item_value_all_none_values(self):
         """Test calculate_line_item_value with all None values."""
         hardcoded_values = {2020: None, 2021: None, 2022: None}
         vals = {}
+
+        # None values with no formula return None
         assert (
             calculate_line_item_value(hardcoded_values, None, vals, 2020, "all_none")
             is None
@@ -314,6 +340,14 @@ class TestCalculateLineItemValueNoneValues:
             calculate_line_item_value(hardcoded_values, None, vals, 2022, "all_none")
             is None
         )
+
+        # None values with formula should use formula if previous values exist
+        formula = "all_none[-1] * 2"
+        vals_with_prev = {2019: {"all_none": 10.0}}
+        result = calculate_line_item_value(
+            hardcoded_values, formula, vals_with_prev, 2020, "all_none"
+        )
+        assert result == 20.0  # 10.0 * 2
 
     def test_calculate_line_item_value_returns_none_from_hardcoded_values(self):
         """Test that calculate_line_item_value returns None when None is stored in hardcoded_values."""
@@ -376,21 +410,19 @@ class TestCalculateLineItemValueNoneValues:
             == 100.0
         )
 
-        # 2021: explicit None value
-        assert (
-            calculate_line_item_value(
-                hardcoded_values, formula, interim_values, 2021, "complex_test"
-            )
-            is None
+        # 2021: None value should now use formula, referencing 2020
+        interim_values = {2020: {"complex_test": 100.0}}
+        result_2021 = calculate_line_item_value(
+            hardcoded_values, formula, interim_values, 2021, "complex_test"
         )
+        assert result_2021 == pytest.approx(110.0)  # 100.0 * 1.1
 
         # 2022: no explicit value, should use formula with 2021 value
-        interim_values = {2021: {"complex_test": None}}
-        with pytest.raises(ValueError) as excinfo:
-            calculate_line_item_value(
-                hardcoded_values, formula, interim_values, 2022, "complex_test"
-            )
-        assert "has None value for year 2021" in str(excinfo.value)
+        interim_values = {2021: {"complex_test": 110.0}}
+        result_2022 = calculate_line_item_value(
+            hardcoded_values, formula, interim_values, 2022, "complex_test"
+        )
+        assert result_2022 == pytest.approx(121.0)  # 110.0 * 1.1
 
         # 2023: explicit value (should override formula)
         assert (

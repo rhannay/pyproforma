@@ -365,21 +365,19 @@ class TestLineItemNoneValues:
             == 100.0
         )
 
-        # 2021: explicit None value
-        assert (
-            calculate_line_item_value(
-                item.values, item.formula, interim_values, 2021, item.name
-            )
-            is None
+        # 2021: None value should now use formula, but formula would reference 2020
+        interim_values = {2020: {"complex_test": 100.0}}
+        result_2021 = calculate_line_item_value(
+            item.values, item.formula, interim_values, 2021, item.name
         )
+        assert result_2021 == pytest.approx(110.0)  # 100.0 * 1.1
 
         # 2022: no explicit value, should use formula with 2021 value
-        interim_values = {2021: {"complex_test": None}}
-        with pytest.raises(ValueError) as excinfo:
-            calculate_line_item_value(
-                item.values, item.formula, interim_values, 2022, item.name
-            )
-        assert "has None value for year 2021" in str(excinfo.value)
+        interim_values = {2021: {"complex_test": 110.0}}
+        result_2022 = calculate_line_item_value(
+            item.values, item.formula, interim_values, 2022, item.name
+        )
+        assert result_2022 == pytest.approx(121.0)  # 110.0 * 1.1
 
         # 2023: explicit value (should override formula)
         assert (
