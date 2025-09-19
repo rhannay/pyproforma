@@ -296,10 +296,6 @@ class LineItemResults:
     # ANALYSIS AND CALCULATION METHODS
     # ============================================================================
 
-    # ============================================================================
-    # ANALYSIS AND CALCULATION METHODS
-    # ============================================================================
-
     def percent_change(self, year: int) -> float:
         """
         Calculate the percent change of this line item from the previous year to the given year.
