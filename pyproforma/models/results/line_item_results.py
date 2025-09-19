@@ -210,6 +210,18 @@ class LineItemResults:
             values[year] = self.model.value(self.name, year)
         return values
 
+    @values.setter
+    def values(self, value: dict[int, float]) -> None:
+        """Set the values for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set values on {self.source_type} item '{self.name}'. "
+                f"Only line_item types support values modification."
+            )
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_line_item(self.name, values=value)
+
     def value(self, year: int) -> float:
         """
         Return the value for this item for a specific year.

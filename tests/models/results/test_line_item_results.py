@@ -226,6 +226,7 @@ class TestLineItemResultsDataFrameMethods:
         assert df.columns.tolist() == [2023, 2024, 2025]
         assert df.loc["revenue"].values.tolist() == [100000, 120000, 140000]
 
+
 class TestLineItemResultsTableMethod:
     """Test table method of LineItemResults."""
 
@@ -1198,3 +1199,51 @@ class TestLineItemResultsValueSetting:
         # Should now return hardcoded value instead of calculated
         hardcoded_value = profit_item.value(2024)
         assert hardcoded_value == 99999
+
+    def test_values_setter_integration_test(self, value_setting_model):
+        """Test values setter with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original values
+        original_values = revenue_item.values
+        expected_original = {2023: 100000, 2024: 120000, 2025: 140000}
+        assert original_values == expected_original
+
+        # Set new values using the setter
+        new_values = {2023: 150000, 2024: 180000, 2025: 210000}
+        revenue_item.values = new_values
+
+        # Verify the values were updated in the model
+        updated_values = revenue_item.values
+        assert updated_values == new_values
+
+        # Verify the values are also updated in the underlying model
+        model_values = value_setting_model.line_item_definition("revenue").values
+        assert model_values == new_values
+
+        # Verify creating a new LineItemResults also has the updated values
+        new_revenue_item = LineItemResults(value_setting_model, "revenue")
+        assert new_revenue_item.values == new_values
+
+    def test_values_setter_raises_error_for_non_line_item(self, value_setting_model):
+        """Test that values setter raises ValueError for non-line_item types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            value_setting_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(value_setting_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.values = {2024: 99999}
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set values on category item 'income'" in error_msg
+        assert "Only line_item types support values modification" in error_msg
