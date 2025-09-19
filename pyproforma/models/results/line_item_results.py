@@ -323,8 +323,8 @@ class LineItemResults:
         previous_year = self.model.years[year_index - 1]
 
         # Get values for current and previous years
-        current_value = self.model.value(self.name, year)
-        previous_value = self.model.value(self.name, previous_year)
+        current_value = self[year]
+        previous_value = self[previous_year]
 
         # Handle None values or zero previous value
         if previous_value is None or current_value is None:
@@ -366,8 +366,8 @@ class LineItemResults:
             return 0
 
         # Get values for current and base years
-        current_value = self.model.value(self.name, year)
-        base_year_value = self.model.value(self.name, base_year)
+        current_value = self[year]
+        base_year_value = self[base_year]
 
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -405,8 +405,8 @@ class LineItemResults:
             )
 
         # Get values for current and base years
-        current_value = self.model.value(self.name, year)
-        base_year_value = self.model.value(self.name, base_year)
+        current_value = self[year]
+        base_year_value = self[base_year]
 
         # Handle None values
         if base_year_value is None or current_value is None:
@@ -447,8 +447,8 @@ class LineItemResults:
             )
 
         # Get values for current and base years
-        current_value = self.model.value(self.name, year)
-        base_year_value = self.model.value(self.name, base_year)
+        current_value = self[year]
+        base_year_value = self[base_year]
 
         # Handle None values or zero base year value
         if base_year_value is None or current_value is None:
@@ -485,7 +485,7 @@ class LineItemResults:
         # Sum values for all specified years
         cumulative_sum = 0
         for year in years_to_sum:
-            value = self.model.value(self.name, year)
+            value = self[year]
             if value is None:
                 value = 0  # Treat None values as zero
             cumulative_sum += value
