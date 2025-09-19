@@ -105,7 +105,7 @@ class TestCalculateLineItemValue:
         )
 
     def test_calculate_line_item_value_returns_none_from_values(self):
-        """Test that None values in values dict now trigger formula usage when available."""
+        """Test that None values now trigger formula usage when available."""
         hardcoded_values = {2020: 1.0, 2021: None, 2022: 3.0}
         vals = {}
 
@@ -155,9 +155,9 @@ class TestCalculateLineItemValue:
 
 
 class TestCalculateLineItemValueValidation:
-    """Test validation of interim_values_by_year parameter in calculate_line_item_value function."""
+    """Test validation of interim_values_by_year in calculate_line_item_value."""
 
-    def test_calculate_line_item_value_validates_interim_values_by_year_non_integer_keys(
+    def test_calculate_line_item_value_validates_interim_values_non_integer_keys(
         self,
     ):
         """Test that calculate_line_item_value validates interim_values_by_year has
@@ -208,10 +208,10 @@ class TestCalculateLineItemValueValidation:
             )
         assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
 
-    def test_calculate_line_item_value_validates_interim_values_by_year_inconsistent_keys(
+    def test_calculate_line_item_value_validates_interim_values_inconsistent_keys(
         self,
     ):
-        """Test that calculate_line_item_value validates consistent variable names across years."""
+        """Test validation of consistent variable names across years."""
         hardcoded_values = {2020: 100.0}
 
         # Invalid: inconsistent variable names between years
@@ -227,10 +227,10 @@ class TestCalculateLineItemValueValidation:
             )
         assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
 
-    def test_calculate_line_item_value_validates_interim_values_by_year_extra_keys_in_last_year(
+    def test_calculate_line_item_value_validates_extra_keys_in_last_year(
         self,
     ):
-        """Test that calculate_line_item_value validates last year doesn't have extra variables."""
+        """Test validation that last year doesn't have extra variables."""
         hardcoded_values = {2020: 100.0}
 
         # Invalid: last year has extra variables not in previous years
@@ -276,7 +276,7 @@ class TestCalculateLineItemValueValidation:
         assert result == 100.0
 
     def test_calculate_line_item_value_duplicate_in_interim_values_raises_error(self):
-        """Test that calculate_line_item_value raises error when value already exists in interim_values_by_year."""
+        """Test error when value already exists in interim_values_by_year."""
         hardcoded_values = {2020: 100.0}
         interim_values = {2020: {"test_item": 50.0}}  # Already exists
 
@@ -291,7 +291,7 @@ class TestCalculateLineItemValueValidation:
 
 
 class TestCalculateLineItemValueNoneValues:
-    """Test class specifically for None value functionality in calculate_line_item_value."""
+    """Test class for None value functionality in calculate_line_item_value."""
 
     def test_calculate_line_item_value_accepts_none_values(self):
         """Test that calculate_line_item_value can work with None values."""
@@ -350,7 +350,7 @@ class TestCalculateLineItemValueNoneValues:
         assert result == 20.0  # 10.0 * 2
 
     def test_calculate_line_item_value_returns_none_from_hardcoded_values(self):
-        """Test that calculate_line_item_value returns None when None is stored in hardcoded_values."""
+        """Test that None values in hardcoded_values can return None."""
         hardcoded_values = {2020: 100.0, 2021: None, 2022: 200.0}
 
         interim_values = {}
@@ -374,7 +374,8 @@ class TestCalculateLineItemValueNoneValues:
         )
 
     def test_calculate_line_item_value_returns_none_when_no_data(self):
-        """Test that calculate_line_item_value returns None when no value exists and no formula."""
+        """Test that calculate_line_item_value returns None when no value exists
+        and no formula."""
         hardcoded_values = {}
 
         interim_values = {}
