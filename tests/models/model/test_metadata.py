@@ -9,27 +9,27 @@ import pytest
 
 from pyproforma import Category, LineItem
 from pyproforma.models.model.metadata import (
-    collect_category_metadata,
-    collect_line_item_metadata,
+    generate_category_metadata,
+    generate_line_item_metadata,
 )
 from pyproforma.models.multi_line_item.debt import Debt
 
 
-class TestCollectCategoryMetadata:
-    """Test the collect_category_metadata function."""
+class TestGenerateCategoryMetadata:
+    """Test the generate_category_metadata function."""
 
     def test_empty_categories_and_multi_line_items(self):
         """Test with empty input lists."""
-        result = collect_category_metadata([], [])
+        result = generate_category_metadata([], [])
         assert result == []
 
-        result = collect_category_metadata([])
+        result = generate_category_metadata([])
         assert result == []
 
     def test_single_category_without_total(self):
         """Test with a single category that doesn't include totals."""
         categories = [Category(name="revenue", label="Revenue", include_total=False)]
-        result = collect_category_metadata(categories)
+        result = generate_category_metadata(categories)
 
         expected = [
             {
@@ -53,7 +53,7 @@ class TestCollectCategoryMetadata:
                 total_label="Total Expenses",
             )
         ]
-        result = collect_category_metadata(categories)
+        result = generate_category_metadata(categories)
 
         expected = [
             {
@@ -92,7 +92,7 @@ class TestCollectCategoryMetadata:
                 total_label="Total Assets",
             ),
         ]
-        result = collect_category_metadata(categories)
+        result = generate_category_metadata(categories)
 
         expected = [
             {
@@ -136,7 +136,7 @@ class TestCollectCategoryMetadata:
         debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
         multi_line_items = [debt]
 
-        result = collect_category_metadata(categories, multi_line_items)
+        result = generate_category_metadata(categories, multi_line_items)
 
         expected = [
             {
@@ -164,7 +164,7 @@ class TestCollectCategoryMetadata:
         debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
         multi_line_items = [debt]
 
-        result = collect_category_metadata(categories, multi_line_items)
+        result = generate_category_metadata(categories, multi_line_items)
 
         # Should only have the original category, not the multi-line item
         expected = [
@@ -186,7 +186,7 @@ class TestCollectCategoryMetadata:
         debt2 = Debt(name="debt2", par_amount={2020: 2000}, interest_rate=0.06, term=25)
         multi_line_items = [debt1, debt2]
 
-        result = collect_category_metadata(categories, multi_line_items)
+        result = generate_category_metadata(categories, multi_line_items)
 
         expected = [
             {
@@ -209,12 +209,12 @@ class TestCollectCategoryMetadata:
         assert result == expected
 
 
-class TestCollectLineItemMetadata:
-    """Test the collect_line_item_metadata function."""
+class TestGenerateLineItemMetadata:
+    """Test the generate_line_item_metadata function."""
 
     def test_empty_inputs(self):
         """Test with empty input lists."""
-        result = collect_line_item_metadata([], [], [])
+        result = generate_line_item_metadata([], [], [])
         assert result == []
 
     def test_single_line_item(self):
@@ -231,7 +231,7 @@ class TestCollectLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 
@@ -243,6 +243,8 @@ class TestCollectLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
+                "formula": None,
+                "hardcoded_values": {2020: 1000},
             }
         ]
         assert result == expected
@@ -275,7 +277,7 @@ class TestCollectLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 
@@ -287,6 +289,8 @@ class TestCollectLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
+                "formula": None,
+                "hardcoded_values": {2020: 1000},
             },
             {
                 "name": "growth_rate",
@@ -295,6 +299,8 @@ class TestCollectLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "growth_rate",
                 "category": "assumptions",
+                "formula": None,
+                "hardcoded_values": {2020: 0.05},
             },
             {
                 "name": "description",
@@ -303,7 +309,74 @@ class TestCollectLineItemMetadata:
                 "source_type": "line_item",
                 "source_name": "description",
                 "category": "notes",
+                "formula": None,
+                "hardcoded_values": {2020: "test"},
             },
+        ]
+        assert result == expected
+
+    def test_line_item_with_formula(self):
+        """Test with a line item that has a formula."""
+        line_items = [
+            LineItem(
+                name="profit",
+                label="Profit",
+                category="income",
+                formula="revenue * 0.1",
+                values={2020: 100, 2021: 200},
+                value_format="no_decimals",
+            )
+        ]
+        category_metadata = []
+        multi_line_items = []
+
+        result = generate_line_item_metadata(
+            line_items, category_metadata, multi_line_items
+        )
+
+        expected = [
+            {
+                "name": "profit",
+                "label": "Profit",
+                "value_format": "no_decimals",
+                "source_type": "line_item",
+                "source_name": "profit",
+                "category": "income",
+                "formula": "revenue * 0.1",
+                "hardcoded_values": {2020: 100, 2021: 200},
+            }
+        ]
+        assert result == expected
+
+    def test_line_item_formula_only_no_hardcoded_values(self):
+        """Test with a line item that has only a formula and no hardcoded values."""
+        line_items = [
+            LineItem(
+                name="calculated_value",
+                label="Calculated Value",
+                category="calculations",
+                formula="base_value + adjustment",
+                value_format="two_decimals",
+            )
+        ]
+        category_metadata = []
+        multi_line_items = []
+
+        result = generate_line_item_metadata(
+            line_items, category_metadata, multi_line_items
+        )
+
+        expected = [
+            {
+                "name": "calculated_value",
+                "label": "Calculated Value",
+                "value_format": "two_decimals",
+                "source_type": "line_item",
+                "source_name": "calculated_value",
+                "category": "calculations",
+                "formula": "base_value + adjustment",
+                "hardcoded_values": {},
+            }
         ]
         assert result == expected
 
@@ -340,7 +413,7 @@ class TestCollectLineItemMetadata:
         ]
         multi_line_items = []
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 
@@ -356,6 +429,8 @@ class TestCollectLineItemMetadata:
             "source_type": "category",
             "source_name": "revenue",
             "category": "category_totals",
+            "formula": None,
+            "hardcoded_values": None,
         }
 
     def test_category_totals_excluded_if_no_items(self):
@@ -385,7 +460,7 @@ class TestCollectLineItemMetadata:
         ]
         multi_line_items = []
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 
@@ -403,7 +478,7 @@ class TestCollectLineItemMetadata:
         debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
         multi_line_items = [debt]
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 
@@ -420,6 +495,8 @@ class TestCollectLineItemMetadata:
                 "source_type": "multi_line_item",
                 "source_name": "debt",
                 "category": "debt",
+                "formula": None,
+                "hardcoded_values": None,
             }
 
     def test_duplicate_names_raise_error(self):
@@ -442,7 +519,7 @@ class TestCollectLineItemMetadata:
         multi_line_items = []
 
         with pytest.raises(ValueError) as exc_info:
-            collect_line_item_metadata(line_items, category_metadata, multi_line_items)
+            generate_line_item_metadata(line_items, category_metadata, multi_line_items)
 
         assert "Duplicate defined names found in Model: revenue" in str(exc_info.value)
 
@@ -477,7 +554,7 @@ class TestCollectLineItemMetadata:
         multi_line_items = []
 
         with pytest.raises(ValueError) as exc_info:
-            collect_line_item_metadata(line_items, category_metadata, multi_line_items)
+            generate_line_item_metadata(line_items, category_metadata, multi_line_items)
 
         error_msg = str(exc_info.value)
         assert "Duplicate defined names found in Model:" in error_msg
@@ -520,7 +597,7 @@ class TestCollectLineItemMetadata:
         debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
         multi_line_items = [debt]
 
-        result = collect_line_item_metadata(
+        result = generate_line_item_metadata(
             line_items, category_metadata, multi_line_items
         )
 

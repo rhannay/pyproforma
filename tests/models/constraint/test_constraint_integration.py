@@ -279,7 +279,7 @@ class TestConstraintValidation:
     """Test constraint validation during model operations."""
 
     def test_recalculate_validates_constraints(self):
-        """Test that _recalculate method validates constraints."""
+        """Test that _build_and_calculate method validates constraints."""
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 100000})
         ]
@@ -307,7 +307,7 @@ class TestConstraintValidation:
 
         # This should raise an error when recalculating
         with pytest.raises(ValueError, match="Duplicate constraint names not allowed"):
-            model._recalculate()
+            model._build_and_calculate()
 
     def test_constraint_validation_with_empty_list(self):
         """Test that constraint validation works with empty constraint list."""
@@ -318,7 +318,7 @@ class TestConstraintValidation:
         model = Model(line_items=line_items, years=[2023], constraints=[])
 
         # This should not raise any errors
-        model._recalculate()
+        model._build_and_calculate()
 
         assert model.constraints == []
 

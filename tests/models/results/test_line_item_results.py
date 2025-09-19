@@ -63,7 +63,7 @@ class TestLineItemResultsInitialization:
         line_item_results = LineItemResults(model_with_line_items, "revenue")
 
         assert line_item_results.model is model_with_line_items
-        assert line_item_results.item_name == "revenue"
+        assert line_item_results.name == "revenue"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Revenue"
         assert line_item_results.value_format == "no_decimals"
@@ -73,7 +73,7 @@ class TestLineItemResultsInitialization:
         line_item_results = LineItemResults(model_with_line_items, "profit")
 
         assert line_item_results.model is model_with_line_items
-        assert line_item_results.item_name == "profit"
+        assert line_item_results.name == "profit"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Profit"
         assert line_item_results.value_format == "no_decimals"
@@ -111,10 +111,7 @@ class TestLineItemResultsStringRepresentation:
         """Test __repr__ method returns expected format."""
         repr_result = repr(line_item_results)
 
-        assert (
-            repr_result
-            == "LineItemResults(item_name='revenue', source_type='line_item')"
-        )
+        assert repr_result == "LineItemResults(name='revenue', source_type='line_item')"
 
     def test_summary_method(self, line_item_results):
         """Test summary method returns formatted line item information."""
@@ -148,7 +145,7 @@ class TestLineItemResultsValueMethods:
 
     def test_values_method_returns_correct_values(self, line_item_results):
         """Test values method returns correct values for all years."""
-        values = line_item_results.values()
+        values = line_item_results.values
 
         expected_values = {2023: 100000, 2024: 120000, 2025: 140000}
         assert values == expected_values
@@ -180,7 +177,7 @@ class TestLineItemResultsValueMethods:
         with patch.object(line_item_results.model, "value") as mock_value:
             mock_value.side_effect = [100000, 120000, 140000]
 
-            line_item_results.values()
+            line_item_results.values
 
             expected_calls = [
                 (("revenue", 2023),),
@@ -228,26 +225,6 @@ class TestLineItemResultsDataFrameMethods:
         assert df.index.tolist() == ["revenue"]
         assert df.columns.tolist() == [2023, 2024, 2025]
         assert df.loc["revenue"].values.tolist() == [100000, 120000, 140000]
-
-    def test_to_series_uses_values_method(self, line_item_results):
-        """Test that to_series method uses values method."""
-        with patch.object(line_item_results, "values") as mock_values:
-            mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
-
-            series = line_item_results.to_series()
-
-            mock_values.assert_called_once()
-            assert series.name == "revenue"
-
-    def test_to_dataframe_uses_values_method(self, line_item_results):
-        """Test that to_dataframe method uses values method."""
-        with patch.object(line_item_results, "values") as mock_values:
-            mock_values.return_value = {2023: 100000, 2024: 120000, 2025: 140000}
-
-            df = line_item_results.to_dataframe()
-
-            mock_values.assert_called_once()
-            assert df.index.tolist() == ["revenue"]
 
 
 class TestLineItemResultsTableMethod:
@@ -483,7 +460,7 @@ class TestLineItemResultsIntegration:
         line_item_results = integrated_model.line_item("revenue")
 
         assert isinstance(line_item_results, LineItemResults)
-        assert line_item_results.item_name == "revenue"
+        assert line_item_results.name == "revenue"
         assert line_item_results.model is integrated_model
 
         # Test that methods work
@@ -517,7 +494,7 @@ class TestLineItemResultsIntegration:
         """Test values method with real model data."""
         line_item_results = integrated_model.line_item("revenue")
 
-        values = line_item_results.values()
+        values = line_item_results.values
         assert values == {2023: 100000, 2024: 120000}
 
     def test_line_item_results_pandas_integration(self, integrated_model):
@@ -560,7 +537,7 @@ class TestLineItemResultsEdgeCases:
 
         line_item_results = LineItemResults(model, "revenue_2024")
 
-        assert line_item_results.item_name == "revenue_2024"
+        assert line_item_results.name == "revenue_2024"
         summary = line_item_results.summary()
         assert "LineItemResults('revenue_2024')" in summary
         assert "Label: Revenue 2024" in summary
@@ -583,7 +560,7 @@ class TestLineItemResultsEdgeCases:
 
         line_item_results = LineItemResults(model, "revenue")
 
-        values = line_item_results.values()
+        values = line_item_results.values
         assert values == {2024: 100000}
 
         series = line_item_results.to_series()
@@ -624,7 +601,7 @@ class TestLineItemResultsCalculationMethods:
     """Test the calculation methods added to LineItemResults."""
 
     @pytest.fixture
-    def calculation_model(self):
+    def calculation_model(self) -> Model:
         """Create a model for testing calculation methods."""
         line_items = [
             LineItem(
@@ -657,7 +634,7 @@ class TestLineItemResultsCalculationMethods:
             line_items=line_items, years=[2020, 2021, 2022, 2023], categories=categories
         )
 
-    def test_percent_change_method(self, calculation_model):
+    def test_percent_change_method(self, calculation_model: Model):
         """Test percent_change method on LineItemResults."""
         revenue_item = calculation_model.line_item("revenue")
 
@@ -673,7 +650,7 @@ class TestLineItemResultsCalculationMethods:
         # First year should return None
         assert revenue_item.percent_change(2020) is None
 
-    def test_percent_change_with_zero_previous_value(self, calculation_model):
+    def test_percent_change_with_zero_previous_value(self, calculation_model: Model):
         """Test percent_change when previous value is zero."""
         zero_item = calculation_model.line_item("zero_item")
 
@@ -683,7 +660,7 @@ class TestLineItemResultsCalculationMethods:
         # zero_item: 0 -> 5, can't calculate percent change from zero
         assert zero_item.percent_change(2023) is None
 
-    def test_cumulative_percent_change_method(self, calculation_model):
+    def test_cumulative_percent_change_method(self, calculation_model: Model):
         """Test cumulative_percent_change method on LineItemResults."""
         revenue_item = calculation_model.line_item("revenue")
 
@@ -899,3 +876,374 @@ class TestLineItemResultsCalculationMethods:
 
             # Should work fine with years that don't include the None value
             assert revenue_item.cumulative([2020, 2022]) == 250
+
+
+class TestLineItemResultsDeleteMethod:
+    """Test the delete method of LineItemResults."""
+
+    @pytest.fixture
+    def delete_test_model(self):
+        """Create a model for testing delete functionality."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="profit",
+                category="income",
+                formula="revenue - expenses",
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_delete_method_successfully_deletes_line_item(self, delete_test_model):
+        """Test that delete method successfully removes line item from model."""
+        # Get initial count
+        initial_count = len(delete_test_model.line_item_definitions)
+
+        # Delete profit first (it references other items, so delete it first)
+        profit_item = delete_test_model["profit"]
+        profit_item.delete()
+
+        # Now delete revenue (which is no longer referenced)
+        revenue_item = delete_test_model["revenue"]
+
+        # Verify the item exists
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "revenue" in item_names
+
+        # Delete the item
+        revenue_item.delete()
+
+        # Verify the item was deleted
+        assert len(delete_test_model.line_item_definitions) == initial_count - 2
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "revenue" not in item_names
+
+    @pytest.fixture
+    def simple_delete_test_model(self):
+        """Create a simple model without formula dependencies for testing delete."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_delete_method_raises_error_for_non_line_item_types(
+        self, delete_test_model
+    ):
+        """Test that delete method raises ValueError for non-line_item source types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            delete_test_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(delete_test_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.delete()
+
+        assert "Cannot delete category item 'income'" in str(excinfo.value)
+        assert "Only line_item types support deletion" in str(excinfo.value)
+
+    def test_delete_method_raises_error_for_generator_types(self, delete_test_model):
+        """Test that delete method raises ValueError for generator source types."""
+        # Mock metadata to simulate a generator item
+        mock_metadata = {
+            "source_type": "multi_line_item_generator",
+            "label": "Test Generator",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            delete_test_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            generator_results = LineItemResults(delete_test_model, "test_generator")
+
+            with pytest.raises(ValueError) as excinfo:
+                generator_results.delete()
+
+        error_msg = str(excinfo.value)
+        expected_msg = "Cannot delete multi_line_item_generator item 'test_generator'"
+        assert expected_msg in error_msg
+        assert "Only line_item types support deletion" in error_msg
+
+    def test_delete_method_integration_with_formulas(self, delete_test_model):
+        """Test deleting a line item that is referenced by other formulas."""
+        # The profit line item has formula "revenue - expenses"
+        # Try to delete revenue (which is referenced in the formula)
+        revenue_item = delete_test_model["revenue"]
+
+        # This should raise an error because revenue is referenced by profit
+        with pytest.raises(ValueError):
+            revenue_item.delete()
+
+    def test_delete_method_allows_deletion_of_unreferenced_items(
+        self, delete_test_model
+    ):
+        """Test that deletion works for items not referenced by other formulas."""
+        # Delete profit first (which has the formula referencing other items)
+        profit_item = LineItemResults(delete_test_model, "profit")
+        profit_item.delete()
+
+        # Now we can delete expenses since it's no longer referenced
+        expenses_item = LineItemResults(delete_test_model, "expenses")
+        initial_count = len(delete_test_model.line_item_definitions)
+
+        expenses_item.delete()
+
+        # Verify deletion was successful
+        assert len(delete_test_model.line_item_definitions) == initial_count - 1
+        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert "expenses" not in item_names
+
+
+class TestLineItemResultsValueSetting:
+    """Test value setting functionality (__setitem__ and set_value methods)."""
+
+    @pytest.fixture
+    def value_setting_model(self):
+        """Create a model for testing value setting functionality."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                label="Revenue",
+                values={2023: 100000, 2024: 120000, 2025: 140000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                label="Expenses",
+                values={2023: 50000, 2024: 60000, 2025: 70000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="profit",
+                category="income",
+                label="Profit",
+                formula="revenue - expenses",
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+
+        return Model(
+            line_items=line_items,
+            years=[2023, 2024, 2025],
+            categories=categories,
+        )
+
+    def test_setitem_method_calls_set_value(self, value_setting_model):
+        """Test that __setitem__ method calls set_value correctly."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        with patch.object(revenue_item, "set_value") as mock_set_value:
+            revenue_item[2024] = 99999
+
+            mock_set_value.assert_called_once_with(2024, 99999)
+
+    def test_set_value_integration_test(self, value_setting_model):
+        """Test set_value with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original value
+        original_value = revenue_item.value(2024)
+        assert original_value == 120000
+
+        # Set new value
+        revenue_item.set_value(2024, 99999)
+
+        # Verify the value was updated in the model
+        new_value = revenue_item.value(2024)
+        assert new_value == 99999
+
+        # Verify other years are preserved
+        assert revenue_item.value(2023) == 100000
+        assert revenue_item.value(2025) == 140000
+
+    def test_setitem_integration_test(self, value_setting_model):
+        """Test __setitem__ with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original value
+        original_value = revenue_item[2024]
+        assert original_value == 120000
+
+        # Set new value using bracket notation
+        revenue_item[2024] = 88888
+
+        # Verify the value was updated in the model
+        new_value = revenue_item[2024]
+        assert new_value == 88888
+
+        # Verify other years are preserved
+        assert revenue_item[2023] == 100000
+        assert revenue_item[2025] == 140000
+
+    def test_set_value_method_raises_error_for_non_line_item(self, value_setting_model):
+        """Test that set_value raises ValueError for non-line_item types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            value_setting_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(value_setting_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.set_value(2024, 99999)
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set value on category item 'income'" in error_msg
+        assert "Only line_item types support value modification" in error_msg
+
+    def test_set_value_method_raises_error_for_invalid_year(self, value_setting_model):
+        """Test that set_value raises KeyError for invalid year."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        with pytest.raises(KeyError) as excinfo:
+            revenue_item.set_value(2026, 99999)
+
+        error_msg = str(excinfo.value)
+        assert "Year 2026 not found in model years" in error_msg
+
+    def test_value_setting_with_different_value_types(self, value_setting_model):
+        """Test value setting with different numeric types."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Test with integer
+        revenue_item.set_value(2023, 100)
+        assert revenue_item.value(2023) == 100
+
+        # Test with float
+        revenue_item.set_value(2024, 100.5)
+        assert revenue_item.value(2024) == 100.5
+
+        # Test with negative value
+        revenue_item.set_value(2025, -50)
+        assert revenue_item.value(2025) == -50
+
+    def test_set_value_with_zero_value(self, value_setting_model):
+        """Test setting value to zero."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        revenue_item.set_value(2024, 0)
+        assert revenue_item.value(2024) == 0
+
+    def test_set_value_overwrites_formula_calculation(self, value_setting_model):
+        """Test that setting hardcoded value overwrites formula calculation."""
+        # Test setting hardcoded value on a line item with formula
+        profit_item = LineItemResults(value_setting_model, "profit")
+
+        # Get calculated value first
+        calculated_value = profit_item.value(2024)
+        expected_calculated = 120000 - 60000  # revenue - expenses
+        assert calculated_value == expected_calculated
+
+        # Set hardcoded value
+        profit_item.set_value(2024, 99999)
+
+        # Should now return hardcoded value instead of calculated
+        hardcoded_value = profit_item.value(2024)
+        assert hardcoded_value == 99999
+
+    def test_values_setter_integration_test(self, value_setting_model):
+        """Test values setter with actual model integration."""
+        revenue_item = LineItemResults(value_setting_model, "revenue")
+
+        # Get original values
+        original_values = revenue_item.values
+        expected_original = {2023: 100000, 2024: 120000, 2025: 140000}
+        assert original_values == expected_original
+
+        # Set new values using the setter
+        new_values = {2023: 150000, 2024: 180000, 2025: 210000}
+        revenue_item.values = new_values
+
+        # Verify the values were updated in the model
+        updated_values = revenue_item.values
+        assert updated_values == new_values
+
+        # Verify the values are also updated in the underlying model
+        model_values = value_setting_model.line_item_definition("revenue").values
+        assert model_values == new_values
+
+        # Verify creating a new LineItemResults also has the updated values
+        new_revenue_item = LineItemResults(value_setting_model, "revenue")
+        assert new_revenue_item.values == new_values
+
+    def test_values_setter_raises_error_for_non_line_item(self, value_setting_model):
+        """Test that values setter raises ValueError for non-line_item types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            value_setting_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(value_setting_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.values = {2024: 99999}
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set values on category item 'income'" in error_msg
+        assert "Only line_item types support values modification" in error_msg

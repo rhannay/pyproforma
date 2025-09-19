@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from pyproforma.models._utils import check_interim_values_by_year, check_name
+from pyproforma.models._utils import validate_name
+from pyproforma.models.model.value_matrix import validate_value_matrix
 from pyproforma.models.multi_line_item.abc_class import MultiLineItem
 
 
@@ -72,10 +73,7 @@ class ShortTermDebt(MultiLineItem):
         begin_balance: float = 0.0,
         interest_rate: float | dict | str = 0.0,
     ):
-        if not check_name(name):
-            raise ValueError(
-                "Short term debt name must only contain letters, numbers, underscores, or hyphens (no spaces or special characters)."  # noqa: E501
-            )
+        validate_name(name)
 
         self.name = name
         self._draws = draws if draws is not None else {}
@@ -190,9 +188,7 @@ class ShortTermDebt(MultiLineItem):
             ValueError: If draws or paydowns are prior to the start year.
         """  # noqa: E501
         # Validate interim values by year
-        is_valid, error_msg = check_interim_values_by_year(interim_values_by_year)
-        if not is_valid:
-            raise ValueError(f"Invalid interim values by year: {error_msg}")
+        validate_value_matrix(interim_values_by_year)
 
         result = {}
 

@@ -13,7 +13,7 @@ from ..category import Category
 from ..line_item import LineItem
 
 
-def collect_category_metadata(
+def generate_category_metadata(
     category_definitions: List[Category], multi_line_items: List[MultiLineItem] = None
 ) -> List[Dict]:
     """
@@ -86,7 +86,7 @@ def collect_category_metadata(
     return category_metadata
 
 
-def collect_line_item_metadata(
+def generate_line_item_metadata(
     line_item_definitions: List[LineItem],
     category_metadata: List[Dict],
     multi_line_items: List[MultiLineItem],
@@ -115,6 +115,10 @@ def collect_line_item_metadata(
               ('line_item', 'category', 'multi_line_item')
             - 'source_name' (str): The original source object's name
             - 'category' (str): The category name
+            - 'formula' (str or None): The formula string for line items
+              (None for other types)
+            - 'hardcoded_values' (dict or None): Dictionary of year->value
+              mappings for line items (None for other types)
 
     Raises:
         ValueError: If duplicate names are found across different components
@@ -124,24 +128,34 @@ def collect_line_item_metadata(
         [
             {'name': 'revenue', 'label': 'Revenue',
              'value_format': 'no_decimals', 'source_type': 'line_item',
-             'source_name': 'revenue', 'category': 'income'},
+             'source_name': 'revenue', 'category': 'income',
+             'formula': 'sales * price', 'hardcoded_values': {2023: 100000}},
             {'name': 'total_revenue', 'label': 'Total Revenue',
              'value_format': 'no_decimals', 'source_type': 'category',
-             'source_name': 'revenue', 'category': 'category_totals'}
+             'source_name': 'revenue', 'category': 'category_totals',
+             'formula': None, 'hardcoded_values': None}
         ]
     """
     defined_names = []
 
     # Add line item definitions
     for item in line_item_definitions:
+        # If label is None, use name as label
+        label = item.label if item.label is not None else item.name
+
+        # If hardcoded values are None, use {}
+        hardcoded_values = item.values if item.values is not None else {}
+
         defined_names.append(
             {
                 "name": item.name,
-                "label": item.label,
+                "label": label,
                 "value_format": item.value_format,
                 "source_type": "line_item",
                 "source_name": item.name,
                 "category": item.category,
+                "formula": item.formula,
+                "hardcoded_values": hardcoded_values,
             }
         )
 
@@ -163,6 +177,8 @@ def collect_line_item_metadata(
                         "source_type": "category",
                         "source_name": category_meta["name"],
                         "category": "category_totals",
+                        "formula": None,
+                        "hardcoded_values": None,
                     }
                 )
 
@@ -177,6 +193,8 @@ def collect_line_item_metadata(
                     "source_type": "multi_line_item",
                     "source_name": generator.name,
                     "category": generator.name,
+                    "formula": None,
+                    "hardcoded_values": None,
                 }
             )
 

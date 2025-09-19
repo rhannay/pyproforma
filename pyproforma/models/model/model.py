@@ -12,7 +12,7 @@ from ..compare import Compare
 from ..constraint import Constraint
 from ..line_item import LineItem
 from ..results import CategoryResults, ConstraintResults, LineItemResults
-from .metadata import collect_category_metadata, collect_line_item_metadata
+from .metadata import generate_category_metadata, generate_line_item_metadata
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
 from .validations import (
@@ -21,6 +21,7 @@ from .validations import (
     validate_formulas,
     validate_line_items,
     validate_multi_line_items,
+    validate_years,
 )
 from .value_matrix import generate_value_matrix
 
@@ -34,8 +35,11 @@ class Model(SerializationMixin):
     and rich output formatting.
 
     Args:
-        line_items (list[LineItem], optional): LineItem objects defining the model
-            structure. If None, creates an empty model. Default: None
+        line_items (Union[list[LineItem], list[str], list[dict]], optional):
+            LineItem objects defining the model structure. Can be LineItem objects,
+            strings (which will be converted to LineItems with those names),
+            or dictionaries (which will be used with LineItem.from_dict).
+            If None, creates an empty model. Default: None
         years (list[int], optional): Years for the model time horizon.
             If None, defaults to empty list []. Models can be created with
             line items but empty years for template/workflow purposes. Default: None
@@ -51,13 +55,22 @@ class Model(SerializationMixin):
         >>> # Create an empty model
         >>> empty_model = Model()
         >>>
-        >>> # Create a model with line items
-        >>> revenue = LineItem(name="revenue", category="income", formula="1000")
-        >>> expenses = LineItem(
-        ...     name="expenses", category="income", formula="revenue * 0.8"
-        ... )
+        >>> # Create a model with line items as strings
+        >>> model = Model(line_items=["revenue", "expenses"], years=[2023, 2024])
         >>>
-        >>> model = Model(line_items=[revenue, expenses], years=[2023, 2024, 2025])
+        >>> # Create a model with line items as dictionaries
+        >>> line_items = [
+        ...     {"name": "revenue", "category": "income", "formula": "1000"},
+        ...     {"name": "expenses", "category": "costs", "formula": "revenue * 0.8"}
+        ... ]
+        >>> model = Model(line_items=line_items, years=[2023, 2024])
+        >>>
+        >>> # Create a model with mixed line item types
+        >>> revenue = LineItem(name="revenue", category="income", formula="1000")
+        >>> model = Model(
+        ...     line_items=[revenue, {"name": "expenses", "formula": "800"}, "profit"],
+        ...     years=[2023, 2024]
+        ... )
         >>>
         >>> # Access values
         >>> model.value("revenue", 2023)  # 1000
@@ -93,95 +106,132 @@ class Model(SerializationMixin):
 
     def __init__(
         self,
-        line_items: list[LineItem] = None,
+        line_items: Union[list[LineItem], list[str], list[dict]] = None,
         years: list[int] = None,
-        categories: list[Category] = None,
+        categories: Union[list[Category], list[str]] = None,
         constraints: list[Constraint] = None,
         multi_line_items: list[MultiLineItem] = None,
     ):
-        # Set defaults for empty model initialization
-        if line_items is None:
-            line_items = []
-        if years is None:
-            years = []
-
-        # Allow empty years even with line items - enables template creation
-        # and dynamic workflows. Models with empty years will have empty value
-        # matrices but maintain structural integrity
-
-        self._years = sorted(years)
-
+        self._years = years if years is not None else []
+        self._line_item_definitions = self._collect_line_item_definitions(line_items)
         self._category_definitions = self._collect_category_definitions(
-            line_items, categories
+            self._line_item_definitions, categories
         )
-        self._line_item_definitions = line_items
         self.multi_line_items = multi_line_items if multi_line_items is not None else []
         self.constraints = constraints if constraints is not None else []
 
-        validate_categories(self._category_definitions)
-        validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_multi_line_items(self.multi_line_items, self._category_definitions)
-        validate_constraints(self.constraints, self._line_item_definitions)
+        self._build_and_calculate()
 
-        self.category_metadata = collect_category_metadata(
-            self._category_definitions, self.multi_line_items
-        )
-        self.line_item_metadata = collect_line_item_metadata(
-            self._line_item_definitions, self.category_metadata, self.multi_line_items
-        )
-        validate_formulas(self._line_item_definitions, self.line_item_metadata)
+    @staticmethod
+    def _collect_line_item_definitions(
+        line_items: Union[list[LineItem], list[str], list[dict]] = None,
+    ) -> list[LineItem]:
+        """
+        Collect and convert line item definitions from various input formats.
 
-        self._value_matrix = generate_value_matrix(
-            self._years,
-            self._line_item_definitions + self.multi_line_items,
-            self._category_definitions,
-            self.line_item_metadata,
-        )
+        This method handles three input formats for line items:
+        1. List of LineItem objects - used as-is
+        2. List of strings - converted to LineItem objects with those names
+        3. List of dictionaries - converted using LineItem.from_dict()
+
+        Args:
+            line_items (Union[list[LineItem], list[str], list[dict]], optional):
+                Line items in various formats. If None, returns empty list.
+
+        Returns:
+            list[LineItem]: List of LineItem objects
+
+        Raises:
+            TypeError: If line_items contains unsupported types
+            ValueError: If string names are invalid or dictionaries are malformed
+        """
+        if line_items is None or len(line_items) == 0:
+            return []
+
+        line_item_definitions = []
+
+        for item in line_items:
+            if isinstance(item, LineItem):
+                # Already a LineItem object, use as-is
+                line_item_definitions.append(item)
+            elif isinstance(item, str):
+                # String name, create LineItem with that name
+                line_item = LineItem(name=item)
+                line_item_definitions.append(line_item)
+            elif isinstance(item, dict):
+                # Dictionary, use from_dict to create LineItem
+                line_item = LineItem.from_dict(item)
+                line_item_definitions.append(line_item)
+            else:
+                raise TypeError(
+                    f"Line items must be LineItem objects, strings, or dictionaries, "
+                    f"got {type(item)} for value: {item}"
+                )
+
+        return line_item_definitions
 
     @staticmethod
     def _collect_category_definitions(
-        line_items: list[LineItem], categories: list[Category] = None
+        line_items: list[LineItem], categories: Union[list[Category], list[str]] = None
     ) -> list[Category]:
         """
         Collect category definitions from provided categories or infer from line items.
 
-        If categories are provided, use them as the base. If not, automatically infer
-        categories from the unique category names used in the line items.
-        Multi-line items are no longer added as category definitions - they are only
-        captured in metadata.
+        If categories are provided, use them as the base. Categories can be provided
+        as Category objects or as strings (which will be converted to Category objects
+        with name=label). If not provided, automatically infer categories from the
+        unique category names used in the line items. Multi-line items are no longer
+        added as category definitions - they are only captured in metadata.
 
         Args:
             line_items (list[LineItem]): Line items to infer categories from
-            categories (list[Category], optional): Explicit category definitions
+            categories (Union[list[Category], list[str]], optional): Explicit category
+                definitions as Category objects or strings
 
         Returns:
             list[Category]: List of category definitions to use in the model
         """
-        if categories is None:
-            # Auto-infer categories from line items
+        if categories is None or len(categories) == 0:
+            # Auto-infer categories from line items when None or empty list
             category_names = set([item.category for item in line_items])
             category_definitions = []
             for name in category_names:
                 category = Category(name=name, label=name)
                 category_definitions.append(category)
         else:
-            # Use provided categories as base
-            category_definitions = list(categories)
+            # Handle provided categories - could be Category objects or strings
+            category_definitions = []
+            for cat in categories:
+                if isinstance(cat, Category):
+                    # Already a Category object, use as-is
+                    category_definitions.append(cat)
+                elif isinstance(cat, str):
+                    # String category name, convert to Category object
+                    category = Category(name=cat, label=cat)
+                    category_definitions.append(category)
+                else:
+                    raise TypeError(
+                        f"Categories must be Category objects or strings, "
+                        f"got {type(cat)} for value: {cat}"
+                    )
 
         return category_definitions
 
-    def _recalculate(self):
+    def _build_and_calculate(self):
+        validate_years(self._years)
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_constraints(self.constraints, self._line_item_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
-        self.category_metadata = collect_category_metadata(
+        validate_constraints(self.constraints, self._line_item_definitions)
+
+        self.category_metadata = generate_category_metadata(
             self._category_definitions, self.multi_line_items
         )
-        self.line_item_metadata = collect_line_item_metadata(
+        self.line_item_metadata = generate_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
+
         self._value_matrix = generate_value_matrix(
             self._years,
             self._line_item_definitions + self.multi_line_items,

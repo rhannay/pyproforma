@@ -29,7 +29,7 @@ class TestShortTermDebtBasic:
 
     def test_name_validation(self):
         """Test that invalid names raise ValueError."""
-        with pytest.raises(ValueError, match="Short term debt name must only contain"):
+        with pytest.raises(ValueError, match="Name must only contain"):
             ShortTermDebt(
                 name="invalid name with spaces",
                 draws={},

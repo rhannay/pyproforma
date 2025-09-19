@@ -175,3 +175,41 @@ def validate_formulas(line_items: List[LineItem], line_item_metadata: List[dict]
                 raise ValueError(
                     f"Error in formula for line item '{line_item.name}': {str(e)}"
                 ) from e
+
+
+def validate_years(years: List[int]):
+    """
+    Validates that years are integers, sequential, sorted, and have no gaps.
+
+    Args:
+        years (List[int]): List of years to validate
+
+    Raises:
+        ValueError: If years are not integers, not sorted, not sequential, or have gaps.
+        TypeError: If years is None.
+    """
+    if years is None:
+        raise TypeError("Years cannot be None")
+
+    if not years:
+        return  # Empty years list is allowed for template models
+
+    # Check that all years are integers
+    for year in years:
+        if not isinstance(year, int):
+            raise ValueError(
+                f"All years must be integers, found: {year} ({type(year).__name__})"
+            )
+
+    # Check that years are sorted
+    if years != sorted(years):
+        raise ValueError(f"Years must be in ascending order: {years}")
+
+    # Check that years are sequential with no gaps
+    if len(years) > 1:
+        for i in range(1, len(years)):
+            if years[i] != years[i - 1] + 1:
+                raise ValueError(
+                    f"Years must be sequential with no gaps. "
+                    f"Gap found between {years[i - 1]} and {years[i]}"
+                )

@@ -2,8 +2,8 @@ import pytest
 
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.model.metadata import (
-    collect_category_metadata,
-    collect_line_item_metadata,
+    generate_category_metadata,
+    generate_line_item_metadata,
 )
 from pyproforma.models.model.value_matrix import (
     _calculate_category_total,
@@ -148,10 +148,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -197,10 +197,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -239,10 +239,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -280,10 +280,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -321,10 +321,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -466,10 +466,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,
@@ -504,10 +504,10 @@ class TestGenerateValueMatrix:
         multi_line_items = []
 
         # Create metadata needed for generate_value_matrix
-        category_metadata = collect_category_metadata(
+        category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = collect_line_item_metadata(
+        line_item_metadata = generate_line_item_metadata(
             line_item_definitions,
             category_metadata,
             multi_line_items,

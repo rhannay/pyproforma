@@ -1,5 +1,5 @@
 from ..constants import RESERVED_CATEGORY_NAMES
-from ._utils import check_name
+from ._utils import validate_name
 
 
 class Category:
@@ -62,11 +62,7 @@ class Category:
         include_total: bool = True,
         total_label: str = None,
     ):
-        if not check_name(name):
-            raise ValueError(
-                "Category name must only contain letters, numbers, underscores, "
-                "or hyphens (no spaces or special characters)."
-            )
+        validate_name(name)
 
         if name in RESERVED_CATEGORY_NAMES:
             raise ValueError(

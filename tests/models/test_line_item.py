@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import LineItem, Model
+from pyproforma.models.line_item import _validate_values_keys
 
 
 @pytest.fixture
@@ -32,13 +33,20 @@ class TestLineItemInit:
         item = LineItem(
             name="default_label_item", category="expense", values={2020: 3.0, 2021: 4.0}
         )
-        assert item.label == "default_label_item"
+        assert item.label is None
+
+    def test_line_item_init_with_default_category(self):
+        """Test that LineItem uses 'general' as default category when not specified."""
+        item = LineItem(name="default_category_item", values={2020: 5.0, 2021: 6.0})
+        assert item.category == "general"
+        assert item.name == "default_category_item"
+        assert item.values == {2020: 5.0, 2021: 6.0}
 
     def test_no_values(self):
         item = LineItem(
             name="no_values_item", label="No Values Item", category="revenue"
         )
-        assert item.values == {}
+        assert item.values is None
 
     def test_values_can_contain_none(self):
         # Test that None values are now allowed
@@ -54,208 +62,40 @@ class TestLineItemInit:
         item2 = LineItem(name="test_item2", category="expense", values={2020: None})
         assert item2.values[2020] is None
 
-
-class TestGetValue:
-    def test_get_value_no_formula(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: 2.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) == 2.0
-
-        # Should return None when no value and no formula
-        result = item.get_value(vals, 2022)
-        assert result is None
-
-    def test_get_value_with_formula(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: 2.0},
-            formula="test_item[-1] * 1.05",
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) == 2.0
-        vals = {2021: {"test_item": 2.0}}
-        assert item.get_value(vals, 2022) == 2.0 * 1.05
-        val = {2022: {"test_item": 2.1}}
-        assert item.get_value(val, 2023) == 2.1 * 1.05
-
-        # Test for year referening [-1] but previous value does not exist
+    def test_values_keys_must_be_integers(self):
+        """Test that values dictionary keys must be integers (years)."""
+        # String keys should raise ValueError
         with pytest.raises(ValueError) as excinfo:
-            item.get_value(vals, 2019)
-        assert "2018 not found" in str(excinfo.value)
+            LineItem(
+                name="string_keys",
+                category="revenue",
+                values={"2020": 100.0, "2021": 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
 
-    def test_get_value_with_gap_in_yers(self):
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2022: 2.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-
-        # Should return None when no value and no formula
-        result = item.get_value(vals, 2021)
-        assert result is None
-
-        assert item.get_value(vals, 2022) == 2.0
-
-        # add formula
-        item.formula = "test_item[-1] * 1.05"
-        vals = {2020: {"test_item": 2.0}}
-        assert item.get_value(vals, 2021) == 2.0 * 1.05
-
-    def test_get_value_formula_referendes_other_item(self):
-        item2 = LineItem(
-            name="item2",
-            label="Item 2",
-            category="expense",
-            values={2020: 3.0},
-            formula="item1 * 2",
-        )
-        vals = {2021: {"item1": 5.0}}
-        assert item2.get_value(vals, 2021) == 5.0 * 2
-
-    def test_get_value_returns_none_from_values(self):
-        """Test that None values in values dict are returned correctly."""
-        item = LineItem(
-            name="test_item",
-            label="Test Item",
-            category="revenue",
-            values={2020: 1.0, 2021: None, 2022: 3.0},
-        )
-        vals = {}
-        assert item.get_value(vals, 2020) == 1.0
-        assert item.get_value(vals, 2021) is None
-        assert item.get_value(vals, 2022) == 3.0
-
-    def test_get_value_none_in_formula_raises_error(self):
-        """Test that None values in formulas raise appropriate errors."""
-        from pyproforma.models.formula import calculate_formula
-
-        # Test with None value in value matrix
-        value_matrix = {2023: {"revenue": None, "costs": 100}}
-
+        # Float keys should raise ValueError
         with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue + costs", value_matrix, 2023)
-        assert "has None value for year 2023" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
+            LineItem(
+                name="float_keys",
+                category="revenue",
+                values={2020.5: 100.0, 2021: 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got float" in error_msg
 
-        # Test with offset reference to None value
-        value_matrix = {2022: {"revenue": None}, 2023: {"revenue": 100, "costs": 50}}
-
+        # Mixed key types should raise ValueError
         with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue[-1] + costs", value_matrix, 2023)
-        assert "has None value for year 2022" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
-
-
-class TestGetValueValidation:
-    """Test validation of interim_values_by_year parameter in get_value method."""
-
-    def test_get_value_validates_interim_values_by_year_non_integer_keys(self):
-        """Test that get_value validates interim_values_by_year has integer keys."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: non-integer keys
-        invalid_interim_values = {"2020": {"other_item": 50.0}}
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "All keys must be integers representing years" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_unordered_years(self):
-        """Test that get_value validates interim_values_by_year has years in ascending order."""  # noqa: E501
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: years not in ascending order
-        invalid_interim_values = {
-            2022: {"other_item": 50.0},
-            2020: {"another_item": 25.0},
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Years must be in ascending order" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_non_dict_values(self):
-        """Test that get_value validates interim_values_by_year has dict values."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: values are not dictionaries
-        invalid_interim_values = {2020: "not_a_dict"}
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_inconsistent_keys(self):
-        """Test that get_value validates consistent variable names across years."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: inconsistent variable names between years
-        invalid_interim_values = {
-            2020: {"var1": 10.0, "var2": 20.0},
-            2021: {"var1": 15.0, "var3": 25.0},  # var2 missing, var3 extra
-            2022: {"var1": 20.0},  # last year can be subset
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
-
-    def test_get_value_validates_interim_values_by_year_extra_keys_in_last_year(self):
-        """Test that get_value validates last year doesn't have extra variables."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Invalid: last year has extra variables not in previous years
-        invalid_interim_values = {
-            2020: {"var1": 10.0},
-            2021: {"var1": 15.0, "var2": 25.0},  # var2 is extra
-        }
-
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(invalid_interim_values, 2020)
-        assert "Invalid interim values by year" in str(excinfo.value)
-        assert "Last year (2021) contains extra variables" in str(excinfo.value)
-
-    def test_get_value_accepts_valid_interim_values_by_year(self):
-        """Test that get_value accepts valid interim_values_by_year."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Valid interim values
-        valid_interim_values = {
-            2020: {"var1": 10.0, "var2": 20.0},
-            2021: {"var1": 15.0, "var2": 25.0},
-            2022: {"var1": 20.0},  # last year can be subset
-        }
-
-        # Should not raise an error
-        result = item.get_value(valid_interim_values, 2020)
-        assert result == 100.0
-
-    def test_get_value_accepts_empty_interim_values_by_year(self):
-        """Test that get_value accepts empty interim_values_by_year."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Empty interim values should be valid
-        empty_interim_values = {}
-
-        # Should not raise an error
-        result = item.get_value(empty_interim_values, 2020)
-        assert result == 100.0
+            LineItem(
+                name="mixed_keys",
+                category="revenue",
+                values={2020: 100.0, "2021": 200.0},
+            )
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
 
 
 class TestLineItemMisc:
@@ -342,11 +182,11 @@ class TestLineItemMisc:
         assert item.category == "revenue"
         assert item.values == {2020: 10.0, 2021: 20.0}
 
-    def test_line_item_from_dict_label_defaults_to_name(self):
+    def test_line_item_from_dict_label_is_none(self):
         data = {"name": "item2", "category": "expense", "values": {2020: 5.0}}
         item = LineItem.from_dict(data)
         assert item.name == "item2"
-        assert item.label == "item2"
+        assert item.label is None
         assert item.category == "expense"
         assert item.values == {2020: 5.0}
 
@@ -393,79 +233,6 @@ class TestLineItemMisc:
         assert reconstructed.value_format == original.value_format
 
 
-class TestIsHardcoded:
-    """Test class for the is_hardcoded method."""
-
-    def test_is_hardcoded_returns_true_when_year_in_values(self):
-        """Test that is_hardcoded returns True when year exists in values dict."""
-        item = LineItem(
-            name="test_item",
-            category="revenue",
-            values={2020: 100.0, 2021: 200.0, 2022: None},
-        )
-
-        assert item.is_hardcoded(2020) is True
-        assert item.is_hardcoded(2021) is True
-        assert (
-            item.is_hardcoded(2022) is True
-        )  # Even None values are considered hardcoded
-
-    def test_is_hardcoded_returns_false_when_year_not_in_values(self):
-        """Test that is_hardcoded returns False when year doesn't exist in values dict."""  # noqa: E501
-        item = LineItem(
-            name="test_item", category="revenue", values={2020: 100.0, 2021: 200.0}
-        )
-
-        assert item.is_hardcoded(2019) is False
-        assert item.is_hardcoded(2022) is False
-        assert item.is_hardcoded(2025) is False
-
-    def test_is_hardcoded_with_empty_values(self):
-        """Test that is_hardcoded returns False when values dict is empty."""
-        item = LineItem(name="test_item", category="revenue")
-
-        assert item.is_hardcoded(2020) is False
-        assert item.is_hardcoded(2021) is False
-
-    def test_is_hardcoded_with_formula_item(self):
-        """Test that is_hardcoded works correctly for items with formulas."""
-        item = LineItem(
-            name="test_item",
-            category="revenue",
-            values={2020: 100.0},  # Only hardcoded for 2020
-            formula="test_item[-1] * 1.1",
-        )
-
-        assert item.is_hardcoded(2020) is True  # Has explicit value
-        assert item.is_hardcoded(2021) is False  # Would use formula
-        assert item.is_hardcoded(2022) is False  # Would use formula
-
-    def test_is_hardcoded_with_mixed_none_and_numeric_values(self):
-        """Test is_hardcoded with mixed None and numeric values."""
-        item = LineItem(
-            name="mixed_item",
-            category="revenue",
-            values={2020: 100.0, 2021: None, 2022: 200.0},
-        )
-
-        assert item.is_hardcoded(2020) is True
-        assert item.is_hardcoded(2021) is True  # None is still considered hardcoded
-        assert item.is_hardcoded(2022) is True
-        assert item.is_hardcoded(2023) is False  # Not in values
-
-    def test_is_hardcoded_different_year_types(self):
-        """Test is_hardcoded with different year value types."""
-        item = LineItem(name="test_item", category="revenue", values={2020: 100.0})
-
-        # Test with different integer representations
-        assert item.is_hardcoded(2020) is True
-        assert item.is_hardcoded(int(2020)) is True
-
-        # Test with years not in values
-        assert item.is_hardcoded(2019) is False
-        assert item.is_hardcoded(2021) is False
-
-
 class TestLineItemNoneValues:
     """Test class specifically for None value functionality in LineItems."""
 
@@ -488,41 +255,6 @@ class TestLineItemNoneValues:
             values={2020: None, 2021: None, 2022: None},
         )
         assert all(value is None for value in item.values.values())
-
-    def test_get_value_returns_none_from_values_dict(self):
-        """Test that get_value returns None when None is stored in values."""
-        item = LineItem(
-            name="none_test",
-            category="revenue",
-            values={2020: 100.0, 2021: None, 2022: 200.0},
-        )
-
-        interim_values = {}
-        assert item.get_value(interim_values, 2020) == 100.0
-        assert item.get_value(interim_values, 2021) is None
-        assert item.get_value(interim_values, 2022) == 200.0
-
-    def test_get_value_returns_none_when_no_data(self):
-        """Test that get_value returns None when no value exists and no formula."""
-        item = LineItem(name="empty", category="revenue")
-
-        interim_values = {}
-        result = item.get_value(interim_values, 2020)
-        assert result is None
-
-    def test_get_value_formula_overrides_none_values(self):
-        """Test that formulas work even when values dict contains None."""
-        item = LineItem(
-            name="formula_test",
-            category="revenue",
-            values={2020: None},  # None in values
-            formula="test_item * 2",  # But has formula
-        )
-
-        # Formula should be used since year not in values (None doesn't count as having a value)  # noqa: E501
-        interim_values = {2021: {"test_item": 50.0}}
-        result = item.get_value(interim_values, 2021)
-        assert result == 100.0  # 50 * 2
 
     def test_none_values_in_model_category_totals(self):
         """Test that None values are treated as 0 in category totals."""
@@ -614,6 +346,8 @@ class TestLineItemNoneValues:
 
     def test_mixed_none_and_formula_behavior(self):
         """Test complex scenario with None values and formulas."""
+        from pyproforma.models.model.value_matrix import calculate_line_item_value
+
         item = LineItem(
             name="complex_test",
             category="revenue",
@@ -624,19 +358,32 @@ class TestLineItemNoneValues:
         interim_values = {}
 
         # 2020: explicit value
-        assert item.get_value(interim_values, 2020) == 100.0
+        assert (
+            calculate_line_item_value(
+                item.values, item.formula, interim_values, 2020, item.name
+            )
+            == 100.0
+        )
 
-        # 2021: explicit None value
-        assert item.get_value(interim_values, 2021) is None
+        # 2021: None value should now use formula, but formula would reference 2020
+        interim_values = {2020: {"complex_test": 100.0}}
+        result_2021 = calculate_line_item_value(
+            item.values, item.formula, interim_values, 2021, item.name
+        )
+        assert result_2021 == pytest.approx(110.0)  # 100.0 * 1.1
 
         # 2022: no explicit value, should use formula with 2021 value
-        interim_values = {2021: {"complex_test": None}}
-        with pytest.raises(ValueError) as excinfo:
-            item.get_value(interim_values, 2022)
-        assert "has None value for year 2021" in str(excinfo.value)
+        interim_values = {2021: {"complex_test": 110.0}}
+        result_2022 = calculate_line_item_value(
+            item.values, item.formula, interim_values, 2022, item.name
+        )
+        assert result_2022 == pytest.approx(121.0)  # 110.0 * 1.1
 
         # 2023: explicit value (should override formula)
-        assert item.get_value({}, 2023) == 300.0
+        assert (
+            calculate_line_item_value(item.values, item.formula, {}, 2023, item.name)
+            == 300.0
+        )
 
     def test_none_values_in_complex_model(self):
         """Test None values in a more complex model scenario."""
@@ -685,3 +432,106 @@ class TestLineItemNoneValues:
         assert simple_model["total_income", 2021] == 0  # revenue: None treated as 0
         assert simple_model["total_expenses", 2020] == 0  # costs: None treated as 0
         assert simple_model["total_expenses", 2021] == 600  # costs: 600
+
+
+class TestValidateValuesKeys:
+    """Test class for the _validate_values_keys function."""
+
+    def test_validate_values_keys_with_none(self):
+        """Test that None values dictionary is accepted."""
+        # Should not raise any exception
+        _validate_values_keys(None)
+
+    def test_validate_values_keys_with_empty_dict(self):
+        """Test that empty dictionary is accepted."""
+        # Should not raise any exception
+        _validate_values_keys({})
+
+    def test_validate_values_keys_with_valid_integer_keys(self):
+        """Test that dictionary with integer keys is accepted."""
+        values = {2020: 100.0, 2021: 200.0, 2022: None, 2023: 300.0}
+        # Should not raise any exception
+        _validate_values_keys(values)
+
+    def test_validate_values_keys_rejects_string_keys(self):
+        """Test that string keys are rejected."""
+        values = {"2020": 100.0, "2021": 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
+
+    def test_validate_values_keys_rejects_float_keys(self):
+        """Test that float keys are rejected."""
+        values = {2020.5: 100.0, 2021: 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got float" in error_msg
+
+    def test_validate_values_keys_rejects_mixed_key_types(self):
+        """Test that mixed key types are rejected."""
+        values = {2020: 100.0, "2021": 200.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
+        assert "got str" in error_msg
+
+    def test_validate_values_keys_error_message_includes_key_value(self):
+        """Test that error message includes the problematic key value."""
+        values = {"invalid_year": 100.0}
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys(values)
+
+        error_msg = str(excinfo.value)
+        assert "'invalid_year'" in error_msg
+        assert "must be an integer (year)" in error_msg
+
+    def test_validate_values_keys_accepts_boolean_keys(self):
+        """Test that boolean keys are accepted since bool is subclass of int."""
+        # This should work because isinstance(True, int) returns True in Python
+        values = {True: 100.0, False: 200.0}
+        # Should not raise any exception
+        _validate_values_keys(values)
+
+    def test_validate_values_keys_with_various_invalid_types(self):
+        """Test various invalid key types."""
+        # Test None key
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({None: 100.0})
+        assert "got NoneType" in str(excinfo.value)
+
+        # Test tuple key
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({(2020,): 100.0})
+        assert "got tuple" in str(excinfo.value)
+
+        # Test list key (unhashable type will cause TypeError, but let's test dict key)
+        with pytest.raises(ValueError) as excinfo:
+            _validate_values_keys({"key": 100.0})
+        assert "got str" in str(excinfo.value)
+
+    def test_validate_values_keys_integration_with_line_item(self):
+        """Test that LineItem creation properly validates values keys."""
+        # Valid integer keys should work
+        item = LineItem(
+            name="test_valid", category="revenue", values={2020: 100.0, 2021: 200.0}
+        )
+        assert item.values == {2020: 100.0, 2021: 200.0}
+
+        # Invalid string keys should raise ValueError during LineItem creation
+        with pytest.raises(ValueError) as excinfo:
+            LineItem(
+                name="test_invalid",
+                category="revenue",
+                values={"2020": 100.0, "2021": 200.0},
+            )
+
+        error_msg = str(excinfo.value)
+        assert "must be an integer (year)" in error_msg
