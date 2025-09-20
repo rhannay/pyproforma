@@ -31,42 +31,49 @@ class CategoryResults:
     def __init__(self, model: "Model", category_name: str):
         self.model = model
         self.category_name = category_name
-        self.category_metadata = model._get_category_metadata(category_name)
-        # if self.category_metadata["system_generated"] is False:
-        #     self.category_obj = model.category_definition(category_name)
-        # else:
-        #     self.category_obj = None
-        self.line_item_names = model.line_item_names_by_category(category_name)
+        # Validate that the category exists by accessing the metadata
+        # This will raise a KeyError if the category doesn't exist
+        _ = model._get_category_metadata(category_name)
+
+    @property
+    def line_item_names(self) -> list[str]:
+        """Get the line item names for this category from the model."""
+        return self.model.line_item_names_by_category(self.category_name)
+
+    @property
+    def _category_metadata(self) -> dict:
+        """Get the category metadata from the model."""
+        return self.model._get_category_metadata(self.category_name)
 
     @property
     def name(self) -> str:
         """The category name."""
-        return self.category_metadata["name"]
+        return self._category_metadata["name"]
 
     @property
     def label(self) -> str:
         """The display label for the category."""
-        return self.category_metadata["label"]
+        return self._category_metadata["label"]
 
     @property
     def include_total(self) -> bool:
         """Whether the category includes a total row."""
-        return self.category_metadata["include_total"]
+        return self._category_metadata["include_total"]
 
     @property
     def total_name(self) -> str:
         """The name used for the category total."""
-        return self.category_metadata["total_name"]
+        return self._category_metadata["total_name"]
 
     @property
     def total_label(self) -> str:
         """The display label for the category total."""
-        return self.category_metadata["total_label"]
+        return self._category_metadata["total_label"]
 
     @property
     def system_generated(self) -> bool:
         """Whether the category was auto-generated."""
-        return self.category_metadata["system_generated"]
+        return self._category_metadata["system_generated"]
 
     def __str__(self) -> str:
         """
