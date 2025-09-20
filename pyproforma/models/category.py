@@ -62,8 +62,6 @@ class Category:
     label: str = None
     include_total: bool = True
     total_label: str = None
-
-    # These will be set in __post_init__
     total_name: str = None
 
     def __post_init__(self):
