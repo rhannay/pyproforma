@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 from ..constants import RESERVED_CATEGORY_NAMES
 from ._utils import validate_name
 
 
+@dataclass
 class Category:
     """
     Represents a category for organizing line items in a financial model.
@@ -55,33 +58,22 @@ class Category:
         ... )
     """  # noqa: E501
 
-    def __init__(
-        self,
-        name: str,
-        label: str = None,
-        include_total: bool = True,
-        total_label: str = None,
-    ):
-        validate_name(name)
+    name: str
+    label: str = None
+    include_total: bool = True
+    total_label: str = None
 
-        if name in RESERVED_CATEGORY_NAMES:
+    # These will be set in __post_init__
+    total_name: str = None
+
+    def __post_init__(self):
+        validate_name(self.name)
+
+        if self.name in RESERVED_CATEGORY_NAMES:
             raise ValueError(
-                f"Category name '{name}' is reserved and cannot be used. Reserved names are: "  # noqa: E501
+                f"Category name '{self.name}' is reserved and cannot be used. Reserved names are: "  # noqa: E501
                 f"{', '.join(RESERVED_CATEGORY_NAMES)}"
             )
-
-        self.name = name
-        self.label = label if label is not None else name
-        self.include_total = include_total
-
-        if include_total:
-            self.total_label = (
-                total_label if total_label is not None else f"Total {self.label}"
-            )
-            self.total_name = f"total_{self.name}"
-        else:
-            self.total_label = None
-            self.total_name = None
 
     def __str__(self):
         return (
@@ -103,6 +95,7 @@ class Category:
             "name": self.name,
             "label": self.label,
             "total_label": self.total_label,
+            "total_name": self.total_name,
             "include_total": self.include_total,
         }
 
@@ -113,5 +106,6 @@ class Category:
             name=category_dict["name"],
             label=category_dict.get("label"),
             total_label=category_dict.get("total_label"),
+            total_name=category_dict.get("total_name"),
             include_total=category_dict.get("include_total", True),
         )
