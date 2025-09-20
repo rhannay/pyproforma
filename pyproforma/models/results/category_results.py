@@ -64,6 +64,13 @@ class CategoryResults:
         """The display label for the category."""
         return self._category_metadata["label"]
 
+    @label.setter
+    def label(self, value: str) -> None:
+        """Set the label for this category and update it in the model."""
+        # Update the category in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_category(self._name, label=value)
+
     @property
     def include_total(self) -> bool:
         """Whether the category includes a total row."""

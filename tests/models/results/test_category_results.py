@@ -171,6 +171,50 @@ class TestCategoryResultsProperties:
         assert category_results.name == original_name
         assert category_results.line_item_names == ["sales"]
 
+    def test_label_getter(self, model_for_property_tests):
+        """Test that the label property returns the correct category label."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        assert category_results.label == "Revenue Items"
+
+    def test_label_setter_basic(self, model_for_property_tests):
+        """Test that the label setter updates the category label in the model."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Change the label
+        category_results.label = "Sales Revenue"
+
+        # Verify the CategoryResults object has the new label
+        assert category_results.label == "Sales Revenue"
+
+        # Verify the category definition was updated in the model
+        category_def = next(
+            cat
+            for cat in model_for_property_tests.category_definitions
+            if cat.name == "revenue"
+        )
+        assert category_def.label == "Sales Revenue"
+
+    def test_label_setter_preserves_state_on_failure(self, model_for_property_tests):
+        """Test that CategoryResults state is preserved if label setter fails."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        original_label = category_results.label
+
+        # Try to create a scenario that might cause an update failure
+        # Note: Since label updates are generally safe, we'll simulate this
+        # by temporarily breaking the model reference
+        original_model = category_results.model
+        category_results.model = None
+
+        try:
+            with pytest.raises(AttributeError):
+                category_results.label = "New Label"
+        finally:
+            # Restore the model reference
+            category_results.model = original_model
+
+        # Verify the original state is preserved
+        assert category_results.label == original_label
+
 
 class TestCategoryResultsStringRepresentation:
     """Test string representation methods of CategoryResults."""
