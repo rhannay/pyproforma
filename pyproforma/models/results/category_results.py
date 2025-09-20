@@ -208,6 +208,35 @@ class CategoryResults:
         """  # noqa: E501
         return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
+    def pie_chart(
+        self,
+        year: int,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+    ):
+        """
+        Create a pie chart showing the distribution of line items within this category for a specific year.
+
+        Args:
+            year (int): The year for which to create the pie chart
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+
+        Returns:
+            Chart figure: The Plotly pie chart figure showing the distribution of category items
+
+        Raises:
+            ValueError: If no line items are found in the category or if year is not in model years
+        """  # noqa: E501
+        if not self.line_item_names:
+            raise ValueError(f"No line items found in category '{self.name}'")
+
+        return self.model.charts.line_items_pie(
+            self.line_item_names, year, width=width, height=height, template=template
+        )
+
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
     # ============================================================================

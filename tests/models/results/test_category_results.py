@@ -515,6 +515,68 @@ class TestCategoryResultsTableMethod:
             mock_category.assert_called_once_with("income", hardcoded_color=None)
 
 
+class TestCategoryResultsPieChartMethod:
+    """Test pie_chart method of CategoryResults."""
+
+    @pytest.fixture
+    def category_results(self, model_with_categories):
+        """Create a CategoryResults instance for testing."""
+        return CategoryResults(model_with_categories, "income")
+
+    def test_pie_chart_method_returns_figure(self, category_results):
+        """Test pie_chart method returns a plotly figure."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            mock_figure = Mock()
+            mock_pie_chart.return_value = mock_figure
+
+            result = category_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2023,
+                width=800,
+                height=600,
+                template="plotly_white",
+            )
+            assert result is mock_figure
+
+    def test_pie_chart_method_passes_custom_parameters(self, category_results):
+        """Test pie_chart method passes custom parameters correctly."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            category_results.pie_chart(
+                year=2024, width=1000, height=800, template="plotly_dark"
+            )
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2024,
+                width=1000,
+                height=800,
+                template="plotly_dark",
+            )
+
+    def test_pie_chart_method_with_empty_category(self, model_with_categories):
+        """Test pie_chart method raises error for empty category."""
+        # Create an empty category
+        model_with_categories.update.add_category(name="empty", label="Empty Category")
+        category_results = CategoryResults(model_with_categories, "empty")
+
+        with pytest.raises(ValueError, match="No line items found in category 'empty'"):
+            category_results.pie_chart(year=2023)
+
+    def test_pie_chart_method_uses_line_item_names(self, category_results):
+        """Test pie_chart method uses the correct line item names from the category."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            # Verify that the method uses the line_item_names property
+            expected_item_names = category_results.line_item_names
+
+            category_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once()
+            call_args = mock_pie_chart.call_args
+            assert call_args[0][0] == expected_item_names  # First positional argument
+
+
 class TestCategoryResultsHtmlRepr:
     """Test _repr_html_ method for Jupyter notebook integration."""
 
