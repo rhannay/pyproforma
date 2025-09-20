@@ -30,20 +30,34 @@ class CategoryResults:
 
     def __init__(self, model: "Model", category_name: str):
         self.model = model
-        self.name = category_name
+        self._name = category_name
         # Validate that the category exists by accessing the metadata
         # This will raise a KeyError if the category doesn't exist
         _ = model._get_category_metadata(category_name)
 
     @property
+    def name(self) -> str:
+        """The category name."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name for this category and update it in the model."""
+        # Update the category in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_category(self._name, new_name=value)
+        # Only update local state if model update succeeded
+        self._name = value
+
+    @property
     def line_item_names(self) -> list[str]:
         """Get the line item names for this category from the model."""
-        return self.model.line_item_names_by_category(self.name)
+        return self.model.line_item_names_by_category(self._name)
 
     @property
     def _category_metadata(self) -> dict:
         """Get the category metadata from the model."""
-        return self.model._get_category_metadata(self.name)
+        return self.model._get_category_metadata(self._name)
 
     @property
     def label(self) -> str:

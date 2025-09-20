@@ -103,6 +103,75 @@ class TestCategoryResultsInitialization:
             CategoryResults(model_with_categories, "nonexistent")
 
 
+class TestCategoryResultsProperties:
+    """Test property access and modification for CategoryResults."""
+
+    @pytest.fixture
+    def model_for_property_tests(self):
+        """Create a model specifically for property testing."""
+        model = Model(years=[2024, 2025])
+        model.update.add_category(name="revenue", label="Revenue Items")
+        model.update.add_line_item(
+            name="sales", category="revenue", values={2024: 100000, 2025: 110000}
+        )
+        return model
+
+    def test_name_getter(self, model_for_property_tests):
+        """Test that the name property returns the correct category name."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        assert category_results.name == "revenue"
+
+    def test_name_setter_basic(self, model_for_property_tests):
+        """Test that the name setter updates the category name in the model."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Change the name
+        category_results.name = "sales_revenue"
+
+        # Verify the CategoryResults object has the new name
+        assert category_results.name == "sales_revenue"
+
+        # Verify the line item's category was updated in the model
+        sales_item = model_for_property_tests.line_item_definition("sales")
+        assert sales_item.category == "sales_revenue"
+
+        # Verify we can access the category with the new name
+        new_category_results = CategoryResults(
+            model_for_property_tests, "sales_revenue"
+        )
+        assert new_category_results.name == "sales_revenue"
+        assert "sales" in new_category_results.line_item_names
+
+    def test_name_setter_with_invalid_name(self, model_for_property_tests):
+        """Test that the name setter raises appropriate errors for invalid names."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Test setting to an existing category name should fail
+        model_for_property_tests.update.add_category(name="expenses")
+
+        with pytest.raises(ValueError):
+            category_results.name = "expenses"
+
+        # Verify the original name is unchanged after the failed update
+        assert category_results.name == "revenue"
+
+    def test_name_setter_preserves_state_on_failure(self, model_for_property_tests):
+        """Test that the CategoryResults state is preserved if the setter fails."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        original_name = category_results.name
+
+        # Add another category to create a conflict
+        model_for_property_tests.update.add_category(name="existing_category")
+
+        # Try to set to an existing name (should fail)
+        with pytest.raises(ValueError):
+            category_results.name = "existing_category"
+
+        # Verify the original state is preserved
+        assert category_results.name == original_name
+        assert category_results.line_item_names == ["sales"]
+
+
 class TestCategoryResultsStringRepresentation:
     """Test string representation methods of CategoryResults."""
 
