@@ -35,6 +35,38 @@ class CategoryResults:
         # This will raise a KeyError if the category doesn't exist
         _ = model._get_category_metadata(category_name)
 
+    # ============================================================================
+    # INTERNAL/PRIVATE METHODS
+    # ============================================================================
+
+    def __str__(self) -> str:
+        """
+        Return a string representation showing key information about the category.
+        """
+        return self.summary()
+
+    def __repr__(self) -> str:
+        return (
+            f"CategoryResults(category_name='{self.name}', "
+            f"num_items={len(self.line_item_names)})"
+        )
+
+    def _repr_html_(self) -> str:
+        """
+        Return HTML representation for Jupyter notebooks.
+        This ensures proper formatting when the object is displayed in a notebook cell.
+        """
+        return self.summary(html=True)
+
+    # ============================================================================
+    # PROPERTY ACCESSORS (GETTERS AND SETTERS)
+    # ============================================================================
+
+    @property
+    def _category_metadata(self) -> dict:
+        """Get the category metadata from the model."""
+        return self.model._get_category_metadata(self._name)
+
     @property
     def name(self) -> str:
         """The category name."""
@@ -50,16 +82,6 @@ class CategoryResults:
         self._name = value
 
     @property
-    def line_item_names(self) -> list[str]:
-        """Get the line item names for this category from the model."""
-        return self.model.line_item_names_by_category(self._name)
-
-    @property
-    def _category_metadata(self) -> dict:
-        """Get the category metadata from the model."""
-        return self.model._get_category_metadata(self._name)
-
-    @property
     def label(self) -> str:
         """The display label for the category."""
         return self._category_metadata["label"]
@@ -70,6 +92,11 @@ class CategoryResults:
         # Update the category in the model first - if this fails, we don't change
         # local state
         self.model.update.update_category(self._name, label=value)
+
+    @property
+    def line_item_names(self) -> list[str]:
+        """Get the line item names for this category from the model."""
+        return self.model.line_item_names_by_category(self._name)
 
     @property
     def include_total(self) -> bool:
@@ -91,17 +118,9 @@ class CategoryResults:
         """Whether the category was auto-generated."""
         return self._category_metadata["system_generated"]
 
-    def __str__(self) -> str:
-        """
-        Return a string representation showing key information about the category.
-        """
-        return self.summary()
-
-    def __repr__(self) -> str:
-        return (
-            f"CategoryResults(category_name='{self.name}', "
-            f"num_items={len(self.line_item_names)})"
-        )
+    # ============================================================================
+    # VALUE ACCESS METHODS
+    # ============================================================================
 
     def totals(self) -> dict[int, float]:
         """
@@ -142,6 +161,10 @@ class CategoryResults:
                     values[item_name][year] = 0.0
 
         return values
+
+    # ============================================================================
+    # DATA CONVERSION METHODS
+    # ============================================================================
 
     def to_dataframe(self) -> pd.DataFrame:
         """
@@ -185,12 +208,9 @@ class CategoryResults:
         """  # noqa: E501
         return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
-    def _repr_html_(self) -> str:
-        """
-        Return HTML representation for Jupyter notebooks.
-        This ensures proper formatting when the object is displayed in a notebook cell.
-        """
-        return self.summary(html=True)
+    # ============================================================================
+    # DISPLAY AND SUMMARY METHODS
+    # ============================================================================
 
     def summary(self, html: bool = False) -> str:
         """
