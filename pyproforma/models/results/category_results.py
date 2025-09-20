@@ -32,10 +32,10 @@ class CategoryResults:
         self.model = model
         self.category_name = category_name
         self.category_metadata = model._get_category_metadata(category_name)
-        if self.category_metadata["system_generated"] is False:
-            self.category_obj = model.category_definition(category_name)
-        else:
-            self.category_obj = None
+        # if self.category_metadata["system_generated"] is False:
+        #     self.category_obj = model.category_definition(category_name)
+        # else:
+        #     self.category_obj = None
         self.line_item_names = model.line_item_names_by_category(category_name)
 
     @property
