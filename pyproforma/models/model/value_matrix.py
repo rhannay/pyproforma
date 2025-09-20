@@ -13,7 +13,6 @@ from ..formula import calculate_formula
 if TYPE_CHECKING:
     from pyproforma.models.multi_line_item import MultiLineItem
 
-    from ..category import Category
     from ..line_item import LineItem
 
 
@@ -220,8 +219,8 @@ def generate_value_matrix(
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items  # noqa: E501
-        category_definitions (list[Category]): List of category definitions
+        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
+        category_metadata (list[dict]): Metadata for all defined categories
         line_item_metadata (list[dict]): Metadata for all defined names
 
     Returns:
