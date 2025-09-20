@@ -71,7 +71,7 @@ class TestCategoryResultsInitialization:
         category_results = CategoryResults(model_with_categories, "income")
 
         assert category_results.model is model_with_categories
-        assert category_results.category_name == "income"
+        assert category_results.name == "income"
         assert len(category_results.line_item_names) == 2
         assert "product_sales" in category_results.line_item_names
         assert "service_revenue" in category_results.line_item_names
@@ -90,7 +90,7 @@ class TestCategoryResultsInitialization:
         category_results = CategoryResults(model_with_categories, "metrics")
 
         assert category_results.model is model_with_categories
-        assert category_results.category_name == "metrics"
+        assert category_results.name == "metrics"
         assert category_results._category_metadata["name"] == "metrics"
         assert category_results._category_metadata["label"] == "Metrics"
         assert category_results._category_metadata["include_total"] is False
@@ -510,7 +510,7 @@ class TestCategoryResultsIntegration:
         category_results = integrated_model.category("income")
 
         assert isinstance(category_results, CategoryResults)
-        assert category_results.category_name == "income"
+        assert category_results.name == "income"
         assert category_results.model is integrated_model
 
         # Test that methods work
@@ -593,7 +593,7 @@ class TestCategoryResultsEdgeCases:
 
         category_results = CategoryResults(model, "income_2024")
 
-        assert category_results.category_name == "income_2024"
+        assert category_results.name == "income_2024"
         summary = category_results.summary()
         assert "CategoryResults('income_2024')" in summary
         assert "Label: Income 2024" in summary

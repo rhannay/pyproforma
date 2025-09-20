@@ -30,7 +30,7 @@ class CategoryResults:
 
     def __init__(self, model: "Model", category_name: str):
         self.model = model
-        self.category_name = category_name
+        self.name = category_name
         # Validate that the category exists by accessing the metadata
         # This will raise a KeyError if the category doesn't exist
         _ = model._get_category_metadata(category_name)
@@ -38,17 +38,12 @@ class CategoryResults:
     @property
     def line_item_names(self) -> list[str]:
         """Get the line item names for this category from the model."""
-        return self.model.line_item_names_by_category(self.category_name)
+        return self.model.line_item_names_by_category(self.name)
 
     @property
     def _category_metadata(self) -> dict:
         """Get the category metadata from the model."""
-        return self.model._get_category_metadata(self.category_name)
-
-    @property
-    def name(self) -> str:
-        """The category name."""
-        return self._category_metadata["name"]
+        return self.model._get_category_metadata(self.name)
 
     @property
     def label(self) -> str:
@@ -83,7 +78,7 @@ class CategoryResults:
 
     def __repr__(self) -> str:
         return (
-            f"CategoryResults(category_name='{self.category_name}', "
+            f"CategoryResults(category_name='{self.name}', "
             f"num_items={len(self.line_item_names)})"
         )
 
@@ -98,12 +93,12 @@ class CategoryResults:
             ValueError: If the category doesn't include totals
         """
         if not self.include_total:
-            raise ValueError(f"Category '{self.category_name}' does not include totals")
+            raise ValueError(f"Category '{self.name}' does not include totals")
 
         totals = {}
         for year in self.model.years:
             try:
-                totals[year] = self.model.category_total(self.category_name, year)
+                totals[year] = self.model.category_total(self.name, year)
             except KeyError:
                 totals[year] = 0.0
 
@@ -167,9 +162,7 @@ class CategoryResults:
         Returns:
             Table: A Table object containing the category items formatted for display
         """  # noqa: E501
-        return self.model.tables.category(
-            self.category_name, hardcoded_color=hardcoded_color
-        )
+        return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
     def _repr_html_(self) -> str:
         """
@@ -197,7 +190,7 @@ class CategoryResults:
             try:
                 totals_list = []
                 for year in self.model.years:
-                    total_value = self.model.category_total(self.category_name, year)
+                    total_value = self.model.category_total(self.name, year)
                     formatted_total = f"{total_value:,.0f}"
                     totals_list.append(formatted_total)
                 total_info = f"\nTotals: {', '.join(totals_list)}"
@@ -205,7 +198,7 @@ class CategoryResults:
                 total_info = "\nTotals: Not available"
 
         summary_text = (
-            f"CategoryResults('{self.category_name}')\n"
+            f"CategoryResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Line Items: {num_items}\n"
             f"Items: {', '.join(item_names)}{total_info}"
