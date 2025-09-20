@@ -42,13 +42,25 @@ def generate_category_metadata(
 
     # Add metadata for category definitions
     for category in category_definitions:
+        label = category.label if category.label is not None else category.name
+        if category.include_total:
+            total_label = (
+                category.total_label
+                if category.total_label is not None
+                else f"Total {label}"
+            )
+            total_name = f"total_{category.name}"
+        else:
+            total_label = None
+            total_name = None
+
         category_metadata.append(
             {
                 "name": category.name,
-                "label": category.label,
+                "label": label,
                 "include_total": category.include_total,
-                "total_name": category.total_name,
-                "total_label": category.total_label,
+                "total_name": total_name,
+                "total_label": total_label,
                 "system_generated": False,
             }
         )
