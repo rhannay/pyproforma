@@ -271,8 +271,8 @@ class ConstraintPassRow(BaseRow):
 
     def generate_row(self, model: "Model") -> Row:
         """Create a row showing constraint evaluation results across all years."""
-        # Get the constraint object
-        constraint = model.constraint_definition(self.constraint_name)
+        # Get the constraint results object
+        constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name as label if no custom label provided
         label = self.label or self.constraint_name
@@ -286,7 +286,7 @@ class ConstraintPassRow(BaseRow):
         # Add cells for each year with constraint evaluation result
         for year in model.years:
             try:
-                is_satisfied = constraint.evaluate(model._value_matrix, year)
+                is_satisfied = constraint_results.evaluate(model._value_matrix, year)
                 result_msg = self.pass_msg if is_satisfied else self.fail_msg
 
                 # Apply background color if color_code is True
