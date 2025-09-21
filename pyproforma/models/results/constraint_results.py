@@ -128,6 +128,16 @@ class ConstraintResults:
         """Get the value format for this constraint's line item from the model."""
         return self.model[self.line_item_name].value_format
 
+    @property
+    def tolerance(self) -> float:
+        """Get the tolerance for this constraint from metadata."""
+        return self._constraint_metadata["tolerance"]
+
+    @property
+    def operator(self) -> str:
+        """Get the operator for this constraint from metadata."""
+        return self._constraint_metadata["operator"]
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================
@@ -205,9 +215,9 @@ class ConstraintResults:
         # Get the line item value
         line_item_value = self.model.value(self.line_item_name, year)
 
-        # Get operator and tolerance from metadata
-        operator = self._constraint_metadata["operator"]
-        tolerance = self._constraint_metadata["tolerance"]
+        # Get operator and tolerance from properties
+        operator = self.operator
+        tolerance = self.tolerance
 
         # Evaluate using helper function
         return _evaluate_constraint(

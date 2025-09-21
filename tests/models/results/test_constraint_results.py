@@ -84,10 +84,9 @@ class TestConstraintResultsInitialization:
 
         assert constraint_results.model is model_with_constraints
         assert constraint_results.constraint_name == "min_revenue"
-        assert constraint_results.constraint_definition.name == "min_revenue"
-        assert constraint_results.constraint_definition.line_item_name == "revenue"
-        assert constraint_results.constraint_definition.target == 80000.0
-        assert constraint_results.constraint_definition.operator == "gt"
+        assert constraint_results.line_item_name == "revenue"
+        assert constraint_results.target(2023) == 80000.0
+        assert constraint_results.operator == "gt"
 
     def test_init_invalid_constraint_name(self, model_with_constraints):
         """Test ConstraintResults initialization with invalid constraint name."""
@@ -101,12 +100,10 @@ class TestConstraintResultsInitialization:
         constraint_results = ConstraintResults(model_with_constraints, "revenue_growth")
 
         assert constraint_results.constraint_name == "revenue_growth"
-        assert constraint_results.constraint_definition.target == {
-            2023: 95000.0,
-            2024: 115000.0,
-            2025: 135000.0,
-        }
-        assert constraint_results.constraint_definition.operator == "ge"
+        assert constraint_results.target(2023) == 95000.0
+        assert constraint_results.target(2024) == 115000.0
+        assert constraint_results.target(2025) == 135000.0
+        assert constraint_results.operator == "ge"
 
 
 class TestConstraintResultsStringRepresentation:
@@ -562,8 +559,8 @@ class TestConstraintResultsWithDifferentConstraintTypes:
             model_with_tolerance_constraint, "balance_check"
         )
 
-        assert constraint_results.constraint_definition.tolerance == 0.01
-        assert constraint_results.constraint_definition.operator == "eq"
+        assert constraint_results.tolerance == 0.01
+        assert constraint_results.operator == "eq"
 
         # Test that methods still work
         summary = constraint_results.summary()
