@@ -30,9 +30,16 @@ class ConstraintResults:
 
     def __init__(self, model: "Model", constraint_name: str):
         self.model = model
-        self.constraint_name = constraint_name
+        self._constraint_name = constraint_name
+
+        # Validate constraint_name exists by attempting to get metadata
+        # This will raise a KeyError if the constraint doesn't exist
+        try:
+            _ = self._constraint_metadata
+        except KeyError:
+            raise KeyError(f"Constraint with name '{constraint_name}' not found")
+
         self.constraint_definition = model.constraint_definition(constraint_name)
-        self.line_item_name = self._constraint_metadata["line_item_name"]
 
         line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
@@ -49,7 +56,17 @@ class ConstraintResults:
     @property
     def _constraint_metadata(self) -> dict:
         """Get the metadata for this constraint from the model."""
-        return self.model._get_constraint_metadata(self.constraint_name)
+        return self.model._get_constraint_metadata(self._constraint_name)
+
+    @property
+    def constraint_name(self) -> str:
+        """Get the constraint name."""
+        return self._constraint_name
+
+    @property
+    def line_item_name(self) -> str:
+        """Get the line item name for this constraint from metadata."""
+        return self._constraint_metadata["line_item_name"]
 
     def line_item_value(self, year: int) -> float:
         """
