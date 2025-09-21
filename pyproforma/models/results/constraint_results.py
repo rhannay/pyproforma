@@ -44,6 +44,10 @@ class ConstraintResults:
         line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
 
+    # ============================================================================
+    # INTERNAL/PRIVATE METHODS
+    # ============================================================================
+
     def __str__(self) -> str:
         """
         Return a string representation showing key information about the constraint.
@@ -52,6 +56,17 @@ class ConstraintResults:
 
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
+
+    def _repr_html_(self) -> str:
+        """
+        Return HTML representation for Jupyter notebooks.
+        This ensures proper formatting when the object is displayed in a notebook cell.
+        """
+        return self.summary(html=True)
+
+    # ============================================================================
+    # PROPERTY ACCESSORS (GETTERS AND SETTERS)
+    # ============================================================================
 
     @property
     def _constraint_metadata(self) -> dict:
@@ -67,6 +82,10 @@ class ConstraintResults:
     def line_item_name(self) -> str:
         """Get the line item name for this constraint from metadata."""
         return self._constraint_metadata["line_item_name"]
+
+    # ============================================================================
+    # VALUE ACCESS METHODS
+    # ============================================================================
 
     def line_item_value(self, year: int) -> float:
         """
@@ -103,47 +122,9 @@ class ConstraintResults:
             return target.get(year, None)
         return target
 
-    def table(self):
-        """
-        Return a Table object for this constraint using the tables.constraint() function.
-
-        Returns:
-            Table: A Table object containing the constraint formatted for display
-        """  # noqa: E501
-        return self.model.tables.constraint(self.constraint_name)
-
-    def chart(
-        self,
-        width: int = 800,
-        height: int = 600,
-        template: str = "plotly_white",
-        line_item_type: str = "bar",
-        constraint_type: str = "line",
-    ) -> go.Figure:
-        """
-        Create a chart using Plotly showing the values for this constraint over years.
-
-        Args:
-            width (int): Chart width in pixels (default: 800)
-            height (int): Chart height in pixels (default: 600)
-            template (str): Plotly template to use (default: 'plotly_white')
-            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
-
-        Returns:
-            go.Figure: The Plotly chart figure
-
-        Raises:
-            ChartGenerationError: If the model has no years defined
-            KeyError: If the constraint name is not found in the model
-        """  # noqa: E501
-        return self.model.charts.constraint(
-            self.constraint_name,
-            width=width,
-            height=height,
-            template=template,
-            line_item_type=line_item_type,
-            constraint_type=constraint_type,
-        )
+    # ============================================================================
+    # ANALYSIS AND CALCULATION METHODS
+    # ============================================================================
 
     def evaluate(self, year: int) -> bool:
         """
@@ -178,12 +159,59 @@ class ConstraintResults:
 
         return failing
 
-    def _repr_html_(self) -> str:
+    # ============================================================================
+    # DATA CONVERSION METHODS
+    # ============================================================================
+
+    def table(self):
         """
-        Return HTML representation for Jupyter notebooks.
-        This ensures proper formatting when the object is displayed in a notebook cell.
+        Return a Table object for this constraint using the tables.constraint() function.
+
+        Returns:
+            Table: A Table object containing the constraint formatted for display
+        """  # noqa: E501
+        return self.model.tables.constraint(self.constraint_name)
+
+    # ============================================================================
+    # VISUALIZATION METHODS
+    # ============================================================================
+
+    def chart(
+        self,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+        line_item_type: str = "bar",
+        constraint_type: str = "line",
+    ) -> go.Figure:
         """
-        return self.summary(html=True)
+        Create a chart using Plotly showing the values for this constraint over years.
+
+        Args:
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+            chart_type (str): Type of chart to create - 'line', 'bar', etc. (default: 'line')
+
+        Returns:
+            go.Figure: The Plotly chart figure
+
+        Raises:
+            ChartGenerationError: If the model has no years defined
+            KeyError: If the constraint name is not found in the model
+        """  # noqa: E501
+        return self.model.charts.constraint(
+            self.constraint_name,
+            width=width,
+            height=height,
+            template=template,
+            line_item_type=line_item_type,
+            constraint_type=constraint_type,
+        )
+
+    # ============================================================================
+    # DISPLAY AND SUMMARY METHODS
+    # ============================================================================
 
     def summary(self, html: bool = False) -> str:
         """
