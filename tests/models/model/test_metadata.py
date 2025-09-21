@@ -7,9 +7,10 @@ including their integration with multi-line items.
 
 import pytest
 
-from pyproforma import Category, LineItem
+from pyproforma import Category, Constraint, LineItem
 from pyproforma.models.model.metadata import (
     generate_category_metadata,
+    generate_constraint_metadata,
     generate_line_item_metadata,
 )
 from pyproforma.models.multi_line_item.debt import Debt
@@ -624,3 +625,249 @@ class TestGenerateLineItemMetadata:
         # Verify no duplicates
         names = [item["name"] for item in result]
         assert len(names) == len(set(names))
+
+
+class TestGenerateConstraintMetadata:
+    """Test the generate_constraint_metadata function."""
+
+    def test_empty_constraints(self):
+        """Test with empty input list."""
+        result = generate_constraint_metadata([])
+        assert result == []
+
+    def test_single_constraint_with_float_target(self):
+        """Test with a single constraint with a float target."""
+        constraints = [
+            Constraint(
+                name="min_revenue",
+                line_item_name="revenue",
+                target=50000.0,
+                operator="gt",
+                tolerance=0.0,
+                label="Minimum Revenue"
+            )
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        expected = [
+            {
+                "name": "min_revenue",
+                "label": "Minimum Revenue",
+                "line_item_name": "revenue",
+                "target": 50000.0,
+                "operator": "gt",
+                "operator_symbol": ">",
+                "tolerance": 0.0,
+            }
+        ]
+        assert result == expected
+
+    def test_single_constraint_with_dict_target(self):
+        """Test with a single constraint with a dictionary target."""
+        constraints = [
+            Constraint(
+                name="revenue_budget",
+                line_item_name="revenue",
+                target={2020: 100000.0, 2021: 110000.0},
+                operator="le",
+                tolerance=1000.0,
+                label="Revenue Budget Constraint"
+            )
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        expected = [
+            {
+                "name": "revenue_budget",
+                "label": "Revenue Budget Constraint",
+                "line_item_name": "revenue",
+                "target": {2020: 100000.0, 2021: 110000.0},
+                "operator": "le",
+                "operator_symbol": "<=",
+                "tolerance": 1000.0,
+            }
+        ]
+        assert result == expected
+
+    def test_constraint_without_label(self):
+        """Test with a constraint that doesn't have a custom label."""
+        constraints = [
+            Constraint(
+                name="balance_check",
+                line_item_name="balance",
+                target=0.0,
+                operator="eq",
+                tolerance=0.01
+                # No label provided - should use name as label
+            )
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        expected = [
+            {
+                "name": "balance_check",
+                "label": "balance_check",  # Should use name as label
+                "line_item_name": "balance",
+                "target": 0.0,
+                "operator": "eq",
+                "operator_symbol": "=",
+                "tolerance": 0.01,
+            }
+        ]
+        assert result == expected
+
+    def test_multiple_constraints_different_operators(self):
+        """Test with multiple constraints using different operators."""
+        constraints = [
+            Constraint(
+                name="min_revenue",
+                line_item_name="revenue",
+                target=50000.0,
+                operator="gt",
+                label="Minimum Revenue"
+            ),
+            Constraint(
+                name="max_expenses",
+                line_item_name="expenses",
+                target=30000.0,
+                operator="le",
+                tolerance=500.0,
+                label="Maximum Expenses"
+            ),
+            Constraint(
+                name="balance_zero",
+                line_item_name="balance",
+                target=0.0,
+                operator="eq",
+                tolerance=0.01,
+                label="Balance Check"
+            ),
+            Constraint(
+                name="profit_not_zero",
+                line_item_name="profit",
+                target=0.0,
+                operator="ne",
+                tolerance=100.0,
+                label="Profit Non-Zero"
+            ),
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        expected = [
+            {
+                "name": "min_revenue",
+                "label": "Minimum Revenue",
+                "line_item_name": "revenue",
+                "target": 50000.0,
+                "operator": "gt",
+                "operator_symbol": ">",
+                "tolerance": 0.0,
+            },
+            {
+                "name": "max_expenses",
+                "label": "Maximum Expenses",
+                "line_item_name": "expenses",
+                "target": 30000.0,
+                "operator": "le",
+                "operator_symbol": "<=",
+                "tolerance": 500.0,
+            },
+            {
+                "name": "balance_zero",
+                "label": "Balance Check",
+                "line_item_name": "balance",
+                "target": 0.0,
+                "operator": "eq",
+                "operator_symbol": "=",
+                "tolerance": 0.01,
+            },
+            {
+                "name": "profit_not_zero",
+                "label": "Profit Non-Zero",
+                "line_item_name": "profit",
+                "target": 0.0,
+                "operator": "ne",
+                "operator_symbol": "!=",
+                "tolerance": 100.0,
+            },
+        ]
+        assert result == expected
+
+    def test_all_operators_covered(self):
+        """Test that all supported operators work correctly."""
+        constraints = [
+            Constraint("eq_constraint", "item1", 100.0, "eq"),
+            Constraint("lt_constraint", "item2", 200.0, "lt"),
+            Constraint("le_constraint", "item3", 300.0, "le"),
+            Constraint("gt_constraint", "item4", 400.0, "gt"),
+            Constraint("ge_constraint", "item5", 500.0, "ge"),
+            Constraint("ne_constraint", "item6", 600.0, "ne"),
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        expected_operators = [
+            ("eq", "="),
+            ("lt", "<"),
+            ("le", "<="),
+            ("gt", ">"),
+            ("ge", ">="),
+            ("ne", "!="),
+        ]
+
+        assert len(result) == 6
+        for i, (op, symbol) in enumerate(expected_operators):
+            assert result[i]["operator"] == op
+            assert result[i]["operator_symbol"] == symbol
+
+    def test_constraints_with_zero_tolerance(self):
+        """Test constraints with zero tolerance (default)."""
+        constraints = [
+            Constraint(
+                name="exact_match",
+                line_item_name="value",
+                target=1000.0,
+                operator="eq"
+                # tolerance defaults to 0.0
+            )
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        assert result[0]["tolerance"] == 0.0
+
+    def test_constraints_with_custom_tolerance(self):
+        """Test constraints with custom tolerance values."""
+        constraints = [
+            Constraint(
+                name="approx_match",
+                line_item_name="value",
+                target=1000.0,
+                operator="eq",
+                tolerance=5.0
+            )
+        ]
+        result = generate_constraint_metadata(constraints)
+
+        assert result[0]["tolerance"] == 5.0
+
+    def test_constraint_preserves_all_attributes(self):
+        """Test that all constraint attributes are preserved in metadata."""
+        constraint = Constraint(
+            name="complex_constraint",
+            line_item_name="complex_item",
+            target={2020: 1000.0, 2021: 1100.0, 2022: 1200.0},
+            operator="ge",
+            tolerance=50.0,
+            label="Complex Multi-Year Constraint"
+        )
+        result = generate_constraint_metadata([constraint])
+
+        assert len(result) == 1
+        metadata = result[0]
+
+        assert metadata["name"] == "complex_constraint"
+        assert metadata["label"] == "Complex Multi-Year Constraint"
+        assert metadata["line_item_name"] == "complex_item"
+        assert metadata["target"] == {2020: 1000.0, 2021: 1100.0, 2022: 1200.0}
+        assert metadata["operator"] == "ge"
+        assert metadata["operator_symbol"] == ">="
+        assert metadata["tolerance"] == 50.0
