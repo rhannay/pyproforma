@@ -32,7 +32,7 @@ class ConstraintResults:
         self.model = model
         self.constraint_name = constraint_name
         self.constraint_definition = model.constraint_definition(constraint_name)
-        self.line_item_name = self.constraint_definition.line_item_name
+        self.line_item_name = self._constraint_metadata["line_item_name"]
 
         line_item_definition = model.line_item_definition(self.line_item_name)
         self.value_format = line_item_definition.value_format
@@ -80,7 +80,7 @@ class ConstraintResults:
         Raises:
             KeyError: If the year is not in the model's years
         """
-        target = self.constraint_definition.target
+        target = self._constraint_metadata["target"]
 
         if isinstance(target, dict):
             return target.get(year, None)
@@ -181,8 +181,8 @@ class ConstraintResults:
         # Format the target using the line item's value format
         target_info = ""
         try:
-            target = self.constraint_definition.target
-            operator_symbol = self.constraint_definition.get_operator_symbol()
+            target = self._constraint_metadata["target"]
+            operator_symbol = self._constraint_metadata["operator_symbol"]
 
             if isinstance(target, dict):
                 target_str = str(
