@@ -169,8 +169,7 @@ class ConstraintResults:
             raise ValueError(f"No target value available for year {year}")
 
         # Get the line item value
-        # TODO: use the normal API for accessing a value
-        line_item_value = self.model._value_matrix[year][self.line_item_name]
+        line_item_value = self.model.value(self.line_item_name, year)
 
         # Get operator and tolerance from metadata
         operator = self._constraint_metadata["operator"]
