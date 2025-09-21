@@ -867,6 +867,31 @@ class Model(SerializationMixin):
             f"Available categories: {available_categories}"
         )
 
+    def _get_constraint_metadata(self, constraint_name: str) -> dict:
+        """
+        Get constraint metadata for a specific constraint name.
+
+        Args:
+            constraint_name (str): The name of the constraint to get metadata for
+
+        Returns:
+            dict: Dictionary containing constraint metadata including name, label,
+                  line_item_name, target, operator, operator_symbol, and tolerance
+
+        Raises:
+            KeyError: If the constraint name is not found in constraint metadata
+        """
+        for constraint_meta in self.constraint_metadata:
+            if constraint_meta["name"] == constraint_name:
+                return constraint_meta
+        available_constraints = [
+            constraint["name"] for constraint in self.constraint_metadata
+        ]
+        raise KeyError(
+            f"Constraint '{constraint_name}' not found in model. "
+            f"Available constraints: {available_constraints}"
+        )
+
     # ============================================================================
     # CATEGORY TOTALS
     # ============================================================================
