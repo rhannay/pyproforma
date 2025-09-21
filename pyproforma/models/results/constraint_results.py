@@ -8,6 +8,40 @@ if TYPE_CHECKING:
     from ..model import Model
 
 
+def _evaluate_constraint(
+    value: float, target_value: float, operator: str, tolerance: float
+) -> bool:
+    """
+    Helper function to evaluate constraint logic.
+
+    Args:
+        value (float): The actual value to compare
+        target_value (float): The target value to compare against
+        operator (str): The comparison operator ('eq', 'lt', 'le', 'gt', 'ge', 'ne')
+        tolerance (float): The tolerance for the comparison
+
+    Returns:
+        bool: True if the constraint is satisfied, False otherwise
+
+    Raises:
+        ValueError: If the operator is unknown
+    """
+    if operator == "eq":
+        return abs(value - target_value) <= tolerance
+    elif operator == "lt":
+        return value < target_value - tolerance
+    elif operator == "le":
+        return value <= target_value + tolerance
+    elif operator == "gt":
+        return value > target_value + tolerance
+    elif operator == "ge":
+        return value >= target_value - tolerance
+    elif operator == "ne":
+        return abs(value - target_value) > tolerance
+    else:
+        raise ValueError(f"Unknown operator: {operator}")
+
+
 class ConstraintResults:
     """
     A helper class that provides convenient methods for exploring and analyzing
@@ -70,7 +104,7 @@ class ConstraintResults:
 
     @property
     def constraint_definition(self):
-        #TODO: remove this
+        # TODO: remove this
         """Get the constraint definition for this constraint from the model."""
         return self.model.constraint_definition(self._constraint_name)
 
@@ -175,21 +209,13 @@ class ConstraintResults:
         operator = self._constraint_metadata["operator"]
         tolerance = self._constraint_metadata["tolerance"]
 
-        # Evaluate based on operator
-        if operator == "eq":
-            return abs(line_item_value - target_value) <= tolerance
-        elif operator == "lt":
-            return line_item_value < target_value - tolerance
-        elif operator == "le":
-            return line_item_value <= target_value + tolerance
-        elif operator == "gt":
-            return line_item_value > target_value + tolerance
-        elif operator == "ge":
-            return line_item_value >= target_value - tolerance
-        elif operator == "ne":
-            return abs(line_item_value - target_value) > tolerance
-        else:
-            raise ValueError(f"Unknown operator: {operator}")
+        # Evaluate using helper function
+        return _evaluate_constraint(
+            value=line_item_value,
+            target_value=target_value,
+            operator=operator,
+            tolerance=tolerance,
+        )
 
     def failing_years(self) -> list[int]:
         """
