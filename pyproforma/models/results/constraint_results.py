@@ -41,9 +41,6 @@ class ConstraintResults:
 
         self.constraint_definition = model.constraint_definition(constraint_name)
 
-        line_item_definition = model.line_item_definition(self.line_item_name)
-        self.value_format = line_item_definition.value_format
-
     # ============================================================================
     # INTERNAL/PRIVATE METHODS
     # ============================================================================
@@ -87,6 +84,11 @@ class ConstraintResults:
     def label(self) -> str:
         """Get the label for this constraint from metadata."""
         return self._constraint_metadata["label"]
+
+    @property
+    def value_format(self) -> str:
+        """Get the value format for this constraint's line item from the model."""
+        return self.model[self.line_item_name].value_format
 
     # ============================================================================
     # VALUE ACCESS METHODS
