@@ -11,7 +11,11 @@ from ..category import Category
 from ..compare import Compare
 from ..constraint import Constraint
 from ..line_item import LineItem
-from ..metadata import generate_category_metadata, generate_line_item_metadata
+from ..metadata import (
+    generate_category_metadata,
+    generate_constraint_metadata,
+    generate_line_item_metadata,
+)
 from ..results import CategoryResults, ConstraintResults, LineItemResults
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
@@ -230,12 +234,12 @@ class Model(SerializationMixin):
         self.line_item_metadata = generate_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
+        self.constraint_metadata = generate_constraint_metadata(self.constraints)
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
             self._years,
             self._line_item_definitions + self.multi_line_items,
-            # self._category_definitions,
             self.category_metadata,
             self.line_item_metadata,
         )
