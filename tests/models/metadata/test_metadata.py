@@ -8,7 +8,7 @@ including their integration with multi-line items.
 import pytest
 
 from pyproforma import Category, Constraint, LineItem
-from pyproforma.models.model.metadata import (
+from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_constraint_metadata,
     generate_line_item_metadata,

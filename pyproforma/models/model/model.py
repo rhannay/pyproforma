@@ -11,8 +11,8 @@ from ..category import Category
 from ..compare import Compare
 from ..constraint import Constraint
 from ..line_item import LineItem
+from ..metadata import generate_category_metadata, generate_line_item_metadata
 from ..results import CategoryResults, ConstraintResults, LineItemResults
-from .metadata import generate_category_metadata, generate_line_item_metadata
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
 from .validations import (

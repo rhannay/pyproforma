@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
-from pyproforma.models.model.metadata import (
+from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_line_item_metadata,
 )
