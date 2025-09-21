@@ -751,6 +751,195 @@ class TestConstraintResultsIntegration:
         assert "<br>" in html_result
 
 
+class TestConstraintResultsMetadata:
+    """Test _constraint_metadata property of ConstraintResults."""
+
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+
+    @pytest.fixture
+    def constraint_results_with_dict_target(self, model_with_constraints):
+        """Create a ConstraintResults instance with dict target for testing."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+
+    def test_constraint_metadata_property_returns_dict(self, constraint_results):
+        """Test that _constraint_metadata property returns a dictionary."""
+        metadata = constraint_results._constraint_metadata
+
+        assert isinstance(metadata, dict)
+
+    def test_constraint_metadata_property_calls_model_method(self, constraint_results):
+        """Test that _constraint_metadata property calls model._get_constraint_metadata."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {"name": "min_revenue", "operator": "gt"}
+
+            result = constraint_results._constraint_metadata
+
+            mock_get_metadata.assert_called_once_with("min_revenue")
+            assert result == {"name": "min_revenue", "operator": "gt"}
+
+    def test_constraint_metadata_property_contains_expected_fields(
+        self, constraint_results
+    ):
+        """Test that _constraint_metadata property contains expected fields."""
+        metadata = constraint_results._constraint_metadata
+
+        # Verify all expected fields are present
+        expected_fields = [
+            "name",
+            "label",
+            "line_item_name",
+            "target",
+            "operator",
+            "operator_symbol",
+            "tolerance",
+        ]
+        for field in expected_fields:
+            assert field in metadata, f"Field '{field}' should be in metadata"
+
+    def test_constraint_metadata_property_basic_constraint(self, constraint_results):
+        """Test _constraint_metadata property with basic constraint values."""
+        metadata = constraint_results._constraint_metadata
+
+        assert metadata["name"] == "min_revenue"
+        assert metadata["label"] == "Minimum Revenue"
+        assert metadata["line_item_name"] == "revenue"
+        assert metadata["target"] == 80000.0
+        assert metadata["operator"] == "gt"
+        assert metadata["operator_symbol"] == ">"
+        assert metadata["tolerance"] == 0.0  # Default tolerance
+
+    def test_constraint_metadata_property_dict_target_constraint(
+        self, constraint_results_with_dict_target
+    ):
+        """Test _constraint_metadata property with constraint having dict target."""
+        metadata = constraint_results_with_dict_target._constraint_metadata
+
+        assert metadata["name"] == "revenue_growth"
+        assert metadata["label"] == "Revenue Growth Target"
+        assert metadata["line_item_name"] == "revenue"
+        assert metadata["target"] == {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        assert metadata["operator"] == "ge"
+        assert metadata["operator_symbol"] == ">="
+        assert metadata["tolerance"] == 0.0  # Default tolerance
+
+    def test_constraint_metadata_property_with_tolerance(
+        self, basic_line_items, basic_categories
+    ):
+        """Test _constraint_metadata property with constraint that has tolerance."""
+        constraint_with_tolerance = Constraint(
+            name="balance_check",
+            line_item_name="revenue",
+            target=100000.0,
+            operator="eq",
+            tolerance=0.01,
+            label="Balance Check",
+        )
+
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[constraint_with_tolerance],
+        )
+
+        constraint_results = ConstraintResults(model, "balance_check")
+        metadata = constraint_results._constraint_metadata
+
+        assert metadata["name"] == "balance_check"
+        assert metadata["label"] == "Balance Check"
+        assert metadata["tolerance"] == 0.01
+        assert metadata["operator"] == "eq"
+        assert metadata["operator_symbol"] == "="
+
+    def test_constraint_metadata_property_propagates_key_error(
+        self, model_with_constraints
+    ):
+        """Test that _constraint_metadata property propagates KeyError from model method."""
+        constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
+
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.side_effect = KeyError("Constraint not found")
+
+            with pytest.raises(KeyError, match="Constraint not found"):
+                _ = constraint_results._constraint_metadata
+
+    def test_constraint_metadata_property_uses_correct_constraint_name(
+        self, constraint_results
+    ):
+        """Test that _constraint_metadata property uses the correct constraint name."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {}
+
+            _ = constraint_results._constraint_metadata
+
+            # Verify it was called with the constraint's name
+            mock_get_metadata.assert_called_once_with(
+                constraint_results.constraint_name
+            )
+
+    def test_constraint_metadata_property_caching_behavior(self, constraint_results):
+        """Test that _constraint_metadata property doesn't cache (calls model each time)."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {"name": "min_revenue"}
+
+            # Access the property multiple times
+            _ = constraint_results._constraint_metadata
+            _ = constraint_results._constraint_metadata
+            _ = constraint_results._constraint_metadata
+
+            # Should call the model method each time (no caching)
+            assert mock_get_metadata.call_count == 3
+            mock_get_metadata.assert_called_with("min_revenue")
+
+    def test_constraint_metadata_property_with_different_operators(
+        self, basic_line_items, basic_categories
+    ):
+        """Test _constraint_metadata property with constraints having different operators."""
+        operators_tests = [
+            ("eq", "="),
+            ("ne", "!="),
+            ("lt", "<"),
+            ("le", "<="),
+            ("gt", ">"),
+            ("ge", ">="),
+        ]
+
+        for operator, symbol in operators_tests:
+            constraint = Constraint(
+                name=f"test_{operator}",
+                line_item_name="revenue",
+                target=100000.0,
+                operator=operator,
+                label=f"Test {operator.upper()}",
+            )
+
+            model = Model(
+                line_items=basic_line_items,
+                years=[2023, 2024, 2025],
+                categories=basic_categories,
+                constraints=[constraint],
+            )
+
+            constraint_results = ConstraintResults(model, f"test_{operator}")
+            metadata = constraint_results._constraint_metadata
+
+            assert metadata["operator"] == operator
+            assert metadata["operator_symbol"] == symbol
+            assert metadata["name"] == f"test_{operator}"
+            assert metadata["label"] == f"Test {operator.upper()}"
+
+
 class TestConstraintResultsEdgeCases:
     """Test edge cases and boundary conditions."""
 

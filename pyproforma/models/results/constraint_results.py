@@ -46,6 +46,11 @@ class ConstraintResults:
     def __repr__(self) -> str:
         return f"ConstraintResults(constraint_name='{self.constraint_name}')"
 
+    @property
+    def _constraint_metadata(self) -> dict:
+        """Get the metadata for this constraint from the model."""
+        return self.model._get_constraint_metadata(self.constraint_name)
+
     def line_item_value(self, year: int) -> float:
         """
         Return the line item value for this constraint for a specific year.
