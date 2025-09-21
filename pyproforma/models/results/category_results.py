@@ -233,21 +233,13 @@ class CategoryResults:
         if not self.line_item_names:
             raise ValueError(f"No line items found in category '{self.name}'")
 
-        if year is not None:
-            return self.model.charts.line_items_pie(
-                self.line_item_names,
-                year,
-                width=width,
-                height=height,
-                template=template,
-            )
-        else:
-            return self.model.charts.line_items_pie(
-                self.line_item_names,
-                width=width,
-                height=height,
-                template=template,
-            )
+        return self.model.charts.line_items_pie(
+            self.line_item_names,
+            year,
+            width=width,
+            height=height,
+            template=template,
+        )
 
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
