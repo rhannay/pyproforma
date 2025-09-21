@@ -248,10 +248,11 @@ def generate_constraint_metadata(constraints: List[Constraint]) -> List[Dict]:
     constraint_metadata = []
 
     for constraint in constraints:
+        label = constraint.label if constraint.label is not None else constraint.name
         constraint_metadata.append(
             {
                 "name": constraint.name,
-                "label": constraint.label,
+                "label": label,
                 "line_item_name": constraint.line_item_name,
                 "target": constraint.target,
                 "operator": constraint.operator,

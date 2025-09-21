@@ -83,6 +83,11 @@ class ConstraintResults:
         """Get the line item name for this constraint from metadata."""
         return self._constraint_metadata["line_item_name"]
 
+    @property
+    def label(self) -> str:
+        """Get the label for this constraint from metadata."""
+        return self._constraint_metadata["label"]
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================
@@ -277,12 +282,9 @@ class ConstraintResults:
             else:
                 failing_info = "\nStatus: All years pass constraint check"
 
-        constraint_label = getattr(
-            self.constraint_definition, "label", self.constraint_name
-        )
         summary_text = (
             f"ConstraintResults('{self.constraint_name}')\n"
-            f"Label: {constraint_label}\n"
+            f"Label: {self.label}\n"
             f"Line Item: {self.line_item_name}"
             f"{target_info}{value_info}{failing_info}"
         )

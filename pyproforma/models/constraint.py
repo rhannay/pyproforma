@@ -87,7 +87,7 @@ class Constraint:
         if tolerance < 0:
             raise ValueError("Tolerance must be non-negative")
         self.name = name
-        self.label = label if label is not None else name
+        self.label = label
         self.line_item_name = line_item_name
         self.tolerance = tolerance
         if isinstance(target, dict):

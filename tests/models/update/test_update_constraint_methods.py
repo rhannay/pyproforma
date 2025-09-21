@@ -95,7 +95,7 @@ class TestUpdateConstraintMethods:
         constraint = sample_model.constraints[-1]
         assert constraint.name == "test_constraint"
         assert constraint.tolerance == 0.0  # Default value
-        assert constraint.label == "test_constraint"  # Should default to name
+        assert constraint.label is None
 
     def test_add_constraint_missing_parameters_raises_error(self, sample_model: Model):
         """Test that missing required parameters raise ValueError."""

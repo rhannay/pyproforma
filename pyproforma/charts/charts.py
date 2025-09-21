@@ -653,14 +653,14 @@ class Charts:
 
         # Get the constraint
         try:
-            constraint = self._model.constraint_definition(constraint_name)
+            constraint_results = self._model.constraint(constraint_name)
         except KeyError:
             raise KeyError(
                 f"Constraint '{constraint_name}' not found in model constraints."
             )
 
         # Get the associated line item info
-        line_item_name = constraint.line_item_name
+        line_item_name = constraint_results.line_item_name
         try:
             line_item = self._model.line_item(line_item_name)
             line_item_label = line_item.label
@@ -685,7 +685,7 @@ class Charts:
         # Get constraint target values for all years
         constraint_values = []
         for year in years:
-            target_value = constraint.get_target(year)
+            target_value = constraint_results.target(year)
             if target_value is not None:
                 constraint_values.append(target_value)
             else:
@@ -705,7 +705,7 @@ class Charts:
 
         # Constraint target dataset
         constraint_dataset = ChartDataSet(
-            label=f"{constraint.label} Target",
+            label=f"{constraint_results.label} Target",
             data=constraint_values,
             color="red",
             type=constraint_type,
@@ -716,7 +716,7 @@ class Charts:
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=datasets,
-            title=f"{line_item_label} vs {constraint.label} Target",
+            title=f"{line_item_label} vs {constraint_results.label} Target",
             value_format=value_format,
         )
 
