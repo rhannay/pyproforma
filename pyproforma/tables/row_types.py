@@ -370,6 +370,7 @@ class ConstraintTargetRow(BaseRow):
         """Create a row showing constraint target values across all years."""
         # Get the constraint object
         constraint = model.constraint_definition(self.constraint_name)
+        constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name with "Target" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Target"
@@ -388,7 +389,7 @@ class ConstraintTargetRow(BaseRow):
         # Add cells for each year with constraint target value
         for year in model.years:
             try:
-                target_value = constraint.get_target(year)
+                target_value = constraint_results.target(year)
                 cells.append(
                     Cell(value=target_value, bold=self.bold, value_format=value_format)
                 )
