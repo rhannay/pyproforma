@@ -365,28 +365,6 @@ class TestConstraintResultsTargetMethod:
         result = constraint_results_with_dict_target.target(2026)
         assert result is None
 
-    def test_target_method_calls_constraint_definition(self, constraint_results):
-        """Test that target method calls get_target on constraint definition."""
-        with patch.object(
-            constraint_results.constraint_definition, "get_target"
-        ) as mock_get_target:
-            mock_get_target.return_value = 80000.0
-
-            result = constraint_results.target(2023)
-
-            mock_get_target.assert_called_once_with(2023)
-            assert result == 80000.0
-
-    def test_target_method_propagates_exceptions(self, constraint_results):
-        """Test that target method propagates exceptions from constraint definition."""
-        with patch.object(
-            constraint_results.constraint_definition, "get_target"
-        ) as mock_get_target:
-            mock_get_target.side_effect = ValueError("Custom error")
-
-            with pytest.raises(ValueError, match="Custom error"):
-                constraint_results.target(2023)
-
     def test_target_method_with_custom_constraint(
         self, basic_line_items, basic_categories
     ):

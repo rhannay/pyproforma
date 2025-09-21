@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import plotly.graph_objects as go
 
@@ -61,7 +61,7 @@ class ConstraintResults:
         """
         return self.model.value(self.line_item_name, year)
 
-    def target(self, year: int) -> float:
+    def target(self, year: int) -> Union[float, None]:
         """
         Return the target value for this constraint for a specific year.
 
@@ -69,12 +69,17 @@ class ConstraintResults:
             year (int): The year to get the target value for
 
         Returns:
-            float: The constraint target value for the specified year
+            Union[float, None]: The constraint target value for the specified year,
+                               or None if no target is available for that year
 
         Raises:
             KeyError: If the year is not in the model's years
         """
-        return self.constraint_definition.get_target(year)
+        target = self.constraint_definition.target
+
+        if isinstance(target, dict):
+            return target.get(year, None)
+        return target
 
     def table(self):
         """
