@@ -644,7 +644,7 @@ class TestGenerateConstraintMetadata:
                 target=50000.0,
                 operator="gt",
                 tolerance=0.0,
-                label="Minimum Revenue"
+                label="Minimum Revenue",
             )
         ]
         result = generate_constraint_metadata(constraints)
@@ -671,7 +671,7 @@ class TestGenerateConstraintMetadata:
                 target={2020: 100000.0, 2021: 110000.0},
                 operator="le",
                 tolerance=1000.0,
-                label="Revenue Budget Constraint"
+                label="Revenue Budget Constraint",
             )
         ]
         result = generate_constraint_metadata(constraints)
@@ -697,7 +697,7 @@ class TestGenerateConstraintMetadata:
                 line_item_name="balance",
                 target=0.0,
                 operator="eq",
-                tolerance=0.01
+                tolerance=0.01,
                 # No label provided - should use name as label
             )
         ]
@@ -724,7 +724,7 @@ class TestGenerateConstraintMetadata:
                 line_item_name="revenue",
                 target=50000.0,
                 operator="gt",
-                label="Minimum Revenue"
+                label="Minimum Revenue",
             ),
             Constraint(
                 name="max_expenses",
@@ -732,7 +732,7 @@ class TestGenerateConstraintMetadata:
                 target=30000.0,
                 operator="le",
                 tolerance=500.0,
-                label="Maximum Expenses"
+                label="Maximum Expenses",
             ),
             Constraint(
                 name="balance_zero",
@@ -740,7 +740,7 @@ class TestGenerateConstraintMetadata:
                 target=0.0,
                 operator="eq",
                 tolerance=0.01,
-                label="Balance Check"
+                label="Balance Check",
             ),
             Constraint(
                 name="profit_not_zero",
@@ -748,7 +748,7 @@ class TestGenerateConstraintMetadata:
                 target=0.0,
                 operator="ne",
                 tolerance=100.0,
-                label="Profit Non-Zero"
+                label="Profit Non-Zero",
             ),
         ]
         result = generate_constraint_metadata(constraints)
@@ -826,7 +826,7 @@ class TestGenerateConstraintMetadata:
                 name="exact_match",
                 line_item_name="value",
                 target=1000.0,
-                operator="eq"
+                operator="eq",
                 # tolerance defaults to 0.0
             )
         ]
@@ -842,7 +842,7 @@ class TestGenerateConstraintMetadata:
                 line_item_name="value",
                 target=1000.0,
                 operator="eq",
-                tolerance=5.0
+                tolerance=5.0,
             )
         ]
         result = generate_constraint_metadata(constraints)
@@ -857,7 +857,7 @@ class TestGenerateConstraintMetadata:
             target={2020: 1000.0, 2021: 1100.0, 2022: 1200.0},
             operator="ge",
             tolerance=50.0,
-            label="Complex Multi-Year Constraint"
+            label="Complex Multi-Year Constraint",
         )
         result = generate_constraint_metadata([constraint])
 
