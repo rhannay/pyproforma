@@ -456,22 +456,6 @@ class TestConstraintResultsEvaluateMethod:
         result = constraint_results_revenue_growth.evaluate(2025)
         assert result is True
 
-    def test_evaluate_method_calls_constraint_definition_evaluate(
-        self, constraint_results
-    ):
-        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""  # noqa: E501
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.return_value = True
-
-            result = constraint_results.evaluate(2023)
-
-            mock_evaluate.assert_called_once_with(
-                constraint_results.model._value_matrix, 2023
-            )
-            assert result is True
-
     def test_evaluate_method_propagates_value_error(self, constraint_results):
         """Test that evaluate method propagates ValueError from constraint definition."""  # noqa: E501
         with patch.object(
@@ -489,21 +473,6 @@ class TestConstraintResultsEvaluateMethod:
         # Test with a year that's not in the model
         with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
             constraint_results.evaluate(2026)
-
-    def test_evaluate_method_uses_correct_value_matrix(self, constraint_results):
-        """Test that evaluate method uses the correct value matrix from the model."""
-        # Verify the constraint uses the model's _value_matrix
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.return_value = True
-
-            constraint_results.evaluate(2023)
-
-            # Verify it was called with the model's _value_matrix
-            mock_evaluate.assert_called_once_with(
-                constraint_results.model._value_matrix, 2023
-            )
 
     def test_evaluate_method_with_custom_constraint(
         self, basic_line_items, basic_categories
@@ -771,7 +740,8 @@ class TestConstraintResultsMetadata:
         assert isinstance(metadata, dict)
 
     def test_constraint_metadata_property_calls_model_method(self, constraint_results):
-        """Test that _constraint_metadata property calls model._get_constraint_metadata."""
+        """Test that _constraint_metadata property calls
+        model._get_constraint_metadata."""
         with patch.object(
             constraint_results.model, "_get_constraint_metadata"
         ) as mock_get_metadata:
@@ -859,7 +829,8 @@ class TestConstraintResultsMetadata:
     def test_constraint_metadata_property_propagates_key_error(
         self, model_with_constraints
     ):
-        """Test that _constraint_metadata property propagates KeyError from model method."""
+        """Test that _constraint_metadata property propagates
+        KeyError from model method."""
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
 
         with patch.object(
@@ -887,7 +858,8 @@ class TestConstraintResultsMetadata:
             )
 
     def test_constraint_metadata_property_caching_behavior(self, constraint_results):
-        """Test that _constraint_metadata property doesn't cache (calls model each time)."""
+        """Test that _constraint_metadata property doesn't cache
+        (calls model each time)."""
         with patch.object(
             constraint_results.model, "_get_constraint_metadata"
         ) as mock_get_metadata:
@@ -905,7 +877,8 @@ class TestConstraintResultsMetadata:
     def test_constraint_metadata_property_with_different_operators(
         self, basic_line_items, basic_categories
     ):
-        """Test _constraint_metadata property with constraints having different operators."""
+        """Test _constraint_metadata property with constraints having different
+        operators."""
         operators_tests = [
             ("eq", "="),
             ("ne", "!="),

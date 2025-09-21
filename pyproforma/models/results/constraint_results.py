@@ -39,8 +39,6 @@ class ConstraintResults:
         except KeyError:
             raise KeyError(f"Constraint with name '{constraint_name}' not found")
 
-        self.constraint_definition = model.constraint_definition(constraint_name)
-
     # ============================================================================
     # INTERNAL/PRIVATE METHODS
     # ============================================================================
@@ -69,6 +67,12 @@ class ConstraintResults:
     def _constraint_metadata(self) -> dict:
         """Get the metadata for this constraint from the model."""
         return self.model._get_constraint_metadata(self._constraint_name)
+
+    @property
+    def constraint_definition(self):
+        #TODO: remove this
+        """Get the constraint definition for this constraint from the model."""
+        return self.model.constraint_definition(self._constraint_name)
 
     @property
     def constraint_name(self) -> str:
@@ -146,7 +150,47 @@ class ConstraintResults:
         Raises:
             ValueError: If year or line item is not found in the model, or no target available
         """  # noqa: E501
-        return self.constraint_definition.evaluate(self.model._value_matrix, year)
+        # Check if year exists in the model's value matrix
+        if year not in self.model._value_matrix:
+            raise ValueError(f"Year {year} not found in value_matrix")
+
+        # Check if line item exists in the value matrix for this year
+        if self.line_item_name not in self.model._value_matrix[year]:
+            raise ValueError(
+                (
+                    f"Line item '{self.line_item_name}' not found in value_matrix "
+                    f"for year {year}"
+                )
+            )
+
+        # Get target value for the year
+        target_value = self.target(year)
+        if target_value is None:
+            raise ValueError(f"No target value available for year {year}")
+
+        # Get the line item value
+        # TODO: use the normal API for accessing a value
+        line_item_value = self.model._value_matrix[year][self.line_item_name]
+
+        # Get operator and tolerance from metadata
+        operator = self._constraint_metadata["operator"]
+        tolerance = self._constraint_metadata["tolerance"]
+
+        # Evaluate based on operator
+        if operator == "eq":
+            return abs(line_item_value - target_value) <= tolerance
+        elif operator == "lt":
+            return line_item_value < target_value - tolerance
+        elif operator == "le":
+            return line_item_value <= target_value + tolerance
+        elif operator == "gt":
+            return line_item_value > target_value + tolerance
+        elif operator == "ge":
+            return line_item_value >= target_value - tolerance
+        elif operator == "ne":
+            return abs(line_item_value - target_value) > tolerance
+        else:
+            raise ValueError(f"Unknown operator: {operator}")
 
     def failing_years(self) -> list[int]:
         """
