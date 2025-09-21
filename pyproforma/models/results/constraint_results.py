@@ -103,12 +103,6 @@ class ConstraintResults:
         return self.model._get_constraint_metadata(self._constraint_name)
 
     @property
-    def constraint_definition(self):
-        # TODO: remove this
-        """Get the constraint definition for this constraint from the model."""
-        return self.model.constraint_definition(self._constraint_name)
-
-    @property
     def constraint_name(self) -> str:
         """Get the constraint name."""
         return self._constraint_name
