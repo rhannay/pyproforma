@@ -523,7 +523,7 @@ class Charts:
     def line_items_pie(
         self,
         item_names: list[str],
-        year: int,
+        year: int = None,
         width: int = 800,
         height: int = 600,
         template: str = "plotly_white",
@@ -533,7 +533,7 @@ class Charts:
 
         Args:
             item_names (list[str]): List of line item names to include in the pie chart
-            year (int): The year for which to create the pie chart
+            year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -555,8 +555,12 @@ class Charts:
                 "Please add years to the model before creating charts."
             )
 
-        # Validate year is in model years
+        # If year is None, use the latest year in the model
         years = self._model.years
+        if year is None:
+            year = max(years)
+
+        # Validate year is in model years
         if year not in years:
             raise ValueError(f"Year {year} not found in model years: {years}")
 

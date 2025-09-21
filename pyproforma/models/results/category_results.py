@@ -210,7 +210,7 @@ class CategoryResults:
 
     def pie_chart(
         self,
-        year: int,
+        year: int = None,
         width: int = 800,
         height: int = 600,
         template: str = "plotly_white",
@@ -219,7 +219,7 @@ class CategoryResults:
         Create a pie chart showing the distribution of line items within this category for a specific year.
 
         Args:
-            year (int): The year for which to create the pie chart
+            year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -233,9 +233,21 @@ class CategoryResults:
         if not self.line_item_names:
             raise ValueError(f"No line items found in category '{self.name}'")
 
-        return self.model.charts.line_items_pie(
-            self.line_item_names, year, width=width, height=height, template=template
-        )
+        if year is not None:
+            return self.model.charts.line_items_pie(
+                self.line_item_names,
+                year,
+                width=width,
+                height=height,
+                template=template,
+            )
+        else:
+            return self.model.charts.line_items_pie(
+                self.line_item_names,
+                width=width,
+                height=height,
+                template=template,
+            )
 
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
