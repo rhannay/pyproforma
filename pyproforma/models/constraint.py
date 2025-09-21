@@ -118,52 +118,6 @@ class Constraint:
             return self.target.get(year, None)
         return self.target
 
-    def evaluate(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> bool:
-        """
-        Evaluate the constraint against a line item value from the value matrix for a specific year.
-
-        Args:
-            value_matrix: Dictionary mapping years to line_item_name:value dictionaries
-            year: The specific year to evaluate the constraint for
-
-        Returns:
-            bool: True if the constraint is satisfied, False otherwise
-
-        Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available
-        """  # noqa: E501
-        if year not in value_matrix:
-            raise ValueError(f"Year {year} not found in value_matrix")
-
-        if self.line_item_name not in value_matrix[year]:
-            raise ValueError(
-                (
-                    f"Line item '{self.line_item_name}' not found in value_matrix "
-                    f"for year {year}"
-                )
-            )
-
-        target_value = self.get_target(year)
-        if target_value is None:
-            raise ValueError(f"No target value available for year {year}")
-
-        line_item_value = value_matrix[year][self.line_item_name]
-
-        if self.operator == "eq":
-            return abs(line_item_value - target_value) <= self.tolerance
-        elif self.operator == "lt":
-            return line_item_value < target_value - self.tolerance
-        elif self.operator == "le":
-            return line_item_value <= target_value + self.tolerance
-        elif self.operator == "gt":
-            return line_item_value > target_value + self.tolerance
-        elif self.operator == "ge":
-            return line_item_value >= target_value - self.tolerance
-        elif self.operator == "ne":
-            return abs(line_item_value - target_value) > self.tolerance
-        else:
-            raise ValueError(f"Unknown operator: {self.operator}")
-
     def variance(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> float:
         """
         Calculate the variance (difference) between line item value and target for a specific year.

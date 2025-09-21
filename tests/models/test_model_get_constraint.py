@@ -120,7 +120,6 @@ class TestModelGetConstraint:
         constraint = model_with_constraints.constraint_definition("max_expenses")
 
         assert isinstance(constraint, Constraint)
-        assert hasattr(constraint, "evaluate")
         assert hasattr(constraint, "variance")
         assert hasattr(constraint, "get_target")
 

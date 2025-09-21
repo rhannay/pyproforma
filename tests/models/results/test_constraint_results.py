@@ -456,18 +456,6 @@ class TestConstraintResultsEvaluateMethod:
         result = constraint_results_revenue_growth.evaluate(2025)
         assert result is True
 
-    def test_evaluate_method_propagates_value_error(self, constraint_results):
-        """Test that evaluate method propagates ValueError from constraint definition."""  # noqa: E501
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.side_effect = ValueError(
-                "Year 2026 not found in value_matrix"
-            )
-
-            with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
-                constraint_results.evaluate(2026)
-
     def test_evaluate_method_with_invalid_year(self, constraint_results):
         """Test evaluate method with year not in model raises ValueError."""
         # Test with a year that's not in the model
