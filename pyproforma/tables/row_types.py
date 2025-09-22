@@ -332,9 +332,7 @@ class ConstraintVarianceRow(BaseRow):
         # Default to same format as the constraint's target line item if not specified
         value_format = (
             self.value_format
-            or model.line_item(
-                constraint_results.line_item_name
-            ).value_format
+            or model.line_item(constraint_results.line_item_name).value_format
         )
 
         # Create cells for this row
@@ -392,7 +390,7 @@ class ConstraintTargetRow(BaseRow):
         # Add cells for each year with constraint target value
         for year in model.years:
             try:
-                target_value = constraint_results.target(year)
+                target_value = constraint_results.target_by_year(year)
                 cells.append(
                     Cell(value=target_value, bold=self.bold, value_format=value_format)
                 )

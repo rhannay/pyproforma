@@ -188,7 +188,7 @@ class ConstraintResults:
         """
         return self.model.value(self.line_item_name, year)
 
-    def target(self, year: int) -> Union[float, None]:
+    def target_by_year(self, year: int) -> Union[float, None]:
         """
         Return the target value for this constraint for a specific year.
 
@@ -236,7 +236,7 @@ class ConstraintResults:
             )
 
         # Get target value for the year
-        target_value = self.target(year)
+        target_value = self.target_by_year(year)
         if target_value is None:
             raise ValueError(f"No target value available for year {year}")
 
@@ -277,7 +277,7 @@ class ConstraintResults:
             )
 
         # Get target value for the year
-        target_value = self.target(year)
+        target_value = self.target_by_year(year)
         if target_value is None:
             raise ValueError(f"No target value available for year {year}")
 

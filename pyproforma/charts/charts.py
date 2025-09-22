@@ -685,7 +685,7 @@ class Charts:
         # Get constraint target values for all years
         constraint_values = []
         for year in years:
-            target_value = constraint_results.target(year)
+            target_value = constraint_results.target_by_year(year)
             if target_value is not None:
                 constraint_values.append(target_value)
             else:

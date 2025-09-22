@@ -85,7 +85,7 @@ class TestConstraintResultsInitialization:
         assert constraint_results.model is model_with_constraints
         assert constraint_results.name == "min_revenue"
         assert constraint_results.line_item_name == "revenue"
-        assert constraint_results.target(2023) == 80000.0
+        assert constraint_results.target_by_year(2023) == 80000.0
         assert constraint_results.operator == "gt"
 
     def test_init_invalid_constraint_name(self, model_with_constraints):
@@ -100,9 +100,9 @@ class TestConstraintResultsInitialization:
         constraint_results = ConstraintResults(model_with_constraints, "revenue_growth")
 
         assert constraint_results.name == "revenue_growth"
-        assert constraint_results.target(2023) == 95000.0
-        assert constraint_results.target(2024) == 115000.0
-        assert constraint_results.target(2025) == 135000.0
+        assert constraint_results.target_by_year(2023) == 95000.0
+        assert constraint_results.target_by_year(2024) == 115000.0
+        assert constraint_results.target_by_year(2025) == 135000.0
         assert constraint_results.operator == "ge"
 
 
@@ -332,26 +332,26 @@ class TestConstraintResultsTargetMethod:
     def test_target_method_with_float_target(self, constraint_results):
         """Test target method with constraint having float target."""
         # The "min_revenue" constraint has a float target of 80000.0
-        result = constraint_results.target(2023)
+        result = constraint_results.target_by_year(2023)
         assert result == 80000.0
 
         # Should return same value for any year when target is a float
-        result = constraint_results.target(2024)
+        result = constraint_results.target_by_year(2024)
         assert result == 80000.0
 
-        result = constraint_results.target(2025)
+        result = constraint_results.target_by_year(2025)
         assert result == 80000.0
 
     def test_target_method_with_dict_target(self, constraint_results_with_dict_target):
         """Test target method with constraint having dict target."""
         # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}  # noqa: E501
-        result = constraint_results_with_dict_target.target(2023)
+        result = constraint_results_with_dict_target.target_by_year(2023)
         assert result == 95000.0
 
-        result = constraint_results_with_dict_target.target(2024)
+        result = constraint_results_with_dict_target.target_by_year(2024)
         assert result == 115000.0
 
-        result = constraint_results_with_dict_target.target(2025)
+        result = constraint_results_with_dict_target.target_by_year(2025)
         assert result == 135000.0
 
     def test_target_method_with_dict_target_missing_year(
@@ -359,7 +359,7 @@ class TestConstraintResultsTargetMethod:
     ):
         """Test target method with dict target for year not in dict."""
         # The "revenue_growth" constraint doesn't have a target for 2026
-        result = constraint_results_with_dict_target.target(2026)
+        result = constraint_results_with_dict_target.target_by_year(2026)
         assert result is None
 
     def test_target_method_with_custom_constraint(
@@ -383,7 +383,7 @@ class TestConstraintResultsTargetMethod:
         )
 
         constraint_results = ConstraintResults(model, "test_constraint")
-        result = constraint_results.target(2023)
+        result = constraint_results.target_by_year(2023)
         assert result == 90000.0
 
 
@@ -1335,7 +1335,7 @@ class TestConstraintResultsNameSetter:
         updated_constraint = model_with_multiple_constraints.constraint(new_name)
         assert updated_constraint.name == new_name
         assert updated_constraint.line_item_name == "revenue"
-        assert updated_constraint.target(2023) == 80000.0
+        assert updated_constraint.target_by_year(2023) == 80000.0
 
     def test_name_setter_removes_old_name_from_model(
         self, model_with_multiple_constraints
@@ -1436,7 +1436,7 @@ class TestConstraintResultsNameSetter:
         # Capture original properties
         original_label = constraint_results.label
         original_line_item_name = constraint_results.line_item_name
-        original_target = constraint_results.target(2023)
+        original_target = constraint_results.target_by_year(2023)
         original_operator = constraint_results.operator
         original_tolerance = constraint_results.tolerance
 
@@ -1446,7 +1446,7 @@ class TestConstraintResultsNameSetter:
         # Verify all other properties are preserved
         assert constraint_results.label == original_label
         assert constraint_results.line_item_name == original_line_item_name
-        assert constraint_results.target(2023) == original_target
+        assert constraint_results.target_by_year(2023) == original_target
         assert constraint_results.operator == original_operator
         assert constraint_results.tolerance == original_tolerance
 
