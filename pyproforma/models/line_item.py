@@ -120,17 +120,3 @@ class LineItem:
             formula=item_dict.get("formula"),
             value_format=item_dict.get("value_format", "no_decimals"),
         )
-
-    def __str__(self):
-        if self.values is None:
-            values_str = "None"
-        else:
-            years = sorted(self.values.keys())
-            values_str = ", ".join(f"{year}: {self.values[year]}" for year in years)
-        return (
-            f"LineItem(name='{self.name}', label='{self.label}', "
-            f"category='{self.category}', values={{ {values_str} }})"
-        )
-
-    def __repr__(self):
-        return self.__str__()

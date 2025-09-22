@@ -73,20 +73,6 @@ class Category:
                 f"{', '.join(RESERVED_CATEGORY_NAMES)}"
             )
 
-    def __str__(self):
-        return (
-            f"Category("
-            f"name='{self.name}', "
-            f"label='{self.label}', "
-            f"total_label='{self.total_label}', "
-            f"total_name='{self.total_name}', "
-            f"include_total={self.include_total}"
-            f")"
-        )
-
-    def __repr__(self):
-        return self.__str__()
-
     def to_dict(self) -> dict:
         """Convert Category to dictionary representation."""
         return {
