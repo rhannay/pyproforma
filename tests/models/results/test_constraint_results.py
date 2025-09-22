@@ -965,3 +965,209 @@ class TestConstraintResultsEdgeCases:
         assert "ConstraintResults('revenue_check_2024')" in summary
         assert "Label: Revenue Check 2024" in summary
         assert "Value (2024): 100,000.00" in summary
+
+
+class TestConstraintResultsNameSetter:
+    """Test the name setter functionality of ConstraintResults."""
+
+    @pytest.fixture
+    def model_with_multiple_constraints(self, basic_line_items, basic_categories):
+        """Create a model with multiple constraints for testing."""
+        constraints = [
+            Constraint(
+                name="min_revenue",
+                line_item_name="revenue",
+                target=80000.0,
+                operator="gt",
+                label="Minimum Revenue",
+            ),
+            Constraint(
+                name="max_revenue",
+                line_item_name="revenue",
+                target=200000.0,
+                operator="lt",
+                label="Maximum Revenue",
+            ),
+            Constraint(
+                name="expense_limit",
+                line_item_name="expenses",
+                target=75000.0,
+                operator="lt",
+                label="Expense Limit",
+            ),
+        ]
+        return Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=constraints,
+        )
+
+    def test_name_setter_updates_constraint_name(self, model_with_multiple_constraints):
+        """Test that setting name updates the constraint name correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Verify the name was updated
+        assert constraint_results.name == new_name
+        assert constraint_results.name != original_name
+
+    def test_name_setter_updates_model(self, model_with_multiple_constraints):
+        """Test that setting name updates the constraint in the model."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        new_name = "revenue_minimum"
+
+        # Set new name
+        constraint_results.name = new_name
+
+        # Verify the model was updated by accessing constraint with new name
+        updated_constraint = model_with_multiple_constraints.constraint(new_name)
+        assert updated_constraint.name == new_name
+        assert updated_constraint.line_item_name == "revenue"
+        assert updated_constraint.target(2023) == 80000.0
+
+    def test_name_setter_removes_old_name_from_model(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting name removes the old name from the model."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+        new_name = "revenue_floor"
+
+        # Set new name
+        constraint_results.name = new_name
+
+        # Verify old name no longer exists in model
+        with pytest.raises(
+            KeyError, match=f"Constraint with name '{original_name}' not found"
+        ):
+            model_with_multiple_constraints.constraint(original_name)
+
+    def test_name_setter_rejects_duplicate_name(self, model_with_multiple_constraints):
+        """Test that setting a name that already exists raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set name to an existing constraint name
+        with pytest.raises(
+            ValueError, match="Constraint with name 'max_revenue' already exists"
+        ):
+            constraint_results.name = "max_revenue"
+
+        # Verify original name is unchanged
+        assert constraint_results.name == original_name
+
+    def test_name_setter_rejects_empty_name(self, model_with_multiple_constraints):
+        """Test that setting an empty name raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set empty name
+        with pytest.raises(
+            ValueError,
+            match="Name must only contain letters, numbers, underscores, or hyphens",
+        ):
+            constraint_results.name = ""
+
+        # Verify original name is unchanged
+        assert constraint_results.name == original_name
+
+    def test_name_setter_rejects_invalid_characters(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting a name with invalid characters raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set name with invalid characters
+        invalid_names = ["name with spaces", "name@symbol", "name$special", "name!"]
+
+        for invalid_name in invalid_names:
+            with pytest.raises(
+                ValueError,
+                match="Name must only contain letters, numbers, underscores, or hyphens",
+            ):
+                constraint_results.name = invalid_name
+
+            # Verify original name is unchanged after each attempt
+            assert constraint_results.name == original_name
+
+    def test_name_setter_accepts_valid_names(self, model_with_multiple_constraints):
+        """Test that setting valid names works correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        valid_names = [
+            "revenue_floor",
+            "revenue-minimum",
+            "rev123",
+            "Revenue_Floor_2023",
+            "constraint_1",
+        ]
+
+        for valid_name in valid_names:
+            # Set the valid name
+            constraint_results.name = valid_name
+
+            # Verify it was set correctly
+            assert constraint_results.name == valid_name
+
+            # Verify we can access it from the model
+            updated_constraint = model_with_multiple_constraints.constraint(valid_name)
+            assert updated_constraint.name == valid_name
+
+    def test_name_setter_preserves_other_properties(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting name preserves all other constraint properties."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Capture original properties
+        original_label = constraint_results.label
+        original_line_item_name = constraint_results.line_item_name
+        original_target = constraint_results.target(2023)
+        original_operator = constraint_results.operator
+        original_tolerance = constraint_results.tolerance
+
+        # Set new name
+        constraint_results.name = "revenue_minimum"
+
+        # Verify all other properties are preserved
+        assert constraint_results.label == original_label
+        assert constraint_results.line_item_name == original_line_item_name
+        assert constraint_results.target(2023) == original_target
+        assert constraint_results.operator == original_operator
+        assert constraint_results.tolerance == original_tolerance
+
+    def test_name_setter_updates_repr(self, model_with_multiple_constraints):
+        """Test that setting name updates the __repr__ output."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Check original repr
+        original_repr = repr(constraint_results)
+        assert "name='min_revenue'" in original_repr
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Check updated repr
+        updated_repr = repr(constraint_results)
+        assert f"name='{new_name}'" in updated_repr
+        assert "name='min_revenue'" not in updated_repr
+
+    def test_name_setter_updates_summary(self, model_with_multiple_constraints):
+        """Test that setting name updates the summary output."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Check that summary contains new name
+        summary = constraint_results.summary()
+        assert f"ConstraintResults('{new_name}')" in summary
+        assert "ConstraintResults('min_revenue')" not in summary

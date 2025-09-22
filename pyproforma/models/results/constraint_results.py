@@ -107,6 +107,15 @@ class ConstraintResults:
         """Get the constraint name."""
         return self._constraint_name
 
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, new_name=value)
+        # Only update local state if model update succeeded
+        self._constraint_name = value
+
     @property
     def line_item_name(self) -> str:
         """Get the line item name for this constraint from metadata."""
