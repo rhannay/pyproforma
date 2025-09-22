@@ -121,10 +121,24 @@ class ConstraintResults:
         """Get the line item name for this constraint from metadata."""
         return self._constraint_metadata["line_item_name"]
 
+    @line_item_name.setter
+    def line_item_name(self, value: str) -> None:
+        """Set the line item name for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, line_item_name=value)
+
     @property
     def label(self) -> str:
         """Get the label for this constraint from metadata."""
         return self._constraint_metadata["label"]
+
+    @label.setter
+    def label(self, value: str) -> None:
+        """Set the label for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, label=value)
 
     @property
     def value_format(self) -> str:
@@ -136,10 +150,24 @@ class ConstraintResults:
         """Get the tolerance for this constraint from metadata."""
         return self._constraint_metadata["tolerance"]
 
+    @tolerance.setter
+    def tolerance(self, value: float) -> None:
+        """Set the tolerance for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, tolerance=value)
+
     @property
     def operator(self) -> str:
         """Get the operator for this constraint from metadata."""
         return self._constraint_metadata["operator"]
+
+    @operator.setter
+    def operator(self, value: str) -> None:
+        """Set the operator for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, operator=value)
 
     # ============================================================================
     # VALUE ACCESS METHODS
