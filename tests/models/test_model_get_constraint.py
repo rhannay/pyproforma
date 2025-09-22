@@ -120,9 +120,6 @@ class TestModelGetConstraint:
         constraint = model_with_constraints.constraint_definition("max_expenses")
 
         assert isinstance(constraint, Constraint)
-        assert hasattr(constraint, "evaluate")
-        assert hasattr(constraint, "variance")
-        assert hasattr(constraint, "get_target")
 
     def test_get_constraint_case_sensitive(self, model_with_constraints):
         """Test that constraint names are case sensitive."""

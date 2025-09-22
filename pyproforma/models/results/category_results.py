@@ -30,43 +30,14 @@ class CategoryResults:
 
     def __init__(self, model: "Model", category_name: str):
         self.model = model
-        self.category_name = category_name
-        self.category_metadata = model._get_category_metadata(category_name)
-        if self.category_metadata["system_generated"] is False:
-            self.category_obj = model.category_definition(category_name)
-        else:
-            self.category_obj = None
-        self.line_item_names = model.line_item_names_by_category(category_name)
+        self._name = category_name
+        # Validate that the category exists by accessing the metadata
+        # This will raise a KeyError if the category doesn't exist
+        _ = model._get_category_metadata(category_name)
 
-    @property
-    def name(self) -> str:
-        """The category name."""
-        return self.category_metadata["name"]
-
-    @property
-    def label(self) -> str:
-        """The display label for the category."""
-        return self.category_metadata["label"]
-
-    @property
-    def include_total(self) -> bool:
-        """Whether the category includes a total row."""
-        return self.category_metadata["include_total"]
-
-    @property
-    def total_name(self) -> str:
-        """The name used for the category total."""
-        return self.category_metadata["total_name"]
-
-    @property
-    def total_label(self) -> str:
-        """The display label for the category total."""
-        return self.category_metadata["total_label"]
-
-    @property
-    def system_generated(self) -> bool:
-        """Whether the category was auto-generated."""
-        return self.category_metadata["system_generated"]
+    # ============================================================================
+    # INTERNAL/PRIVATE METHODS
+    # ============================================================================
 
     def __str__(self) -> str:
         """
@@ -76,9 +47,80 @@ class CategoryResults:
 
     def __repr__(self) -> str:
         return (
-            f"CategoryResults(category_name='{self.category_name}', "
+            f"CategoryResults(category_name='{self.name}', "
             f"num_items={len(self.line_item_names)})"
         )
+
+    def _repr_html_(self) -> str:
+        """
+        Return HTML representation for Jupyter notebooks.
+        This ensures proper formatting when the object is displayed in a notebook cell.
+        """
+        return self.summary(html=True)
+
+    # ============================================================================
+    # PROPERTY ACCESSORS (GETTERS AND SETTERS)
+    # ============================================================================
+
+    @property
+    def _category_metadata(self) -> dict:
+        """Get the category metadata from the model."""
+        return self.model._get_category_metadata(self._name)
+
+    @property
+    def name(self) -> str:
+        """The category name."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name for this category and update it in the model."""
+        # Update the category in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_category(self._name, new_name=value)
+        # Only update local state if model update succeeded
+        self._name = value
+
+    @property
+    def label(self) -> str:
+        """The display label for the category."""
+        return self._category_metadata["label"]
+
+    @label.setter
+    def label(self, value: str) -> None:
+        """Set the label for this category and update it in the model."""
+        # Update the category in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_category(self._name, label=value)
+
+    @property
+    def line_item_names(self) -> list[str]:
+        """Get the line item names for this category from the model."""
+        return self.model.line_item_names_by_category(self._name)
+
+    @property
+    def include_total(self) -> bool:
+        """Whether the category includes a total row."""
+        return self._category_metadata["include_total"]
+
+    @property
+    def total_name(self) -> str:
+        """The name used for the category total."""
+        return self._category_metadata["total_name"]
+
+    @property
+    def total_label(self) -> str:
+        """The display label for the category total."""
+        return self._category_metadata["total_label"]
+
+    @property
+    def system_generated(self) -> bool:
+        """Whether the category was auto-generated."""
+        return self._category_metadata["system_generated"]
+
+    # ============================================================================
+    # VALUE ACCESS METHODS
+    # ============================================================================
 
     def totals(self) -> dict[int, float]:
         """
@@ -91,12 +133,12 @@ class CategoryResults:
             ValueError: If the category doesn't include totals
         """
         if not self.include_total:
-            raise ValueError(f"Category '{self.category_name}' does not include totals")
+            raise ValueError(f"Category '{self.name}' does not include totals")
 
         totals = {}
         for year in self.model.years:
             try:
-                totals[year] = self.model.category_total(self.category_name, year)
+                totals[year] = self.model.category_total(self.name, year)
             except KeyError:
                 totals[year] = 0.0
 
@@ -119,6 +161,10 @@ class CategoryResults:
                     values[item_name][year] = 0.0
 
         return values
+
+    # ============================================================================
+    # DATA CONVERSION METHODS
+    # ============================================================================
 
     def to_dataframe(self) -> pd.DataFrame:
         """
@@ -160,16 +206,44 @@ class CategoryResults:
         Returns:
             Table: A Table object containing the category items formatted for display
         """  # noqa: E501
-        return self.model.tables.category(
-            self.category_name, hardcoded_color=hardcoded_color
+        return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
+
+    def pie_chart(
+        self,
+        year: int = None,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+    ):
+        """
+        Create a pie chart showing the distribution of line items within this category for a specific year.
+
+        Args:
+            year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+
+        Returns:
+            Chart figure: The Plotly pie chart figure showing the distribution of category items
+
+        Raises:
+            ValueError: If no line items are found in the category or if year is not in model years
+        """  # noqa: E501
+        if not self.line_item_names:
+            raise ValueError(f"No line items found in category '{self.name}'")
+
+        return self.model.charts.line_items_pie(
+            self.line_item_names,
+            year,
+            width=width,
+            height=height,
+            template=template,
         )
 
-    def _repr_html_(self) -> str:
-        """
-        Return HTML representation for Jupyter notebooks.
-        This ensures proper formatting when the object is displayed in a notebook cell.
-        """
-        return self.summary(html=True)
+    # ============================================================================
+    # DISPLAY AND SUMMARY METHODS
+    # ============================================================================
 
     def summary(self, html: bool = False) -> str:
         """
@@ -190,7 +264,7 @@ class CategoryResults:
             try:
                 totals_list = []
                 for year in self.model.years:
-                    total_value = self.model.category_total(self.category_name, year)
+                    total_value = self.model.category_total(self.name, year)
                     formatted_total = f"{total_value:,.0f}"
                     totals_list.append(formatted_total)
                 total_info = f"\nTotals: {', '.join(totals_list)}"
@@ -198,7 +272,7 @@ class CategoryResults:
                 total_info = "\nTotals: Not available"
 
         summary_text = (
-            f"CategoryResults('{self.category_name}')\n"
+            f"CategoryResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Line Items: {num_items}\n"
             f"Items: {', '.join(item_names)}{total_info}"

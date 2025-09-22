@@ -71,10 +71,7 @@ class TestCategoryResultsInitialization:
         category_results = CategoryResults(model_with_categories, "income")
 
         assert category_results.model is model_with_categories
-        assert category_results.category_name == "income"
-        assert category_results.category_obj.name == "income"
-        assert category_results.category_obj.label == "Income"
-        assert category_results.category_obj.include_total is True
+        assert category_results.name == "income"
         assert len(category_results.line_item_names) == 2
         assert "product_sales" in category_results.line_item_names
         assert "service_revenue" in category_results.line_item_names
@@ -93,10 +90,10 @@ class TestCategoryResultsInitialization:
         category_results = CategoryResults(model_with_categories, "metrics")
 
         assert category_results.model is model_with_categories
-        assert category_results.category_name == "metrics"
-        assert category_results.category_obj.name == "metrics"
-        assert category_results.category_obj.label == "Metrics"
-        assert category_results.category_obj.include_total is False
+        assert category_results.name == "metrics"
+        assert category_results._category_metadata["name"] == "metrics"
+        assert category_results._category_metadata["label"] == "Metrics"
+        assert category_results._category_metadata["include_total"] is False
         assert len(category_results.line_item_names) == 1
         assert "conversion_rate" in category_results.line_item_names
 
@@ -104,6 +101,119 @@ class TestCategoryResultsInitialization:
         """Test CategoryResults initialization with invalid category name."""
         with pytest.raises(KeyError):
             CategoryResults(model_with_categories, "nonexistent")
+
+
+class TestCategoryResultsProperties:
+    """Test property access and modification for CategoryResults."""
+
+    @pytest.fixture
+    def model_for_property_tests(self):
+        """Create a model specifically for property testing."""
+        model = Model(years=[2024, 2025])
+        model.update.add_category(name="revenue", label="Revenue Items")
+        model.update.add_line_item(
+            name="sales", category="revenue", values={2024: 100000, 2025: 110000}
+        )
+        return model
+
+    def test_name_getter(self, model_for_property_tests):
+        """Test that the name property returns the correct category name."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        assert category_results.name == "revenue"
+
+    def test_name_setter_basic(self, model_for_property_tests):
+        """Test that the name setter updates the category name in the model."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Change the name
+        category_results.name = "sales_revenue"
+
+        # Verify the CategoryResults object has the new name
+        assert category_results.name == "sales_revenue"
+
+        # Verify the line item's category was updated in the model
+        sales_item = model_for_property_tests.line_item_definition("sales")
+        assert sales_item.category == "sales_revenue"
+
+        # Verify we can access the category with the new name
+        new_category_results = CategoryResults(
+            model_for_property_tests, "sales_revenue"
+        )
+        assert new_category_results.name == "sales_revenue"
+        assert "sales" in new_category_results.line_item_names
+
+    def test_name_setter_with_invalid_name(self, model_for_property_tests):
+        """Test that the name setter raises appropriate errors for invalid names."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Test setting to an existing category name should fail
+        model_for_property_tests.update.add_category(name="expenses")
+
+        with pytest.raises(ValueError):
+            category_results.name = "expenses"
+
+        # Verify the original name is unchanged after the failed update
+        assert category_results.name == "revenue"
+
+    def test_name_setter_preserves_state_on_failure(self, model_for_property_tests):
+        """Test that the CategoryResults state is preserved if the setter fails."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        original_name = category_results.name
+
+        # Add another category to create a conflict
+        model_for_property_tests.update.add_category(name="existing_category")
+
+        # Try to set to an existing name (should fail)
+        with pytest.raises(ValueError):
+            category_results.name = "existing_category"
+
+        # Verify the original state is preserved
+        assert category_results.name == original_name
+        assert category_results.line_item_names == ["sales"]
+
+    def test_label_getter(self, model_for_property_tests):
+        """Test that the label property returns the correct category label."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        assert category_results.label == "Revenue Items"
+
+    def test_label_setter_basic(self, model_for_property_tests):
+        """Test that the label setter updates the category label in the model."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+
+        # Change the label
+        category_results.label = "Sales Revenue"
+
+        # Verify the CategoryResults object has the new label
+        assert category_results.label == "Sales Revenue"
+
+        # Verify the category definition was updated in the model
+        category_def = next(
+            cat
+            for cat in model_for_property_tests.category_definitions
+            if cat.name == "revenue"
+        )
+        assert category_def.label == "Sales Revenue"
+
+    def test_label_setter_preserves_state_on_failure(self, model_for_property_tests):
+        """Test that CategoryResults state is preserved if label setter fails."""
+        category_results = CategoryResults(model_for_property_tests, "revenue")
+        original_label = category_results.label
+
+        # Try to create a scenario that might cause an update failure
+        # Note: Since label updates are generally safe, we'll simulate this
+        # by temporarily breaking the model reference
+        original_model = category_results.model
+        category_results.model = None
+
+        try:
+            with pytest.raises(AttributeError):
+                category_results.label = "New Label"
+        finally:
+            # Restore the model reference
+            category_results.model = original_model
+
+        # Verify the original state is preserved
+        assert category_results.label == original_label
 
 
 class TestCategoryResultsStringRepresentation:
@@ -405,6 +515,68 @@ class TestCategoryResultsTableMethod:
             mock_category.assert_called_once_with("income", hardcoded_color=None)
 
 
+class TestCategoryResultsPieChartMethod:
+    """Test pie_chart method of CategoryResults."""
+
+    @pytest.fixture
+    def category_results(self, model_with_categories):
+        """Create a CategoryResults instance for testing."""
+        return CategoryResults(model_with_categories, "income")
+
+    def test_pie_chart_method_returns_figure(self, category_results):
+        """Test pie_chart method returns a plotly figure."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            mock_figure = Mock()
+            mock_pie_chart.return_value = mock_figure
+
+            result = category_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2023,
+                width=800,
+                height=600,
+                template="plotly_white",
+            )
+            assert result is mock_figure
+
+    def test_pie_chart_method_passes_custom_parameters(self, category_results):
+        """Test pie_chart method passes custom parameters correctly."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            category_results.pie_chart(
+                year=2024, width=1000, height=800, template="plotly_dark"
+            )
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2024,
+                width=1000,
+                height=800,
+                template="plotly_dark",
+            )
+
+    def test_pie_chart_method_with_empty_category(self, model_with_categories):
+        """Test pie_chart method raises error for empty category."""
+        # Create an empty category
+        model_with_categories.update.add_category(name="empty", label="Empty Category")
+        category_results = CategoryResults(model_with_categories, "empty")
+
+        with pytest.raises(ValueError, match="No line items found in category 'empty'"):
+            category_results.pie_chart(year=2023)
+
+    def test_pie_chart_method_uses_line_item_names(self, category_results):
+        """Test pie_chart method uses the correct line item names from the category."""
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            # Verify that the method uses the line_item_names property
+            expected_item_names = category_results.line_item_names
+
+            category_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once()
+            call_args = mock_pie_chart.call_args
+            assert call_args[0][0] == expected_item_names  # First positional argument
+
+
 class TestCategoryResultsHtmlRepr:
     """Test _repr_html_ method for Jupyter notebook integration."""
 
@@ -513,7 +685,7 @@ class TestCategoryResultsIntegration:
         category_results = integrated_model.category("income")
 
         assert isinstance(category_results, CategoryResults)
-        assert category_results.category_name == "income"
+        assert category_results.name == "income"
         assert category_results.model is integrated_model
 
         # Test that methods work
@@ -596,7 +768,7 @@ class TestCategoryResultsEdgeCases:
 
         category_results = CategoryResults(model, "income_2024")
 
-        assert category_results.category_name == "income_2024"
+        assert category_results.name == "income_2024"
         summary = category_results.summary()
         assert "CategoryResults('income_2024')" in summary
         assert "Label: Income 2024" in summary

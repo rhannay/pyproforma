@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import plotly.graph_objects as go
 
@@ -6,6 +6,40 @@ from pyproforma.tables.table_class import format_value
 
 if TYPE_CHECKING:
     from ..model import Model
+
+
+def _evaluate_constraint(
+    value: float, target_value: float, operator: str, tolerance: float
+) -> bool:
+    """
+    Helper function to evaluate constraint logic.
+
+    Args:
+        value (float): The actual value to compare
+        target_value (float): The target value to compare against
+        operator (str): The comparison operator ('eq', 'lt', 'le', 'gt', 'ge', 'ne')
+        tolerance (float): The tolerance for the comparison
+
+    Returns:
+        bool: True if the constraint is satisfied, False otherwise
+
+    Raises:
+        ValueError: If the operator is unknown
+    """
+    if operator == "eq":
+        return abs(value - target_value) <= tolerance
+    elif operator == "lt":
+        return value < target_value - tolerance
+    elif operator == "le":
+        return value <= target_value + tolerance
+    elif operator == "gt":
+        return value > target_value + tolerance
+    elif operator == "ge":
+        return value >= target_value - tolerance
+    elif operator == "ne":
+        return abs(value - target_value) > tolerance
+    else:
+        raise ValueError(f"Unknown operator: {operator}")
 
 
 class ConstraintResults:
@@ -30,12 +64,18 @@ class ConstraintResults:
 
     def __init__(self, model: "Model", constraint_name: str):
         self.model = model
-        self.constraint_name = constraint_name
-        self.constraint_definition = model.constraint_definition(constraint_name)
-        self.line_item_name = self.constraint_definition.line_item_name
+        self._constraint_name = constraint_name
 
-        line_item_definition = model.line_item_definition(self.line_item_name)
-        self.value_format = line_item_definition.value_format
+        # Validate constraint_name exists by attempting to get metadata
+        # This will raise a KeyError if the constraint doesn't exist
+        try:
+            _ = self._constraint_metadata
+        except KeyError:
+            raise KeyError(f"Constraint with name '{constraint_name}' not found")
+
+    # ============================================================================
+    # INTERNAL/PRIVATE METHODS
+    # ============================================================================
 
     def __str__(self) -> str:
         """
@@ -44,7 +84,106 @@ class ConstraintResults:
         return self.summary()
 
     def __repr__(self) -> str:
-        return f"ConstraintResults(constraint_name='{self.constraint_name}')"
+        return f"ConstraintResults(name='{self.name}')"
+
+    def _repr_html_(self) -> str:
+        """
+        Return HTML representation for Jupyter notebooks.
+        This ensures proper formatting when the object is displayed in a notebook cell.
+        """
+        return self.summary(html=True)
+
+    # ============================================================================
+    # PROPERTY ACCESSORS (GETTERS AND SETTERS)
+    # ============================================================================
+
+    @property
+    def _constraint_metadata(self) -> dict:
+        """Get the metadata for this constraint from the model."""
+        return self.model._get_constraint_metadata(self._constraint_name)
+
+    @property
+    def name(self) -> str:
+        """Get the constraint name."""
+        return self._constraint_name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, new_name=value)
+        # Only update local state if model update succeeded
+        self._constraint_name = value
+
+    @property
+    def line_item_name(self) -> str:
+        """Get the line item name for this constraint from metadata."""
+        return self._constraint_metadata["line_item_name"]
+
+    @line_item_name.setter
+    def line_item_name(self, value: str) -> None:
+        """Set the line item name for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, line_item_name=value)
+
+    @property
+    def label(self) -> str:
+        """Get the label for this constraint from metadata."""
+        return self._constraint_metadata["label"]
+
+    @label.setter
+    def label(self, value: str) -> None:
+        """Set the label for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, label=value)
+
+    @property
+    def value_format(self) -> str:
+        """Get the value format for this constraint's line item from the model."""
+        return self.model[self.line_item_name].value_format
+
+    @property
+    def tolerance(self) -> float:
+        """Get the tolerance for this constraint from metadata."""
+        return self._constraint_metadata["tolerance"]
+
+    @tolerance.setter
+    def tolerance(self, value: float) -> None:
+        """Set the tolerance for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, tolerance=value)
+
+    @property
+    def operator(self) -> str:
+        """Get the operator for this constraint from metadata."""
+        return self._constraint_metadata["operator"]
+
+    @operator.setter
+    def operator(self, value: str) -> None:
+        """Set the operator for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, operator=value)
+
+    @property
+    def target(self) -> Union[float, dict]:
+        """Get the target for this constraint from metadata."""
+        return self._constraint_metadata["target"]
+
+    @target.setter
+    def target(self, value: Union[float, dict]) -> None:
+        """Set the target for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, target=value)
+
+    # ============================================================================
+    # VALUE ACCESS METHODS
+    # ============================================================================
 
     def line_item_value(self, year: int) -> float:
         """
@@ -61,7 +200,7 @@ class ConstraintResults:
         """
         return self.model.value(self.line_item_name, year)
 
-    def target(self, year: int) -> float:
+    def target_by_year(self, year: int) -> Union[float, None]:
         """
         Return the target value for this constraint for a specific year.
 
@@ -69,12 +208,127 @@ class ConstraintResults:
             year (int): The year to get the target value for
 
         Returns:
-            float: The constraint target value for the specified year
+            Union[float, None]: The constraint target value for the specified year,
+                               or None if no target is available for that year
 
         Raises:
             KeyError: If the year is not in the model's years
         """
-        return self.constraint_definition.get_target(year)
+        target = self._constraint_metadata["target"]
+
+        if isinstance(target, dict):
+            return target.get(year, None)
+        return target
+
+    def variance(self, year: int) -> float:
+        """
+        Calculate the variance (difference) between line item value and target.
+
+        Args:
+            year (int): The year to calculate variance for
+
+        Returns:
+            float: The variance (actual - target) for the specified year
+
+        Raises:
+            ValueError: If year or line item is not found in the model, or no target
+                       available
+        """
+        # Check if year exists in the model's value matrix
+        if year not in self.model._value_matrix:
+            raise ValueError(f"Year {year} not found in value_matrix")
+
+        # Check if line item exists in the value matrix for this year
+        if self.line_item_name not in self.model._value_matrix[year]:
+            raise ValueError(
+                (
+                    f"Line item '{self.line_item_name}' not found in value_matrix "
+                    f"for year {year}"
+                )
+            )
+
+        # Get target value for the year
+        target_value = self.target_by_year(year)
+        if target_value is None:
+            raise ValueError(f"No target value available for year {year}")
+
+        # Get the line item value
+        actual_value = self.model.value(self.line_item_name, year)
+
+        # Calculate variance as actual - target
+        return actual_value - target_value
+
+    # ============================================================================
+    # ANALYSIS AND CALCULATION METHODS
+    # ============================================================================
+
+    def evaluate(self, year: int) -> bool:
+        """
+        Evaluate whether the constraint is satisfied for a specific year.
+
+        Args:
+            year (int): The year to evaluate the constraint for
+
+        Returns:
+            bool: True if the constraint is satisfied, False otherwise
+
+        Raises:
+            ValueError: If year or line item is not found in the model, or no target available
+        """  # noqa: E501
+        # Check if year exists in the model's value matrix
+        if year not in self.model._value_matrix:
+            raise ValueError(f"Year {year} not found in value_matrix")
+
+        # Check if line item exists in the value matrix for this year
+        if self.line_item_name not in self.model._value_matrix[year]:
+            raise ValueError(
+                (
+                    f"Line item '{self.line_item_name}' not found in value_matrix "
+                    f"for year {year}"
+                )
+            )
+
+        # Get target value for the year
+        target_value = self.target_by_year(year)
+        if target_value is None:
+            raise ValueError(f"No target value available for year {year}")
+
+        # Get the line item value
+        line_item_value = self.model.value(self.line_item_name, year)
+
+        # Get operator and tolerance from properties
+        operator = self.operator
+        tolerance = self.tolerance
+
+        # Evaluate using helper function
+        return _evaluate_constraint(
+            value=line_item_value,
+            target_value=target_value,
+            operator=operator,
+            tolerance=tolerance,
+        )
+
+    def failing_years(self) -> list[int]:
+        """
+        Return a list of years where the constraint is not satisfied.
+
+        Returns:
+            list[int]: List of years where the constraint fails
+        """
+        failing = []
+        for year in self.model.years:
+            try:
+                if not self.evaluate(year):
+                    failing.append(year)
+            except ValueError:
+                # Skip years that can't be evaluated
+                pass
+
+        return failing
+
+    # ============================================================================
+    # TABLE AND CHART METHODS
+    # ============================================================================
 
     def table(self):
         """
@@ -83,7 +337,7 @@ class ConstraintResults:
         Returns:
             Table: A Table object containing the constraint formatted for display
         """  # noqa: E501
-        return self.model.tables.constraint(self.constraint_name)
+        return self.model.tables.constraint(self.name)
 
     def chart(
         self,
@@ -110,7 +364,7 @@ class ConstraintResults:
             KeyError: If the constraint name is not found in the model
         """  # noqa: E501
         return self.model.charts.constraint(
-            self.constraint_name,
+            self.name,
             width=width,
             height=height,
             template=template,
@@ -118,45 +372,9 @@ class ConstraintResults:
             constraint_type=constraint_type,
         )
 
-    def evaluate(self, year: int) -> bool:
-        """
-        Evaluate whether the constraint is satisfied for a specific year.
-
-        Args:
-            year (int): The year to evaluate the constraint for
-
-        Returns:
-            bool: True if the constraint is satisfied, False otherwise
-
-        Raises:
-            ValueError: If year or line item is not found in the model, or no target available
-        """  # noqa: E501
-        return self.constraint_definition.evaluate(self.model._value_matrix, year)
-
-    def failing_years(self) -> list[int]:
-        """
-        Return a list of years where the constraint is not satisfied.
-
-        Returns:
-            list[int]: List of years where the constraint fails
-        """
-        failing = []
-        for year in self.model.years:
-            try:
-                if not self.evaluate(year):
-                    failing.append(year)
-            except ValueError:
-                # Skip years that can't be evaluated
-                pass
-
-        return failing
-
-    def _repr_html_(self) -> str:
-        """
-        Return HTML representation for Jupyter notebooks.
-        This ensures proper formatting when the object is displayed in a notebook cell.
-        """
-        return self.summary(html=True)
+    # ============================================================================
+    # DISPLAY AND SUMMARY METHODS
+    # ============================================================================
 
     def summary(self, html: bool = False) -> str:
         """
@@ -171,8 +389,8 @@ class ConstraintResults:
         # Format the target using the line item's value format
         target_info = ""
         try:
-            target = self.constraint_definition.target
-            operator_symbol = self.constraint_definition.get_operator_symbol()
+            target = self._constraint_metadata["target"]
+            operator_symbol = self._constraint_metadata["operator_symbol"]
 
             if isinstance(target, dict):
                 target_str = str(
@@ -222,12 +440,9 @@ class ConstraintResults:
             else:
                 failing_info = "\nStatus: All years pass constraint check"
 
-        constraint_label = getattr(
-            self.constraint_definition, "label", self.constraint_name
-        )
         summary_text = (
-            f"ConstraintResults('{self.constraint_name}')\n"
-            f"Label: {constraint_label}\n"
+            f"ConstraintResults('{self.name}')\n"
+            f"Label: {self.label}\n"
             f"Line Item: {self.line_item_name}"
             f"{target_info}{value_info}{failing_info}"
         )

@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
-from pyproforma.models.model.metadata import (
+from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_line_item_metadata,
 )
@@ -60,19 +60,19 @@ class TestGenerateValueMatrix:
         matrix1 = generate_value_matrix(
             model1.years,
             model1._line_item_definitions + model1.multi_line_items,
-            model1._category_definitions,
+            model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
             model2._line_item_definitions + model2.multi_line_items,
-            model2._category_definitions,
+            model2.category_metadata,
             model2.line_item_metadata,
         )
         matrix3 = generate_value_matrix(
             model3.years,
             model3._line_item_definitions + model3.multi_line_items,
-            model3._category_definitions,
+            model3.category_metadata,
             model3.line_item_metadata,
         )
 
@@ -114,13 +114,13 @@ class TestGenerateValueMatrix:
         matrix1 = generate_value_matrix(
             model1.years,
             model1._line_item_definitions + model1.multi_line_items,
-            model1._category_definitions,
+            model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
             model2._line_item_definitions + model2.multi_line_items,
-            model2._category_definitions,
+            model2.category_metadata,
             model2.line_item_metadata,
         )
 
@@ -210,7 +210,7 @@ class TestGenerateValueMatrix:
             generate_value_matrix(
                 years,
                 line_item_definitions + multi_line_items,
-                category_definitions,
+                category_metadata,
                 line_item_metadata,
             )
 
@@ -252,7 +252,7 @@ class TestGenerateValueMatrix:
             generate_value_matrix(
                 years,
                 line_item_definitions + multi_line_items,
-                category_definitions,
+                category_metadata,
                 line_item_metadata,
             )
 
@@ -293,7 +293,7 @@ class TestGenerateValueMatrix:
             generate_value_matrix(
                 years,
                 line_item_definitions + multi_line_items,
-                category_definitions,
+                category_metadata,
                 line_item_metadata,
             )
 
@@ -334,7 +334,7 @@ class TestGenerateValueMatrix:
             generate_value_matrix(
                 years,
                 line_item_definitions + multi_line_items,
-                category_definitions,
+                category_metadata,
                 line_item_metadata,
             )
 
@@ -382,13 +382,13 @@ class TestGenerateValueMatrix:
         matrix1 = generate_value_matrix(
             model1.years,
             model1._line_item_definitions + model1.multi_line_items,
-            model1._category_definitions,
+            model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
             model2._line_item_definitions + model2.multi_line_items,
-            model2._category_definitions,
+            model2.category_metadata,
             model2.line_item_metadata,
         )
 
@@ -434,7 +434,7 @@ class TestGenerateValueMatrix:
         matrix = generate_value_matrix(
             model.years,
             model._line_item_definitions + model.multi_line_items,
-            model._category_definitions,
+            model.category_metadata,
             model.line_item_metadata,
         )
 
@@ -550,7 +550,7 @@ class TestGenerateValueMatrix:
         matrix = generate_value_matrix(
             model.years,
             model._line_item_definitions + model.multi_line_items,
-            model._category_definitions,
+            model.category_metadata,
             model.line_item_metadata,
         )
 

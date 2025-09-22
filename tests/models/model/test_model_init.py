@@ -677,7 +677,7 @@ class TestModelInitWithStringCategories:
 
         # Test category access works
         income_category = model.category("income")
-        assert income_category.category_name == "income"
+        assert income_category.name == "income"
 
         # Test that category totals work
         assert model.category_total("income", 2023) == 100000  # Just revenue

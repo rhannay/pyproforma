@@ -7,9 +7,11 @@ model components including categories and line items.
 
 from typing import Dict, List
 
+from pyproforma.constants import CONSTRAINT_OPERATOR_SYMBOLS
 from pyproforma.models.multi_line_item import MultiLineItem
 
 from ..category import Category
+from ..constraint import Constraint
 from ..line_item import LineItem
 
 
@@ -42,13 +44,25 @@ def generate_category_metadata(
 
     # Add metadata for category definitions
     for category in category_definitions:
+        label = category.label if category.label is not None else category.name
+        if category.include_total:
+            total_label = (
+                category.total_label
+                if category.total_label is not None
+                else f"Total {label}"
+            )
+            total_name = f"total_{category.name}"
+        else:
+            total_label = None
+            total_name = None
+
         category_metadata.append(
             {
                 "name": category.name,
-                "label": category.label,
+                "label": label,
                 "include_total": category.include_total,
-                "total_name": category.total_name,
-                "total_label": category.total_label,
+                "total_name": total_name,
+                "total_label": total_label,
                 "system_generated": False,
             }
         )
@@ -207,3 +221,45 @@ def generate_line_item_metadata(
             f"Duplicate defined names found in Model: {', '.join(duplicates)}"
         )
     return defined_names
+
+
+def generate_constraint_metadata(constraints: List[Constraint]) -> List[Dict]:
+    """
+    Collect constraint metadata from constraint definitions.
+
+    This function extracts key information from each constraint definition
+    to create a comprehensive metadata structure for constraints.
+
+    Args:
+        constraints (List[Constraint]): List of constraint definitions
+
+    Returns:
+        List[Dict]: A list of dictionaries, each containing:
+            - 'name' (str): The constraint name
+            - 'label' (str): The display label for the constraint
+            - 'line_item_name' (str): The name of the line item being constrained
+            - 'target' (Union[float, Dict[int, float]]): The target value(s) for
+              comparison
+            - 'operator' (str): The comparison operator ('eq', 'lt', 'le', 'gt',
+              'ge', 'ne')
+            - 'operator_symbol' (str): The symbol representation of the operator
+              ('=', '<', etc.)
+            - 'tolerance' (float): The tolerance for approximate comparisons
+    """
+    constraint_metadata = []
+
+    for constraint in constraints:
+        label = constraint.label if constraint.label is not None else constraint.name
+        constraint_metadata.append(
+            {
+                "name": constraint.name,
+                "label": label,
+                "line_item_name": constraint.line_item_name,
+                "target": constraint.target,
+                "operator": constraint.operator,
+                "operator_symbol": CONSTRAINT_OPERATOR_SYMBOLS[constraint.operator],
+                "tolerance": constraint.tolerance,
+            }
+        )
+
+    return constraint_metadata

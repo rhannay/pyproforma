@@ -523,7 +523,7 @@ class Charts:
     def line_items_pie(
         self,
         item_names: list[str],
-        year: int,
+        year: int = None,
         width: int = 800,
         height: int = 600,
         template: str = "plotly_white",
@@ -533,7 +533,7 @@ class Charts:
 
         Args:
             item_names (list[str]): List of line item names to include in the pie chart
-            year (int): The year for which to create the pie chart
+            year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
@@ -555,8 +555,12 @@ class Charts:
                 "Please add years to the model before creating charts."
             )
 
-        # Validate year is in model years
+        # If year is None, use the latest year in the model
         years = self._model.years
+        if year is None:
+            year = max(years)
+
+        # Validate year is in model years
         if year not in years:
             raise ValueError(f"Year {year} not found in model years: {years}")
 
@@ -649,14 +653,14 @@ class Charts:
 
         # Get the constraint
         try:
-            constraint = self._model.constraint_definition(constraint_name)
+            constraint_results = self._model.constraint(constraint_name)
         except KeyError:
             raise KeyError(
                 f"Constraint '{constraint_name}' not found in model constraints."
             )
 
         # Get the associated line item info
-        line_item_name = constraint.line_item_name
+        line_item_name = constraint_results.line_item_name
         try:
             line_item = self._model.line_item(line_item_name)
             line_item_label = line_item.label
@@ -681,7 +685,7 @@ class Charts:
         # Get constraint target values for all years
         constraint_values = []
         for year in years:
-            target_value = constraint.get_target(year)
+            target_value = constraint_results.target_by_year(year)
             if target_value is not None:
                 constraint_values.append(target_value)
             else:
@@ -701,7 +705,7 @@ class Charts:
 
         # Constraint target dataset
         constraint_dataset = ChartDataSet(
-            label=f"{constraint.label} Target",
+            label=f"{constraint_results.label} Target",
             data=constraint_values,
             color="red",
             type=constraint_type,
@@ -712,7 +716,7 @@ class Charts:
         chart = Chart(
             labels=[str(year) for year in years],
             data_sets=datasets,
-            title=f"{line_item_label} vs {constraint.label} Target",
+            title=f"{line_item_label} vs {constraint_results.label} Target",
             value_format=value_format,
         )
 

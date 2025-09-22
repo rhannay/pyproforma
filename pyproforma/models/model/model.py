@@ -11,8 +11,12 @@ from ..category import Category
 from ..compare import Compare
 from ..constraint import Constraint
 from ..line_item import LineItem
+from ..metadata import (
+    generate_category_metadata,
+    generate_constraint_metadata,
+    generate_line_item_metadata,
+)
 from ..results import CategoryResults, ConstraintResults, LineItemResults
-from .metadata import generate_category_metadata, generate_line_item_metadata
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
 from .validations import (
@@ -230,12 +234,13 @@ class Model(SerializationMixin):
         self.line_item_metadata = generate_line_item_metadata(
             self._line_item_definitions, self.category_metadata, self.multi_line_items
         )
+        self.constraint_metadata = generate_constraint_metadata(self.constraints)
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
             self._years,
             self._line_item_definitions + self.multi_line_items,
-            self._category_definitions,
+            self.category_metadata,
             self.line_item_metadata,
         )
 
@@ -860,6 +865,31 @@ class Model(SerializationMixin):
         raise KeyError(
             f"Category '{category_name}' not found in model. "
             f"Available categories: {available_categories}"
+        )
+
+    def _get_constraint_metadata(self, constraint_name: str) -> dict:
+        """
+        Get constraint metadata for a specific constraint name.
+
+        Args:
+            constraint_name (str): The name of the constraint to get metadata for
+
+        Returns:
+            dict: Dictionary containing constraint metadata including name, label,
+                  line_item_name, target, operator, operator_symbol, and tolerance
+
+        Raises:
+            KeyError: If the constraint name is not found in constraint metadata
+        """
+        for constraint_meta in self.constraint_metadata:
+            if constraint_meta["name"] == constraint_name:
+                return constraint_meta
+        available_constraints = [
+            constraint["name"] for constraint in self.constraint_metadata
+        ]
+        raise KeyError(
+            f"Constraint '{constraint_name}' not found in model. "
+            f"Available constraints: {available_constraints}"
         )
 
     # ============================================================================

@@ -13,7 +13,6 @@ from ..formula import calculate_formula
 if TYPE_CHECKING:
     from pyproforma.models.multi_line_item import MultiLineItem
 
-    from ..category import Category
     from ..line_item import LineItem
 
 
@@ -207,7 +206,8 @@ def _calculate_category_total(
 def generate_value_matrix(
     years: list[int],
     line_item_definitions: list[Union["LineItem", "MultiLineItem"]],
-    category_definitions: list["Category"],
+    # category_definitions: list["Category"],
+    category_metadata: list[dict],
     line_item_metadata: list[dict],
 ) -> dict[int, dict[str, float]]:
     """
@@ -219,8 +219,8 @@ def generate_value_matrix(
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items  # noqa: E501
-        category_definitions (list[Category]): List of category definitions
+        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
+        category_metadata (list[dict]): Metadata for all defined categories
         line_item_metadata (list[dict]): Metadata for all defined names
 
     Returns:
@@ -320,10 +320,10 @@ def generate_value_matrix(
                 remaining_items.remove(item)
 
             # After each round, check if we can calculate any category totals
-            for category in category_definitions:
+            for category in category_metadata:
                 if (
-                    category.include_total
-                    and category.total_name not in value_matrix[year]
+                    category["include_total"]
+                    and category["total_name"] not in value_matrix[year]
                 ):
                     # Check if all items in this category have been calculated
                     # Only look at LineItem objects for category totals, not MultiLineItems  # noqa: E501
@@ -335,7 +335,7 @@ def generate_value_matrix(
                     items_in_category = [
                         item
                         for item in line_items_only
-                        if item.category == category.name
+                        if item.category == category["name"]
                     ]
                     all_items_calculated = all(
                         item.name in calculated_items for item in items_in_category
@@ -345,9 +345,9 @@ def generate_value_matrix(
                         all_items_calculated and items_in_category
                     ):  # Only if category has items
                         category_total = _calculate_category_total(
-                            value_matrix[year], line_item_metadata, category.name
+                            value_matrix[year], line_item_metadata, category["name"]
                         )
-                        total_name = category.total_name
+                        total_name = category["total_name"]
                         value_matrix[year][total_name] = category_total
 
             # If no progress was made this round, we have circular dependencies

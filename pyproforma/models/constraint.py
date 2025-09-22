@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from typing import Dict, Literal, Union
 
 from ._utils import validate_name
 
 
+@dataclass
 class Constraint:
     """
     Represents a constraint in a financial model that compares a line item value to a target value.
@@ -61,38 +63,27 @@ class Constraint:
     """  # noqa: E501
 
     VALID_OPERATORS = {"eq", "lt", "le", "gt", "ge", "ne"}
-    OPERATOR_SYMBOLS = {
-        "eq": "=",
-        "lt": "<",
-        "le": "<=",
-        "gt": ">",
-        "ge": ">=",
-        "ne": "!=",
-    }
 
-    def __init__(
-        self,
-        name: str,
-        line_item_name: str,
-        target: Union[float, Dict[int, float]],
-        operator: Literal["eq", "lt", "le", "gt", "ge", "ne"],
-        tolerance: float = 0.0,
-        label: str = None,
-    ):
-        validate_name(name)
-        if operator not in self.VALID_OPERATORS:
+    name: str
+    line_item_name: str
+    target: Union[float, Dict[int, float]]
+    operator: Literal["eq", "lt", "le", "gt", "ge", "ne"]
+    tolerance: float = 0.0
+    label: str = None
+
+    def __post_init__(self):
+        """Validate the constraint parameters after initialization."""
+        validate_name(self.name)
+        if self.operator not in self.VALID_OPERATORS:
             raise ValueError(
                 f"Operator must be one of: {', '.join(self.VALID_OPERATORS)}"
             )
-        if tolerance < 0:
+        if self.tolerance < 0:
             raise ValueError("Tolerance must be non-negative")
-        self.name = name
-        self.label = label if label is not None else name
-        self.line_item_name = line_item_name
-        self.tolerance = tolerance
-        if isinstance(target, dict):
+
+        if isinstance(self.target, dict):
             try:
-                self.target = {int(k): float(v) for k, v in target.items()}
+                self.target = {int(k): float(v) for k, v in self.target.items()}
             except Exception:
                 raise ValueError(
                     "All values in target dict must be convertible to float"
@@ -102,108 +93,11 @@ class Constraint:
                 raise ValueError("Target dict must not be empty.")
         else:
             try:
-                self.target = float(target)
+                self.target = float(self.target)
             except Exception:
                 raise ValueError(
                     "Target must be convertible to float or a dict of year:float."
                 )
-        self.operator = operator
-
-    def get_target(self, year: int) -> Union[float, None]:
-        """
-        Returns the target value for the given year. If target is a float, returns it.
-        If target is a dict, returns the value for the year or None if not present.
-        """
-        if isinstance(self.target, dict):
-            return self.target.get(year, None)
-        return self.target
-
-    def evaluate(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> bool:
-        """
-        Evaluate the constraint against a line item value from the value matrix for a specific year.
-
-        Args:
-            value_matrix: Dictionary mapping years to line_item_name:value dictionaries
-            year: The specific year to evaluate the constraint for
-
-        Returns:
-            bool: True if the constraint is satisfied, False otherwise
-
-        Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available
-        """  # noqa: E501
-        if year not in value_matrix:
-            raise ValueError(f"Year {year} not found in value_matrix")
-
-        if self.line_item_name not in value_matrix[year]:
-            raise ValueError(
-                (
-                    f"Line item '{self.line_item_name}' not found in value_matrix "
-                    f"for year {year}"
-                )
-            )
-
-        target_value = self.get_target(year)
-        if target_value is None:
-            raise ValueError(f"No target value available for year {year}")
-
-        line_item_value = value_matrix[year][self.line_item_name]
-
-        if self.operator == "eq":
-            return abs(line_item_value - target_value) <= self.tolerance
-        elif self.operator == "lt":
-            return line_item_value < target_value - self.tolerance
-        elif self.operator == "le":
-            return line_item_value <= target_value + self.tolerance
-        elif self.operator == "gt":
-            return line_item_value > target_value + self.tolerance
-        elif self.operator == "ge":
-            return line_item_value >= target_value - self.tolerance
-        elif self.operator == "ne":
-            return abs(line_item_value - target_value) > self.tolerance
-        else:
-            raise ValueError(f"Unknown operator: {self.operator}")
-
-    def variance(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> float:
-        """
-        Calculate the variance (difference) between line item value and target for a specific year.
-
-        Args:
-            value_matrix: Dictionary mapping years to line_item_name:value dictionaries
-            year: The specific year to calculate variance for
-
-        Returns:
-            float: The variance (actual - target) for the specified year
-
-        Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available
-        """  # noqa: E501
-        if year not in value_matrix:
-            raise ValueError(f"Year {year} not found in value_matrix")
-
-        if self.line_item_name not in value_matrix[year]:
-            raise ValueError(
-                (
-                    f"Line item '{self.line_item_name}' not found in value_matrix "
-                    f"for year {year}"
-                )
-            )
-
-        target_value = self.get_target(year)
-        if target_value is None:
-            raise ValueError(f"No target value available for year {year}")
-
-        actual_value = value_matrix[year][self.line_item_name]
-        return actual_value - target_value
-
-    def get_operator_symbol(self) -> str:
-        """
-        Returns the symbol representation of the constraint's operator.
-
-        Returns:
-            str: The symbol corresponding to the operator (e.g., '=', '>', '<=')
-        """
-        return self.OPERATOR_SYMBOLS.get(self.operator, self.operator)
 
     def to_dict(self) -> dict:
         """Convert Constraint to dictionary representation."""
@@ -227,18 +121,3 @@ class Constraint:
             tolerance=constraint_dict.get("tolerance", 0.0),
             label=constraint_dict.get("label", None),
         )
-
-    def __str__(self):
-        operator_symbol = self.get_operator_symbol()
-        if isinstance(self.target, dict):
-            target_str = str(self.target)
-        else:
-            target_str = str(self.target)
-        return (
-            f"Constraint(name='{self.name}', "
-            f"line_item_name='{self.line_item_name}', "
-            f"condition='{self.line_item_name} {operator_symbol} {target_str}')"
-        )
-
-    def __repr__(self):
-        return self.__str__()

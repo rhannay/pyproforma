@@ -271,8 +271,8 @@ class ConstraintPassRow(BaseRow):
 
     def generate_row(self, model: "Model") -> Row:
         """Create a row showing constraint evaluation results across all years."""
-        # Get the constraint object
-        constraint = model.constraint_definition(self.constraint_name)
+        # Get the constraint results object
+        constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name as label if no custom label provided
         label = self.label or self.constraint_name
@@ -286,7 +286,7 @@ class ConstraintPassRow(BaseRow):
         # Add cells for each year with constraint evaluation result
         for year in model.years:
             try:
-                is_satisfied = constraint.evaluate(model._value_matrix, year)
+                is_satisfied = constraint_results.evaluate(model._value_matrix, year)
                 result_msg = self.pass_msg if is_satisfied else self.fail_msg
 
                 # Apply background color if color_code is True
@@ -324,14 +324,15 @@ class ConstraintVarianceRow(BaseRow):
     def generate_row(self, model: "Model") -> Row:
         """Create a row showing constraint variance (actual - target) across all years."""  # noqa: E501
         # Get the constraint object
-        constraint = model.constraint_definition(self.constraint_name)
+        constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name with "Variance" suffix as label if no custom label provided  # noqa: E501
         label = self.label or f"{self.constraint_name} Variance"
 
         # Default to same format as the constraint's target line item if not specified
         value_format = (
-            self.value_format or model.line_item(constraint.line_item_name).value_format
+            self.value_format
+            or model.line_item(constraint_results.line_item_name).value_format
         )
 
         # Create cells for this row
@@ -343,7 +344,7 @@ class ConstraintVarianceRow(BaseRow):
         # Add cells for each year with constraint variance calculation
         for year in model.years:
             try:
-                variance = constraint.variance(model._value_matrix, year)
+                variance = constraint_results.variance(model._value_matrix, year)
                 cells.append(
                     Cell(value=variance, bold=self.bold, value_format=value_format)
                 )
@@ -370,6 +371,7 @@ class ConstraintTargetRow(BaseRow):
         """Create a row showing constraint target values across all years."""
         # Get the constraint object
         constraint = model.constraint_definition(self.constraint_name)
+        constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name with "Target" suffix as label if no custom label provided
         label = self.label or f"{self.constraint_name} Target"
@@ -388,7 +390,7 @@ class ConstraintTargetRow(BaseRow):
         # Add cells for each year with constraint target value
         for year in model.years:
             try:
-                target_value = constraint.get_target(year)
+                target_value = constraint_results.target_by_year(year)
                 cells.append(
                     Cell(value=target_value, bold=self.bold, value_format=value_format)
                 )

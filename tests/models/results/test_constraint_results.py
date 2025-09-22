@@ -83,11 +83,10 @@ class TestConstraintResultsInitialization:
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
 
         assert constraint_results.model is model_with_constraints
-        assert constraint_results.constraint_name == "min_revenue"
-        assert constraint_results.constraint_definition.name == "min_revenue"
-        assert constraint_results.constraint_definition.line_item_name == "revenue"
-        assert constraint_results.constraint_definition.target == 80000.0
-        assert constraint_results.constraint_definition.operator == "gt"
+        assert constraint_results.name == "min_revenue"
+        assert constraint_results.line_item_name == "revenue"
+        assert constraint_results.target_by_year(2023) == 80000.0
+        assert constraint_results.operator == "gt"
 
     def test_init_invalid_constraint_name(self, model_with_constraints):
         """Test ConstraintResults initialization with invalid constraint name."""
@@ -100,13 +99,11 @@ class TestConstraintResultsInitialization:
         """Test ConstraintResults initialization with constraint having dict target."""
         constraint_results = ConstraintResults(model_with_constraints, "revenue_growth")
 
-        assert constraint_results.constraint_name == "revenue_growth"
-        assert constraint_results.constraint_definition.target == {
-            2023: 95000.0,
-            2024: 115000.0,
-            2025: 135000.0,
-        }
-        assert constraint_results.constraint_definition.operator == "ge"
+        assert constraint_results.name == "revenue_growth"
+        assert constraint_results.target_by_year(2023) == 95000.0
+        assert constraint_results.target_by_year(2024) == 115000.0
+        assert constraint_results.target_by_year(2025) == 135000.0
+        assert constraint_results.operator == "ge"
 
 
 class TestConstraintResultsStringRepresentation:
@@ -131,7 +128,7 @@ class TestConstraintResultsStringRepresentation:
         """Test __repr__ method returns expected format."""
         repr_result = repr(constraint_results)
 
-        assert repr_result == "ConstraintResults(constraint_name='min_revenue')"
+        assert repr_result == "ConstraintResults(name='min_revenue')"
 
     def test_summary_method(self, constraint_results):
         """Test summary method returns formatted constraint information."""
@@ -159,7 +156,7 @@ class TestConstraintResultsStringRepresentation:
 
         # ConstraintResults should be accessible
         constraint_result = model.constraint(basic_constraints[0].name)
-        assert constraint_result.constraint_name == basic_constraints[0].name
+        assert constraint_result.name == basic_constraints[0].name
         assert constraint_result.failing_years() == []  # No years, no failing years
 
 
@@ -335,26 +332,26 @@ class TestConstraintResultsTargetMethod:
     def test_target_method_with_float_target(self, constraint_results):
         """Test target method with constraint having float target."""
         # The "min_revenue" constraint has a float target of 80000.0
-        result = constraint_results.target(2023)
+        result = constraint_results.target_by_year(2023)
         assert result == 80000.0
 
         # Should return same value for any year when target is a float
-        result = constraint_results.target(2024)
+        result = constraint_results.target_by_year(2024)
         assert result == 80000.0
 
-        result = constraint_results.target(2025)
+        result = constraint_results.target_by_year(2025)
         assert result == 80000.0
 
     def test_target_method_with_dict_target(self, constraint_results_with_dict_target):
         """Test target method with constraint having dict target."""
         # The "revenue_growth" constraint has dict target: {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}  # noqa: E501
-        result = constraint_results_with_dict_target.target(2023)
+        result = constraint_results_with_dict_target.target_by_year(2023)
         assert result == 95000.0
 
-        result = constraint_results_with_dict_target.target(2024)
+        result = constraint_results_with_dict_target.target_by_year(2024)
         assert result == 115000.0
 
-        result = constraint_results_with_dict_target.target(2025)
+        result = constraint_results_with_dict_target.target_by_year(2025)
         assert result == 135000.0
 
     def test_target_method_with_dict_target_missing_year(
@@ -362,30 +359,8 @@ class TestConstraintResultsTargetMethod:
     ):
         """Test target method with dict target for year not in dict."""
         # The "revenue_growth" constraint doesn't have a target for 2026
-        result = constraint_results_with_dict_target.target(2026)
+        result = constraint_results_with_dict_target.target_by_year(2026)
         assert result is None
-
-    def test_target_method_calls_constraint_definition(self, constraint_results):
-        """Test that target method calls get_target on constraint definition."""
-        with patch.object(
-            constraint_results.constraint_definition, "get_target"
-        ) as mock_get_target:
-            mock_get_target.return_value = 80000.0
-
-            result = constraint_results.target(2023)
-
-            mock_get_target.assert_called_once_with(2023)
-            assert result == 80000.0
-
-    def test_target_method_propagates_exceptions(self, constraint_results):
-        """Test that target method propagates exceptions from constraint definition."""
-        with patch.object(
-            constraint_results.constraint_definition, "get_target"
-        ) as mock_get_target:
-            mock_get_target.side_effect = ValueError("Custom error")
-
-            with pytest.raises(ValueError, match="Custom error"):
-                constraint_results.target(2023)
 
     def test_target_method_with_custom_constraint(
         self, basic_line_items, basic_categories
@@ -408,7 +383,7 @@ class TestConstraintResultsTargetMethod:
         )
 
         constraint_results = ConstraintResults(model, "test_constraint")
-        result = constraint_results.target(2023)
+        result = constraint_results.target_by_year(2023)
         assert result == 90000.0
 
 
@@ -478,54 +453,11 @@ class TestConstraintResultsEvaluateMethod:
         result = constraint_results_revenue_growth.evaluate(2025)
         assert result is True
 
-    def test_evaluate_method_calls_constraint_definition_evaluate(
-        self, constraint_results
-    ):
-        """Test that evaluate method calls constraint_definition.evaluate with correct parameters."""  # noqa: E501
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.return_value = True
-
-            result = constraint_results.evaluate(2023)
-
-            mock_evaluate.assert_called_once_with(
-                constraint_results.model._value_matrix, 2023
-            )
-            assert result is True
-
-    def test_evaluate_method_propagates_value_error(self, constraint_results):
-        """Test that evaluate method propagates ValueError from constraint definition."""  # noqa: E501
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.side_effect = ValueError(
-                "Year 2026 not found in value_matrix"
-            )
-
-            with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
-                constraint_results.evaluate(2026)
-
     def test_evaluate_method_with_invalid_year(self, constraint_results):
         """Test evaluate method with year not in model raises ValueError."""
         # Test with a year that's not in the model
         with pytest.raises(ValueError, match="Year 2026 not found in value_matrix"):
             constraint_results.evaluate(2026)
-
-    def test_evaluate_method_uses_correct_value_matrix(self, constraint_results):
-        """Test that evaluate method uses the correct value matrix from the model."""
-        # Verify the constraint uses the model's _value_matrix
-        with patch.object(
-            constraint_results.constraint_definition, "evaluate"
-        ) as mock_evaluate:
-            mock_evaluate.return_value = True
-
-            constraint_results.evaluate(2023)
-
-            # Verify it was called with the model's _value_matrix
-            mock_evaluate.assert_called_once_with(
-                constraint_results.model._value_matrix, 2023
-            )
 
     def test_evaluate_method_with_custom_constraint(
         self, basic_line_items, basic_categories
@@ -627,8 +559,8 @@ class TestConstraintResultsWithDifferentConstraintTypes:
             model_with_tolerance_constraint, "balance_check"
         )
 
-        assert constraint_results.constraint_definition.tolerance == 0.01
-        assert constraint_results.constraint_definition.operator == "eq"
+        assert constraint_results.tolerance == 0.01
+        assert constraint_results.operator == "eq"
 
         # Test that methods still work
         summary = constraint_results.summary()
@@ -742,7 +674,7 @@ class TestConstraintResultsIntegration:
         constraint_results = integrated_model.constraint("profit_margin")
 
         assert isinstance(constraint_results, ConstraintResults)
-        assert constraint_results.constraint_name == "profit_margin"
+        assert constraint_results.name == "profit_margin"
         assert constraint_results.model is integrated_model
 
         # Test that methods work
@@ -773,6 +705,197 @@ class TestConstraintResultsIntegration:
         assert "<br>" in html_result
 
 
+class TestConstraintResultsMetadata:
+    """Test _constraint_metadata property of ConstraintResults."""
+
+    @pytest.fixture
+    def constraint_results(self, model_with_constraints):
+        """Create a ConstraintResults instance for testing."""
+        return ConstraintResults(model_with_constraints, "min_revenue")
+
+    @pytest.fixture
+    def constraint_results_with_dict_target(self, model_with_constraints):
+        """Create a ConstraintResults instance with dict target for testing."""
+        return ConstraintResults(model_with_constraints, "revenue_growth")
+
+    def test_constraint_metadata_property_returns_dict(self, constraint_results):
+        """Test that _constraint_metadata property returns a dictionary."""
+        metadata = constraint_results._constraint_metadata
+
+        assert isinstance(metadata, dict)
+
+    def test_constraint_metadata_property_calls_model_method(self, constraint_results):
+        """Test that _constraint_metadata property calls
+        model._get_constraint_metadata."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {"name": "min_revenue", "operator": "gt"}
+
+            result = constraint_results._constraint_metadata
+
+            mock_get_metadata.assert_called_once_with("min_revenue")
+            assert result == {"name": "min_revenue", "operator": "gt"}
+
+    def test_constraint_metadata_property_contains_expected_fields(
+        self, constraint_results
+    ):
+        """Test that _constraint_metadata property contains expected fields."""
+        metadata = constraint_results._constraint_metadata
+
+        # Verify all expected fields are present
+        expected_fields = [
+            "name",
+            "label",
+            "line_item_name",
+            "target",
+            "operator",
+            "operator_symbol",
+            "tolerance",
+        ]
+        for field in expected_fields:
+            assert field in metadata, f"Field '{field}' should be in metadata"
+
+    def test_constraint_metadata_property_basic_constraint(self, constraint_results):
+        """Test _constraint_metadata property with basic constraint values."""
+        metadata = constraint_results._constraint_metadata
+
+        assert metadata["name"] == "min_revenue"
+        assert metadata["label"] == "Minimum Revenue"
+        assert metadata["line_item_name"] == "revenue"
+        assert metadata["target"] == 80000.0
+        assert metadata["operator"] == "gt"
+        assert metadata["operator_symbol"] == ">"
+        assert metadata["tolerance"] == 0.0  # Default tolerance
+
+    def test_constraint_metadata_property_dict_target_constraint(
+        self, constraint_results_with_dict_target
+    ):
+        """Test _constraint_metadata property with constraint having dict target."""
+        metadata = constraint_results_with_dict_target._constraint_metadata
+
+        assert metadata["name"] == "revenue_growth"
+        assert metadata["label"] == "Revenue Growth Target"
+        assert metadata["line_item_name"] == "revenue"
+        assert metadata["target"] == {2023: 95000.0, 2024: 115000.0, 2025: 135000.0}
+        assert metadata["operator"] == "ge"
+        assert metadata["operator_symbol"] == ">="
+        assert metadata["tolerance"] == 0.0  # Default tolerance
+
+    def test_constraint_metadata_property_with_tolerance(
+        self, basic_line_items, basic_categories
+    ):
+        """Test _constraint_metadata property with constraint that has tolerance."""
+        constraint_with_tolerance = Constraint(
+            name="balance_check",
+            line_item_name="revenue",
+            target=100000.0,
+            operator="eq",
+            tolerance=0.01,
+            label="Balance Check",
+        )
+
+        model = Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=[constraint_with_tolerance],
+        )
+
+        constraint_results = ConstraintResults(model, "balance_check")
+        metadata = constraint_results._constraint_metadata
+
+        assert metadata["name"] == "balance_check"
+        assert metadata["label"] == "Balance Check"
+        assert metadata["tolerance"] == 0.01
+        assert metadata["operator"] == "eq"
+        assert metadata["operator_symbol"] == "="
+
+    def test_constraint_metadata_property_propagates_key_error(
+        self, model_with_constraints
+    ):
+        """Test that _constraint_metadata property propagates
+        KeyError from model method."""
+        constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
+
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.side_effect = KeyError("Constraint not found")
+
+            with pytest.raises(KeyError, match="Constraint not found"):
+                _ = constraint_results._constraint_metadata
+
+    def test_constraint_metadata_property_uses_correct_constraint_name(
+        self, constraint_results
+    ):
+        """Test that _constraint_metadata property uses the correct constraint name."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {}
+
+            _ = constraint_results._constraint_metadata
+
+            # Verify it was called with the constraint's name
+            mock_get_metadata.assert_called_once_with(constraint_results.name)
+
+    def test_constraint_metadata_property_caching_behavior(self, constraint_results):
+        """Test that _constraint_metadata property doesn't cache
+        (calls model each time)."""
+        with patch.object(
+            constraint_results.model, "_get_constraint_metadata"
+        ) as mock_get_metadata:
+            mock_get_metadata.return_value = {"name": "min_revenue"}
+
+            # Access the property multiple times
+            _ = constraint_results._constraint_metadata
+            _ = constraint_results._constraint_metadata
+            _ = constraint_results._constraint_metadata
+
+            # Should call the model method each time (no caching)
+            assert mock_get_metadata.call_count == 3
+            mock_get_metadata.assert_called_with("min_revenue")
+
+    def test_constraint_metadata_property_with_different_operators(
+        self, basic_line_items, basic_categories
+    ):
+        """Test _constraint_metadata property with constraints having different
+        operators."""
+        operators_tests = [
+            ("eq", "="),
+            ("ne", "!="),
+            ("lt", "<"),
+            ("le", "<="),
+            ("gt", ">"),
+            ("ge", ">="),
+        ]
+
+        for operator, symbol in operators_tests:
+            constraint = Constraint(
+                name=f"test_{operator}",
+                line_item_name="revenue",
+                target=100000.0,
+                operator=operator,
+                label=f"Test {operator.upper()}",
+            )
+
+            model = Model(
+                line_items=basic_line_items,
+                years=[2023, 2024, 2025],
+                categories=basic_categories,
+                constraints=[constraint],
+            )
+
+            constraint_results = ConstraintResults(model, f"test_{operator}")
+            metadata = constraint_results._constraint_metadata
+
+            assert metadata["operator"] == operator
+            assert metadata["operator_symbol"] == symbol
+            assert metadata["name"] == f"test_{operator}"
+            assert metadata["label"] == f"Test {operator.upper()}"
+
+
 class TestConstraintResultsEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -801,7 +924,7 @@ class TestConstraintResultsEdgeCases:
 
         # Should be able to create ConstraintResults
         constraint_result = model.constraint("test_constraint")
-        assert constraint_result.constraint_name == "test_constraint"
+        assert constraint_result.name == "test_constraint"
         assert constraint_result.line_item_name == "revenue"
         assert constraint_result.failing_years() == []  # No years, no failing years
 
@@ -837,8 +960,522 @@ class TestConstraintResultsEdgeCases:
 
         constraint_results = ConstraintResults(model, "revenue_check_2024")
 
-        assert constraint_results.constraint_name == "revenue_check_2024"
+        assert constraint_results.name == "revenue_check_2024"
         summary = constraint_results.summary()
         assert "ConstraintResults('revenue_check_2024')" in summary
         assert "Label: Revenue Check 2024" in summary
         assert "Value (2024): 100,000.00" in summary
+
+
+class TestConstraintResultsSetters:
+    """Test the setter functionality of ConstraintResults."""
+
+    @pytest.fixture
+    def model_with_multiple_constraints(self, basic_line_items, basic_categories):
+        """Create a model with multiple constraints for testing."""
+        constraints = [
+            Constraint(
+                name="min_revenue",
+                line_item_name="revenue",
+                target=80000.0,
+                operator="gt",
+                tolerance=1000.0,
+                label="Minimum Revenue",
+            ),
+            Constraint(
+                name="max_revenue",
+                line_item_name="revenue",
+                target=200000.0,
+                operator="lt",
+                tolerance=500.0,
+                label="Maximum Revenue",
+            ),
+            Constraint(
+                name="expense_limit",
+                line_item_name="expenses",
+                target=75000.0,
+                operator="le",
+                tolerance=100.0,
+                label="Expense Limit",
+            ),
+        ]
+        return Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=constraints,
+        )
+
+    def test_line_item_name_setter_updates_constraint(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting line_item_name updates the constraint correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_line_item_name = constraint_results.line_item_name
+
+        # Set new line item name
+        new_line_item_name = "expenses"
+        constraint_results.line_item_name = new_line_item_name
+
+        # Verify the line item name was updated
+        assert constraint_results.line_item_name == new_line_item_name
+        assert constraint_results.line_item_name != original_line_item_name
+
+    def test_line_item_name_setter_calls_model_update(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting line_item_name successfully updates the constraint."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new line item name (using existing line item)
+        constraint_results.line_item_name = "expenses"
+
+        # Verify the constraint was updated in the model
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.line_item_name == "expenses"
+
+    def test_line_item_name_setter_handles_model_error(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setter handles errors from model update gracefully."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_line_item_name = constraint_results.line_item_name
+
+        # Test with nonexistent line item - expect specific error message
+        with pytest.raises(
+            ValueError,
+            match="Failed to update constraint 'min_revenue': Constraint "
+            "'min_revenue' references unknown line item 'nonexistent'",
+        ):
+            constraint_results.line_item_name = "nonexistent"
+
+        # Verify original state is preserved
+        assert constraint_results.line_item_name == original_line_item_name
+
+    def test_label_setter_updates_constraint(self, model_with_multiple_constraints):
+        """Test that setting label updates the constraint correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_label = constraint_results.label
+
+        # Set new label
+        new_label = "Revenue Floor"
+        constraint_results.label = new_label
+
+        # Verify the label was updated
+        assert constraint_results.label == new_label
+        assert constraint_results.label != original_label
+
+    def test_label_setter_calls_model_update(self, model_with_multiple_constraints):
+        """Test that setting label successfully updates the constraint."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new label
+        constraint_results.label = "New Label"
+
+        # Verify the constraint was updated in the model
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.label == "New Label"
+
+    def test_label_setter_handles_model_error(self, model_with_multiple_constraints):
+        """Test that label setter can handle various label values."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Test with empty string (should work)
+        constraint_results.label = ""
+        assert constraint_results.label == ""
+
+        # Test with special characters (should work)
+        constraint_results.label = "Label with spaces & symbols!"
+        assert constraint_results.label == "Label with spaces & symbols!"
+
+    def test_tolerance_setter_updates_constraint(self, model_with_multiple_constraints):
+        """Test that setting tolerance updates the constraint correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_tolerance = constraint_results.tolerance
+
+        # Set new tolerance
+        new_tolerance = 2000.0
+        constraint_results.tolerance = new_tolerance
+
+        # Verify the tolerance was updated
+        assert constraint_results.tolerance == new_tolerance
+        assert constraint_results.tolerance != original_tolerance
+
+    def test_tolerance_setter_calls_model_update(self, model_with_multiple_constraints):
+        """Test that setting tolerance successfully updates the constraint."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new tolerance
+        constraint_results.tolerance = 1500.0
+
+        # Verify the constraint was updated in the model
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.tolerance == 1500.0
+
+    def test_tolerance_setter_handles_model_error(
+        self, model_with_multiple_constraints
+    ):
+        """Test that tolerance setter handles errors from model update gracefully."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_tolerance = constraint_results.tolerance
+
+        # Test with negative tolerance - expect specific error message
+        with pytest.raises(ValueError, match="Tolerance must be non-negative"):
+            constraint_results.tolerance = -100.0
+
+        # Verify original state is preserved
+        assert constraint_results.tolerance == original_tolerance
+
+    def test_tolerance_setter_accepts_zero(self, model_with_multiple_constraints):
+        """Test that tolerance setter accepts zero as a valid value."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set tolerance to zero
+        constraint_results.tolerance = 0.0
+
+        # Verify the tolerance was updated
+        assert constraint_results.tolerance == 0.0
+
+    def test_operator_setter_updates_constraint(self, model_with_multiple_constraints):
+        """Test that setting operator updates the constraint correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_operator = constraint_results.operator
+
+        # Set new operator
+        new_operator = "ge"
+        constraint_results.operator = new_operator
+
+        # Verify the operator was updated
+        assert constraint_results.operator == new_operator
+        assert constraint_results.operator != original_operator
+
+    def test_operator_setter_calls_model_update(self, model_with_multiple_constraints):
+        """Test that setting operator successfully updates the constraint."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new operator
+        constraint_results.operator = "ge"
+
+        # Verify the constraint was updated in the model
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.operator == "ge"
+
+    def test_operator_setter_handles_model_error(self, model_with_multiple_constraints):
+        """Test that operator setter handles errors from model update gracefully."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_operator = constraint_results.operator
+
+        # Test with invalid operator - expect specific error message
+        with pytest.raises(ValueError, match="Operator must be one of:"):
+            constraint_results.operator = "invalid"
+
+        # Verify original state is preserved
+        assert constraint_results.operator == original_operator
+
+    def test_operator_setter_accepts_valid_operators(
+        self, model_with_multiple_constraints
+    ):
+        """Test that operator setter accepts all valid operators."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        valid_operators = ["eq", "ne", "lt", "le", "gt", "ge"]
+
+        for operator in valid_operators:
+            constraint_results.operator = operator
+            assert constraint_results.operator == operator
+
+    def test_setters_preserve_other_properties(self, model_with_multiple_constraints):
+        """Test that each setter preserves all other constraint properties."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Capture original properties
+        original_name = constraint_results.name
+        original_line_item_name = constraint_results.line_item_name
+        original_label = constraint_results.label
+        original_tolerance = constraint_results.tolerance
+        original_operator = constraint_results.operator
+
+        # Test line_item_name setter preserves others
+        constraint_results.line_item_name = "expenses"
+        assert constraint_results.name == original_name
+        assert constraint_results.label == original_label
+        assert constraint_results.tolerance == original_tolerance
+        assert constraint_results.operator == original_operator
+
+        # Reset and test label setter preserves others
+        constraint_results.line_item_name = original_line_item_name
+        constraint_results.label = "New Label"
+        assert constraint_results.name == original_name
+        assert constraint_results.line_item_name == original_line_item_name
+        assert constraint_results.tolerance == original_tolerance
+        assert constraint_results.operator == original_operator
+
+        # Reset and test tolerance setter preserves others
+        constraint_results.label = original_label
+        constraint_results.tolerance = 2000.0
+        assert constraint_results.name == original_name
+        assert constraint_results.line_item_name == original_line_item_name
+        assert constraint_results.label == original_label
+        assert constraint_results.operator == original_operator
+
+        # Reset and test operator setter preserves others
+        constraint_results.tolerance = original_tolerance
+        constraint_results.operator = "ge"
+        assert constraint_results.name == original_name
+        assert constraint_results.line_item_name == original_line_item_name
+        assert constraint_results.label == original_label
+        assert constraint_results.tolerance == original_tolerance
+
+    def test_setters_update_model_state(self, model_with_multiple_constraints):
+        """Test that setters update the model state correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Test line_item_name setter updates model
+        constraint_results.line_item_name = "expenses"
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.line_item_name == "expenses"
+
+        # Test label setter updates model
+        constraint_results.label = "New Revenue Label"
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.label == "New Revenue Label"
+
+        # Test tolerance setter updates model
+        constraint_results.tolerance = 3000.0
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.tolerance == 3000.0
+
+        # Test operator setter updates model
+        constraint_results.operator = "ge"
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.operator == "ge"
+
+    def test_multiple_setters_work_together(self, model_with_multiple_constraints):
+        """Test that multiple setters can be used together successfully."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set multiple properties
+        constraint_results.line_item_name = "expenses"
+        constraint_results.label = "Expense Floor"
+        constraint_results.tolerance = 500.0
+        constraint_results.operator = "ge"
+
+        # Verify all properties were updated
+        assert constraint_results.line_item_name == "expenses"
+        assert constraint_results.label == "Expense Floor"
+        assert constraint_results.tolerance == 500.0
+        assert constraint_results.operator == "ge"
+
+        # Verify the model was updated
+        updated_constraint = model_with_multiple_constraints.constraint("min_revenue")
+        assert updated_constraint.line_item_name == "expenses"
+        assert updated_constraint.label == "Expense Floor"
+        assert updated_constraint.tolerance == 500.0
+        assert updated_constraint.operator == "ge"
+
+
+class TestConstraintResultsNameSetter:
+    """Test the name setter functionality of ConstraintResults."""
+
+    @pytest.fixture
+    def model_with_multiple_constraints(self, basic_line_items, basic_categories):
+        """Create a model with multiple constraints for testing."""
+        constraints = [
+            Constraint(
+                name="min_revenue",
+                line_item_name="revenue",
+                target=80000.0,
+                operator="gt",
+                label="Minimum Revenue",
+            ),
+            Constraint(
+                name="max_revenue",
+                line_item_name="revenue",
+                target=200000.0,
+                operator="lt",
+                label="Maximum Revenue",
+            ),
+            Constraint(
+                name="expense_limit",
+                line_item_name="expenses",
+                target=75000.0,
+                operator="lt",
+                label="Expense Limit",
+            ),
+        ]
+        return Model(
+            line_items=basic_line_items,
+            years=[2023, 2024, 2025],
+            categories=basic_categories,
+            constraints=constraints,
+        )
+
+    def test_name_setter_updates_constraint_name(self, model_with_multiple_constraints):
+        """Test that setting name updates the constraint name correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Verify the name was updated
+        assert constraint_results.name == new_name
+        assert constraint_results.name != original_name
+
+    def test_name_setter_updates_model(self, model_with_multiple_constraints):
+        """Test that setting name updates the constraint in the model."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        new_name = "revenue_minimum"
+
+        # Set new name
+        constraint_results.name = new_name
+
+        # Verify the model was updated by accessing constraint with new name
+        updated_constraint = model_with_multiple_constraints.constraint(new_name)
+        assert updated_constraint.name == new_name
+        assert updated_constraint.line_item_name == "revenue"
+        assert updated_constraint.target_by_year(2023) == 80000.0
+
+    def test_name_setter_removes_old_name_from_model(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting name removes the old name from the model."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+        new_name = "revenue_floor"
+
+        # Set new name
+        constraint_results.name = new_name
+
+        # Verify old name no longer exists in model
+        with pytest.raises(
+            KeyError, match=f"Constraint with name '{original_name}' not found"
+        ):
+            model_with_multiple_constraints.constraint(original_name)
+
+    def test_name_setter_rejects_duplicate_name(self, model_with_multiple_constraints):
+        """Test that setting a name that already exists raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set name to an existing constraint name
+        with pytest.raises(
+            ValueError, match="Constraint with name 'max_revenue' already exists"
+        ):
+            constraint_results.name = "max_revenue"
+
+        # Verify original name is unchanged
+        assert constraint_results.name == original_name
+
+    def test_name_setter_rejects_empty_name(self, model_with_multiple_constraints):
+        """Test that setting an empty name raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set empty name
+        with pytest.raises(
+            ValueError,
+            match="Name must only contain letters, numbers, underscores, or hyphens",
+        ):
+            constraint_results.name = ""
+
+        # Verify original name is unchanged
+        assert constraint_results.name == original_name
+
+    def test_name_setter_rejects_invalid_characters(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting a name with invalid characters raises ValueError."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+        original_name = constraint_results.name
+
+        # Try to set name with invalid characters
+        invalid_names = ["name with spaces", "name@symbol", "name$special", "name!"]
+
+        for invalid_name in invalid_names:
+            with pytest.raises(
+                ValueError,
+                match="Name must only contain letters, numbers, underscores, "
+                "or hyphens",
+            ):
+                constraint_results.name = invalid_name
+
+            # Verify original name is unchanged after each attempt
+            assert constraint_results.name == original_name
+
+    def test_name_setter_accepts_valid_names(self, model_with_multiple_constraints):
+        """Test that setting valid names works correctly."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        valid_names = [
+            "revenue_floor",
+            "revenue-minimum",
+            "rev123",
+            "Revenue_Floor_2023",
+            "constraint_1",
+        ]
+
+        for valid_name in valid_names:
+            # Set the valid name
+            constraint_results.name = valid_name
+
+            # Verify it was set correctly
+            assert constraint_results.name == valid_name
+
+            # Verify we can access it from the model
+            updated_constraint = model_with_multiple_constraints.constraint(valid_name)
+            assert updated_constraint.name == valid_name
+
+    def test_name_setter_preserves_other_properties(
+        self, model_with_multiple_constraints
+    ):
+        """Test that setting name preserves all other constraint properties."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Capture original properties
+        original_label = constraint_results.label
+        original_line_item_name = constraint_results.line_item_name
+        original_target = constraint_results.target_by_year(2023)
+        original_operator = constraint_results.operator
+        original_tolerance = constraint_results.tolerance
+
+        # Set new name
+        constraint_results.name = "revenue_minimum"
+
+        # Verify all other properties are preserved
+        assert constraint_results.label == original_label
+        assert constraint_results.line_item_name == original_line_item_name
+        assert constraint_results.target_by_year(2023) == original_target
+        assert constraint_results.operator == original_operator
+        assert constraint_results.tolerance == original_tolerance
+
+    def test_name_setter_updates_repr(self, model_with_multiple_constraints):
+        """Test that setting name updates the __repr__ output."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Check original repr
+        original_repr = repr(constraint_results)
+        assert "name='min_revenue'" in original_repr
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Check updated repr
+        updated_repr = repr(constraint_results)
+        assert f"name='{new_name}'" in updated_repr
+        assert "name='min_revenue'" not in updated_repr
+
+    def test_name_setter_updates_summary(self, model_with_multiple_constraints):
+        """Test that setting name updates the summary output."""
+        constraint_results = model_with_multiple_constraints.constraint("min_revenue")
+
+        # Set new name
+        new_name = "revenue_floor"
+        constraint_results.name = new_name
+
+        # Check that summary contains new name
+        summary = constraint_results.summary()
+        assert f"ConstraintResults('{new_name}')" in summary
+        assert "ConstraintResults('min_revenue')" not in summary
