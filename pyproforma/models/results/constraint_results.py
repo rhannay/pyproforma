@@ -171,6 +171,44 @@ class ConstraintResults:
             return target.get(year, None)
         return target
 
+    def variance(self, year: int) -> float:
+        """
+        Calculate the variance (difference) between line item value and target.
+
+        Args:
+            year (int): The year to calculate variance for
+
+        Returns:
+            float: The variance (actual - target) for the specified year
+
+        Raises:
+            ValueError: If year or line item is not found in the model, or no target
+                       available
+        """
+        # Check if year exists in the model's value matrix
+        if year not in self.model._value_matrix:
+            raise ValueError(f"Year {year} not found in value_matrix")
+
+        # Check if line item exists in the value matrix for this year
+        if self.line_item_name not in self.model._value_matrix[year]:
+            raise ValueError(
+                (
+                    f"Line item '{self.line_item_name}' not found in value_matrix "
+                    f"for year {year}"
+                )
+            )
+
+        # Get target value for the year
+        target_value = self.target(year)
+        if target_value is None:
+            raise ValueError(f"No target value available for year {year}")
+
+        # Get the line item value
+        actual_value = self.model.value(self.line_item_name, year)
+
+        # Calculate variance as actual - target
+        return actual_value - target_value
+
     # ============================================================================
     # ANALYSIS AND CALCULATION METHODS
     # ============================================================================
