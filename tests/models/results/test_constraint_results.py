@@ -83,7 +83,7 @@ class TestConstraintResultsInitialization:
         constraint_results = ConstraintResults(model_with_constraints, "min_revenue")
 
         assert constraint_results.model is model_with_constraints
-        assert constraint_results.constraint_name == "min_revenue"
+        assert constraint_results.name == "min_revenue"
         assert constraint_results.line_item_name == "revenue"
         assert constraint_results.target(2023) == 80000.0
         assert constraint_results.operator == "gt"
@@ -99,7 +99,7 @@ class TestConstraintResultsInitialization:
         """Test ConstraintResults initialization with constraint having dict target."""
         constraint_results = ConstraintResults(model_with_constraints, "revenue_growth")
 
-        assert constraint_results.constraint_name == "revenue_growth"
+        assert constraint_results.name == "revenue_growth"
         assert constraint_results.target(2023) == 95000.0
         assert constraint_results.target(2024) == 115000.0
         assert constraint_results.target(2025) == 135000.0
@@ -128,7 +128,7 @@ class TestConstraintResultsStringRepresentation:
         """Test __repr__ method returns expected format."""
         repr_result = repr(constraint_results)
 
-        assert repr_result == "ConstraintResults(constraint_name='min_revenue')"
+        assert repr_result == "ConstraintResults(name='min_revenue')"
 
     def test_summary_method(self, constraint_results):
         """Test summary method returns formatted constraint information."""
@@ -156,7 +156,7 @@ class TestConstraintResultsStringRepresentation:
 
         # ConstraintResults should be accessible
         constraint_result = model.constraint(basic_constraints[0].name)
-        assert constraint_result.constraint_name == basic_constraints[0].name
+        assert constraint_result.name == basic_constraints[0].name
         assert constraint_result.failing_years() == []  # No years, no failing years
 
 
@@ -674,7 +674,7 @@ class TestConstraintResultsIntegration:
         constraint_results = integrated_model.constraint("profit_margin")
 
         assert isinstance(constraint_results, ConstraintResults)
-        assert constraint_results.constraint_name == "profit_margin"
+        assert constraint_results.name == "profit_margin"
         assert constraint_results.model is integrated_model
 
         # Test that methods work
@@ -838,9 +838,7 @@ class TestConstraintResultsMetadata:
             _ = constraint_results._constraint_metadata
 
             # Verify it was called with the constraint's name
-            mock_get_metadata.assert_called_once_with(
-                constraint_results.constraint_name
-            )
+            mock_get_metadata.assert_called_once_with(constraint_results.name)
 
     def test_constraint_metadata_property_caching_behavior(self, constraint_results):
         """Test that _constraint_metadata property doesn't cache
@@ -926,7 +924,7 @@ class TestConstraintResultsEdgeCases:
 
         # Should be able to create ConstraintResults
         constraint_result = model.constraint("test_constraint")
-        assert constraint_result.constraint_name == "test_constraint"
+        assert constraint_result.name == "test_constraint"
         assert constraint_result.line_item_name == "revenue"
         assert constraint_result.failing_years() == []  # No years, no failing years
 
@@ -962,7 +960,7 @@ class TestConstraintResultsEdgeCases:
 
         constraint_results = ConstraintResults(model, "revenue_check_2024")
 
-        assert constraint_results.constraint_name == "revenue_check_2024"
+        assert constraint_results.name == "revenue_check_2024"
         summary = constraint_results.summary()
         assert "ConstraintResults('revenue_check_2024')" in summary
         assert "Label: Revenue Check 2024" in summary

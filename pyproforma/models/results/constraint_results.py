@@ -84,7 +84,7 @@ class ConstraintResults:
         return self.summary()
 
     def __repr__(self) -> str:
-        return f"ConstraintResults(constraint_name='{self.constraint_name}')"
+        return f"ConstraintResults(name='{self.name}')"
 
     def _repr_html_(self) -> str:
         """
@@ -103,7 +103,7 @@ class ConstraintResults:
         return self.model._get_constraint_metadata(self._constraint_name)
 
     @property
-    def constraint_name(self) -> str:
+    def name(self) -> str:
         """Get the constraint name."""
         return self._constraint_name
 
@@ -288,7 +288,7 @@ class ConstraintResults:
         Returns:
             Table: A Table object containing the constraint formatted for display
         """  # noqa: E501
-        return self.model.tables.constraint(self.constraint_name)
+        return self.model.tables.constraint(self.name)
 
     # ============================================================================
     # VISUALIZATION METHODS
@@ -319,7 +319,7 @@ class ConstraintResults:
             KeyError: If the constraint name is not found in the model
         """  # noqa: E501
         return self.model.charts.constraint(
-            self.constraint_name,
+            self.name,
             width=width,
             height=height,
             template=template,
@@ -396,7 +396,7 @@ class ConstraintResults:
                 failing_info = "\nStatus: All years pass constraint check"
 
         summary_text = (
-            f"ConstraintResults('{self.constraint_name}')\n"
+            f"ConstraintResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Line Item: {self.line_item_name}"
             f"{target_info}{value_info}{failing_info}"
