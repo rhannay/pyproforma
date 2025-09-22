@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from typing import Dict, Literal, Union
 
 from ._utils import validate_name
 
 
+@dataclass
 class Constraint:
     """
     Represents a constraint in a financial model that compares a line item value to a target value.
@@ -62,29 +64,26 @@ class Constraint:
 
     VALID_OPERATORS = {"eq", "lt", "le", "gt", "ge", "ne"}
 
-    def __init__(
-        self,
-        name: str,
-        line_item_name: str,
-        target: Union[float, Dict[int, float]],
-        operator: Literal["eq", "lt", "le", "gt", "ge", "ne"],
-        tolerance: float = 0.0,
-        label: str = None,
-    ):
-        validate_name(name)
-        if operator not in self.VALID_OPERATORS:
+    name: str
+    line_item_name: str
+    target: Union[float, Dict[int, float]]
+    operator: Literal["eq", "lt", "le", "gt", "ge", "ne"]
+    tolerance: float = 0.0
+    label: str = None
+
+    def __post_init__(self):
+        """Validate the constraint parameters after initialization."""
+        validate_name(self.name)
+        if self.operator not in self.VALID_OPERATORS:
             raise ValueError(
                 f"Operator must be one of: {', '.join(self.VALID_OPERATORS)}"
             )
-        if tolerance < 0:
+        if self.tolerance < 0:
             raise ValueError("Tolerance must be non-negative")
-        self.name = name
-        self.label = label
-        self.line_item_name = line_item_name
-        self.tolerance = tolerance
-        if isinstance(target, dict):
+
+        if isinstance(self.target, dict):
             try:
-                self.target = {int(k): float(v) for k, v in target.items()}
+                self.target = {int(k): float(v) for k, v in self.target.items()}
             except Exception:
                 raise ValueError(
                     "All values in target dict must be convertible to float"
@@ -94,12 +93,11 @@ class Constraint:
                 raise ValueError("Target dict must not be empty.")
         else:
             try:
-                self.target = float(target)
+                self.target = float(self.target)
             except Exception:
                 raise ValueError(
                     "Target must be convertible to float or a dict of year:float."
                 )
-        self.operator = operator
 
     def to_dict(self) -> dict:
         """Convert Constraint to dictionary representation."""
@@ -123,16 +121,3 @@ class Constraint:
             tolerance=constraint_dict.get("tolerance", 0.0),
             label=constraint_dict.get("label", None),
         )
-
-    def __str__(self):
-        return (
-            f"Constraint(name='{self.name}', "
-            f"line_item_name='{self.line_item_name}', "
-            f"target={self.target}, "
-            f"operator='{self.operator}', "
-            f"tolerance={self.tolerance}, "
-            f"label={self.label})"
-        )
-
-    def __repr__(self):
-        return self.__str__()
