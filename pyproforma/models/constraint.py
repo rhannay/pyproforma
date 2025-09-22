@@ -1,6 +1,5 @@
 from typing import Dict, Literal, Union
 
-from ..constants import CONSTRAINT_OPERATOR_SYMBOLS
 from ._utils import validate_name
 
 
