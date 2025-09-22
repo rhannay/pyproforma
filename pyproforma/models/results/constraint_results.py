@@ -169,6 +169,18 @@ class ConstraintResults:
         # local state
         self.model.update.update_constraint(self._constraint_name, operator=value)
 
+    @property
+    def target(self) -> Union[float, dict]:
+        """Get the target for this constraint from metadata."""
+        return self._constraint_metadata["target"]
+
+    @target.setter
+    def target(self, value: Union[float, dict]) -> None:
+        """Set the target for this constraint and update it in the model."""
+        # Update the constraint in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_constraint(self._constraint_name, target=value)
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================
