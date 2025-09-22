@@ -7,6 +7,7 @@ model components including categories and line items.
 
 from typing import Dict, List
 
+from pyproforma.constants import CONSTRAINT_OPERATOR_SYMBOLS
 from pyproforma.models.multi_line_item import MultiLineItem
 
 from ..category import Category
@@ -256,7 +257,7 @@ def generate_constraint_metadata(constraints: List[Constraint]) -> List[Dict]:
                 "line_item_name": constraint.line_item_name,
                 "target": constraint.target,
                 "operator": constraint.operator,
-                "operator_symbol": constraint.get_operator_symbol(),
+                "operator_symbol": CONSTRAINT_OPERATOR_SYMBOLS[constraint.operator],
                 "tolerance": constraint.tolerance,
             }
         )

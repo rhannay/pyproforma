@@ -1,5 +1,6 @@
 from typing import Dict, Literal, Union
 
+from ..constants import CONSTRAINT_OPERATOR_SYMBOLS
 from ._utils import validate_name
 
 
@@ -61,14 +62,6 @@ class Constraint:
     """  # noqa: E501
 
     VALID_OPERATORS = {"eq", "lt", "le", "gt", "ge", "ne"}
-    OPERATOR_SYMBOLS = {
-        "eq": "=",
-        "lt": "<",
-        "le": "<=",
-        "gt": ">",
-        "ge": ">=",
-        "ne": "!=",
-    }
 
     def __init__(
         self,
@@ -109,15 +102,6 @@ class Constraint:
                 )
         self.operator = operator
 
-    def get_operator_symbol(self) -> str:
-        """
-        Returns the symbol representation of the constraint's operator.
-
-        Returns:
-            str: The symbol corresponding to the operator (e.g., '=', '>', '<=')
-        """
-        return self.OPERATOR_SYMBOLS.get(self.operator, self.operator)
-
     def to_dict(self) -> dict:
         """Convert Constraint to dictionary representation."""
         return {
@@ -142,15 +126,13 @@ class Constraint:
         )
 
     def __str__(self):
-        operator_symbol = self.get_operator_symbol()
-        if isinstance(self.target, dict):
-            target_str = str(self.target)
-        else:
-            target_str = str(self.target)
         return (
             f"Constraint(name='{self.name}', "
             f"line_item_name='{self.line_item_name}', "
-            f"condition='{self.line_item_name} {operator_symbol} {target_str}')"
+            f"target={self.target}, "
+            f"operator='{self.operator}', "
+            f"tolerance={self.tolerance}, "
+            f"label={self.label})"
         )
 
     def __repr__(self):

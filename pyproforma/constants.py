@@ -27,3 +27,13 @@ ValueFormat = Literal[
 
 # Reserved category names that cannot be used by users
 RESERVED_CATEGORY_NAMES = ["category_totals"]
+
+# Constraint operator symbols mapping
+CONSTRAINT_OPERATOR_SYMBOLS = {
+    "eq": "=",
+    "lt": "<",
+    "le": "<=",
+    "gt": ">",
+    "ge": ">=",
+    "ne": "!=",
+}
