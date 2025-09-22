@@ -118,38 +118,6 @@ class Constraint:
             return self.target.get(year, None)
         return self.target
 
-    def variance(self, value_matrix: Dict[int, Dict[str, float]], year: int) -> float:
-        """
-        Calculate the variance (difference) between line item value and target for a specific year.
-
-        Args:
-            value_matrix: Dictionary mapping years to line_item_name:value dictionaries
-            year: The specific year to calculate variance for
-
-        Returns:
-            float: The variance (actual - target) for the specified year
-
-        Raises:
-            ValueError: If year or line item is not found in value_matrix, or no target available
-        """  # noqa: E501
-        if year not in value_matrix:
-            raise ValueError(f"Year {year} not found in value_matrix")
-
-        if self.line_item_name not in value_matrix[year]:
-            raise ValueError(
-                (
-                    f"Line item '{self.line_item_name}' not found in value_matrix "
-                    f"for year {year}"
-                )
-            )
-
-        target_value = self.get_target(year)
-        if target_value is None:
-            raise ValueError(f"No target value available for year {year}")
-
-        actual_value = value_matrix[year][self.line_item_name]
-        return actual_value - target_value
-
     def get_operator_symbol(self) -> str:
         """
         Returns the symbol representation of the constraint's operator.
