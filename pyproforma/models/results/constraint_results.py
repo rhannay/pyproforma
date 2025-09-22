@@ -327,7 +327,7 @@ class ConstraintResults:
         return failing
 
     # ============================================================================
-    # DATA CONVERSION METHODS
+    # TABLE AND CHART METHODS
     # ============================================================================
 
     def table(self):
@@ -338,10 +338,6 @@ class ConstraintResults:
             Table: A Table object containing the constraint formatted for display
         """  # noqa: E501
         return self.model.tables.constraint(self.name)
-
-    # ============================================================================
-    # VISUALIZATION METHODS
-    # ============================================================================
 
     def chart(
         self,
