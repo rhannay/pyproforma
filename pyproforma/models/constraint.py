@@ -109,15 +109,6 @@ class Constraint:
                 )
         self.operator = operator
 
-    def get_target(self, year: int) -> Union[float, None]:
-        """
-        Returns the target value for the given year. If target is a float, returns it.
-        If target is a dict, returns the value for the year or None if not present.
-        """
-        if isinstance(self.target, dict):
-            return self.target.get(year, None)
-        return self.target
-
     def get_operator_symbol(self) -> str:
         """
         Returns the symbol representation of the constraint's operator.

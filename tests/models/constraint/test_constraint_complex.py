@@ -222,5 +222,3 @@ class TestConstraintsWithComplexModels:
         # But have the same values
         assert copied_model.constraints[0].name == "copy_test"
         assert copied_model.constraints[0].target == {2023: 1000, 2024: 1100}
-        assert copied_model.constraints[0].get_target(2023) == 1000
-        assert copied_model.constraints[0].get_target(2025) is None

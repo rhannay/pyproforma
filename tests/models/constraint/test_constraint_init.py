@@ -134,9 +134,6 @@ class TestConstraintInit:
         )
 
         assert constraint.target == target_dict
-        assert constraint.get_target(2023) == 100.0
-        assert constraint.get_target(2024) == 200.0
-        assert constraint.get_target(2025) is None
 
     def test_invalid_target_value(self):
         """Test that invalid target values raise appropriate errors."""
