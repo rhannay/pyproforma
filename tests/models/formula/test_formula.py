@@ -151,3 +151,30 @@ def test__calculate_formula_with_invalid_formulas():
     # Nested parentheses
     result = calculate_formula("((a + b) * 2) + a", values_matrix, 2024)
     assert result == ((10 + 5) * 2) + 10  # should respect nested parentheses
+
+
+def test__calculate_formula_with_parentheses_after_variable():
+    """Test what happens when parentheses are used after a variable."""
+    values_matrix = {2024: {"a": 10, "b": 5}, 2023: {"a": 8, "b": 4}}
+
+    # Test with parentheses instead of square brackets
+    # This causes a TypeError because a(-1) is interpreted as calling 'a' as a function
+    # but 'a' is an integer (10), not a callable function
+    with pytest.raises(TypeError, match="'int' object is not callable"):
+        calculate_formula("a(-1) + b", values_matrix, 2024)
+
+    # Test with multiple variables using parentheses
+    with pytest.raises(TypeError, match="'int' object is not callable"):
+        calculate_formula("a(-1) + b(-1)", values_matrix, 2024)
+
+    # Test mixed usage - one with correct brackets, one with incorrect parentheses
+    with pytest.raises(TypeError, match="'int' object is not callable"):
+        calculate_formula("a[-1] + b(-1)", values_matrix, 2024)
+
+    # Test just a variable with parentheses
+    with pytest.raises(TypeError, match="'int' object is not callable"):
+        calculate_formula("a(-1)", values_matrix, 2024)
+
+    # For comparison, test that the correct square bracket syntax works
+    result = calculate_formula("a[-1] + b", values_matrix, 2024)
+    assert result == 8 + 5  # a[-1] is 8 (from 2023), b is 5 (from 2024)
