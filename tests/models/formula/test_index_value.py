@@ -183,7 +183,9 @@ class TestIndexValue:
         assert str(iv) == "0"
 
     def test_negative_values(self):
-        """Test with negative numeric values (not to be confused with negative indexes)."""
+        """
+        Test with negative numeric values (not to be confused with negative indexes).
+        """
         iv = IndexValue(-50, {-1: -25, -2: -30.5})
 
         assert iv.value == -50
