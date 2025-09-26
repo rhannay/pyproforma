@@ -1,6 +1,8 @@
+import ast
+
 import pytest
 
-from pyproforma.models.formula.formula_2 import evaluate
+from pyproforma.models.formula.formula_2 import _validate_indexed_value, evaluate
 
 
 class TestEvaluate:
@@ -266,3 +268,195 @@ class TestEvaluate:
         # Test mixed None and non-None values
         result = evaluate("revenue + expenses + 50", matrix_with_none, 2024)
         assert result == 850.0  # 0 + 800 + 50
+
+
+class TestValidateIndexedValue:
+    """Test cases for the _validate_indexed_value function."""
+
+    @pytest.fixture
+    def sample_matrix(self):
+        """Sample value matrix for testing."""
+        return {
+            2024: {"revenue": 1000.0, "expenses": 800.0, "profit": None},
+            2023: {"revenue": 900.0, "expenses": 750.0, "profit": None},
+            2022: {"revenue": 800.0, "expenses": 700.0, "profit": 100.0},
+        }
+
+    def _create_subscript_node(self, var_name: str, index: int) -> ast.Subscript:
+        """Helper to create AST Subscript nodes for testing."""
+        # Create the variable name node
+        name_node = ast.Name(id=var_name, ctx=ast.Load())
+
+        # Create the index node - handle positive and negative indices differently
+        if index < 0:
+            # Negative index: create UnaryOp with USub
+            index_node = ast.UnaryOp(
+                op=ast.USub(),
+                operand=ast.Constant(
+                    value=-index
+                ),  # Store positive value, USub makes it negative
+            )
+        else:
+            # Positive index: create Constant directly
+            index_node = ast.Constant(value=index)
+
+        # Create the subscript node
+        return ast.Subscript(value=name_node, slice=index_node, ctx=ast.Load())
+
+    def test_valid_negative_index_lookup(self, sample_matrix):
+        """Test successful lookup with negative indices."""
+        # Test revenue[-1] from 2024 (should get 2023 value)
+        node = self._create_subscript_node("revenue", -1)
+        result = _validate_indexed_value(node, sample_matrix, 2024)
+        assert result == 900.0
+
+        # Test revenue[-2] from 2024 (should get 2022 value)
+        node = self._create_subscript_node("revenue", -2)
+        result = _validate_indexed_value(node, sample_matrix, 2024)
+        assert result == 800.0
+
+        # Test expenses[-1] from 2023 (should get 2022 value)
+        node = self._create_subscript_node("expenses", -1)
+        result = _validate_indexed_value(node, sample_matrix, 2023)
+        assert result == 700.0
+
+    def test_none_value_returns_zero(self, sample_matrix):
+        """Test that None values are returned as 0.0."""
+        # Current year None value
+        node = self._create_subscript_node("profit", -1)
+        result = _validate_indexed_value(node, sample_matrix, 2024)
+        assert result == 0.0  # profit in 2023 was None -> should become 0.0
+
+    def test_positive_index_raises_error(self, sample_matrix):
+        """Test that positive indices raise ValueError."""
+        node = self._create_subscript_node("revenue", 1)
+        with pytest.raises(
+            ValueError, match="Only negative indices are allowed, got 1"
+        ):
+            _validate_indexed_value(node, sample_matrix, 2024)
+
+    def test_zero_index_raises_error(self, sample_matrix):
+        """Test that zero index raises ValueError."""
+        node = self._create_subscript_node("revenue", 0)
+        with pytest.raises(
+            ValueError, match="Only negative indices are allowed, got 0"
+        ):
+            _validate_indexed_value(node, sample_matrix, 2024)
+
+    def test_missing_year_raises_error(self, sample_matrix):
+        """Test that missing target year raises ValueError."""
+        # Try to access revenue[-3] from 2024, which would need 2021 data
+        node = self._create_subscript_node("revenue", -3)
+        with pytest.raises(ValueError, match="Year 2021 not found in value matrix"):
+            _validate_indexed_value(node, sample_matrix, 2024)
+
+    def test_missing_variable_raises_error(self, sample_matrix):
+        """Test that missing variable in target year raises ValueError."""
+        # Add a year that doesn't have all variables
+        matrix_with_missing = sample_matrix.copy()
+        matrix_with_missing[2021] = {"revenue": 700.0}  # Missing expenses
+
+        node = self._create_subscript_node("expenses", -3)
+        with pytest.raises(
+            ValueError, match="Variable 'expenses' not found for year 2021"
+        ):
+            _validate_indexed_value(node, matrix_with_missing, 2024)
+
+    def test_non_name_variable_raises_error(self, sample_matrix):
+        """Test that non-Name variable nodes raise ValueError."""
+        # Create a subscript node with a non-Name variable (e.g., a constant)
+        subscript_node = ast.Subscript(
+            value=ast.Constant(value=5),  # Not a name
+            slice=ast.Constant(value=-1),
+            ctx=ast.Load(),
+        )
+
+        with pytest.raises(
+            ValueError, match="Only simple variable indexing is supported"
+        ):
+            _validate_indexed_value(subscript_node, sample_matrix, 2024)
+
+    def test_non_constant_index_raises_error(self, sample_matrix):
+        """Test that non-constant indices raise ValueError."""
+        # Create a subscript node with a variable as index
+        subscript_node = ast.Subscript(
+            value=ast.Name(id="revenue", ctx=ast.Load()),
+            slice=ast.Name(id="x", ctx=ast.Load()),  # Variable as index, not constant
+            ctx=ast.Load(),
+        )
+
+        with pytest.raises(
+            ValueError, match="Only constant integer indices are supported"
+        ):
+            _validate_indexed_value(subscript_node, sample_matrix, 2024)
+
+    def test_non_integer_index_raises_error(self, sample_matrix):
+        """Test that non-integer indices raise ValueError."""
+        # Create a subscript node with a float index
+        subscript_node = ast.Subscript(
+            value=ast.Name(id="revenue", ctx=ast.Load()),
+            slice=ast.Constant(value=-1.5),  # Float index
+            ctx=ast.Load(),
+        )
+
+        with pytest.raises(ValueError, match="Index must be an integer"):
+            _validate_indexed_value(subscript_node, sample_matrix, 2024)
+
+    def test_complex_unary_op_raises_error(self, sample_matrix):
+        """Test that complex unary operations (not simple negation) raise ValueError."""
+        # Create a subscript node with UnaryOp that's not simple negation
+        subscript_node = ast.Subscript(
+            value=ast.Name(id="revenue", ctx=ast.Load()),
+            slice=ast.UnaryOp(
+                op=ast.USub(),
+                operand=ast.Name(id="x", ctx=ast.Load()),  # Variable in unary op
+            ),
+            ctx=ast.Load(),
+        )
+
+        with pytest.raises(
+            ValueError, match="Only constant integer indices are supported"
+        ):
+            _validate_indexed_value(subscript_node, sample_matrix, 2024)
+
+    def test_year_calculation_accuracy(self, sample_matrix):
+        """Test that year calculations are accurate for various indices."""
+        # Test multiple negative indices to ensure year calculation is correct
+        test_cases = [
+            (-1, 2023),  # 2024 + (-1) = 2023
+            (-2, 2022),  # 2024 + (-2) = 2022
+            (-1, 2022),  # 2023 + (-1) = 2022 (when starting from 2023)
+        ]
+
+        for index, expected_year in test_cases[
+            :2
+        ]:  # Test first two with 2024 as base year
+            node = self._create_subscript_node("revenue", index)
+            expected_value = sample_matrix[expected_year]["revenue"]
+            result = _validate_indexed_value(node, sample_matrix, 2024)
+            assert result == expected_value
+
+        # Test the last case with 2023 as base year
+        node = self._create_subscript_node("revenue", -1)
+        result = _validate_indexed_value(node, sample_matrix, 2023)
+        assert result == sample_matrix[2022]["revenue"]
+
+    def test_edge_case_matrix_structures(self):
+        """Test with various edge case matrix structures."""
+        # Empty matrix
+        empty_matrix = {}
+        node = self._create_subscript_node("revenue", -1)
+        with pytest.raises(ValueError, match="Year 2023 not found in value matrix"):
+            _validate_indexed_value(node, empty_matrix, 2024)
+
+        # Matrix with only current year
+        single_year_matrix = {2024: {"revenue": 1000.0}}
+        with pytest.raises(ValueError, match="Year 2023 not found in value matrix"):
+            _validate_indexed_value(node, single_year_matrix, 2024)
+
+        # Matrix with empty year dictionary
+        empty_year_matrix = {2024: {"revenue": 1000.0}, 2023: {}}
+        with pytest.raises(
+            ValueError, match="Variable 'revenue' not found for year 2023"
+        ):
+            _validate_indexed_value(node, empty_year_matrix, 2024)

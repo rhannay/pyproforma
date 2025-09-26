@@ -3,6 +3,62 @@ import operator
 from typing import Dict, Union
 
 
+def _validate_indexed_value(
+    node: ast.Subscript, value_matrix: Dict[int, Dict[str, float]], year: int
+) -> float:
+    """
+    Handle variable lookup with indexing like var[-1].
+
+    Args:
+        node: AST Subscript node representing indexed variable access
+        value_matrix: Matrix of values organized by year and variable name
+        year: Current year for calculation
+
+    Returns:
+        float: The value from the matrix (0.0 if None)
+
+    Raises:
+        ValueError: If indexing is invalid or variable/year not found
+    """
+    # Extract variable name and index
+    if not isinstance(node.value, ast.Name):
+        raise ValueError("Only simple variable indexing is supported")
+    var_name = node.value.id
+
+    # Extract index value - handle different AST structures
+    index = None
+    if isinstance(node.slice, ast.Constant):
+        # Direct constant: var[1]
+        index = node.slice.value
+    elif isinstance(node.slice, ast.UnaryOp) and isinstance(node.slice.op, ast.USub):
+        # Negative constant: var[-1]
+        if isinstance(node.slice.operand, ast.Constant):
+            index = -node.slice.operand.value
+        else:
+            raise ValueError("Only constant integer indices are supported")
+    else:
+        raise ValueError("Only constant integer indices are supported")
+
+    # Validate index
+    if not isinstance(index, int):
+        raise ValueError("Index must be an integer")
+    if index >= 0:
+        raise ValueError(f"Only negative indices are allowed, got {index}")
+
+    # Calculate target year
+    target_year = year + index  # index is negative, so this reduces the year
+
+    # Look up the value in the target year
+    if target_year not in value_matrix:
+        raise ValueError(f"Year {target_year} not found in value matrix")
+    if var_name not in value_matrix[target_year]:
+        raise ValueError(f"Variable '{var_name}' not found for year {target_year}")
+    value = value_matrix[target_year][var_name]
+    if value is None:
+        return 0.0
+    return value
+
+
 def evaluate(
     formula: str, value_matrix: Dict[int, Dict[str, float]], year: int
 ) -> Union[int, float]:
@@ -59,47 +115,7 @@ def evaluate(
                 return 0.0
             return value
         elif isinstance(node, ast.Subscript):  # Variable with indexing like var[-1]
-            # Extract variable name and index
-            if not isinstance(node.value, ast.Name):
-                raise ValueError("Only simple variable indexing is supported")
-            var_name = node.value.id
-
-            # Extract index value - handle different AST structures
-            index = None
-            if isinstance(node.slice, ast.Constant):
-                # Direct constant: var[1]
-                index = node.slice.value
-            elif isinstance(node.slice, ast.UnaryOp) and isinstance(
-                node.slice.op, ast.USub
-            ):
-                # Negative constant: var[-1]
-                if isinstance(node.slice.operand, ast.Constant):
-                    index = -node.slice.operand.value
-                else:
-                    raise ValueError("Only constant integer indices are supported")
-            else:
-                raise ValueError("Only constant integer indices are supported")
-
-            # Validate index
-            if not isinstance(index, int):
-                raise ValueError("Index must be an integer")
-            if index >= 0:
-                raise ValueError(f"Only negative indices are allowed, got {index}")
-
-            # Calculate target year
-            target_year = year + index  # index is negative, so this reduces the year
-
-            # Look up the value in the target year
-            if target_year not in value_matrix:
-                raise ValueError(f"Year {target_year} not found in value matrix")
-            if var_name not in value_matrix[target_year]:
-                raise ValueError(
-                    f"Variable '{var_name}' not found for year {target_year}"
-                )
-            value = value_matrix[target_year][var_name]
-            if value is None:
-                return 0.0
-            return value
+            return _validate_indexed_value(node, value_matrix, year)
         elif isinstance(node, ast.BinOp):  # Binary operations (+, -, *, /, etc.)
             left = _evaluate_node(node.left)
             right = _evaluate_node(node.right)
