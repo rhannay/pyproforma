@@ -1,6 +1,6 @@
 import pytest
 
-from pyproforma.models.model.formula_2 import evaluate
+from pyproforma.models.formula.formula_2 import evaluate
 
 
 class TestEvaluate:
