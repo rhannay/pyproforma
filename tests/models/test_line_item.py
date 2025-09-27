@@ -512,3 +512,85 @@ class TestValidateValuesKeys:
 
         error_msg = str(excinfo.value)
         assert "must be an integer (year)" in error_msg
+
+
+class TestLineItemCategoryValidation:
+    """Test validation of LineItem category parameter."""
+
+    def test_category_cannot_be_none(self):
+        """Test that LineItem raises ValueError when category is None."""
+        with pytest.raises(ValueError, match="LineItem category cannot be None"):
+            LineItem(name="test_item", category=None, values={2023: 100})
+
+    def test_category_must_be_string(self):
+        """Test that LineItem raises TypeError when category is not a string."""
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got int"
+        ):
+            LineItem(name="test_item", category=123, values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got list"
+        ):
+            LineItem(name="test_item", category=["income"], values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got dict"
+        ):
+            LineItem(name="test_item", category={"name": "income"}, values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got bool"
+        ):
+            LineItem(name="test_item", category=True, values={2023: 100})
+
+    def test_valid_string_categories_accepted(self):
+        """Test that valid string categories are accepted."""
+        # Normal category
+        item1 = LineItem(name="test1", category="income", values={2023: 100})
+        assert item1.category == "income"
+
+        # Empty string should be allowed (no longer validates whitespace)
+        item2 = LineItem(name="test2", category="", values={2023: 100})
+        assert item2.category == ""
+
+        # Whitespace category should be allowed
+        item3 = LineItem(name="test3", category="  spaces  ", values={2023: 100})
+        assert item3.category == "  spaces  "
+
+        # Special characters in category name
+        item4 = LineItem(name="test4", category="income-tax", values={2023: 100})
+        assert item4.category == "income-tax"
+
+        # Unicode characters
+        item5 = LineItem(name="test5", category="收入", values={2023: 100})
+        assert item5.category == "收入"
+
+    def test_default_category_still_works(self):
+        """Test that the default 'general' category works when no category provided."""
+        item = LineItem(name="test_item", values={2023: 100})
+        assert item.category == "general"
+
+    def test_category_validation_with_from_dict(self):
+        """Test that category validation works with from_dict method."""
+        # Valid string category
+        item1 = LineItem.from_dict(
+            {"name": "test1", "category": "income", "values": {2023: 100}}
+        )
+        assert item1.category == "income"
+
+        # None category should default to "general" in from_dict
+        item2 = LineItem.from_dict(
+            {"name": "test2", "category": None, "values": {2023: 100}}
+        )
+        assert item2.category == "general"
+
+        # Empty string category should default to "general" in from_dict
+        item3 = LineItem.from_dict(
+            {"name": "test3", "category": "", "values": {2023: 100}}
+        )
+        assert item3.category == "general"
+
+        # Missing category should default to "general" in from_dict
+        item4 = LineItem.from_dict({"name": "test4", "values": {2023: 100}})
+        assert item4.category == "general"

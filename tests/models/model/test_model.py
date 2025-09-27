@@ -21,21 +21,27 @@ class TestItemTypeValidation:
         assert len(li_set._category_definitions) == 1
         assert li_set._category_definitions[0].name == "revenue"
 
-    def test_item_type_missing(self):
-        with pytest.raises(ValueError) as excinfo:
-            Model(
-                line_items=[
-                    LineItem(
-                        name="item1",
-                        label="Item 1",
-                        category="expense",
-                        values={2020: 100.0},
-                    )
-                ],
-                categories=[Category(name="revenue")],
-                years=[2020],
-            )
-        assert "not defined category" in str(excinfo.value)
+    def test_item_type_auto_added(self):
+        # Test that missing categories from line items are automatically added
+        # to the provided categories
+        model = Model(
+            line_items=[
+                LineItem(
+                    name="item1",
+                    label="Item 1",
+                    category="expense",
+                    values={2020: 100.0},
+                )
+            ],
+            categories=[Category(name="revenue")],
+            years=[2020],
+        )
+
+        # Should have both the provided category and the auto-added one
+        assert len(model._category_definitions) == 2
+        category_names = [cat.name for cat in model._category_definitions]
+        assert "revenue" in category_names  # Provided category
+        assert "expense" in category_names  # Auto-added from line item
 
 
 class TestLineItemsWithFormulas:
@@ -344,9 +350,7 @@ class TestOtherMisc:
             sample_line_item_set._category_definitions, key=lambda x: x.name
         )
         assert sorted_1[0].name == "expense"
-        assert sorted_1[0].label == "expense"
         assert sorted_1[1].name == "revenue"
-        assert sorted_1[1].label == "revenue"
 
         with pytest.raises(KeyError) as excinfo:
             sample_line_item_set["item4", 2020]

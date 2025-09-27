@@ -173,8 +173,8 @@ class TestUnifiedUpdateNamespace:
         original_count = len(sample_model._line_item_definitions)
         with pytest.raises(ValueError):
             sample_model.update.add_line_item(
-                name="invalid_item",
-                category="nonexistent_category",  # This will fail
+                name="invalid name with spaces",  # This will fail validation
+                category="income",
                 values={2023: 1000},
             )
 

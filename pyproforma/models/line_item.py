@@ -80,6 +80,15 @@ class LineItem:
         validate_name(self.name)
         _validate_values_keys(self.values)
 
+        # Validate category
+        if self.category is None:
+            raise ValueError("LineItem category cannot be None")
+        if not isinstance(self.category, str):
+            raise TypeError(
+                f"LineItem category must be a string, "
+                f"got {type(self.category).__name__}"
+            )
+
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""
         return {

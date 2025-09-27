@@ -179,50 +179,82 @@ class Model(SerializationMixin):
         line_items: list[LineItem], categories: Union[list[Category], list[str]] = None
     ) -> list[Category]:
         """
-        Collect category definitions from provided categories or infer from line items.
+        Collect category definitions from provided categories and infer missing ones
+        from line items.
 
-        If categories are provided, use them as the base. Categories can be provided
-        as Category objects or as strings (which will be converted to Category objects
-        with name=label). If not provided, automatically infer categories from the
-        unique category names used in the line items. Multi-line items are no longer
-        added as category definitions - they are only captured in metadata.
+        Starts with categories provided in the args as the base. Then looks at
+        line_items to see if any have categories that aren't already included
+        in the base categories. If so, adds those missing categories as well.
 
         Args:
-            line_items (list[LineItem]): Line items to infer categories from
+            line_items (list[LineItem]): Line items to infer additional categories from
             categories (Union[list[Category], list[str]], optional): Explicit category
-                definitions as Category objects or strings
+                definitions as Category objects or strings to use as the base
 
         Returns:
             list[Category]: List of category definitions to use in the model
         """
-        if categories is None or len(categories) == 0:
-            # Auto-infer categories from line items when None or empty list
-            category_names = set([item.category for item in line_items])
-            category_definitions = []
-            for name in category_names:
-                category = Category(name=name, label=name)
-                category_definitions.append(category)
-        else:
-            # Handle provided categories - could be Category objects or strings
-            category_definitions = []
+        category_definitions = []
+        existing_category_names = set()
+
+        # Start with provided categories (if any)
+        if categories is not None and len(categories) > 0:
             for cat in categories:
                 if isinstance(cat, Category):
                     # Already a Category object, use as-is
                     category_definitions.append(cat)
+                    existing_category_names.add(cat.name)
                 elif isinstance(cat, str):
                     # String category name, convert to Category object
                     category = Category(name=cat, label=cat)
                     category_definitions.append(category)
+                    existing_category_names.add(cat)
                 else:
                     raise TypeError(
                         f"Categories must be Category objects or strings, "
                         f"got {type(cat)} for value: {cat}"
                     )
 
+        # # Look at line items for any categories not already included
+        # line_item_category_names = set([item.category for item in line_items])
+        # missing_category_names = line_item_category_names - existing_category_names
+
+        # # Add missing categories from line items
+        # for name in missing_category_names:
+        #     category = Category(name=name)
+        #     category_definitions.append(category)
+
         return category_definitions
+
+    def _add_missing_categories(self):
+        """
+        Add missing categories from line items to category definitions.
+
+        Looks at all the categories referenced in self._line_item_definitions and
+        if any category is missing in self._category_definitions, adds it with
+        Category(name=category_name).
+        """
+        # Get existing category names for quick lookup
+        existing_category_names = {cat.name for cat in self._category_definitions}
+
+        # Get all category names referenced by line items (excluding None)
+        line_item_category_names = {
+            item.category
+            for item in self._line_item_definitions
+            if item.category is not None
+        }
+
+        # Find categories that are referenced by line items but missing from definitions
+        missing_category_names = line_item_category_names - existing_category_names
+
+        # Add missing categories
+        for category_name in missing_category_names:
+            new_category = Category(name=category_name)
+            self._category_definitions.append(new_category)
 
     def _build_and_calculate(self):
         validate_years(self._years)
+        self._add_missing_categories()
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)

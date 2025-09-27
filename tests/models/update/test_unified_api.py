@@ -74,12 +74,28 @@ class TestUnifiedAddFunctionality:
                 name="revenue", category="income", values={2023: 1000}
             )
 
-    def test_add_line_item_invalid_category_fails(self, sample_model: Model):
-        """Test that adding a line item with invalid category fails."""
-        with pytest.raises(ValueError, match="Failed to add line item 'test'"):
-            sample_model.update.add_line_item(
-                name="test", category="nonexistent", values={2023: 1000}
-            )
+    def test_add_line_item_nonexistent_category_creates_category(
+        self, sample_model: Model
+    ):
+        """Test that adding a line item with nonexistent category creates category."""
+        initial_line_item_count = len(sample_model._line_item_definitions)
+        initial_category_count = len(sample_model._category_definitions)
+
+        # Add line item with nonexistent category - should succeed and create category
+        sample_model.update.add_line_item(
+            name="test", category="nonexistent", values={2023: 1000}
+        )
+
+        # Should have added both the line item and the category
+        assert len(sample_model._line_item_definitions) == initial_line_item_count + 1
+        assert len(sample_model._category_definitions) == initial_category_count + 1
+
+        # Verify the line item was added correctly
+        assert sample_model.value("test", 2023) == 1000
+
+        # Verify the category was created
+        category_names = [cat.name for cat in sample_model._category_definitions]
+        assert "nonexistent" in category_names
 
 
 class TestUnifiedUpdateFunctionality:
