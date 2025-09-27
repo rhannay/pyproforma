@@ -132,7 +132,7 @@ class TestCategoryResultsProperties:
         assert category_results.name == "sales_revenue"
 
         # Verify the line item's category was updated in the model
-        sales_item = model_for_property_tests.line_item_definition("sales")
+        sales_item = model_for_property_tests._line_item_definition("sales")
         assert sales_item.category == "sales_revenue"
 
         # Verify we can access the category with the new name

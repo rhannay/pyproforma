@@ -358,7 +358,7 @@ class UpdateNamespace:
         """  # noqa: E501
         # Find the existing line item
         try:
-            existing_item = self._model.line_item_definition(name)
+            existing_item = self._model._line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
 
@@ -777,7 +777,7 @@ class UpdateNamespace:
         """
         # Verify the line item exists
         try:
-            self._model.line_item_definition(name)
+            self._model._line_item_definition(name)
         except KeyError:
             raise KeyError(f"Line item '{name}' not found in model")
 

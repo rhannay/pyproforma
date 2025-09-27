@@ -289,8 +289,7 @@ class LineItemResults:
             raise KeyError(f"Year {year} not found in model years: {self.model.years}")
 
         # Get current values from the line item definition
-        line_item_def = self.model.line_item_definition(self.name)
-        current_values = line_item_def.values or {}
+        current_values = self.hardcoded_values
 
         # Add/update the value for this year
         updated_values = {**current_values, year: value}

@@ -1218,7 +1218,7 @@ class TestLineItemResultsValueSetting:
         assert updated_values == new_values
 
         # Verify the values are also updated in the underlying model
-        model_values = value_setting_model.line_item_definition("revenue").values
+        model_values = value_setting_model._line_item_definition("revenue").values
         assert model_values == new_values
 
         # Verify creating a new LineItemResults also has the updated values

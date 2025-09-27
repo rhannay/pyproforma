@@ -260,8 +260,8 @@ class Compare:
                     base_item_meta["source_type"] == "line_item"
                     and compare_item_meta["source_type"] == "line_item"
                 ):
-                    base_line_item = self.base_model.line_item_definition(item_name)
-                    compare_line_item = self.compare_model.line_item_definition(
+                    base_line_item = self.base_model._line_item_definition(item_name)
+                    compare_line_item = self.compare_model._line_item_definition(
                         item_name
                     )
 
