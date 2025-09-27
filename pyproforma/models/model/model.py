@@ -2,6 +2,7 @@ import copy
 from typing import Union
 
 from pyproforma.charts import Charts
+from pyproforma.constants import ValueFormat
 from pyproforma.models.multi_line_item import MultiLineItem
 
 # Namespace imports
@@ -1047,6 +1048,104 @@ class Model(SerializationMixin):
 
         # Check if this is the last item in the category list
         return items_in_category[-1].name == name
+
+    # ============================================================================
+    # CONVENIENCE METHODS
+    # ============================================================================
+
+    def add_line_item(
+        self,
+        line_item: LineItem | None = None,
+        *,
+        name: str | None = None,
+        category: str | None = None,
+        label: str | None = None,
+        values: dict[int, float] | None = None,
+        formula: str | None = None,
+        value_format: ValueFormat = "no_decimals",
+    ) -> None:
+        """
+        Add a new line item to the model.
+
+        This is a convenience method that directly calls the update namespace's add_line_item method.
+        It accepts either an already-created LineItem instance or the parameters to create a new one.
+
+        Args:
+            line_item (LineItem, optional): An already-created LineItem instance to add
+            name (str, optional): Name for new LineItem - required if line_item is None
+            category (str, optional): Category for new LineItem. Defaults to "general" if None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            values (dict[int, float], optional): Dictionary mapping years to explicit values
+            formula (str, optional): Formula string for calculating values
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the line item cannot be added (validation fails), or if both
+                line_item and name are provided, or if neither is provided
+
+        Examples:
+            >>> # Method 1: Pass a LineItem instance
+            >>> model.add_line_item(existing_line_item)
+
+            >>> # Method 2: Create from parameters
+            >>> model.add_line_item(name="revenue", category="income", values={2023: 100000})
+        """  # noqa: E501
+        self.update.add_line_item(
+            line_item=line_item,
+            name=name,
+            category=category,
+            label=label,
+            values=values,
+            formula=formula,
+            value_format=value_format,
+        )
+
+    def add_category(
+        self,
+        category: Category | None = None,
+        *,
+        name: str | None = None,
+        label: str | None = None,
+        total_label: str | None = None,
+        include_total: bool = True,
+    ) -> None:
+        """
+        Add a new category to the model.
+
+        This is a convenience method that directly calls the update namespace's add_category method.
+        It accepts either an already-created Category instance or the parameters to create a new one.
+
+        Args:
+            category (Category, optional): An already-created Category instance to add
+            name (str, optional): Name for new Category - required if category is None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
+            include_total (bool, optional): Whether to include a total for this category. Defaults to True
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the category cannot be added (validation fails), or if both
+                category and name are provided, or if neither is provided
+
+        Examples:
+            >>> # Method 1: Pass a Category instance
+            >>> model.add_category(existing_category)
+
+            >>> # Method 2: Create from parameters
+            >>> model.add_category(name="assets", label="Assets", include_total=True)
+        """  # noqa: E501
+        self.update.add_category(
+            category=category,
+            name=name,
+            label=label,
+            total_label=total_label,
+            include_total=include_total,
+        )
 
     # ============================================================================
     # SERIALIZATION METHODS
