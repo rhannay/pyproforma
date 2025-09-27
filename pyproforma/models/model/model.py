@@ -723,6 +723,20 @@ class Model(SerializationMixin):
 
         return line_item_names
 
+    @property
+    def category_names(self) -> list[str]:
+        """
+        Get list of all category names.
+
+        Returns:
+            list[str]: List of category names
+        """
+        return [category["name"] for category in self.category_metadata]
+
+    # ============================================================================
+    # METADATA & INTERNAL LOOKUPS
+    # ============================================================================
+
     def _line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
@@ -746,16 +760,6 @@ class Model(SerializationMixin):
             f"LineItem with name '{name}' not found. "
             f"Valid line item names are: {valid_line_items}"
         )
-
-    @property
-    def category_names(self) -> list[str]:
-        """
-        Get list of all category names.
-
-        Returns:
-            list[str]: List of category names
-        """
-        return [category["name"] for category in self.category_metadata]
 
     def _category_definition(self, name: str) -> Category:
         """
@@ -800,10 +804,6 @@ class Model(SerializationMixin):
             f"Constraint with name '{name}' not found. "
             f"Valid constraint names are: {valid_constraints}"
         )
-
-    # ============================================================================
-    # METADATA & INTERNAL LOOKUPS
-    # ============================================================================
 
     def _get_item_metadata(self, item_name: str) -> dict:
         """
