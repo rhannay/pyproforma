@@ -517,10 +517,10 @@ class TestValidateValuesKeys:
 class TestLineItemCategoryValidation:
     """Test validation of LineItem category parameter."""
 
-    def test_category_cannot_be_none(self):
-        """Test that LineItem raises ValueError when category is None."""
-        with pytest.raises(ValueError, match="LineItem category cannot be None"):
-            LineItem(name="test_item", category=None, values={2023: 100})
+    def test_category_none_defaults_to_general(self):
+        """Test that LineItem defaults category to 'general' when None is provided."""
+        item = LineItem(name="test_item", category=None, values={2023: 100})
+        assert item.category == "general"
 
     def test_category_must_be_string(self):
         """Test that LineItem raises TypeError when category is not a string."""
@@ -579,11 +579,15 @@ class TestLineItemCategoryValidation:
         )
         assert item1.category == "income"
 
-        # None category should default to "general" in from_dict
+        # None category should default to "general" in from_dict and direct construction
         item2 = LineItem.from_dict(
             {"name": "test2", "category": None, "values": {2023: 100}}
         )
         assert item2.category == "general"
+
+        # Also test direct construction with None
+        item2b = LineItem(name="test2b", category=None, values={2023: 100})
+        assert item2b.category == "general"
 
         # Empty string category should default to "general" in from_dict
         item3 = LineItem.from_dict(

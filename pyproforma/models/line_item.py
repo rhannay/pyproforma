@@ -30,7 +30,7 @@ class LineItem:
         name (str): Unique identifier for the line item. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
         category (str, optional): Category or type classification for the line item.
-            Defaults to "general" if not provided.
+            Defaults to "general" if None is provided.
         label (str, optional): Human-readable display name. Defaults to name if not provided.
         values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
             Values can be numbers or None. Defaults to empty dict if not provided.
@@ -70,7 +70,7 @@ class LineItem:
     """  # noqa: E501
 
     name: str
-    category: str = "general"
+    category: str = None
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
@@ -80,9 +80,11 @@ class LineItem:
         validate_name(self.name)
         _validate_values_keys(self.values)
 
-        # Validate category
+        # Handle None category by converting to "general"
         if self.category is None:
-            raise ValueError("LineItem category cannot be None")
+            self.category = "general"
+
+        # Validate category is a string
         if not isinstance(self.category, str):
             raise TypeError(
                 f"LineItem category must be a string, "
