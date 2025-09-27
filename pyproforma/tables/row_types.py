@@ -369,8 +369,7 @@ class ConstraintTargetRow(BaseRow):
 
     def generate_row(self, model: "Model") -> Row:
         """Create a row showing constraint target values across all years."""
-        # Get the constraint object
-        constraint = model.constraint_definition(self.constraint_name)
+
         constraint_results = model.constraint(self.constraint_name)
 
         # Use constraint name with "Target" suffix as label if no custom label provided
@@ -378,7 +377,10 @@ class ConstraintTargetRow(BaseRow):
 
         # Default to same format as the constraint's target line item if not specified
         value_format = (
-            self.value_format or model.line_item(constraint.line_item_name).value_format
+            self.value_format
+            or model.line_item(
+                constraint_results.line_item_name
+            ).value_format
         )
 
         # Create cells for this row

@@ -195,7 +195,6 @@ class Tables:
         Returns:
             Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.
         """  # noqa: E501
-        constraint = self._model.constraint_definition(constraint_name)
         constraint_results = self._model.constraint(constraint_name)
         rows = [
             rt.LabelRow(label=constraint_results.label, bold=True),
