@@ -2,11 +2,11 @@ import ast
 
 import pytest
 
-from pyproforma.models.formula.formula_2 import _validate_indexed_value, evaluate
+from pyproforma.models.formula import _validate_indexed_value, evaluate
 
 
 class TestEvaluate:
-    """Test cases for the evaluate function in formula_2.py"""
+    """Test cases for the evaluate function in formula.py"""
 
     # Sample value matrix for testing
     @pytest.fixture
