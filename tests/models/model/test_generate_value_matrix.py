@@ -169,21 +169,6 @@ class TestGenerateValueMatrix:
         error_msg = str(exc_info.value)
         assert "'unknown_variable' not found" in error_msg
 
-    def test_formula_with_invalid_variable_in_formula_calculation(
-        self, basic_categories
-    ):
-        """Test that the underlying formula calculation raises a clear error for unknown variables."""  # noqa: E501
-        from pyproforma.models.formula import calculate_formula
-
-        # Test the formula calculation directly to ensure it gives useful errors
-        value_matrix = {2023: {"revenue": 1000}}
-
-        with pytest.raises(ValueError) as exc_info:
-            calculate_formula("revenue - unknown_variable", value_matrix, 2023)
-
-        error_msg = str(exc_info.value)
-        assert "'unknown_variable' not found" in error_msg
-
     def test_circular_reference_simple(self, basic_categories):
         """Test detection of simple circular references."""
         # Create circular dependency: a depends on b, b depends on a
@@ -356,7 +341,7 @@ class TestGenerateValueMatrix:
         revenue = LineItem(name="revenue", category="revenue", values={2023: 150000})
         # Use the first defined name from the line item generator
         debt_names = debt_generator.defined_names
-        debt_payment_var = debt_names[0]  # Usually something like "loan.principal"
+        debt_payment_var = debt_names[0]  # Usually something like "loan_principal"
 
         net_income = LineItem(
             name="net_income",

@@ -8,7 +8,7 @@ across all years in a financial model.
 
 from typing import TYPE_CHECKING, Any, Dict, Union
 
-from ..formula import calculate_formula
+from ..formula import evaluate
 
 if TYPE_CHECKING:
     from pyproforma.models.multi_line_item import MultiLineItem
@@ -139,7 +139,7 @@ def calculate_line_item_value(
 
     # If no explicit value (missing key or None value), use formula
     if formula:
-        return calculate_formula(formula, interim_values_by_year, year)
+        return evaluate(formula, interim_values_by_year, year)
     # If no formula is defined, return None
     return None
 

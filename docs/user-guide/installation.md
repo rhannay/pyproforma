@@ -6,7 +6,6 @@ PyProforma requires Python 3.9 or higher and the following dependencies:
 
 - pandas >= 1.3.0
 - openpyxl >= 3.0.0
-- numexpr >= 2.7.0
 - jinja2 >= 3.0.0
 - plotly >= 5.0.0
 - PyYAML >= 6.0.0

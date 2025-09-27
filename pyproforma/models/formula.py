@@ -1,38 +1,40 @@
-import re
-from typing import Dict, List
+"""Formula evaluation and validation functions."""
 
-import numexpr as ne
+import ast
+import operator
+import re
+from typing import Dict, List, Union
 
 
 def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     """
-    Validate that all variable names in a formula are included in the provided list of valid names.  # noqa: E501
+    Validate that all variable names in a formula are included in the provided list of valid names.
 
-    This function checks both regular variable references (e.g., 'revenue') and time-offset  # noqa: E501
+    This function checks both regular variable references (e.g., 'revenue') and time-offset
     references (e.g., 'revenue[-1]') to ensure all variables exist in the model. It also
     validates that the line item name itself is in the valid names, checks for circular
-    references (i.e., a formula referencing its own name without a time offset or with [0]),  # noqa: E501
+    references (i.e., a formula referencing its own name without a time offset or with [0]),
     and ensures no positive time offsets are used (future references are not allowed).
 
     Args:
-        formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")  # noqa: E501
+        formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
         name (str): The name of the line item this formula belongs to
         valid_names (List[str]): List of valid variable names available in the model
 
     Raises:
-        ValueError: If the line item name is not in valid_names, if any variable referenced  # noqa: E501
+        ValueError: If the line item name is not in valid_names, if any variable referenced
                    in the formula is not found in the valid_names list, if the formula
-                   contains a circular reference to its own name without a time offset or  # noqa: E501
-                   with [0] offset, or if the formula contains positive time offsets (future references)  # noqa: E501
+                   contains a circular reference to its own name without a time offset or
+                   with [0] offset, or if the formula contains positive time offsets (future references)
 
     Examples:
-        >>> validate_formula("revenue - expenses", "profit", ["revenue", "expenses", "profit"])  # noqa: E501
+        >>> validate_formula("revenue - expenses", "profit", ["revenue", "expenses", "profit"])
         # No error - all variables found and no circular reference
         >>> validate_formula("revenue[-1] * 1.1", "revenue", ["revenue", "expenses"])
         # No error - negative time offset reference is allowed
         >>> validate_formula("profit + expenses", "profit", ["profit", "expenses"])
         # Raises ValueError - circular reference without time offset
-        >>> validate_formula("revenue[1] + expenses", "projection", ["revenue", "expenses", "projection"])  # noqa: E501
+        >>> validate_formula("revenue[1] + expenses", "projection", ["revenue", "expenses", "projection"])
         # Raises ValueError - positive time offset not allowed
     """  # noqa: E501
     # Check that the line item name is in valid_names
@@ -81,14 +83,19 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     # Add variables from offset patterns
     formula_vars.update(offset_var_names)
 
-    # Check for circular reference (formula referencing its own name without time offset or with [0] offset)  # noqa: E501
+    # Check for circular reference (formula referencing its own name without time
+    # offset or with [0] offset)
     if name in formula_vars:
         # Check if the name appears without a time offset
-        # We need to check if 'name' appears in the formula but not as part of name[offset]  # noqa: E501
+        # We need to check if 'name' appears in the formula but not as
+        # part of name[offset]
         pattern = rf"\b{re.escape(name)}\b(?!\[)"
         if re.search(pattern, formula):
             raise ValueError(
-                f"Circular reference detected: formula for '{name}' references itself without a time offset"  # noqa: E501
+                (
+                    f"Circular reference detected: formula for '{name}' "
+                    "references itself without a time offset"
+                )
             )
 
     # Check for circular reference with [0] time offset (which is equivalent to no offset)  # noqa: E501
@@ -120,67 +127,151 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         )
 
 
-def calculate_formula(
-    formula: str, value_matrix: Dict[int, Dict[str, float]], year: int
+def _validate_indexed_value(
+    node: ast.Subscript, value_matrix: Dict[int, Dict[str, float]], year: int
 ) -> float:
     """
-    Calculate the result of a formula string using variable values from a matrix.
-
-    This function evaluates mathematical formulas that can reference variables by name
-    and support time-based offsets (e.g., revenue[-1] for previous year's revenue).
+    Handle variable lookup with indexing like var[-1].
 
     Args:
-        formula (str): The formula string to evaluate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")  # noqa: E501
-        value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year and variable name  # noqa: E501
+        node: AST Subscript node representing indexed variable access
+        value_matrix: Matrix of values organized by year and variable name
+        year: Current year for calculation
+
+    Returns:
+        float: The value from the matrix (0.0 if None)
+
+    Raises:
+        ValueError: If indexing is invalid or variable/year not found
+    """
+    # Extract variable name and index
+    if not isinstance(node.value, ast.Name):
+        raise ValueError("Only simple variable indexing is supported")
+    var_name = node.value.id
+
+    # Extract index value - handle different AST structures
+    index = None
+    if isinstance(node.slice, ast.Constant):
+        # Direct constant: var[1]
+        index = node.slice.value
+    elif isinstance(node.slice, ast.UnaryOp) and isinstance(node.slice.op, ast.USub):
+        # Negative constant: var[-1]
+        if isinstance(node.slice.operand, ast.Constant):
+            index = -node.slice.operand.value
+        else:
+            raise ValueError("Only constant integer indices are supported")
+    else:
+        raise ValueError("Only constant integer indices are supported")
+
+    # Validate index
+    if not isinstance(index, int):
+        raise ValueError("Index must be an integer")
+    if index >= 0:
+        raise ValueError(f"Only negative indices are allowed, got {index}")
+
+    # Calculate target year
+    target_year = year + index  # index is negative, so this reduces the year
+
+    # Look up the value in the target year
+    if target_year not in value_matrix:
+        raise ValueError(f"Year {target_year} not found in value matrix")
+    if var_name not in value_matrix[target_year]:
+        raise ValueError(f"Variable '{var_name}' not found for year {target_year}")
+    value = value_matrix[target_year][var_name]
+    if value is None:
+        return 0.0
+    return value
+
+
+def evaluate(
+    formula: str, value_matrix: Dict[int, Dict[str, float]], year: int
+) -> Union[int, float]:
+    """
+    Safely evaluate a mathematical expression using AST with value matrix lookup.
+
+    Args:
+        formula (str): Mathematical expression to evaluate (e.g., "5 * 3 - 2 + 7 / 6")
+        value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year
+            and variable name. None values are treated as 0.0.
         year (int): The current year for which to evaluate the formula
 
     Returns:
-        float: The calculated result of the formula
+        Union[int, float]: The result of the mathematical expression
 
     Raises:
-        ValueError: If a referenced variable or year is not found in the value matrix
+        ValueError: If the formula contains unsupported operations, syntax,
+            or variable references
+        SyntaxError: If the formula has invalid syntax
 
     Examples:
-        >>> matrix = {2023: {'revenue': 1000, 'expenses': 800}, 2024: {'revenue': 1100, 'expenses': 850}}  # noqa: E501
-        >>> calculate_formula("revenue - expenses", matrix, 2024)
-        250.0
-        >>> calculate_formula("revenue[-1] * 1.1", matrix, 2024)  # Previous year's revenue * 1.1  # noqa: E501
-        1100.0
-    """  # noqa: E501
-    # strip whitespace from the formula
-    formula = formula.strip()
+        >>> matrix = {2024: {'revenue': 1000.0, 'tax_rate': 0.1}}
+        >>> evaluate("5 * 3 - 2 + 7 / 6", matrix, 2024)
+        14.166666666666666
+        >>> evaluate("revenue * tax_rate", matrix, 2024)
+        100.0
+    """
+    # Define supported operations
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
 
-    # Helper to replace var[-N] with the correct value
-    def replace_offset(match):
-        var = match.group(1)
-        offset = int(match.group(2))
-        target_year = year + offset
-        # if year is missing, raise error
-        if target_year not in value_matrix:
-            raise ValueError(f"Year {target_year} not found in values.")
-        if var not in value_matrix[target_year]:
-            raise ValueError(f"Variable '{var}' not found for year {target_year}.")
-        value = value_matrix[target_year][var]
-        if value is None:
-            raise ValueError(
-                f"Variable '{var}' has None value for year {target_year}. Cannot use None values in formulas."  # noqa: E501
-            )
-        return str(value)
-
-    # Replace all occurrences like revenue[-1], cost[-2], etc.
-    formula = re.sub(r"([\w.]+)\[(-?\d+)\]", replace_offset, formula)
-
-    # Replace variables like 'revenue' with their value for the current year
-    for var in re.findall(r"\b[\w.]+\b", formula):
-        if var.isidentifier() and var not in value_matrix.get(year, {}):
-            raise ValueError(f"Variable '{var}' not found for year {year}.")
-        if var in value_matrix.get(year, {}):
-            value = value_matrix[year][var]
+    def _evaluate_node(node):
+        """Recursively evaluate AST nodes."""
+        if isinstance(node, ast.Constant):  # Numbers and other constants
+            return node.value
+        elif isinstance(node, ast.Name):  # Variable names (no indexing)
+            var_name = node.id
+            # Look up the value in the current year
+            if year not in value_matrix:
+                raise ValueError(f"Year {year} not found in value matrix")
+            if var_name not in value_matrix[year]:
+                raise ValueError(f"Variable '{var_name}' not found for year {year}")
+            value = value_matrix[year][var_name]
             if value is None:
+                return 0.0
+            return value
+        elif isinstance(node, ast.Subscript):  # Variable with indexing like var[-1]
+            return _validate_indexed_value(node, value_matrix, year)
+        elif isinstance(node, ast.BinOp):  # Binary operations (+, -, *, /, etc.)
+            left = _evaluate_node(node.left)
+            right = _evaluate_node(node.right)
+            op = operators.get(type(node.op))
+            if op is None:
                 raise ValueError(
-                    f"Variable '{var}' has None value for year {year}. Cannot use None values in formulas."  # noqa: E501
+                    f"Unsupported binary operation: {type(node.op).__name__}"
                 )
-            formula = formula.replace(var, str(value))
+            return op(left, right)
+        elif isinstance(node, ast.UnaryOp):  # Unary operations (+, -)
+            operand = _evaluate_node(node.operand)
+            op = operators.get(type(node.op))
+            if op is None:
+                raise ValueError(
+                    f"Unsupported unary operation: {type(node.op).__name__}"
+                )
+            return op(operand)
+        else:
+            raise ValueError(f"Unsupported AST node type: {type(node).__name__}")
 
-    # Evaluate the formula using numexpr
-    return float(ne.evaluate(formula))
+    try:
+        # Parse the formula into an AST (strip whitespace first)
+        tree = ast.parse(formula.strip(), mode="eval")
+
+        # Evaluate the AST
+        result = _evaluate_node(tree.body)
+
+        return result
+
+    except SyntaxError as e:
+        raise SyntaxError(f"Invalid formula syntax: {formula}") from e
+    except ZeroDivisionError as e:
+        raise ZeroDivisionError("Division by zero in formula") from e
+    except Exception as e:
+        raise ValueError(f"Error evaluating formula '{formula}': {str(e)}") from e

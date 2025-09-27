@@ -281,7 +281,7 @@ class TestLineItemNoneValues:
         assert model["total_revenue", 2021] == 275.0
 
     def test_formula_error_with_none_values(self):
-        """Test that formulas raise proper errors when referencing None values."""
+        """Test that formulas treat None values as zero."""
         from pyproforma import Category, Model
 
         base_item = LineItem(
@@ -289,41 +289,18 @@ class TestLineItemNoneValues:
         )
         calc_item = LineItem(name="calculated", category="test", formula="base * 2")
 
-        # Model creation should work for years without None formula references
+        # Model creation should work for all years now that None is treated as 0
         model = Model(
             line_items=[base_item, calc_item],
             categories=[Category(name="test")],
-            years=[2020],  # Only year that works
+            years=[2020, 2021],  # Both years should work now
         )
 
         # This should work fine
-        assert model["calculated", 2020] == 200.0
+        assert model["calculated", 2020] == 200.0  # 100.0 * 2
 
-        # But creating a model that includes a year with None formula reference should fail  # noqa: E501
-        with pytest.raises(ValueError) as excinfo:
-            Model(
-                line_items=[base_item, calc_item],
-                categories=[Category(name="test")],
-                years=[2020, 2021],  # 2021 will fail due to None in formula
-            )
-
-        error_msg = str(excinfo.value)
-        assert "has None value for year 2021" in error_msg
-        assert "Cannot use None values in formulas" in error_msg
-
-    def test_formula_error_with_offset_none_values(self):
-        """Test formula errors when offset references point to None values."""
-        from pyproforma.models.formula import calculate_formula
-
-        # Test offset reference to None value
-        value_matrix = {2019: {"revenue": None}, 2020: {"revenue": 100.0}}
-
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue[-1] * 1.1", value_matrix, 2020)
-
-        error_msg = str(excinfo.value)
-        assert "has None value for year 2019" in error_msg
-        assert "Cannot use None values in formulas" in error_msg
+        # This should now work too, treating None as 0
+        assert model["calculated", 2021] == 0.0  # None (treated as 0) * 2 = 0
 
     def test_serialization_preserves_none_values(self):
         """Test that to_dict and from_dict preserve None values correctly."""

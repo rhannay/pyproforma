@@ -133,25 +133,27 @@ class TestCalculateLineItemValue:
         )
         assert result == 2.0  # 1.0 * 2
 
-    def test_calculate_line_item_value_none_in_formula_raises_error(self):
-        """Test that None values in formulas raise appropriate errors."""
-        from pyproforma.models.formula import calculate_formula
+    def test_calculate_line_item_value_none_in_formula_treated_as_zero(self):
+        """Test that None values in formulas are treated as zero."""
+        from pyproforma.models.formula import evaluate
 
-        # Test with None value in value matrix
+        # Test with None value in value matrix - should treat None as 0
         value_matrix = {2023: {"revenue": None, "costs": 100}}
 
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue + costs", value_matrix, 2023)
-        assert "has None value for year 2023" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
+        result = evaluate("revenue + costs", value_matrix, 2023)
+        assert result == 100  # None (treated as 0) + 100 = 100
 
-        # Test with offset reference to None value
+        # Test with offset reference to None value - should treat None as 0
         value_matrix = {2022: {"revenue": None}, 2023: {"revenue": 100, "costs": 50}}
 
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue[-1] + costs", value_matrix, 2023)
-        assert "has None value for year 2022" in str(excinfo.value)
-        assert "Cannot use None values in formulas" in str(excinfo.value)
+        result = evaluate("revenue[-1] + costs", value_matrix, 2023)
+        assert result == 50  # None (treated as 0) + 50 = 50
+
+        # Test multiple None values
+        value_matrix = {2023: {"revenue": None, "costs": None, "other": 25}}
+
+        result = evaluate("revenue + costs + other", value_matrix, 2023)
+        assert result == 25  # 0 + 0 + 25 = 25
 
 
 class TestCalculateLineItemValueValidation:
