@@ -82,7 +82,7 @@ class TestUnifiedUpdateNamespace:
 
     def test_add_line_item_functionality(self, sample_model: Model):
         """Test that add_line_item works correctly."""
-        initial_count = len(sample_model.line_item_definitions)
+        initial_count = len(sample_model._line_item_definitions)
 
         sample_model.update.add_line_item(
             name="rent",
@@ -90,7 +90,7 @@ class TestUnifiedUpdateNamespace:
             values={2023: 24000, 2024: 25000, 2025: 26000},
         )
 
-        assert len(sample_model.line_item_definitions) == initial_count + 1
+        assert len(sample_model._line_item_definitions) == initial_count + 1
         assert sample_model.value("rent", 2023) == 24000
 
     def test_update_category_functionality(self, sample_model: Model):
@@ -120,13 +120,13 @@ class TestUnifiedUpdateNamespace:
 
     def test_delete_line_item_functionality(self, sample_model: Model):
         """Test that delete_line_item works correctly."""
-        initial_count = len(sample_model.line_item_definitions)
+        initial_count = len(sample_model._line_item_definitions)
 
         sample_model.update.delete_line_item("salary")
 
-        assert len(sample_model.line_item_definitions) == initial_count - 1
+        assert len(sample_model._line_item_definitions) == initial_count - 1
         assert "salary" not in [
-            item.name for item in sample_model.line_item_definitions
+            item.name for item in sample_model._line_item_definitions
         ]
 
     def test_delete_category_with_no_line_items(self, sample_model: Model):
@@ -170,7 +170,7 @@ class TestUnifiedUpdateNamespace:
         )
 
         # This should fail validation and not affect the original model
-        original_count = len(sample_model.line_item_definitions)
+        original_count = len(sample_model._line_item_definitions)
         with pytest.raises(ValueError):
             sample_model.update.add_line_item(
                 name="invalid_item",
@@ -179,4 +179,4 @@ class TestUnifiedUpdateNamespace:
             )
 
         # Original model should be unchanged
-        assert len(sample_model.line_item_definitions) == original_count
+        assert len(sample_model._line_item_definitions) == original_count

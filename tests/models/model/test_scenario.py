@@ -36,7 +36,7 @@ def basic_model() -> Model:
 def test_fixture_loads(basic_model: Model):
     """Test that the basic model fixture loads correctly."""
     assert isinstance(basic_model, Model)
-    assert len(basic_model.line_item_definitions) == 4
+    assert len(basic_model._line_item_definitions) == 4
     assert basic_model["revenue", 2023] == 100
     assert basic_model["costs", 2023] == 70
     assert basic_model["profit", 2023] == 30
@@ -273,8 +273,8 @@ def test_scenario_preserves_model_structure(basic_model):
     assert len(scenario_model._category_definitions) == len(
         basic_model._category_definitions
     )
-    assert len(scenario_model.line_item_definitions) == len(
-        basic_model.line_item_definitions
+    assert len(scenario_model._line_item_definitions) == len(
+        basic_model._line_item_definitions
     )
     assert scenario_model.years == basic_model.years
     assert len(scenario_model.constraints) == len(basic_model.constraints)

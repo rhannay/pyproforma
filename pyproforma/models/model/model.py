@@ -723,16 +723,6 @@ class Model(SerializationMixin):
 
         return line_item_names
 
-    @property
-    def line_item_definitions(self) -> tuple[LineItem, ...]:
-        """
-        Read-only access to line item definitions.
-
-        Returns:
-            tuple[LineItem, ...]: Immutable tuple of line item definitions
-        """
-        return self._line_item_definitions
-
     def line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.

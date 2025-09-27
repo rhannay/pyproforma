@@ -168,12 +168,13 @@ class TestUnifiedDeleteFunctionality:
 
     def test_delete_line_item_basic(self, sample_model_with_generators: Model):
         """Test deleting a line item."""
-        initial_count = len(sample_model_with_generators.line_item_definitions)
+        initial_count = len(sample_model_with_generators._line_item_definitions)
 
         sample_model_with_generators.update.delete_line_item("revenue")
 
         assert (
-            len(sample_model_with_generators.line_item_definitions) == initial_count - 1
+            len(sample_model_with_generators._line_item_definitions)
+            == initial_count - 1
         )
 
     def test_delete_category_unused(self):

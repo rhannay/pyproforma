@@ -882,7 +882,7 @@ class TestLineItemResultsDeleteMethod:
     """Test the delete method of LineItemResults."""
 
     @pytest.fixture
-    def delete_test_model(self):
+    def delete_test_model(self) -> Model:
         """Create a model for testing delete functionality."""
         line_items = [
             LineItem(
@@ -915,7 +915,7 @@ class TestLineItemResultsDeleteMethod:
     def test_delete_method_successfully_deletes_line_item(self, delete_test_model):
         """Test that delete method successfully removes line item from model."""
         # Get initial count
-        initial_count = len(delete_test_model.line_item_definitions)
+        initial_count = len(delete_test_model._line_item_definitions)
 
         # Delete profit first (it references other items, so delete it first)
         profit_item = delete_test_model["profit"]
@@ -925,15 +925,15 @@ class TestLineItemResultsDeleteMethod:
         revenue_item = delete_test_model["revenue"]
 
         # Verify the item exists
-        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        item_names = [item.name for item in delete_test_model._line_item_definitions]
         assert "revenue" in item_names
 
         # Delete the item
         revenue_item.delete()
 
         # Verify the item was deleted
-        assert len(delete_test_model.line_item_definitions) == initial_count - 2
-        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert len(delete_test_model._line_item_definitions) == initial_count - 2
+        item_names = [item.name for item in delete_test_model._line_item_definitions]
         assert "revenue" not in item_names
 
     @pytest.fixture
@@ -1029,13 +1029,13 @@ class TestLineItemResultsDeleteMethod:
 
         # Now we can delete expenses since it's no longer referenced
         expenses_item = LineItemResults(delete_test_model, "expenses")
-        initial_count = len(delete_test_model.line_item_definitions)
+        initial_count = len(delete_test_model._line_item_definitions)
 
         expenses_item.delete()
 
         # Verify deletion was successful
-        assert len(delete_test_model.line_item_definitions) == initial_count - 1
-        item_names = [item.name for item in delete_test_model.line_item_definitions]
+        assert len(delete_test_model._line_item_definitions) == initial_count - 1
+        item_names = [item.name for item in delete_test_model._line_item_definitions]
         assert "expenses" not in item_names
 
 

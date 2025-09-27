@@ -36,7 +36,7 @@ def basic_model() -> Model:
 def test_fixture_loads(basic_model: Model):
     """Test that the basic model fixture loads correctly."""
     assert isinstance(basic_model, Model)
-    assert len(basic_model.line_item_definitions) == 4
+    assert len(basic_model._line_item_definitions) == 4
     assert basic_model["revenue", 2023] == 100
     assert basic_model["costs", 2023] == 70
     assert basic_model["profit", 2023] == 30

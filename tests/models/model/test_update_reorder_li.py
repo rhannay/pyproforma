@@ -49,7 +49,7 @@ class TestReorderLineItems:
     def test_successful_reordering(self, sample_model):
         """Test successful reordering of line items."""
         # Get initial order
-        initial_order = [item.name for item in sample_model.line_item_definitions]
+        initial_order = [item.name for item in sample_model._line_item_definitions]
         assert initial_order == ["revenue", "expenses", "profit", "taxes"]
 
         # Reorder line items
@@ -57,7 +57,7 @@ class TestReorderLineItems:
         sample_model.update.reorder_line_items(new_order)
 
         # Verify new order
-        actual_order = [item.name for item in sample_model.line_item_definitions]
+        actual_order = [item.name for item in sample_model._line_item_definitions]
         assert actual_order == new_order
 
         # Verify model still calculates correctly
@@ -86,13 +86,13 @@ class TestReorderLineItems:
 
     def test_no_change_when_order_already_correct(self, sample_model):
         """Test that no changes are made when order is already correct."""
-        initial_order = [item.name for item in sample_model.line_item_definitions]
+        initial_order = [item.name for item in sample_model._line_item_definitions]
 
         # "Reorder" to the same order
         sample_model.update.reorder_line_items(initial_order)
 
         # Verify order is unchanged
-        final_order = [item.name for item in sample_model.line_item_definitions]
+        final_order = [item.name for item in sample_model._line_item_definitions]
         assert final_order == initial_order
 
     def test_missing_line_items_error(self, sample_model):
@@ -164,7 +164,7 @@ class TestReorderLineItems:
         empty_model.update.reorder_line_items([])
 
         # Verify still empty
-        assert len(empty_model.line_item_definitions) == 0
+        assert len(empty_model._line_item_definitions) == 0
 
     def test_reordering_single_item_model(self):
         """Test reordering on a model with only one line item."""
@@ -175,8 +175,8 @@ class TestReorderLineItems:
         model.update.reorder_line_items(["single_item"])
 
         # Verify unchanged
-        assert len(model.line_item_definitions) == 1
-        assert model.line_item_definitions[0].name == "single_item"
+        assert len(model._line_item_definitions) == 1
+        assert model._line_item_definitions[0].name == "single_item"
 
     def test_error_during_recalculation_handling(self, sample_model):
         """Test that the method handles errors properly during reordering."""
@@ -187,7 +187,7 @@ class TestReorderLineItems:
                 ["profit", "revenue", "expenses", "taxes"]
             )
             # This should succeed, so let's verify the order changed
-            final_order = [item.name for item in sample_model.line_item_definitions]
+            final_order = [item.name for item in sample_model._line_item_definitions]
             assert final_order == ["profit", "revenue", "expenses", "taxes"]
         except Exception:
             # If any error occurs, that's also valid behavior for edge cases
@@ -212,7 +212,7 @@ class TestReorderLineItems:
         model.update.reorder_line_items(reversed_names)
 
         # Verify the order
-        actual_order = [item.name for item in model.line_item_definitions]
+        actual_order = [item.name for item in model._line_item_definitions]
         assert actual_order == reversed_names
 
     def test_reordering_with_formulas_dependency(self, sample_model):
@@ -231,5 +231,5 @@ class TestReorderLineItems:
         assert sample_model.value("taxes", 2023) == initial_taxes
 
         # Verify the physical order changed
-        actual_order = [item.name for item in sample_model.line_item_definitions]
+        actual_order = [item.name for item in sample_model._line_item_definitions]
         assert actual_order == new_order
