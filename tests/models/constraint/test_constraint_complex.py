@@ -15,7 +15,7 @@ class TestConstraintsWithComplexModels:
             LineItem(
                 name="debt_service",
                 category="expenses",
-                formula="debt.principal + debt.interest",
+                formula="debt_principal + debt_interest",
             ),
         ]
 
@@ -58,7 +58,7 @@ class TestConstraintsWithComplexModels:
 
         # Test that values can be accessed
         assert model.value("revenue", 2023) == 100000
-        assert model.value("debt.principal", 2023) > 0
+        assert model.value("debt_principal", 2023) > 0
         assert model.value("debt_service", 2023) > 0
 
         # Test that constraints are preserved

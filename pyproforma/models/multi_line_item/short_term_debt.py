@@ -107,10 +107,10 @@ class ShortTermDebt(MultiLineItem):
                     )
 
         # Define the line item names
-        self._debt_outstanding_name = f"{self.name}.debt_outstanding"
+        self._debt_outstanding_name = f"{self.name}_debt_outstanding"
         self._draw_name = f"{self.name}.draw"
-        self._principal_name = f"{self.name}.principal"
-        self._interest_name = f"{self.name}.interest"
+        self._principal_name = f"{self.name}_principal"
+        self._interest_name = f"{self.name}_interest"
 
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "ShortTermDebt":

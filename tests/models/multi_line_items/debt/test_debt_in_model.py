@@ -52,9 +52,9 @@ class TestDebtParamsFromValueMatrix:
 
         # Test first year (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(model.value("test_from_matrix.principal", 2020), p1)
-        assert _is_close(model.value("test_from_matrix.interest", 2020), i1)
-        assert model.value("test_from_matrix.bond_proceeds", 2020) == 1_000_000
+        assert _is_close(model.value("test_from_matrix_principal", 2020), p1)
+        assert _is_close(model.value("test_from_matrix_interest", 2020), i1)
+        assert model.value("test_from_matrix_bond_proceeds", 2020) == 1_000_000
 
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
@@ -62,9 +62,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(model.value("test_from_matrix.principal", 2021), p1 + p2)
-        assert _is_close(model.value("test_from_matrix.interest", 2021), i1 + i2)
-        assert model.value("test_from_matrix.bond_proceeds", 2021) == 1_500_000
+        assert _is_close(model.value("test_from_matrix_principal", 2021), p1 + p2)
+        assert _is_close(model.value("test_from_matrix_interest", 2021), i1 + i2)
+        assert model.value("test_from_matrix_bond_proceeds", 2021) == 1_500_000
 
         # Test third year (2022) - both previous issuances exist but no new bond proceeds  # noqa: E501
         # Values from first issuance (2020)
@@ -72,9 +72,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
         # Total values should be sum of both issuances, with no new bond proceeds
-        assert _is_close(model.value("test_from_matrix.principal", 2022), p1 + p2)
-        assert _is_close(model.value("test_from_matrix.interest", 2022), i1 + i2)
-        assert model.value("test_from_matrix.bond_proceeds", 2022) == 0
+        assert _is_close(model.value("test_from_matrix_principal", 2022), p1 + p2)
+        assert _is_close(model.value("test_from_matrix_interest", 2022), i1 + i2)
+        assert model.value("test_from_matrix_bond_proceeds", 2022) == 0
 
     def test_all_debt_params_from_value_matrix(self):
         """
@@ -136,9 +136,9 @@ class TestDebtParamsFromValueMatrix:
 
         # Test first year (2020) - only first issuance exists
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(model.value("test_all_params.principal", 2020), p1)
-        assert _is_close(model.value("test_all_params.interest", 2020), i1)
-        assert model.value("test_all_params.bond_proceeds", 2020) == 1_000_000
+        assert _is_close(model.value("test_all_params_principal", 2020), p1)
+        assert _is_close(model.value("test_all_params_interest", 2020), i1)
+        assert model.value("test_all_params_bond_proceeds", 2020) == 1_000_000
 
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
@@ -146,9 +146,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021) - note the different rate and term
         p2, i2 = _get_p_i(i=0.06, p=1_500_000, t=25, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(model.value("test_all_params.principal", 2021), p1 + p2)
-        assert _is_close(model.value("test_all_params.interest", 2021), i1 + i2)
-        assert model.value("test_all_params.bond_proceeds", 2021) == 1_500_000
+        assert _is_close(model.value("test_all_params_principal", 2021), p1 + p2)
+        assert _is_close(model.value("test_all_params_interest", 2021), i1 + i2)
+        assert model.value("test_all_params_bond_proceeds", 2021) == 1_500_000
 
         # Test third year (2022) - both previous issuances exist but no new bond proceeds  # noqa: E501
         # Values from first issuance (2020)
@@ -156,9 +156,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.06, p=1_500_000, t=25, sy=2021, y=2022)
         # Total values should be sum of both issuances, with no new bond proceeds
-        assert _is_close(model.value("test_all_params.principal", 2022), p1 + p2)
-        assert _is_close(model.value("test_all_params.interest", 2022), i1 + i2)
-        assert model.value("test_all_params.bond_proceeds", 2022) == 0
+        assert _is_close(model.value("test_all_params_principal", 2022), p1 + p2)
+        assert _is_close(model.value("test_all_params_interest", 2022), i1 + i2)
+        assert model.value("test_all_params_bond_proceeds", 2022) == 0
 
     def test_debt_par_amounts_from_value_matrix_multi_layer(self):
         """
@@ -237,9 +237,9 @@ class TestDebtParamsFromValueMatrix:
 
         # Test first year (2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(model.value("test_from_matrix.principal", 2020), p1)
-        assert _is_close(model.value("test_from_matrix.interest", 2020), i1)
-        assert model.value("test_from_matrix.bond_proceeds", 2020) == 1_000_000
+        assert _is_close(model.value("test_from_matrix_principal", 2020), p1)
+        assert _is_close(model.value("test_from_matrix_interest", 2020), i1)
+        assert model.value("test_from_matrix_bond_proceeds", 2020) == 1_000_000
 
         # Test second year (2021) - both issuances exist
         # Values from first issuance (2020)
@@ -247,9 +247,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(model.value("test_from_matrix.principal", 2021), p1 + p2)
-        assert _is_close(model.value("test_from_matrix.interest", 2021), i1 + i2)
-        assert model.value("test_from_matrix.bond_proceeds", 2021) == 1_500_000
+        assert _is_close(model.value("test_from_matrix_principal", 2021), p1 + p2)
+        assert _is_close(model.value("test_from_matrix_interest", 2021), i1 + i2)
+        assert model.value("test_from_matrix_bond_proceeds", 2021) == 1_500_000
 
         # Test third year (2022) - both previous issuances exist but no new bond proceeds  # noqa: E501
         # Values from first issuance (2020)
@@ -257,6 +257,6 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
         # Total values should be sum of both issuances, with no new bond proceeds
-        assert _is_close(model.value("test_from_matrix.principal", 2022), p1 + p2)
-        assert _is_close(model.value("test_from_matrix.interest", 2022), i1 + i2)
-        assert model.value("test_from_matrix.bond_proceeds", 2022) == 0
+        assert _is_close(model.value("test_from_matrix_principal", 2022), p1 + p2)
+        assert _is_close(model.value("test_from_matrix_interest", 2022), i1 + i2)
+        assert model.value("test_from_matrix_bond_proceeds", 2022) == 0

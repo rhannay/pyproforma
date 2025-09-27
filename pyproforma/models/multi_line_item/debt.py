@@ -51,10 +51,10 @@ class Debt(MultiLineItem):
         self._term = term
 
         # Gather the defined names
-        self._principal_name = f"{self.name}.principal"
-        self._interest_name = f"{self.name}.interest"
-        self._bond_proceeds_name = f"{self.name}.bond_proceeds"
-        self._debt_outstanding_name = f"{self.name}.debt_outstanding"
+        self._principal_name = f"{self.name}_principal"
+        self._interest_name = f"{self.name}_interest"
+        self._bond_proceeds_name = f"{self.name}_bond_proceeds"
+        self._debt_outstanding_name = f"{self.name}_debt_outstanding"
 
         self.ds_schedules = {}
 

@@ -356,7 +356,7 @@ class TestGenerateValueMatrix:
         revenue = LineItem(name="revenue", category="revenue", values={2023: 150000})
         # Use the first defined name from the line item generator
         debt_names = debt_generator.defined_names
-        debt_payment_var = debt_names[0]  # Usually something like "loan.principal"
+        debt_payment_var = debt_names[0]  # Usually something like "loan_principal"
 
         net_income = LineItem(
             name="net_income",
