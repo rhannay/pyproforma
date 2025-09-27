@@ -70,13 +70,13 @@ class TestUnifiedUpdateNamespace:
 
     def test_add_category_functionality(self, sample_model: Model):
         """Test that add_category works correctly."""
-        initial_count = len(sample_model.category_definitions)
+        initial_count = len(sample_model._category_definitions)
 
         sample_model.update.add_category(name="assets", label="Assets")
 
-        assert len(sample_model.category_definitions) == initial_count + 1
+        assert len(sample_model._category_definitions) == initial_count + 1
         new_category = next(
-            cat for cat in sample_model.category_definitions if cat.name == "assets"
+            cat for cat in sample_model._category_definitions if cat.name == "assets"
         )
         assert new_category.label == "Assets"
 
@@ -98,7 +98,7 @@ class TestUnifiedUpdateNamespace:
         sample_model.update.update_category("income", label="Revenue Streams")
 
         category = next(
-            cat for cat in sample_model.category_definitions if cat.name == "income"
+            cat for cat in sample_model._category_definitions if cat.name == "income"
         )
         assert category.label == "Revenue Streams"
 
@@ -133,12 +133,12 @@ class TestUnifiedUpdateNamespace:
         """Test that delete_category works when no line items reference it."""
         # First add a category with no line items
         sample_model.update.add_category(name="unused", label="Unused Category")
-        initial_count = len(sample_model.category_definitions)
+        initial_count = len(sample_model._category_definitions)
 
         sample_model.update.delete_category("unused")
 
-        assert len(sample_model.category_definitions) == initial_count - 1
-        assert "unused" not in [cat.name for cat in sample_model.category_definitions]
+        assert len(sample_model._category_definitions) == initial_count - 1
+        assert "unused" not in [cat.name for cat in sample_model._category_definitions]
 
     def test_delete_category_with_line_items_fails(self, sample_model: Model):
         """Test that delete_category fails when line items reference it."""

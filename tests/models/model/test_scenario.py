@@ -270,8 +270,8 @@ def test_scenario_preserves_model_structure(basic_model):
     )
 
     # Check that model structure is preserved
-    assert len(scenario_model.category_definitions) == len(
-        basic_model.category_definitions
+    assert len(scenario_model._category_definitions) == len(
+        basic_model._category_definitions
     )
     assert len(scenario_model.line_item_definitions) == len(
         basic_model.line_item_definitions

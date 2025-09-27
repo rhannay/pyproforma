@@ -767,16 +767,6 @@ class Model(SerializationMixin):
         """
         return [category["name"] for category in self.category_metadata]
 
-    @property
-    def category_definitions(self) -> tuple[Category, ...]:
-        """
-        Read-only access to category definitions.
-
-        Returns:
-            tuple[Category, ...]: Immutable tuple of category definitions
-        """
-        return self._category_definitions
-
     def category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.

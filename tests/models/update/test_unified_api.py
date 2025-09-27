@@ -24,12 +24,12 @@ class TestUnifiedAddFunctionality:
 
     def test_add_category_basic(self, sample_model: Model):
         """Test adding a basic category."""
-        initial_count = len(sample_model.category_definitions)
+        initial_count = len(sample_model._category_definitions)
 
         sample_model.update.add_category(name="expenses")
 
-        assert len(sample_model.category_definitions) == initial_count + 1
-        new_category = sample_model.category_definitions[-1]
+        assert len(sample_model._category_definitions) == initial_count + 1
+        new_category = sample_model._category_definitions[-1]
         assert new_category.name == "expenses"
 
     def test_add_category_with_label(self, sample_model: Model):
@@ -37,7 +37,7 @@ class TestUnifiedAddFunctionality:
         sample_model.update.add_category(name="assets", label="Asset Accounts")
 
         new_category = next(
-            cat for cat in sample_model.category_definitions if cat.name == "assets"
+            cat for cat in sample_model._category_definitions if cat.name == "assets"
         )
         assert new_category.label == "Asset Accounts"
 
@@ -119,7 +119,7 @@ class TestUnifiedUpdateFunctionality:
 
         category = next(
             cat
-            for cat in sample_model_with_categories.category_definitions
+            for cat in sample_model_with_categories._category_definitions
             if cat.name == "income"
         )
         assert category.label == "Revenue Streams"
@@ -186,11 +186,11 @@ class TestUnifiedDeleteFunctionality:
         ]
         model = Model(line_items=[revenue], years=[2023], categories=categories)
 
-        initial_count = len(model.category_definitions)
+        initial_count = len(model._category_definitions)
 
         model.update.delete_category("unused")
 
-        assert len(model.category_definitions) == initial_count - 1
+        assert len(model._category_definitions) == initial_count - 1
 
     def test_delete_category_used_by_line_items_fails(
         self, sample_model_with_generators: Model

@@ -189,7 +189,7 @@ class TestCategoryResultsProperties:
         # Verify the category definition was updated in the model
         category_def = next(
             cat
-            for cat in model_for_property_tests.category_definitions
+            for cat in model_for_property_tests._category_definitions
             if cat.name == "revenue"
         )
         assert category_def.label == "Sales Revenue"
