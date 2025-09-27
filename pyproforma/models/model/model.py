@@ -757,7 +757,7 @@ class Model(SerializationMixin):
         """
         return [category["name"] for category in self.category_metadata]
 
-    def category_definition(self, name: str) -> Category:
+    def _category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
 
@@ -919,7 +919,7 @@ class Model(SerializationMixin):
         Returns:
             float: The calculated sum of all line items in the category
         """
-        category_item = self.category_definition(category)
+        category_item = self._category_definition(category)
         total = 0
         for item in self._line_item_definitions:
             if item.category == category_item.name:
