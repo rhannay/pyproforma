@@ -780,7 +780,7 @@ class Model(SerializationMixin):
             f"Valid categories are: {valid_categories}"
         )
 
-    def constraint_definition(self, name: str) -> Constraint:
+    def _constraint_definition(self, name: str) -> Constraint:
         """Get a constraint definition by name.
 
         Args:
