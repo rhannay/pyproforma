@@ -99,10 +99,7 @@ class TestConstantPassed:
     def test_setter_error_no_years(self, empty_model):
         """Test that setting a value raises ValueError when model has no years."""
         with pytest.raises(
-            ValueError,
-            match=(
-                "Cannot add line item with constant value: model has no years defined"
-            ),
+            ValueError, match="Cannot add line item: model has no years defined"
         ):
             empty_model["test_item"] = 100
 
@@ -123,17 +120,18 @@ class TestConstantPassed:
 
     def test_setter_error_non_numeric_value(self, model_with_years):
         """Test that setting with non-numeric value raises TypeError."""
-        with pytest.raises(TypeError, match="Value must be an int or float, got str"):
+        with pytest.raises(
+            TypeError, match="Value must be an int, float, or list, got str"
+        ):
             model_with_years["test_item"] = "not_a_number"
 
-        with pytest.raises(TypeError, match="Value must be an int or float, got list"):
-            model_with_years["test_item"] = [100]
-
-        with pytest.raises(TypeError, match="Value must be an int or float, got dict"):
+        with pytest.raises(
+            TypeError, match="Value must be an int, float, or list, got dict"
+        ):
             model_with_years["test_item"] = {"value": 100}
 
         with pytest.raises(
-            TypeError, match="Value must be an int or float, got NoneType"
+            TypeError, match="Value must be an int, float, or list, got NoneType"
         ):
             model_with_years["test_item"] = None
 
@@ -197,3 +195,102 @@ class TestConstantPassed:
         line_item_results = large_model.line_item("test_item")
         expected_values = {year: 500.0 for year in years}
         assert line_item_results.values == expected_values
+
+    def test_setter_with_list_values(self, model_with_years):
+        """Test setting a line item with a list of values."""
+        model_with_years["list_item"] = [1000, 1100, 1210]
+
+        # Verify the line item was created
+        assert "list_item" in model_with_years.line_item_names
+
+        # Verify values are set correctly for all years
+        assert model_with_years["list_item", 2023] == 1000.0
+        assert model_with_years["list_item", 2024] == 1100.0
+        assert model_with_years["list_item", 2025] == 1210.0
+
+        # Verify it can be accessed via line_item method
+        line_item_results = model_with_years.line_item("list_item")
+        expected_values = {2023: 1000.0, 2024: 1100.0, 2025: 1210.0}
+        assert line_item_results.values == expected_values
+
+    def test_setter_with_mixed_numeric_list(self, model_with_years):
+        """Test setting a line item with mixed int/float values in list."""
+        model_with_years["mixed_list"] = [100, 110.5, 121]
+
+        # Verify values are set correctly
+        assert model_with_years["mixed_list", 2023] == 100.0
+        assert model_with_years["mixed_list", 2024] == 110.5
+        assert model_with_years["mixed_list", 2025] == 121.0
+
+    def test_setter_with_single_item_list(self):
+        """Test setter with single-year model and single-item list."""
+        single_year_model = Model(years=[2023])
+        single_year_model["single_list"] = [42]
+
+        assert single_year_model["single_list", 2023] == 42.0
+
+    def test_setter_error_list_wrong_length(self, model_with_years):
+        """Test that list with wrong length raises ValueError."""
+        # Too few values
+        with pytest.raises(
+            ValueError, match="List length \\(2\\) must match number of years \\(3\\)"
+        ):
+            model_with_years["wrong_length"] = [100, 200]
+
+        # Too many values
+        with pytest.raises(
+            ValueError, match="List length \\(4\\) must match number of years \\(3\\)"
+        ):
+            model_with_years["wrong_length"] = [100, 200, 300, 400]
+
+    def test_setter_error_list_with_non_numeric_values(self, model_with_years):
+        """Test that list with non-numeric values raises TypeError."""
+        with pytest.raises(
+            TypeError, match="All list values must be int or float, got str at index 1"
+        ):
+            model_with_years["invalid_list"] = [100, "not_a_number", 300]
+
+        with pytest.raises(
+            TypeError,
+            match="All list values must be int or float, got NoneType at index 0",
+        ):
+            model_with_years["invalid_list"] = [None, 200, 300]
+
+    def test_setter_error_list_with_empty_model(self, empty_model):
+        """Test that setting list with empty model raises ValueError."""
+        with pytest.raises(
+            ValueError, match="Cannot add line item: model has no years defined"
+        ):
+            empty_model["test_item"] = [100, 200, 300]
+
+    def test_setter_update_existing_with_list(self, model_with_years):
+        """Test updating existing line item with list values."""
+        # Create initial item with constant value
+        model_with_years["update_test"] = 500
+        assert model_with_years["update_test", 2023] == 500.0
+
+        # Update with list values
+        model_with_years["update_test"] = [600, 700, 800]
+        assert model_with_years["update_test", 2023] == 600.0
+        assert model_with_years["update_test", 2024] == 700.0
+        assert model_with_years["update_test", 2025] == 800.0
+
+    def test_setter_list_integration_with_model_operations(self, model_with_years):
+        """Test that items created via list setter work with other model operations."""
+        model_with_years["revenue"] = [1000, 1100, 1200]
+        model_with_years["expenses"] = [800, 850, 900]
+
+        # Test model operations work
+        assert "revenue" in model_with_years.line_item_names
+        assert "expenses" in model_with_years.line_item_names
+
+        # Test category operations work
+        general_category = model_with_years.category("general")
+        assert general_category is not None
+
+        # Test model copy includes the new items
+        copied_model = model_with_years.copy()
+        assert "revenue" in copied_model.line_item_names
+        assert "expenses" in copied_model.line_item_names
+        assert copied_model["revenue", 2023] == 1000.0
+        assert copied_model["expenses", 2024] == 850.0

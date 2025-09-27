@@ -335,25 +335,27 @@ class Model(SerializationMixin):
             "Key must be a tuple of (item_name, year) or a string item_name."
         )
 
-    def __setitem__(self, key: str, value: Union[int, float]) -> None:
+    def __setitem__(self, key: str, value: Union[int, float, list]) -> None:
         """
-        Set a new line item with constant values using dictionary-style access.
+        Set a new line item with values using dictionary-style access.
 
-        Creates a new line item with the given name and sets its values to the constant
-        value for all years in the model. The line item will be added to the "general"
-        category by default.
+        Creates a new line item with the given name and sets its values. The line item
+        will be added to the "general" category by default.
 
         Args:
             key (str): The name of the new line item to create
-            value (Union[int, float]): The constant value to set for all years
+            value (Union[int, float, list]): Either a constant value to set for all
+                years, or a list of values corresponding to each year in the model
 
         Raises:
-            TypeError: If key is not a string or value is not a number
-            ValueError: If the model has no years defined
+            TypeError: If key is not a string or value is not a number or list
+            ValueError: If the model has no years defined, or if list length doesn't
+                match number of years, or if list contains non-numeric values
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
+            >>> model['growth'] = [100, 110, 121]  # Creates with specific values
         """
         # Validate that key is a string
         if not isinstance(key, str):
@@ -361,20 +363,38 @@ class Model(SerializationMixin):
                 f"Line item name must be a string, got {type(key).__name__}"
             )
 
-        # Validate that value is a number (int or float)
-        if not isinstance(value, (int, float)):
-            raise TypeError(
-                f"Value must be an int or float, got {type(value).__name__}"
-            )
-
         # Check if model has years defined
         if not self._years:
-            raise ValueError(
-                "Cannot add line item with constant value: model has no years defined"
-            )
+            raise ValueError("Cannot add line item: model has no years defined")
 
-        # Create values dictionary with the constant value for all years
-        values = {year: float(value) for year in self._years}
+        # Handle different value types
+        if isinstance(value, list):
+            # Validate list length matches number of years
+            if len(value) != len(self._years):
+                raise ValueError(
+                    f"List length ({len(value)}) must match number of years "
+                    f"({len(self._years)}). Years: {self._years}"
+                )
+
+            # Validate all list elements are numeric
+            for i, val in enumerate(value):
+                if not isinstance(val, (int, float)):
+                    raise TypeError(
+                        f"All list values must be int or float, "
+                        f"got {type(val).__name__} at index {i} (value: {val})"
+                    )
+
+            # Create values dictionary mapping years to list values
+            values = {year: float(val) for year, val in zip(self._years, value)}
+
+        elif isinstance(value, (int, float)):
+            # Create values dictionary with the constant value for all years
+            values = {year: float(value) for year in self._years}
+
+        else:
+            raise TypeError(
+                f"Value must be an int, float, or list, got {type(value).__name__}"
+            )
 
         # Check if line item already exists
         if key in self.line_item_names:
