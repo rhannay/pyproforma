@@ -217,7 +217,9 @@ class TestAddMissingCategories:
         assert isinstance(balance_sheet_category, Category)
 
     def test_add_missing_categories_integration_with_model_init(self):
-        """Test that _add_missing_categories works correctly during model initialization."""
+        """
+        Test that _add_missing_categories works correctly during model initialization.
+        """
         # Create line items with some missing categories
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 100000}),
@@ -247,7 +249,8 @@ class TestAddMissingCategories:
 
     def test_add_missing_categories_with_empty_string_category(self):
         """Test that line items with empty string category are handled gracefully."""
-        # Create line items, some with empty categories (which get defaulted to "general")
+        # Create line items, some with empty categories
+        # (which get defaulted to "general")
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 100000}),
             LineItem(name="temp_item", category="general", values={2023: 50000}),
