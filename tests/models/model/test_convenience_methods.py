@@ -103,12 +103,17 @@ class TestAddLineItemConvenienceMethod:
         # Try to add another line item with the same name
         with pytest.raises(
             ValueError,
-            match="Line item with name 'sales' already exists. Use update.update_line_item\\(\\) to modify existing line items.",
+            match=(
+                "Line item with name 'sales' already exists. "
+                "Use update.update_line_item\\(\\) to modify existing line items."
+            ),
         ):
             model.add_line_item(name="sales", category="revenue", values={2023: 150000})
 
     def test_add_line_item_duplicate_name_with_instance_raises_error(self):
-        """Test that adding a LineItem instance with an existing name raises an error."""
+        """
+        Test that adding a LineItem instance with an existing name raises an error.
+        """
         model = Model(years=[2023, 2024])
 
         # Add a category first
@@ -123,7 +128,10 @@ class TestAddLineItemConvenienceMethod:
         )
         with pytest.raises(
             ValueError,
-            match="Line item with name 'sales' already exists. Use update.update_line_item\\(\\) to modify existing line items.",
+            match=(
+                "Line item with name 'sales' already exists. "
+                "Use update.update_line_item\\(\\) to modify existing line items."
+            ),
         ):
             model.add_line_item(duplicate_line_item)
 
