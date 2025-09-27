@@ -52,7 +52,7 @@ print(results.to_dataframe())
 ### 📊 **Financial Modeling**
 - Create line items with explicit values or formulas
 - Organize items into categories with automatic totals
-- Support for complex financial calculations using numexpr
+- Support for complex financial calculations using Python's AST
 
 ### 📈 **Interactive Charts**
 - Built-in Plotly integration for data visualization
@@ -160,7 +160,6 @@ pytest --cov=pyproforma
 - Python 3.9+
 - pandas >= 1.3.0
 - openpyxl >= 3.0.0
-- numexpr >= 2.7.0
 - jinja2 >= 3.0.0
 - plotly >= 5.0.0
 - PyYAML >= 6.0.0
