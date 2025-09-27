@@ -302,20 +302,6 @@ class TestLineItemNoneValues:
         # This should now work too, treating None as 0
         assert model["calculated", 2021] == 0.0  # None (treated as 0) * 2 = 0
 
-    def test_formula_error_with_offset_none_values(self):
-        """Test formula errors when offset references point to None values."""
-        from pyproforma.models.formula import calculate_formula
-
-        # Test offset reference to None value
-        value_matrix = {2019: {"revenue": None}, 2020: {"revenue": 100.0}}
-
-        with pytest.raises(ValueError) as excinfo:
-            calculate_formula("revenue[-1] * 1.1", value_matrix, 2020)
-
-        error_msg = str(excinfo.value)
-        assert "has None value for year 2019" in error_msg
-        assert "Cannot use None values in formulas" in error_msg
-
     def test_serialization_preserves_none_values(self):
         """Test that to_dict and from_dict preserve None values correctly."""
         original = LineItem(

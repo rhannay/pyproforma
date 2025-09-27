@@ -8,7 +8,7 @@ across all years in a financial model.
 
 from typing import TYPE_CHECKING, Any, Dict, Union
 
-from ..formula import calculate_formula, evaluate
+from ..formula import evaluate
 
 if TYPE_CHECKING:
     from pyproforma.models.multi_line_item import MultiLineItem
