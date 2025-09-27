@@ -69,7 +69,9 @@ class TestUnifiedAddFunctionality:
 
     def test_add_line_item_duplicate_name_fails(self, sample_model: Model):
         """Test that adding a line item with duplicate name fails."""
-        with pytest.raises(ValueError, match="Failed to add line item 'revenue'"):
+        with pytest.raises(
+            ValueError, match="Line item with name 'revenue' already exists"
+        ):
             sample_model.update.add_line_item(
                 name="revenue", category="income", values={2023: 1000}
             )

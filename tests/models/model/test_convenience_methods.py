@@ -90,6 +90,43 @@ class TestAddLineItemConvenienceMethod:
         ):
             model.add_line_item(line_item=line_item, name="test")
 
+    def test_add_line_item_duplicate_name_raises_error(self):
+        """Test that adding a line item with an existing name raises an error."""
+        model = Model(years=[2023, 2024])
+
+        # Add a category first
+        model.add_category(name="revenue")
+
+        # Add first line item
+        model.add_line_item(name="sales", category="revenue", values={2023: 100000})
+
+        # Try to add another line item with the same name
+        with pytest.raises(
+            ValueError,
+            match="Line item with name 'sales' already exists. Use update.update_line_item\\(\\) to modify existing line items.",
+        ):
+            model.add_line_item(name="sales", category="revenue", values={2023: 150000})
+
+    def test_add_line_item_duplicate_name_with_instance_raises_error(self):
+        """Test that adding a LineItem instance with an existing name raises an error."""
+        model = Model(years=[2023, 2024])
+
+        # Add a category first
+        model.add_category(name="revenue")
+
+        # Add first line item
+        model.add_line_item(name="sales", category="revenue", values={2023: 100000})
+
+        # Try to add another line item instance with the same name
+        duplicate_line_item = LineItem(
+            name="sales", category="revenue", values={2023: 150000}
+        )
+        with pytest.raises(
+            ValueError,
+            match="Line item with name 'sales' already exists. Use update.update_line_item\\(\\) to modify existing line items.",
+        ):
+            model.add_line_item(duplicate_line_item)
+
     def test_add_line_item_delegates_to_update_namespace(self):
         """Test that add_line_item produces the same result as update.add_line_item."""
         # Create two identical models

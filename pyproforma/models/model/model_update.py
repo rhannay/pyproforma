@@ -170,6 +170,14 @@ class UpdateNamespace:
                 # Re-raise LineItem creation errors with our standard format
                 raise ValueError(f"Failed to add line item '{name}': {str(e)}") from e
 
+        # Check if line item name already exists
+        existing_names = [item.name for item in self._model._line_item_definitions]
+        if new_line_item.name in existing_names:
+            raise ValueError(
+                f"Line item with name '{new_line_item.name}' already exists. "
+                f"Use update.update_line_item() to modify existing line items."
+            )
+
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
