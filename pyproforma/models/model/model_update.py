@@ -120,7 +120,7 @@ class UpdateNamespace:
         Args:
             line_item (LineItem, optional): An already-created LineItem instance to add
             name (str, optional): Name for new LineItem - required if line_item is None
-            category (str, optional): Category for new LineItem - required if line_item is None
+            category (str, optional): Category for new LineItem. Defaults to "general" if None
             label (str, optional): Human-readable display name. Defaults to name if not provided.
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
@@ -132,7 +132,6 @@ class UpdateNamespace:
         Raises:
             ValueError: If the line item cannot be added (validation fails), or if both
                 line_item and name are provided, or if neither is provided
-            TypeError: If name is provided but category is missing
 
         Examples:
             >>> # Method 1: Pass a LineItem instance
@@ -157,11 +156,6 @@ class UpdateNamespace:
             new_line_item = line_item
         else:
             # Handle the case where parameters are passed to create a new LineItem
-            if category is None:
-                raise TypeError(
-                    "When creating a new LineItem, 'category' parameter is required"
-                )
-
             # Create the new line item - this will validate the name format
             try:
                 new_line_item = LineItem(

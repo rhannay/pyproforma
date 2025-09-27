@@ -97,6 +97,69 @@ class TestUnifiedAddFunctionality:
         category_names = [cat.name for cat in sample_model._category_definitions]
         assert "nonexistent" in category_names
 
+    def test_add_line_item_without_category_defaults_to_general(
+        self, sample_model: Model
+    ):
+        """Test adding a line item without specifying category defaults to 'general'."""
+        initial_line_item_count = len(sample_model._line_item_definitions)
+
+        # Add line item without specifying category
+        sample_model.update.add_line_item(
+            name="misc_expense", values={2023: 5000, 2024: 5500, 2025: 6000}
+        )
+
+        # Should have added the line item and potentially the 'general' category
+        assert len(sample_model._line_item_definitions) == initial_line_item_count + 1
+
+        # Verify the line item was added correctly with 'general' category
+        line_item = sample_model._line_item_definition("misc_expense")
+        assert line_item.category == "general"
+        assert sample_model.value("misc_expense", 2023) == 5000
+
+        # Verify 'general' category exists in model
+        category_names = [cat.name for cat in sample_model._category_definitions]
+        assert "general" in category_names
+
+    def test_add_line_item_with_category_none_defaults_to_general(
+        self, sample_model: Model
+    ):
+        """Test that adding a line item with category=None defaults to 'general'."""
+        initial_line_item_count = len(sample_model._line_item_definitions)
+
+        # Add line item with explicit category=None
+        sample_model.update.add_line_item(
+            name="other_item", category=None, values={2023: 1500}
+        )
+
+        # Should have added the line item
+        assert len(sample_model._line_item_definitions) == initial_line_item_count + 1
+
+        # Verify the line item was added correctly with 'general' category
+        line_item = sample_model._line_item_definition("other_item")
+        assert line_item.category == "general"
+        assert sample_model.value("other_item", 2023) == 1500
+
+        # Verify 'general' category exists in model
+        category_names = [cat.name for cat in sample_model._category_definitions]
+        assert "general" in category_names
+
+    def test_add_line_item_with_formula_no_category_defaults_to_general(
+        self, sample_model: Model
+    ):
+        """Test adding line item with formula but no category defaults to 'general'."""
+        # Add line item with formula but no category specified
+        sample_model.update.add_line_item(
+            name="revenue_percentage", formula="revenue * 0.1"
+        )
+
+        # Verify the line item was added correctly with 'general' category
+        line_item = sample_model._line_item_definition("revenue_percentage")
+        assert line_item.category == "general"
+
+        # Verify the formula works
+        assert sample_model.value("revenue_percentage", 2023) == 10000  # 100000 * 0.1
+        assert sample_model.value("revenue_percentage", 2024) == 12000  # 120000 * 0.1
+
 
 class TestUnifiedUpdateFunctionality:
     """Test update functionality using the new unified .update namespace."""
