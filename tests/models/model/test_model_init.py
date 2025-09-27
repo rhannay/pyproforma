@@ -76,7 +76,7 @@ class TestModelInitWithDuplicateGenerators:
             term=5,
         )
 
-        # This should work because generator creates names like "revenue.principal", "revenue.interest"  # noqa: E501
+        # This should work because generator creates names like "revenue_principal", "revenue_interest"  # noqa: E501
         # which don't conflict with line item "revenue"
         model = Model(
             line_items=basic_line_items,
@@ -93,9 +93,9 @@ class TestModelInitWithDuplicateGenerators:
         # Verify defined names include both line item and generator variables
         defined_names = [item["name"] for item in model.line_item_metadata]
         assert "revenue" in defined_names  # line item
-        assert "revenue.principal" in defined_names  # generator
-        assert "revenue.interest" in defined_names  # generator
-        assert "revenue.bond_proceeds" in defined_names  # generator
+        assert "revenue_principal" in defined_names  # generator
+        assert "revenue_interest" in defined_names  # generator
+        assert "revenue_bond_proceeds" in defined_names  # generator
 
     def test_unique_generator_names_work_correctly(
         self, basic_line_items, basic_categories
@@ -127,10 +127,10 @@ class TestModelInitWithDuplicateGenerators:
 
         # Verify defined names include both generators' variables
         defined_names = [item["name"] for item in model.line_item_metadata]
-        assert "company_debt.principal" in defined_names
-        assert "company_debt.interest" in defined_names
-        assert "equipment_debt.principal" in defined_names
-        assert "equipment_debt.interest" in defined_names
+        assert "company_debt_principal" in defined_names
+        assert "company_debt_interest" in defined_names
+        assert "equipment_debt_principal" in defined_names
+        assert "equipment_debt_interest" in defined_names
 
     def test_different_generator_types_same_name_should_raise_error(
         self, basic_line_items, basic_categories

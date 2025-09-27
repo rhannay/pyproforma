@@ -19,10 +19,10 @@ class TestShortTermDebtBasic:
         )
 
         expected_names = [
-            "test_debt.debt_outstanding",
+            "test_debt_debt_outstanding",
             "test_debt.draw",
-            "test_debt.principal",
-            "test_debt.interest",
+            "test_debt_principal",
+            "test_debt_interest",
         ]
 
         assert debt.defined_names == expected_names
@@ -106,17 +106,17 @@ class TestShortTermDebtFixedParameters:
 
         # Test year 2020
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["simple_debt.debt_outstanding"] == 1000000
+        assert values_2020["simple_debt_debt_outstanding"] == 1000000
         assert values_2020["simple_debt.draw"] == 0.0
-        assert values_2020["simple_debt.principal"] == 0.0
-        assert values_2020["simple_debt.interest"] == 50000  # 1M * 0.05
+        assert values_2020["simple_debt_principal"] == 0.0
+        assert values_2020["simple_debt_interest"] == 50000  # 1M * 0.05
 
         # Test year 2021 (no activity, same balance)
         values_2021 = debt.get_values(interim_values, 2021)
-        assert values_2021["simple_debt.debt_outstanding"] == 1000000
+        assert values_2021["simple_debt_debt_outstanding"] == 1000000
         assert values_2021["simple_debt.draw"] == 0.0
-        assert values_2021["simple_debt.principal"] == 0.0
-        assert values_2021["simple_debt.interest"] == 50000  # 1M * 0.05
+        assert values_2021["simple_debt_principal"] == 0.0
+        assert values_2021["simple_debt_interest"] == 50000  # 1M * 0.05
 
     def test_debt_with_draws_only(self):
         """Test debt with draws but no paydowns."""
@@ -132,17 +132,17 @@ class TestShortTermDebtFixedParameters:
 
         # Test year 2020 (first draw)
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["growth_debt.debt_outstanding"] == 700000  # 500k + 200k
+        assert values_2020["growth_debt_debt_outstanding"] == 700000  # 500k + 200k
         assert values_2020["growth_debt.draw"] == 200000
-        assert values_2020["growth_debt.principal"] == 0.0
-        assert _is_close(values_2020["growth_debt.interest"], 30000)  # 500k * 0.06
+        assert values_2020["growth_debt_principal"] == 0.0
+        assert _is_close(values_2020["growth_debt_interest"], 30000)  # 500k * 0.06
 
         # Test year 2021 (second draw)
         values_2021 = debt.get_values(interim_values, 2021)
-        assert values_2021["growth_debt.debt_outstanding"] == 1000000  # 700k + 300k
+        assert values_2021["growth_debt_debt_outstanding"] == 1000000  # 700k + 300k
         assert values_2021["growth_debt.draw"] == 300000
-        assert values_2021["growth_debt.principal"] == 0.0
-        assert _is_close(values_2021["growth_debt.interest"], 42000)  # 700k * 0.06
+        assert values_2021["growth_debt_principal"] == 0.0
+        assert _is_close(values_2021["growth_debt_interest"], 42000)  # 700k * 0.06
 
     def test_debt_with_paydowns_only(self):
         """Test debt with paydowns but no draws."""
@@ -158,17 +158,17 @@ class TestShortTermDebtFixedParameters:
 
         # Test year 2020 (first paydown)
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["paydown_debt.debt_outstanding"] == 900000  # 1M - 100k
+        assert values_2020["paydown_debt_debt_outstanding"] == 900000  # 1M - 100k
         assert values_2020["paydown_debt.draw"] == 0.0
-        assert values_2020["paydown_debt.principal"] == 100000
-        assert _is_close(values_2020["paydown_debt.interest"], 40000)  # 1M * 0.04
+        assert values_2020["paydown_debt_principal"] == 100000
+        assert _is_close(values_2020["paydown_debt_interest"], 40000)  # 1M * 0.04
 
         # Test year 2021 (second paydown)
         values_2021 = debt.get_values(interim_values, 2021)
-        assert values_2021["paydown_debt.debt_outstanding"] == 750000  # 900k - 150k
+        assert values_2021["paydown_debt_debt_outstanding"] == 750000  # 900k - 150k
         assert values_2021["paydown_debt.draw"] == 0.0
-        assert values_2021["paydown_debt.principal"] == 150000
-        assert _is_close(values_2021["paydown_debt.interest"], 36000)  # 900k * 0.04
+        assert values_2021["paydown_debt_principal"] == 150000
+        assert _is_close(values_2021["paydown_debt_interest"], 36000)  # 900k * 0.04
 
     def test_debt_with_draws_and_paydowns(self):
         """Test debt with both draws and paydowns."""
@@ -184,26 +184,26 @@ class TestShortTermDebtFixedParameters:
 
         # Test year 2020 (draw only)
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["mixed_debt.debt_outstanding"] == 1500000  # 1M + 500k
+        assert values_2020["mixed_debt_debt_outstanding"] == 1500000  # 1M + 500k
         assert values_2020["mixed_debt.draw"] == 500000
-        assert values_2020["mixed_debt.principal"] == 0.0
-        assert _is_close(values_2020["mixed_debt.interest"], 50000)  # 1M * 0.05
+        assert values_2020["mixed_debt_principal"] == 0.0
+        assert _is_close(values_2020["mixed_debt_interest"], 50000)  # 1M * 0.05
 
         # Test year 2021 (draw and paydown)
         values_2021 = debt.get_values(interim_values, 2021)
         assert (
-            values_2021["mixed_debt.debt_outstanding"] == 1600000
+            values_2021["mixed_debt_debt_outstanding"] == 1600000
         )  # 1.5M + 300k - 200k
         assert values_2021["mixed_debt.draw"] == 300000
-        assert values_2021["mixed_debt.principal"] == 200000
-        assert _is_close(values_2021["mixed_debt.interest"], 75000)  # 1.5M * 0.05
+        assert values_2021["mixed_debt_principal"] == 200000
+        assert _is_close(values_2021["mixed_debt_interest"], 75000)  # 1.5M * 0.05
 
         # Test year 2022 (paydown only)
         values_2022 = debt.get_values(interim_values, 2022)
-        assert values_2022["mixed_debt.debt_outstanding"] == 1000000  # 1.6M - 600k
+        assert values_2022["mixed_debt_debt_outstanding"] == 1000000  # 1.6M - 600k
         assert values_2022["mixed_debt.draw"] == 0.0
-        assert values_2022["mixed_debt.principal"] == 600000
-        assert _is_close(values_2022["mixed_debt.interest"], 80000)  # 1.6M * 0.05
+        assert values_2022["mixed_debt_principal"] == 600000
+        assert _is_close(values_2022["mixed_debt_interest"], 80000)  # 1.6M * 0.05
 
     def test_year_before_start_year(self):
         """Test validation that draws and paydowns cannot be prior to start year."""
@@ -244,9 +244,9 @@ class TestShortTermDebtFixedParameters:
 
         # This should work without errors
         values_2020 = debt3.get_values(interim_values, 2020)
-        assert values_2020["valid_debt.debt_outstanding"] == 1300000  # 1000k + 300k
+        assert values_2020["valid_debt_debt_outstanding"] == 1300000  # 1000k + 300k
         assert values_2020["valid_debt.draw"] == 300000
-        assert values_2020["valid_debt.principal"] == 0.0
+        assert values_2020["valid_debt_principal"] == 0.0
 
 
 class TestShortTermDebtDynamicParameters:
@@ -270,13 +270,13 @@ class TestShortTermDebtDynamicParameters:
 
         # Test year 2020 with 3% rate
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["variable_debt.debt_outstanding"] == 1000000
-        assert _is_close(values_2020["variable_debt.interest"], 30000)  # 1M * 0.03
+        assert values_2020["variable_debt_debt_outstanding"] == 1000000
+        assert _is_close(values_2020["variable_debt_interest"], 30000)  # 1M * 0.03
 
         # Test year 2021 with 4.5% rate
         values_2021 = debt.get_values(interim_values, 2021)
-        assert values_2021["variable_debt.debt_outstanding"] == 1000000
-        assert _is_close(values_2021["variable_debt.interest"], 45000)  # 1M * 0.045
+        assert values_2021["variable_debt_debt_outstanding"] == 1000000
+        assert _is_close(values_2021["variable_debt_interest"], 45000)  # 1M * 0.045
 
     def test_fixed_begin_balance(self):
         """Test debt with fixed begin balance."""
@@ -291,8 +291,8 @@ class TestShortTermDebtDynamicParameters:
         interim_values = {2020: {}, 2021: {}}
 
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["fixed_debt.debt_outstanding"] == 750000
-        assert _is_close(values_2020["fixed_debt.interest"], 37500)  # 750k * 0.05
+        assert values_2020["fixed_debt_debt_outstanding"] == 750000
+        assert _is_close(values_2020["fixed_debt_interest"], 37500)  # 750k * 0.05
 
     def test_dynamic_draws_and_paydown(self):
         """Test debt with draws and paydown looked up from interim_values_by_year."""
@@ -312,17 +312,17 @@ class TestShortTermDebtDynamicParameters:
 
         # Test year 2020
         values_2020 = debt.get_values(interim_values, 2020)
-        assert values_2020["flex_debt.debt_outstanding"] == 700000  # 500k + 200k
+        assert values_2020["flex_debt_debt_outstanding"] == 700000  # 500k + 200k
         assert values_2020["flex_debt.draw"] == 200000
-        assert values_2020["flex_debt.principal"] == 0.0
-        assert _is_close(values_2020["flex_debt.interest"], 20000)  # 500k * 0.04
+        assert values_2020["flex_debt_principal"] == 0.0
+        assert _is_close(values_2020["flex_debt_interest"], 20000)  # 500k * 0.04
 
         # Test year 2021
         values_2021 = debt.get_values(interim_values, 2021)
-        assert values_2021["flex_debt.debt_outstanding"] == 650000  # 700k + 100k - 150k
+        assert values_2021["flex_debt_debt_outstanding"] == 650000  # 700k + 100k - 150k
         assert values_2021["flex_debt.draw"] == 100000
-        assert values_2021["flex_debt.principal"] == 150000
-        assert _is_close(values_2021["flex_debt.interest"], 28000)  # 700k * 0.04
+        assert values_2021["flex_debt_principal"] == 150000
+        assert _is_close(values_2021["flex_debt_interest"], 28000)  # 700k * 0.04
 
     def test_interest_rate_dict(self):
         """Test debt with year-specific interest rates provided as dict."""
@@ -339,34 +339,34 @@ class TestShortTermDebtDynamicParameters:
         # Test year 2020 - should use 4% rate
         values_2020 = debt.get_values(interim_values, 2020)
         assert (
-            values_2020["variable_rate_debt.debt_outstanding"] == 600000
+            values_2020["variable_rate_debt_debt_outstanding"] == 600000
         )  # 500k + 100k
         assert values_2020["variable_rate_debt.draw"] == 100000
-        assert values_2020["variable_rate_debt.principal"] == 0.0
+        assert values_2020["variable_rate_debt_principal"] == 0.0
         assert _is_close(
-            values_2020["variable_rate_debt.interest"], 20000
+            values_2020["variable_rate_debt_interest"], 20000
         )  # 500k * 0.04
 
         # Test year 2021 - should use 5% rate
         values_2021 = debt.get_values(interim_values, 2021)
         assert (
-            values_2021["variable_rate_debt.debt_outstanding"] == 620000
+            values_2021["variable_rate_debt_debt_outstanding"] == 620000
         )  # 600k + 50k - 30k
         assert values_2021["variable_rate_debt.draw"] == 50000
-        assert values_2021["variable_rate_debt.principal"] == 30000
+        assert values_2021["variable_rate_debt_principal"] == 30000
         assert _is_close(
-            values_2021["variable_rate_debt.interest"], 30000
+            values_2021["variable_rate_debt_interest"], 30000
         )  # 600k * 0.05
 
         # Test year 2022 - should use 6% rate
         values_2022 = debt.get_values(interim_values, 2022)
         assert (
-            values_2022["variable_rate_debt.debt_outstanding"] == 500000
+            values_2022["variable_rate_debt_debt_outstanding"] == 500000
         )  # 620k + 0 - 120k
         assert values_2022["variable_rate_debt.draw"] == 0.0
-        assert values_2022["variable_rate_debt.principal"] == 120000
+        assert values_2022["variable_rate_debt_principal"] == 120000
         assert _is_close(
-            values_2022["variable_rate_debt.interest"], 37200
+            values_2022["variable_rate_debt_interest"], 37200
         )  # 620k * 0.06
 
     def test_interest_rate_dict_missing_year_error(self):
@@ -384,7 +384,7 @@ class TestShortTermDebtDynamicParameters:
         # Test year 2020 - should work
         values_2020 = debt.get_values(interim_values, 2020)
         assert _is_close(
-            values_2020["incomplete_rate_debt.interest"], 20000
+            values_2020["incomplete_rate_debt_interest"], 20000
         )  # 500k * 0.04
 
         # Test year 2021 - should raise error for missing interest rate
@@ -439,10 +439,10 @@ class TestShortTermDebtDefaults:
         interim_values = {2024: {}}
 
         values = debt.get_values(interim_values, 2024)
-        assert values["minimal_debt.debt_outstanding"] == 0.0
+        assert values["minimal_debt_debt_outstanding"] == 0.0
         assert values["minimal_debt.draw"] == 0.0
-        assert values["minimal_debt.principal"] == 0.0
-        assert values["minimal_debt.interest"] == 0.0
+        assert values["minimal_debt_principal"] == 0.0
+        assert values["minimal_debt_interest"] == 0.0
 
     def test_none_draws_and_paydown(self):
         """Test debt with explicit None for draws and paydown."""
@@ -457,7 +457,7 @@ class TestShortTermDebtDefaults:
         interim_values = {2019: {}, 2020: {}}
 
         values = debt.get_values(interim_values, 2020)
-        assert values["none_debt.debt_outstanding"] == 100000
+        assert values["none_debt_debt_outstanding"] == 100000
         assert values["none_debt.draw"] == 0.0
-        assert values["none_debt.principal"] == 0.0
-        assert _is_close(values["none_debt.interest"], 5000)  # 100k * 0.05
+        assert values["none_debt_principal"] == 0.0
+        assert _is_close(values["none_debt_interest"], 5000)  # 100k * 0.05
