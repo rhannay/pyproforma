@@ -335,6 +335,55 @@ class Model(SerializationMixin):
             "Key must be a tuple of (item_name, year) or a string item_name."
         )
 
+    def __setitem__(self, key: str, value: Union[int, float]) -> None:
+        """
+        Set a new line item with constant values using dictionary-style access.
+
+        Creates a new line item with the given name and sets its values to the constant
+        value for all years in the model. The line item will be added to the "general"
+        category by default.
+
+        Args:
+            key (str): The name of the new line item to create
+            value (Union[int, float]): The constant value to set for all years
+
+        Raises:
+            TypeError: If key is not a string or value is not a number
+            ValueError: If the model has no years defined
+
+        Examples:
+            >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
+            >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
+        """
+        # Validate that key is a string
+        if not isinstance(key, str):
+            raise TypeError(
+                f"Line item name must be a string, got {type(key).__name__}"
+            )
+
+        # Validate that value is a number (int or float)
+        if not isinstance(value, (int, float)):
+            raise TypeError(
+                f"Value must be an int or float, got {type(value).__name__}"
+            )
+
+        # Check if model has years defined
+        if not self._years:
+            raise ValueError(
+                "Cannot add line item with constant value: model has no years defined"
+            )
+
+        # Create values dictionary with the constant value for all years
+        values = {year: float(value) for year in self._years}
+
+        # Check if line item already exists
+        if key in self.line_item_names:
+            # Update existing line item
+            self.update.update_line_item(key, values=values)
+        else:
+            # Add new line item
+            self.add_line_item(name=key, values=values)
+
     def value(self, name: str, year: int) -> float:
         """
         Retrieve a specific value from the model for a given item name and year.
