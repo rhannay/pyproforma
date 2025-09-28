@@ -5,3 +5,4 @@ from .model.model import Model as Model
 from .results import CategoryResults as CategoryResults
 from .results import ConstraintResults as ConstraintResults
 from .results import LineItemResults as LineItemResults
+from .model.functional_api_model import FunctionalApiModel, create_function_api_model
