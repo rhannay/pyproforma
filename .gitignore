@@ -1,4 +1,5 @@
 *.xlsx
+poetry.lock
 
 # Test Excel files
 tests/excel/
