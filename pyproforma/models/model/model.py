@@ -335,7 +335,9 @@ class Model(SerializationMixin):
             "Key must be a tuple of (item_name, year) or a string item_name."
         )
 
-    def __setitem__(self, key: str, value: Union[int, float, list, LineItem]) -> None:
+    def __setitem__(
+        self, key: str, value: Union[int, float, list, LineItem, dict]
+    ) -> None:
         """
         Add a new line item with values using dictionary-style access.
 
@@ -345,22 +347,25 @@ class Model(SerializationMixin):
 
         Args:
             key (str): The name of the new line item to create
-            value (Union[int, float, list, LineItem]): Either a constant value to set
-                for all years, a list of values corresponding to each year in the
-                model, or a LineItem object to add directly
+            value (Union[int, float, list, LineItem, dict]): Either a constant value
+                to set for all years, a list of values corresponding to each year in
+                the model, a LineItem object to add directly, or a dictionary of
+                LineItem parameters to create a new LineItem
 
         Raises:
-            TypeError: If key is not a string or value is not a number, list, or
-                LineItem
+            TypeError: If key is not a string or value is not a number, list,
+                LineItem, or dict
             ValueError: If the model has no years defined, if list length doesn't
-                match number of years, if list contains non-numeric values, or if
-                a line item with the given key already exists
+                match number of years, if list contains non-numeric values, if
+                dictionary is malformed, or if a line item with the given key
+                already exists
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
             >>> model['growth'] = [100, 110, 121]  # Creates with specific values
             >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
+            >>> model['costs'] = {"category": "expenses", "formula": "revenue * 0.6"}
             >>>
             >>> # To update existing line items, use the update namespace:
             >>> model.update.update_line_item('revenue', values={2023: 1200})
@@ -402,6 +407,19 @@ class Model(SerializationMixin):
             self.add_line_item(line_item=line_item_to_add)
             return
 
+        elif isinstance(value, dict):
+            # Handle dictionary with LineItem parameters
+            # Create a copy of the dict and ensure the name matches the key
+            line_item_params = value.copy()
+            line_item_params["name"] = key  # Override name with key
+
+            # Create LineItem from dictionary parameters
+            line_item_to_add = LineItem.from_dict(line_item_params)
+
+            # Add the LineItem object
+            self.add_line_item(line_item=line_item_to_add)
+            return
+
         elif isinstance(value, list):
             # Validate list length matches number of years
             if len(value) != len(self._years):
@@ -427,7 +445,7 @@ class Model(SerializationMixin):
 
         else:
             raise TypeError(
-                f"Value must be an int, float, list, or LineItem, "
+                f"Value must be an int, float, list, LineItem, or dict, "
                 f"got {type(value).__name__}"
             )
 

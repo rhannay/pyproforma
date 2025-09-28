@@ -5,7 +5,6 @@ from pyproforma.models.line_item import LineItem
 
 
 class TestConstantPassed:
-
     @pytest.fixture
     def model_with_years(self):
         """Create a model with years for testing."""
@@ -121,18 +120,14 @@ class TestConstantPassed:
     def test_setter_error_non_numeric_value(self, model_with_years):
         """Test that setting with non-numeric value raises TypeError."""
         with pytest.raises(
-            TypeError, match="Value must be an int, float, list, or LineItem, got str"
+            TypeError,
+            match="Value must be an int, float, list, LineItem, or dict, got str",
         ):
             model_with_years["test_item"] = "not_a_number"
 
         with pytest.raises(
-            TypeError, match="Value must be an int, float, list, or LineItem, got dict"
-        ):
-            model_with_years["test_item"] = {"value": 100}
-
-        with pytest.raises(
             TypeError,
-            match="Value must be an int, float, list, or LineItem, got NoneType",
+            match="Value must be an int, float, list, LineItem, or dict, got NoneType",
         ):
             model_with_years["test_item"] = None
 
@@ -370,3 +365,104 @@ class TestSetterLineItem:
 
         # Verify it calculates correctly
         assert model_with_years["detailed_item", 2023] == 1500
+
+
+class TestSetterDictionary:
+    """Test __setitem__ method with dictionary LineItem parameters."""
+
+    @pytest.fixture
+    def model_with_years(self):
+        """Create a model with years for testing."""
+        return Model(years=[2023, 2024])
+
+    def test_setter_with_dict_parameters(self, model_with_years):
+        """Test that setting with a dictionary creates a LineItem correctly."""
+        model_with_years["revenue"] = {
+            "category": "income",
+            "formula": "1000",
+            "label": "Total Revenue",
+        }
+
+        # Verify the line item was added
+        assert "revenue" in model_with_years.line_item_names
+        assert model_with_years["revenue", 2023] == 1000
+        assert model_with_years["revenue", 2024] == 1000
+
+        # Verify the line item properties
+        added_item = model_with_years._line_item_definition("revenue")
+        assert added_item.name == "revenue"
+        assert added_item.category == "income"
+        assert added_item.label == "Total Revenue"
+        assert added_item.formula == "1000"
+
+    def test_setter_dict_name_override(self, model_with_years):
+        """Test that dictionary name is overridden by the key."""
+        model_with_years["expenses"] = {
+            "name": "original_name",
+            "category": "costs",
+            "formula": "500",
+        }
+
+        # Verify the line item was added with the key name
+        assert "expenses" in model_with_years.line_item_names
+        assert "original_name" not in model_with_years.line_item_names
+        assert model_with_years["expenses", 2023] == 500
+
+        # Verify the line item has the key name
+        added_item = model_with_years._line_item_definition("expenses")
+        assert added_item.name == "expenses"  # Should use key name
+        assert added_item.category == "costs"  # Should preserve other properties
+
+    def test_setter_dict_with_values(self, model_with_years):
+        """Test dictionary with explicit values instead of formula."""
+        model_with_years["margin"] = {
+            "category": "ratios",
+            "values": {2023: 0.15, 2024: 0.18},
+        }
+
+        # Verify the values are set correctly
+        assert model_with_years["margin", 2023] == 0.15
+        assert model_with_years["margin", 2024] == 0.18
+
+        # Verify properties
+        added_item = model_with_years._line_item_definition("margin")
+        assert added_item.category == "ratios"
+
+    def test_setter_dict_empty(self, model_with_years):
+        """Test that empty dictionary creates a basic line item."""
+        model_with_years["basic"] = {}
+
+        # Verify the line item was added with default values
+        assert "basic" in model_with_years.line_item_names
+        # Should be None since no formula or values provided
+        assert model_with_years["basic", 2023] is None
+
+        # Verify the line item has the key name
+        added_item = model_with_years._line_item_definition("basic")
+        assert added_item.name == "basic"
+
+    def test_setter_dict_invalid_parameters(self, model_with_years):
+        """Test that invalid dictionary parameters are handled correctly."""
+        # This should work but ignore invalid parameters
+        model_with_years["test_item"] = {"formula": "100", "invalid_param": "ignored"}
+
+        assert model_with_years["test_item", 2023] == 100
+        added_item = model_with_years._line_item_definition("test_item")
+        assert not hasattr(added_item, "invalid_param")
+
+    def test_setter_dict_malformed_values(self, model_with_years):
+        """Test that malformed dictionary values raise appropriate errors."""
+        with pytest.raises(AttributeError):
+            model_with_years["bad_values"] = {"values": "invalid_values_type"}
+
+    def test_setter_dict_existing_item_error(self, model_with_years):
+        """Test that setting dict on existing item raises ValueError."""
+        # First add a line item
+        model_with_years["existing"] = 1000
+
+        # Try to set a dict with same key
+        with pytest.raises(
+            ValueError,
+            match="Line item 'existing' already exists. Update attributes",
+        ):
+            model_with_years["existing"] = {"formula": "2000"}
