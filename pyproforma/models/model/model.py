@@ -11,7 +11,7 @@ from pyproforma.tables import Tables
 from ..category import Category
 from ..compare import Compare
 from ..constraint import Constraint
-from ..line_item import LineItem
+from ..line_item import LineItem, _is_values_dict
 from ..metadata import (
     generate_category_metadata,
     generate_constraint_metadata,
@@ -343,14 +343,15 @@ class Model(SerializationMixin):
 
         Creates a new line item with the given name and sets its values. The line item
         will be added to the "general" category by default. LineItem objects and
-        dictionaries can replace existing line items, but primitive values cannot.
+        dictionaries with LineItem parameters can replace existing line items, but
+        primitive values and values dictionaries cannot.
 
         Args:
             key (str): The name of the new line item to create
             value (Union[int, float, list, LineItem, dict]): Either a constant value
                 to set for all years, a list of values corresponding to each year in
-                the model, a LineItem object to add directly, or a dictionary of
-                LineItem parameters to create a new LineItem
+                the model, a LineItem object to add directly, a dictionary of year:value
+                pairs (values dictionary), or a dictionary of LineItem parameters
 
         Raises:
             TypeError: If key is not a string or value is not a number, list,
@@ -358,12 +359,13 @@ class Model(SerializationMixin):
             ValueError: If the model has no years defined, if list length doesn't
                 match number of years, if list contains non-numeric values, if
                 dictionary is malformed, or if a line item with the given key
-                already exists
+                already exists (for primitive values and values dictionaries)
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
             >>> model['growth'] = [100, 110, 121]  # Creates with specific values
+            >>> model['revenue_2023'] = {2023: 100000, 2024: 110000}  # Values dict
             >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
             >>> model['costs'] = {"category": "expenses", "formula": "revenue * 0.6"}
             >>>
@@ -400,17 +402,32 @@ class Model(SerializationMixin):
             return
 
         elif isinstance(value, dict):
-            # Handle dictionary with LineItem parameters - can replace existing items
-            # Create a copy of the dict and ensure the name matches the key
-            line_item_params = value.copy()
-            line_item_params["name"] = key  # Override name with key
+            # Check if this is a values dictionary (year:value pairs) or parameters
+            if _is_values_dict(value):
+                # Handle values dictionary - cannot replace existing items
+                if key in self.line_item_names:
+                    raise ValueError(
+                        f"Line item '{key}' already exists. "
+                        "Cannot replace with values dictionary. Use LineItem or "
+                        "dict with LineItem parameters to replace, or update "
+                        "attributes directly."
+                    )
 
-            # Create LineItem from dictionary parameters
-            line_item_to_add = LineItem.from_dict(line_item_params)
+                # Create line item with values dictionary
+                self.add_line_item(name=key, values=value)
+                return
+            else:
+                # Handle dictionary with LineItem parameters - can replace items
+                # Create a copy of the dict and ensure the name matches the key
+                line_item_params = value.copy()
+                line_item_params["name"] = key  # Override name with key
 
-            # Replace existing item or add new one
-            self.add_line_item(line_item=line_item_to_add, replace=True)
-            return
+                # Create LineItem from dictionary parameters
+                line_item_to_add = LineItem.from_dict(line_item_params)
+
+                # Replace existing item or add new one
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+                return
 
         elif isinstance(value, list):
             # Check if line item already exists - primitive types cannot replace items

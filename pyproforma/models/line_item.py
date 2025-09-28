@@ -15,6 +15,53 @@ def _validate_values_keys(values: dict[int, float | None] | None):
                 )
 
 
+def _is_values_dict(value_dict: dict) -> bool:
+    """
+    Check if a dictionary is a valid values dictionary for LineItem.
+
+    A values dictionary contains year:value pairs where:
+    - All keys are integers (years)
+    - All values are numeric (int/float/bool) or None
+
+    Args:
+        value_dict (dict): Dictionary to check
+
+    Returns:
+        bool: True if the dictionary is a valid values dictionary, False otherwise
+
+    Examples:
+        >>> _is_values_dict({2023: 100, 2024: 200})
+        True
+        >>> _is_values_dict({2023: 100.5, 2024: None})
+        True
+        >>> _is_values_dict({2023: True, 2024: False})
+        True
+        >>> _is_values_dict({"name": "revenue", "category": "income"})
+        False
+        >>> _is_values_dict({2023: "invalid"})
+        False
+        >>> _is_values_dict({})
+        False
+    """
+    if not value_dict:
+        return False
+
+    try:
+        # Use existing validation to check if all keys are integers
+        _validate_values_keys(value_dict)
+
+        # Check if all values are numeric (including boolean) or None
+        all_values_numeric = all(
+            isinstance(val, (int, float, bool)) or val is None
+            for val in value_dict.values()
+        )
+
+        return all_values_numeric
+    except ValueError:
+        # If validation fails, it's not a values dictionary
+        return False
+
+
 @dataclass
 class LineItem:
     """
