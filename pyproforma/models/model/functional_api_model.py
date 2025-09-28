@@ -31,6 +31,6 @@ class FunctionalApiModel:
             obj.values[year] = fn(year)
         self._value_store[line_item_name].set_value = MethodType(set_value, self._value_store[line_item_name])
     
-def create_function_api_model(line_item_names):
+def create_functional_api_model(line_item_names):
     model = FunctionalApiModel(line_item_names=line_item_names)
     return model, model._value_store.values()
