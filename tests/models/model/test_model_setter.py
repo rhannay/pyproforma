@@ -118,16 +118,18 @@ class TestConstantPassed:
             model_with_years[["invalid"]] = 100
 
     def test_setter_error_non_numeric_value(self, model_with_years):
-        """Test that setting with non-numeric value raises TypeError."""
+        """Test that setting with invalid values raises appropriate errors."""
+        # String values are now treated as formulas, invalid formulas raise ValueError
         with pytest.raises(
-            TypeError,
-            match="Value must be an int, float, list, LineItem, or dict, got str",
+            ValueError,
+            match=".*Formula contains undefined line item names: not_a_number",
         ):
             model_with_years["test_item"] = "not_a_number"
 
+        # None values still raise TypeError
         with pytest.raises(
             TypeError,
-            match="Value must be an int, float, list, LineItem, or dict, got NoneType",
+            match="Value must be.*got NoneType",
         ):
             model_with_years["test_item"] = None
 
@@ -478,3 +480,249 @@ class TestSetterDictionary:
         added_item = model_with_years._line_item_definition("existing")
         assert added_item.name == "existing"
         assert added_item.category == "costs"
+
+
+class TestSetterStringFormula:
+    """Test __setitem__ method with string formula functionality."""
+
+    @pytest.fixture
+    def model_with_years(self):
+        """Create a model with years for testing."""
+        return Model(years=[2023, 2024, 2025])
+
+    @pytest.fixture
+    def model_with_base_data(self):
+        """Create a model with base data for formula testing."""
+        model = Model(years=[2023, 2024, 2025])
+        model["revenue"] = [1000, 1100, 1200]
+        model["cost_ratio"] = 0.6
+        return model
+
+    def test_setter_with_simple_formula_string(self, model_with_years):
+        """Test setting a line item with a simple formula string."""
+        model_with_years["profit"] = "1000 * 0.2"
+
+        # Verify the line item was created
+        assert "profit" in model_with_years.line_item_names
+
+        # Verify formula is set correctly
+        added_item = model_with_years._line_item_definition("profit")
+        assert added_item.formula == "1000 * 0.2"
+
+        # Verify values are calculated correctly for all years
+        assert model_with_years["profit", 2023] == 200.0
+        assert model_with_years["profit", 2024] == 200.0
+        assert model_with_years["profit", 2025] == 200.0
+
+    def test_setter_with_reference_formula_string(self, model_with_base_data):
+        """Test setting a line item with a formula referencing other line items."""
+        model_with_base_data["profit"] = "revenue * (1 - cost_ratio)"
+
+        # Verify the line item was created
+        assert "profit" in model_with_base_data.line_item_names
+
+        # Verify formula is set correctly
+        added_item = model_with_base_data._line_item_definition("profit")
+        assert added_item.formula == "revenue * (1 - cost_ratio)"
+
+        # Verify values are calculated correctly for all years
+        # revenue * (1 - 0.6) = revenue * 0.4
+        assert model_with_base_data["profit", 2023] == 400.0  # 1000 * 0.4
+        assert model_with_base_data["profit", 2024] == 440.0  # 1100 * 0.4
+        assert model_with_base_data["profit", 2025] == 480.0  # 1200 * 0.4
+
+    def test_setter_with_complex_formula_string(self, model_with_base_data):
+        """Test setting a line item with a complex formula string."""
+        model_with_base_data["tax_rate"] = 0.25
+        model_with_base_data["net_profit"] = (
+            "revenue * (1 - cost_ratio) * (1 - tax_rate)"
+        )
+
+        # Verify the line item was created
+        assert "net_profit" in model_with_base_data.line_item_names
+
+        # Verify formula is set correctly
+        added_item = model_with_base_data._line_item_definition("net_profit")
+        assert added_item.formula == "revenue * (1 - cost_ratio) * (1 - tax_rate)"
+
+        # Verify values are calculated correctly
+        # revenue * 0.4 * 0.75 = revenue * 0.3
+        assert model_with_base_data["net_profit", 2023] == 300.0  # 1000 * 0.3
+        assert model_with_base_data["net_profit", 2024] == 330.0  # 1100 * 0.3
+        assert model_with_base_data["net_profit", 2025] == 360.0  # 1200 * 0.3
+
+    def test_setter_string_formula_category_default(self, model_with_years):
+        """Test that string formula line items get default 'general' category."""
+        model_with_years["test_formula"] = "100 + 50"
+
+        # Verify the line item is in general category
+        added_item = model_with_years._line_item_definition("test_formula")
+        assert added_item.category == "general"
+
+        # Verify it appears in category totals
+        assert "total_general" in model_with_years.line_item_names
+
+    def test_setter_string_formula_with_math_functions(self, model_with_years):
+        """Test string formula with mathematical functions."""
+        # This tests if the formula evaluation supports math functions
+        model_with_years["growth_rate"] = "0.05"
+        model_with_years["compound_growth"] = "1000 * (1 + growth_rate) ** 3"
+
+        # Verify calculation (should be 1000 * 1.05^3 ≈ 1157.625)
+        expected = 1000 * (1.05**3)
+        assert abs(model_with_years["compound_growth", 2023] - expected) < 0.01
+
+    def test_setter_string_formula_overwrite_prevention(self, model_with_base_data):
+        """Test that string formulas cannot overwrite existing line items."""
+        # Try to overwrite existing line item with string formula
+        with pytest.raises(
+            ValueError,
+            match=".*already exists.*Cannot replace with formula string.*",
+        ):
+            model_with_base_data["revenue"] = "2000"
+
+    def test_setter_string_formula_error_no_years(self):
+        """Test that string formula raises ValueError when model has no years."""
+        empty_model = Model()
+        with pytest.raises(
+            ValueError, match="Cannot add line item: model has no years defined"
+        ):
+            empty_model["test_formula"] = "100 + 50"
+
+    def test_setter_string_formula_error_non_string_key(self, model_with_years):
+        """Test that non-string keys raise TypeError with string formulas."""
+        with pytest.raises(TypeError, match="Line item name must be a string, got int"):
+            model_with_years[123] = "100 + 50"
+
+    def test_setter_string_formula_empty_string(self, model_with_years):
+        """Test behavior with empty string formula."""
+        model_with_years["empty_formula"] = ""
+
+        # Verify the line item was created
+        assert "empty_formula" in model_with_years.line_item_names
+
+        # Verify formula is set (empty string)
+        added_item = model_with_years._line_item_definition("empty_formula")
+        assert added_item.formula == ""
+
+    def test_setter_string_formula_whitespace_only(self, model_with_years):
+        """Test behavior with whitespace-only string formula."""
+        # Whitespace-only formulas should raise ValueError due to invalid syntax
+        with pytest.raises(
+            ValueError,
+            match=".*Invalid formula syntax:",
+        ):
+            model_with_years["whitespace_formula"] = "   "
+
+    def test_setter_string_formula_with_special_characters(self, model_with_years):
+        """Test string formula with special characters and operators."""
+        model_with_years["base_value"] = 1000
+        model_with_years["complex_calc"] = "base_value * 1.5 + 200 - 50"
+
+        # Verify calculation: 1000 * 1.5 + 200 - 50 = 1650
+        assert model_with_years["complex_calc", 2023] == 1650.0
+
+        # Verify formula is preserved exactly
+        added_item = model_with_years._line_item_definition("complex_calc")
+        assert added_item.formula == "base_value * 1.5 + 200 - 50"
+
+    def test_setter_string_formula_integration_with_model_operations(
+        self, model_with_base_data
+    ):
+        """Test that string formula items work with other model operations."""
+        model_with_base_data["margin"] = "revenue * 0.1"
+
+        # Test model summary includes the new item
+        assert "margin" in model_with_base_data.line_item_names
+
+        # Test category operations work
+        general_category = model_with_base_data.category("general")
+        assert general_category is not None
+
+        # Test model copy includes the formula item
+        copied_model = model_with_base_data.copy()
+        assert "margin" in copied_model.line_item_names
+        assert copied_model["margin", 2023] == 100.0  # 1000 * 0.1
+
+        # Verify formula is preserved in copy
+        copied_item = copied_model._line_item_definition("margin")
+        assert copied_item.formula == "revenue * 0.1"
+
+    def test_setter_string_formula_with_single_year_model(self):
+        """Test string formula works correctly with a single-year model."""
+        single_year_model = Model(years=[2023])
+        single_year_model["base"] = 500
+        single_year_model["calculated"] = "base * 2"
+
+        assert single_year_model["calculated", 2023] == 1000.0
+
+        # Verify formula is set correctly
+        added_item = single_year_model._line_item_definition("calculated")
+        assert added_item.formula == "base * 2"
+
+    def test_setter_string_formula_multiple_formulas(self, model_with_years):
+        """Test setting multiple string formulas that reference each other."""
+        model_with_years["base"] = "1000"
+        model_with_years["step1"] = "base * 1.1"
+        model_with_years["step2"] = "step1 * 1.2"
+        model_with_years["final"] = "step2 + 100"
+
+        # Verify the chain calculation: 1000 * 1.1 * 1.2 + 100 = 1420
+        assert model_with_years["final", 2023] == 1420.0
+
+        # Verify all formulas are preserved
+        assert model_with_years._line_item_definition("base").formula == "1000"
+        assert model_with_years._line_item_definition("step1").formula == "base * 1.1"
+        assert model_with_years._line_item_definition("step2").formula == "step1 * 1.2"
+        assert model_with_years._line_item_definition("final").formula == "step2 + 100"
+
+    def test_setter_string_formula_numeric_string_edge_cases(self, model_with_years):
+        """Test edge cases with numeric strings and various formats."""
+        # Test different numeric string formats
+        model_with_years["integer_string"] = "42"
+        model_with_years["float_string"] = "3.14159"
+        model_with_years["scientific_notation"] = "1.5e3"
+        model_with_years["negative_string"] = "-250"
+
+        # Verify calculations
+        assert model_with_years["integer_string", 2023] == 42.0
+        assert abs(model_with_years["float_string", 2023] - 3.14159) < 0.00001
+        assert model_with_years["scientific_notation", 2023] == 1500.0
+        assert model_with_years["negative_string", 2023] == -250.0
+
+        # Verify formulas are preserved exactly as entered
+        assert model_with_years._line_item_definition("integer_string").formula == "42"
+        assert (
+            model_with_years._line_item_definition("float_string").formula == "3.14159"
+        )
+        assert (
+            model_with_years._line_item_definition("scientific_notation").formula
+            == "1.5e3"
+        )
+        assert (
+            model_with_years._line_item_definition("negative_string").formula == "-250"
+        )
+
+    def test_setter_string_formula_comparison_with_other_setters(
+        self, model_with_years
+    ):
+        """Test string formulas produce same results as other setters."""
+        # Create items using different setter methods
+        model_with_years["constant_int"] = 100
+        model_with_years["constant_formula"] = "100"
+
+        model_with_years["list_values"] = [10, 20, 30]
+        model_with_years["base_for_formula"] = [10, 20, 30]
+        # Note: Formulas evaluate same for all years unlike lists
+        # But we can test that the formula method works
+
+        # Verify the constant values match
+        assert (
+            model_with_years["constant_int", 2023]
+            == model_with_years["constant_formula", 2023]
+        )
+
+        # Verify list values are set correctly
+        assert model_with_years["list_values", 2023] == 10.0
+        assert model_with_years["list_values", 2024] == 20.0
+        assert model_with_years["list_values", 2025] == 30.0

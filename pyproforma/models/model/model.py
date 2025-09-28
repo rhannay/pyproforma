@@ -336,7 +336,7 @@ class Model(SerializationMixin):
         )
 
     def __setitem__(
-        self, key: str, value: Union[int, float, list, LineItem, dict]
+        self, key: str, value: Union[int, float, str, list, LineItem, dict]
     ) -> None:
         """
         Add a new line item with values using dictionary-style access.
@@ -348,22 +348,24 @@ class Model(SerializationMixin):
 
         Args:
             key (str): The name of the new line item to create
-            value (Union[int, float, list, LineItem, dict]): Either a constant value
-                to set for all years, a list of values corresponding to each year in
-                the model, a LineItem object to add directly, a dictionary of year:value
-                pairs (values dictionary), or a dictionary of LineItem parameters
+            value (Union[int, float, str, list, LineItem, dict]): Either a constant
+                value to set for all years, a formula string for calculations, a list
+                of values corresponding to each year in the model, a LineItem object
+                to add directly, a dictionary of year:value pairs (values dictionary),
+                or a dictionary of LineItem parameters
 
         Raises:
-            TypeError: If key is not a string or value is not a number, list,
+            TypeError: If key is not a string or value is not a number, string, list,
                 LineItem, or dict
             ValueError: If the model has no years defined, if list length doesn't
                 match number of years, if list contains non-numeric values, if
                 dictionary is malformed, or if a line item with the given key
-                already exists (for primitive values and values dictionaries)
+                already exists (for primitive values, formulas, and values dictionaries)
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
+            >>> model['profit'] = "revenue - expenses"  # Creates with formula
             >>> model['growth'] = [100, 110, 121]  # Creates with specific values
             >>> model['revenue_2023'] = {2023: 100000, 2024: 110000}  # Values dict
             >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
@@ -456,6 +458,20 @@ class Model(SerializationMixin):
             # Create values dictionary mapping years to list values
             values = {year: float(val) for year, val in zip(self._years, value)}
 
+        elif isinstance(value, str):
+            # Handle string as formula - cannot replace existing items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with formula string. Use LineItem or dict "
+                    "with LineItem parameters to replace, or update attributes "
+                    "directly."
+                )
+
+            # Create line item with formula
+            self.add_line_item(name=key, formula=value)
+            return
+
         elif isinstance(value, (int, float)):
             # Check if line item already exists - primitive types cannot replace items
             if key in self.line_item_names:
@@ -470,7 +486,7 @@ class Model(SerializationMixin):
 
         else:
             raise TypeError(
-                f"Value must be an int, float, list, LineItem, or dict, "
+                f"Value must be an int, float, str, list, LineItem, or dict, "
                 f"got {type(value).__name__}"
             )
 
