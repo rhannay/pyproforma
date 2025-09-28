@@ -1247,3 +1247,196 @@ class TestLineItemResultsValueSetting:
         error_msg = str(excinfo.value)
         assert "Cannot set values on category item 'income'" in error_msg
         assert "Only line_item types support values modification" in error_msg
+
+
+class TestLineItemResultsCategoryProperty:
+    """Test category property getter and setter functionality."""
+
+    @pytest.fixture
+    def category_testing_model(self):
+        """Create a model for testing category property functionality."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                category="income",
+                label="Revenue",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="expenses",
+                category="costs",
+                label="Expenses",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="income", label="Income", include_total=True),
+            Category(name="costs", label="Costs"),
+            Category(name="profit", label="Profit"),
+        ]
+
+        return Model(
+            line_items=line_items,
+            years=[2023, 2024],
+            categories=categories,
+        )
+
+    def test_category_property_getter(self, category_testing_model):
+        """Test that category property getter returns correct category."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+        expenses_item = LineItemResults(category_testing_model, "expenses")
+
+        assert revenue_item.category == "income"
+        assert expenses_item.category == "costs"
+
+    def test_category_property_getter_for_category_total(self, category_testing_model):
+        """Test that category property getter works for category totals."""
+        # Find the category total name
+        category_total_name = None
+        for metadata in category_testing_model.line_item_metadata:
+            if (
+                metadata["source_type"] == "category"
+                and metadata["source_name"] == "income"
+            ):
+                category_total_name = metadata["name"]
+                break
+
+        assert category_total_name is not None
+        category_total_item = LineItemResults(
+            category_testing_model, category_total_name
+        )
+        assert category_total_item.category == "category_totals"
+
+    def test_category_setter_updates_model(self, category_testing_model):
+        """Test that category setter updates the category in the model."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+
+        # Verify initial category
+        assert revenue_item.category == "income"
+
+        # Change category
+        revenue_item.category = "profit"
+
+        # Verify the category was updated
+        assert revenue_item.category == "profit"
+
+        # Verify the change persists in the model
+        updated_line_item = category_testing_model._line_item_definition("revenue")
+        assert updated_line_item.category == "profit"
+
+        # Verify creating a new LineItemResults also has the updated category
+        new_revenue_item = LineItemResults(category_testing_model, "revenue")
+        assert new_revenue_item.category == "profit"
+
+    def test_category_setter_raises_error_for_non_line_item(
+        self, category_testing_model
+    ):
+        """Test that category setter raises ValueError for non-line_item types."""
+        # Mock metadata to simulate a category item
+        mock_metadata = {
+            "source_type": "category",
+            "label": "Income",
+            "value_format": "no_decimals",
+            "category": "category_totals",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            category_testing_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            category_results = LineItemResults(category_testing_model, "income")
+
+            with pytest.raises(ValueError) as excinfo:
+                category_results.category = "other"
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set category on category item 'income'" in error_msg
+        assert "Only line_item types support category modification" in error_msg
+
+    def test_category_setter_raises_error_for_multi_line_item(
+        self, category_testing_model
+    ):
+        """Test that category setter raises ValueError for multi-line item types."""
+        # Mock metadata to simulate a multi-line item
+        mock_metadata = {
+            "source_type": "multi_line_item",
+            "label": "Debt Schedule",
+            "value_format": "no_decimals",
+            "category": "debt",
+            "formula": None,
+            "hardcoded_values": None,
+        }
+
+        with patch.object(
+            category_testing_model, "_get_item_metadata", return_value=mock_metadata
+        ):
+            multi_line_results = LineItemResults(category_testing_model, "debt_payment")
+
+            with pytest.raises(ValueError) as excinfo:
+                multi_line_results.category = "other"
+
+        error_msg = str(excinfo.value)
+        assert "Cannot set category on multi_line_item item 'debt_payment'" in error_msg
+        assert "Only line_item types support category modification" in error_msg
+
+    def test_category_setter_creates_new_category(self, category_testing_model):
+        """Test that category setter creates new category if it doesn't exist."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+
+        # Get initial categories
+        initial_categories = set(category_testing_model.category_names)
+
+        # Set a category that doesn't exist in the model
+        revenue_item.category = "new_category"
+
+        # Verify the category was set
+        assert revenue_item.category == "new_category"
+
+        # Verify the new category was created in the model
+        updated_categories = set(category_testing_model.category_names)
+        assert "new_category" in updated_categories
+        assert updated_categories > initial_categories  # new_category should be added
+
+    def test_category_setter_string_validation(self, category_testing_model):
+        """Test that category setter validates string input."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+
+        # The setter should accept string values
+        revenue_item.category = "costs"
+        assert revenue_item.category == "costs"
+
+        # Non-string values should be rejected by the LineItem validation
+        # when the model is updated (the setter itself doesn't type-check)
+        with pytest.raises(TypeError):
+            revenue_item.category = 123
+
+    def test_category_property_in_summary(self, category_testing_model):
+        """Test that category property is included in summary output."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+
+        summary_text = revenue_item.summary()
+        assert "Category: income" in summary_text
+
+        # Change category and verify it updates in summary
+        revenue_item.category = "profit"
+        updated_summary = revenue_item.summary()
+        assert "Category: profit" in updated_summary
+        assert "Category: income" not in updated_summary
+
+    def test_category_property_in_html_summary(self, category_testing_model):
+        """Test that category property is included in HTML summary output."""
+        revenue_item = LineItemResults(category_testing_model, "revenue")
+
+        html_summary = revenue_item.summary(html=True)
+        assert "Category: income" in html_summary
+        assert "<br>" in html_summary  # Verify HTML formatting
+
+        # Change category and verify it updates in HTML summary
+        revenue_item.category = "profit"
+        updated_html_summary = revenue_item.summary(html=True)
+        assert "Category: profit" in updated_html_summary
+        assert "Category: income" not in updated_html_summary

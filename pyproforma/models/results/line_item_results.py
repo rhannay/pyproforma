@@ -173,6 +173,23 @@ class LineItemResults:
         # local state
         self.model.update.update_line_item(self.name, value_format=value)
 
+    @property
+    def category(self) -> str:
+        """Get the category for this line item."""
+        return self._line_item_metadata["category"]
+
+    @category.setter
+    def category(self, value: str) -> None:
+        """Set the category for this line item and update it in the model."""
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot set category on {self.source_type} item '{self.name}'. "
+                f"Only line_item types support category modification."
+            )
+        # Update the line item in the model first - if this fails, we don't change
+        # local state
+        self.model.update.update_line_item(self.name, category=value)
+
     def delete(self) -> None:
         """
         Delete this line item from the model.
@@ -633,6 +650,7 @@ class LineItemResults:
             f"LineItemResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Source Type: {self.source_type}\n"
+            f"Category: {self.category}\n"
             f"Value Format: {self.value_format}{formula_info}{value_info}"
         )
 
