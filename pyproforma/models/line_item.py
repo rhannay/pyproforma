@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from __future__ import annotations
+from dataclasses import dataclass, field
 
 from ..constants import ValueFormat
 from ._utils import validate_name
-
 
 def _validate_values_keys(values: dict[int, float | None] | None):
     """Validate that all keys in the values dictionary are integers."""
@@ -72,7 +72,7 @@ class LineItem:
     name: str
     category: str = "general"
     label: str = None
-    values: dict[int, float | None] = None
+    values: dict[int, float | None] = field(default_factory=dict)
     formula: str = None
     value_format: ValueFormat = "no_decimals"
 
@@ -120,3 +120,70 @@ class LineItem:
             formula=item_dict.get("formula"),
             value_format=item_dict.get("value_format", "no_decimals"),
         )
+
+    def get_value(self, year) -> float:
+        if year not in self.values:
+            self.set_value(year)
+        return self.values[year]
+    
+    def set_value(self, year):
+        raise NotImplementedError(
+            f'Update condition for {self.name} has not been set yet. Use model.define() to define the update condition.'
+        )
+    
+    # DOES NOT CURRENTLY SUPPORT ONE CALLABLE ADDING ANOTHER CALLABLE
+    def __add__(self, other: LineItem | float | callable) -> callable:
+        def add_expr(year):
+            if isinstance(other, (int, float)):
+                return self.get_value(year) + other
+            elif callable(other):
+                return self.get_value(year) + other(year)
+            else:
+                return self.get_value(year) + other.get_value(year)
+        return add_expr
+    
+    def __sub__(self, other: LineItem | float) -> callable:
+        def sub_expr(year):
+            if isinstance(other, (int, float)):
+                return self.get_value(year) - other
+            elif callable(other):
+                return self.get_value(year) - other(year)
+            else:
+                return self.get_value(year) - other.get_value(year)
+        return sub_expr
+
+    def __mul__(self, other: LineItem | float) -> callable:
+        def mul_expr(year):
+            if isinstance(other, (int, float)):
+                return self.get_value(year) * other
+            elif callable(other):
+                return self.get_value(year) * other(year)
+            else:
+                return self.get_value(year) * other.get_value(year)
+        return mul_expr
+
+    def __getitem__(self, key):
+        return LaggedLineItem(reference=self, lag=key)
+    
+    def __setitem__(self, key, value):
+        self.values[key] = value
+
+@dataclass
+class LaggedLineItem:
+    reference: LineItem
+    lag: int
+    
+    def get_value(self, year):
+        return self.reference.get_value(year + self.lag)
+    
+    def __add__(self, other: LineItem | float) -> callable:
+        return lambda year: self.reference.__add__(other)(year + self.lag)
+    
+    def __sub__(self, other: LineItem | float) -> callable:
+        return lambda year: self.reference.__sub__(other)(year + self.lag)
+
+
+    def __mul__(self, other: LineItem | float) -> callable:
+        return lambda year: self.reference.__mul__(other)(year + self.lag)
+
+    
