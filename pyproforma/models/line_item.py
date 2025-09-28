@@ -131,36 +131,29 @@ class LineItem:
             f'Update condition for {self.name} has not been set yet. Use model.define() to define the update condition.'
         )
     
+    def _create_binary_operation(self, other: LineItem | float | callable, operation):
+        """Helper method to create binary operations with consistent logic."""
+        def operation_expr(year):
+            if isinstance(other, (int, float)):
+                return operation(self.get_value(year), other)
+            elif callable(other):
+                return operation(self.get_value(year), other(year))
+            else:
+                return operation(self.get_value(year), other.get_value(year))
+        return operation_expr
+    
     # DOES NOT CURRENTLY SUPPORT ONE CALLABLE ADDING ANOTHER CALLABLE
     def __add__(self, other: LineItem | float | callable) -> callable:
-        def add_expr(year):
-            if isinstance(other, (int, float)):
-                return self.get_value(year) + other
-            elif callable(other):
-                return self.get_value(year) + other(year)
-            else:
-                return self.get_value(year) + other.get_value(year)
-        return add_expr
+        return self._create_binary_operation(other, lambda a, b: a + b)
     
     def __sub__(self, other: LineItem | float) -> callable:
-        def sub_expr(year):
-            if isinstance(other, (int, float)):
-                return self.get_value(year) - other
-            elif callable(other):
-                return self.get_value(year) - other(year)
-            else:
-                return self.get_value(year) - other.get_value(year)
-        return sub_expr
+        return self._create_binary_operation(other, lambda a, b: a - b)
 
     def __mul__(self, other: LineItem | float) -> callable:
-        def mul_expr(year):
-            if isinstance(other, (int, float)):
-                return self.get_value(year) * other
-            elif callable(other):
-                return self.get_value(year) * other(year)
-            else:
-                return self.get_value(year) * other.get_value(year)
-        return mul_expr
+        return self._create_binary_operation(other, lambda a, b: a * b)
+
+    def __true_div__(self, other: LineItem | float) -> callable:
+        return self._create_binary_operation(other, lambda a, b: a/b)
 
     def __getitem__(self, key):
         return LaggedLineItem(reference=self, lag=key)
@@ -185,5 +178,6 @@ class LaggedLineItem:
 
     def __mul__(self, other: LineItem | float) -> callable:
         return lambda year: self.reference.__mul__(other)(year + self.lag)
+
 
     
