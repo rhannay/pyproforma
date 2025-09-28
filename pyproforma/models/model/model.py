@@ -1196,6 +1196,7 @@ class Model(SerializationMixin):
         values: dict[int, float] | None = None,
         formula: str | None = None,
         value_format: ValueFormat = "no_decimals",
+        replace: bool = False,
     ) -> None:
         """
         Add a new line item to the model.
@@ -1211,13 +1212,15 @@ class Model(SerializationMixin):
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
             value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+            replace (bool, optional): If True, replace existing line item with same name. Defaults to False.
 
         Returns:
             None
 
         Raises:
             ValueError: If the line item cannot be added (validation fails), or if both
-                line_item and name are provided, or if neither is provided
+                line_item and name are provided, or if neither is provided, or if a line item
+                with the same name already exists and replace=False
 
         Examples:
             >>> # Method 1: Pass a LineItem instance
@@ -1225,6 +1228,9 @@ class Model(SerializationMixin):
 
             >>> # Method 2: Create from parameters
             >>> model.add_line_item(name="revenue", category="income", values={2023: 100000})
+
+            >>> # Method 3: Replace existing line item
+            >>> model.add_line_item(name="revenue", values={2023: 150000}, replace=True)
         """  # noqa: E501
         self.update.add_line_item(
             line_item=line_item,
@@ -1234,6 +1240,7 @@ class Model(SerializationMixin):
             values=values,
             formula=formula,
             value_format=value_format,
+            replace=replace,
         )
 
     def add_category(

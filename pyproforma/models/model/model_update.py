@@ -109,6 +109,7 @@ class UpdateNamespace:
         values: dict[int, float] | None = None,
         formula: str | None = None,
         value_format: ValueFormat = "no_decimals",
+        replace: bool = False,
     ) -> None:
         """
         Add a new line item to the model.
@@ -125,13 +126,15 @@ class UpdateNamespace:
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
             value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+            replace (bool, optional): If True, replace existing line item with same name. Defaults to False.
 
         Returns:
             None
 
         Raises:
             ValueError: If the line item cannot be added (validation fails), or if both
-                line_item and name are provided, or if neither is provided
+                line_item and name are provided, or if neither is provided, or if a line item
+                with the same name already exists and replace=False
 
         Examples:
             >>> # Method 1: Pass a LineItem instance
@@ -139,6 +142,9 @@ class UpdateNamespace:
 
             >>> # Method 2: Create from parameters
             >>> model.update.add_line_item(name="revenue", category="income", values={2023: 100000})
+
+            >>> # Method 3: Replace existing line item
+            >>> model.update.add_line_item(name="revenue", values={2023: 150000}, replace=True)
         """  # noqa: E501
         # Validate that exactly one of line_item or name is provided
         if line_item is not None and name is not None:
@@ -172,27 +178,50 @@ class UpdateNamespace:
 
         # Check if line item name already exists
         existing_names = [item.name for item in self._model._line_item_definitions]
-        if new_line_item.name in existing_names:
+        if new_line_item.name in existing_names and not replace:
             raise ValueError(
                 f"Line item with name '{new_line_item.name}' already exists. "
-                f"Use update.update_line_item() to modify existing line items."
+                f"Use update.update_line_item() to modify existing line items, "
+                f"or set replace=True to replace the existing item."
             )
 
         # Test on a copy of the model first
         try:
             model_copy = self._model.copy()
-            model_copy._line_item_definitions.append(new_line_item)
+
+            if replace and new_line_item.name in existing_names:
+                # Replace existing line item
+                for i, item in enumerate(model_copy._line_item_definitions):
+                    if item.name == new_line_item.name:
+                        model_copy._line_item_definitions[i] = new_line_item
+                        break
+            else:
+                # Add new line item
+                model_copy._line_item_definitions.append(new_line_item)
+
             model_copy._build_and_calculate()
 
-            # If we get here, the addition was successful on the copy
+            # If we get here, the operation was successful on the copy
             # Now apply it to the actual model
-            self._model._line_item_definitions.append(new_line_item)
+            if replace and new_line_item.name in existing_names:
+                # Replace existing line item
+                for i, item in enumerate(self._model._line_item_definitions):
+                    if item.name == new_line_item.name:
+                        self._model._line_item_definitions[i] = new_line_item
+                        break
+            else:
+                # Add new line item
+                self._model._line_item_definitions.append(new_line_item)
+
             self._model._build_and_calculate()
 
         except Exception as e:
             # If validation fails, raise an informative error
+            action = (
+                "replace" if replace and new_line_item.name in existing_names else "add"
+            )
             raise ValueError(
-                f"Failed to add line item '{new_line_item.name}': {str(e)}"
+                f"Failed to {action} line item '{new_line_item.name}': {str(e)}"
             ) from e
 
     # ============================================================================
