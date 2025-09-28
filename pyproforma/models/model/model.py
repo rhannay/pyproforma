@@ -342,8 +342,8 @@ class Model(SerializationMixin):
         Add a new line item with values using dictionary-style access.
 
         Creates a new line item with the given name and sets its values. The line item
-        will be added to the "general" category by default. Cannot replace existing
-        line items - use model.update.update_line_item() or delete the line item first.
+        will be added to the "general" category by default. LineItem objects and
+        dictionaries can replace existing line items, but primitive values cannot.
 
         Args:
             key (str): The name of the new line item to create
@@ -380,17 +380,9 @@ class Model(SerializationMixin):
         if not self._years:
             raise ValueError("Cannot add line item: model has no years defined")
 
-        # Check if line item already exists - cannot replace existing line items
-        # Use the update namespace or delete the line item first
-        if key in self.line_item_names:
-            raise ValueError(
-                f"Line item '{key}' already exists. "
-                "Update attributes directly or delete before replacing."
-            )
-
         # Handle different value types
         if isinstance(value, LineItem):
-            # Handle LineItem object - add it directly but optionally override name
+            # Handle LineItem object - can replace existing items
             line_item_to_add = value
             if line_item_to_add.name != key:
                 # Create a copy with the new name if names don't match
@@ -403,12 +395,16 @@ class Model(SerializationMixin):
                     value_format=value.value_format,
                 )
 
-            # Add the LineItem object
+            # Replace existing item or add new one
+            if key in self.line_item_names:
+                # Delete existing line item first, then add the new one
+                self.update.delete_line_item(key)
+
             self.add_line_item(line_item=line_item_to_add)
             return
 
         elif isinstance(value, dict):
-            # Handle dictionary with LineItem parameters
+            # Handle dictionary with LineItem parameters - can replace existing items
             # Create a copy of the dict and ensure the name matches the key
             line_item_params = value.copy()
             line_item_params["name"] = key  # Override name with key
@@ -416,11 +412,23 @@ class Model(SerializationMixin):
             # Create LineItem from dictionary parameters
             line_item_to_add = LineItem.from_dict(line_item_params)
 
-            # Add the LineItem object
+            # Replace existing item or add new one
+            if key in self.line_item_names:
+                # Delete existing line item first, then add the new one
+                self.update.delete_line_item(key)
+
             self.add_line_item(line_item=line_item_to_add)
             return
 
         elif isinstance(value, list):
+            # Check if line item already exists - primitive types cannot replace items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with primitive values. Use LineItem or dict "
+                    "to replace, or update attributes directly."
+                )
+
             # Validate list length matches number of years
             if len(value) != len(self._years):
                 raise ValueError(
@@ -440,6 +448,14 @@ class Model(SerializationMixin):
             values = {year: float(val) for year, val in zip(self._years, value)}
 
         elif isinstance(value, (int, float)):
+            # Check if line item already exists - primitive types cannot replace items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with primitive values. Use LineItem or dict "
+                    "to replace, or update attributes directly."
+                )
+
             # Create values dictionary with the constant value for all years
             values = {year: float(value) for year in self._years}
 

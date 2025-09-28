@@ -132,18 +132,21 @@ class TestConstantPassed:
             model_with_years["test_item"] = None
 
     def test_setter_with_existing_line_item_name_error(self, model_with_years):
-        """Test that setting with an existing line item name raises ValueError."""
+        """Test setting existing line item name raises ValueError for primitives."""
         # First, create a line item
         model_with_years["existing_item"] = 100
 
         # Verify it exists
         assert model_with_years["existing_item", 2023] == 100.0
 
-        # Now try to set it again with a different value
-        # This should raise ValueError since replacements are not allowed
+        # Now try to set it again with a primitive value
+        # This should raise ValueError since primitive replacements are not allowed
         with pytest.raises(
             ValueError,
-            match="Line item 'existing_item' already exists. Update attributes",
+            match=(
+                "Cannot replace with primitive values. Use LineItem or dict "
+                "to replace, or update attributes directly."
+            ),
         ):
             model_with_years["existing_item"] = 200
 
@@ -267,7 +270,10 @@ class TestConstantPassed:
         # Try to update with list values - should raise ValueError
         with pytest.raises(
             ValueError,
-            match="Line item 'update_test' already exists. Update attributes",
+            match=(
+                "Cannot replace with primitive values. Use LineItem or dict "
+                "to replace, or update attributes directly."
+            ),
         ):
             model_with_years["update_test"] = [600, 700, 800]
 
@@ -331,18 +337,21 @@ class TestSetterLineItem:
         assert added_item.name == "expenses"  # Should use key name
         assert added_item.category == "costs"  # Should preserve other properties
 
-    def test_setter_line_item_existing_item_error(self, model_with_years):
-        """Test that setting LineItem on existing item raises ValueError."""
+    def test_setter_line_item_existing_item_replacement(self, model_with_years):
+        """Test that setting LineItem on existing item replaces it."""
         # First add a line item
         model_with_years["existing"] = 1000
+        assert model_with_years["existing", 2023] == 1000
 
-        # Try to set a LineItem with same key
-        line_item = LineItem(name="new_item", formula="200")
-        with pytest.raises(
-            ValueError,
-            match="Line item 'existing' already exists. Update attributes",
-        ):
-            model_with_years["existing"] = line_item
+        # Set a LineItem with same key - should replace
+        line_item = LineItem(name="new_item", category="income", formula="2000")
+        model_with_years["existing"] = line_item
+
+        # Verify the replacement worked
+        assert model_with_years["existing", 2023] == 2000
+        added_item = model_with_years._line_item_definition("existing")
+        assert added_item.name == "existing"  # Should use key name
+        assert added_item.category == "income"  # Should have new properties
 
     def test_setter_line_item_preserves_properties(self, model_with_years):
         """Test that all LineItem properties are preserved when added."""
@@ -455,14 +464,17 @@ class TestSetterDictionary:
         with pytest.raises(AttributeError):
             model_with_years["bad_values"] = {"values": "invalid_values_type"}
 
-    def test_setter_dict_existing_item_error(self, model_with_years):
-        """Test that setting dict on existing item raises ValueError."""
+    def test_setter_dict_existing_item_replacement(self, model_with_years):
+        """Test that setting dict on existing item replaces it."""
         # First add a line item
         model_with_years["existing"] = 1000
+        assert model_with_years["existing", 2023] == 1000
 
-        # Try to set a dict with same key
-        with pytest.raises(
-            ValueError,
-            match="Line item 'existing' already exists. Update attributes",
-        ):
-            model_with_years["existing"] = {"formula": "2000"}
+        # Set a dict with same key - should replace
+        model_with_years["existing"] = {"formula": "3000", "category": "costs"}
+
+        # Verify the replacement worked
+        assert model_with_years["existing", 2023] == 3000
+        added_item = model_with_years._line_item_definition("existing")
+        assert added_item.name == "existing"
+        assert added_item.category == "costs"
