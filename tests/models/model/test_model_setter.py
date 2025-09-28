@@ -1,10 +1,10 @@
 import pytest
 
 from pyproforma import Model
+from pyproforma.models.line_item import LineItem
 
 
 class TestConstantPassed:
-    """Test cases for the Model.__setitem__ method with constant values."""
 
     @pytest.fixture
     def model_with_years(self):
@@ -121,22 +121,23 @@ class TestConstantPassed:
     def test_setter_error_non_numeric_value(self, model_with_years):
         """Test that setting with non-numeric value raises TypeError."""
         with pytest.raises(
-            TypeError, match="Value must be an int, float, or list, got str"
+            TypeError, match="Value must be an int, float, list, or LineItem, got str"
         ):
             model_with_years["test_item"] = "not_a_number"
 
         with pytest.raises(
-            TypeError, match="Value must be an int, float, or list, got dict"
+            TypeError, match="Value must be an int, float, list, or LineItem, got dict"
         ):
             model_with_years["test_item"] = {"value": 100}
 
         with pytest.raises(
-            TypeError, match="Value must be an int, float, or list, got NoneType"
+            TypeError,
+            match="Value must be an int, float, list, or LineItem, got NoneType",
         ):
             model_with_years["test_item"] = None
 
-    def test_setter_with_existing_line_item_name(self, model_with_years):
-        """Test behavior when setting a line item with a name that already exists."""
+    def test_setter_with_existing_line_item_name_error(self, model_with_years):
+        """Test that setting with an existing line item name raises ValueError."""
         # First, create a line item
         model_with_years["existing_item"] = 100
 
@@ -144,13 +145,12 @@ class TestConstantPassed:
         assert model_with_years["existing_item", 2023] == 100.0
 
         # Now try to set it again with a different value
-        # This should use the update functionality to modify the existing item
-        model_with_years["existing_item"] = 200
-
-        # Verify the value was updated
-        assert model_with_years["existing_item", 2023] == 200.0
-        assert model_with_years["existing_item", 2024] == 200.0
-        assert model_with_years["existing_item", 2025] == 200.0
+        # This should raise ValueError since replacements are not allowed
+        with pytest.raises(
+            ValueError,
+            match="Line item 'existing_item' already exists. Update attributes",
+        ):
+            model_with_years["existing_item"] = 200
 
     def test_setter_integration_with_model_operations(self, model_with_years):
         """Test that items created via setter work with other model operations."""
@@ -263,17 +263,18 @@ class TestConstantPassed:
         ):
             empty_model["test_item"] = [100, 200, 300]
 
-    def test_setter_update_existing_with_list(self, model_with_years):
-        """Test updating existing line item with list values."""
+    def test_setter_update_existing_with_list_error(self, model_with_years):
+        """Test that updating existing line item with list values raises ValueError."""
         # Create initial item with constant value
         model_with_years["update_test"] = 500
         assert model_with_years["update_test", 2023] == 500.0
 
-        # Update with list values
-        model_with_years["update_test"] = [600, 700, 800]
-        assert model_with_years["update_test", 2023] == 600.0
-        assert model_with_years["update_test", 2024] == 700.0
-        assert model_with_years["update_test", 2025] == 800.0
+        # Try to update with list values - should raise ValueError
+        with pytest.raises(
+            ValueError,
+            match="Line item 'update_test' already exists. Update attributes",
+        ):
+            model_with_years["update_test"] = [600, 700, 800]
 
     def test_setter_list_integration_with_model_operations(self, model_with_years):
         """Test that items created via list setter work with other model operations."""
@@ -294,3 +295,78 @@ class TestConstantPassed:
         assert "expenses" in copied_model.line_item_names
         assert copied_model["revenue", 2023] == 1000.0
         assert copied_model["expenses", 2024] == 850.0
+
+
+class TestSetterLineItem:
+    """Test __setitem__ method with LineItem objects."""
+
+    @pytest.fixture
+    def model_with_years(self):
+        """Create a model with years for testing."""
+        return Model(years=[2023, 2024])
+
+    def test_setter_with_line_item_object(self, model_with_years):
+        """Test that setting with a LineItem object adds it correctly."""
+        line_item = LineItem(name="revenue", category="income", formula="1000")
+        model_with_years["revenue"] = line_item
+
+        # Verify the line item was added
+        assert "revenue" in model_with_years.line_item_names
+        assert model_with_years["revenue", 2023] == 1000
+        assert model_with_years["revenue", 2024] == 1000
+
+        # Verify the line item properties
+        added_item = model_with_years._line_item_definition("revenue")
+        assert added_item.name == "revenue"
+        assert added_item.category == "income"
+        assert added_item.formula == "1000"
+
+    def test_setter_line_item_different_key_name(self, model_with_years):
+        """Test that LineItem name is overridden by the key if different."""
+        line_item = LineItem(name="original_name", category="costs", formula="500")
+        model_with_years["expenses"] = line_item
+
+        # Verify the line item was added with the key name
+        assert "expenses" in model_with_years.line_item_names
+        assert "original_name" not in model_with_years.line_item_names
+        assert model_with_years["expenses", 2023] == 500
+
+        # Verify the line item has the key name
+        added_item = model_with_years._line_item_definition("expenses")
+        assert added_item.name == "expenses"  # Should use key name
+        assert added_item.category == "costs"  # Should preserve other properties
+
+    def test_setter_line_item_existing_item_error(self, model_with_years):
+        """Test that setting LineItem on existing item raises ValueError."""
+        # First add a line item
+        model_with_years["existing"] = 1000
+
+        # Try to set a LineItem with same key
+        line_item = LineItem(name="new_item", formula="200")
+        with pytest.raises(
+            ValueError,
+            match="Line item 'existing' already exists. Update attributes",
+        ):
+            model_with_years["existing"] = line_item
+
+    def test_setter_line_item_preserves_properties(self, model_with_years):
+        """Test that all LineItem properties are preserved when added."""
+        line_item = LineItem(
+            name="detailed_item",
+            category="special",
+            label="Detailed Item",
+            formula="1500",
+            value_format="currency",
+        )
+        model_with_years["detailed_item"] = line_item
+
+        # Verify all properties are preserved
+        added_item = model_with_years._line_item_definition("detailed_item")
+        assert added_item.name == "detailed_item"
+        assert added_item.category == "special"
+        assert added_item.label == "Detailed Item"
+        assert added_item.formula == "1500"
+        assert added_item.value_format == "currency"
+
+        # Verify it calculates correctly
+        assert model_with_years["detailed_item", 2023] == 1500

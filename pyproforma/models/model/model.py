@@ -335,27 +335,35 @@ class Model(SerializationMixin):
             "Key must be a tuple of (item_name, year) or a string item_name."
         )
 
-    def __setitem__(self, key: str, value: Union[int, float, list]) -> None:
+    def __setitem__(self, key: str, value: Union[int, float, list, LineItem]) -> None:
         """
-        Set a new line item with values using dictionary-style access.
+        Add a new line item with values using dictionary-style access.
 
         Creates a new line item with the given name and sets its values. The line item
-        will be added to the "general" category by default.
+        will be added to the "general" category by default. Cannot replace existing
+        line items - use model.update.update_line_item() or delete the line item first.
 
         Args:
             key (str): The name of the new line item to create
-            value (Union[int, float, list]): Either a constant value to set for all
-                years, or a list of values corresponding to each year in the model
+            value (Union[int, float, list, LineItem]): Either a constant value to set
+                for all years, a list of values corresponding to each year in the
+                model, or a LineItem object to add directly
 
         Raises:
-            TypeError: If key is not a string or value is not a number or list
-            ValueError: If the model has no years defined, or if list length doesn't
-                match number of years, or if list contains non-numeric values
+            TypeError: If key is not a string or value is not a number, list, or
+                LineItem
+            ValueError: If the model has no years defined, if list length doesn't
+                match number of years, if list contains non-numeric values, or if
+                a line item with the given key already exists
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
             >>> model['growth'] = [100, 110, 121]  # Creates with specific values
+            >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
+            >>>
+            >>> # To update existing line items, use the update namespace:
+            >>> model.update.update_line_item('revenue', values={2023: 1200})
         """
         # Validate that key is a string
         if not isinstance(key, str):
@@ -367,8 +375,34 @@ class Model(SerializationMixin):
         if not self._years:
             raise ValueError("Cannot add line item: model has no years defined")
 
+        # Check if line item already exists - cannot replace existing line items
+        # Use the update namespace or delete the line item first
+        if key in self.line_item_names:
+            raise ValueError(
+                f"Line item '{key}' already exists. "
+                "Update attributes directly or delete before replacing."
+            )
+
         # Handle different value types
-        if isinstance(value, list):
+        if isinstance(value, LineItem):
+            # Handle LineItem object - add it directly but optionally override name
+            line_item_to_add = value
+            if line_item_to_add.name != key:
+                # Create a copy with the new name if names don't match
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=value.category,
+                    label=value.label,
+                    formula=value.formula,
+                    values=value.values,
+                    value_format=value.value_format,
+                )
+
+            # Add the LineItem object
+            self.add_line_item(line_item=line_item_to_add)
+            return
+
+        elif isinstance(value, list):
             # Validate list length matches number of years
             if len(value) != len(self._years):
                 raise ValueError(
@@ -393,16 +427,12 @@ class Model(SerializationMixin):
 
         else:
             raise TypeError(
-                f"Value must be an int, float, or list, got {type(value).__name__}"
+                f"Value must be an int, float, list, or LineItem, "
+                f"got {type(value).__name__}"
             )
 
-        # Check if line item already exists
-        if key in self.line_item_names:
-            # Update existing line item
-            self.update.update_line_item(key, values=values)
-        else:
-            # Add new line item
-            self.add_line_item(name=key, values=values)
+        # Add new line item (we already checked that it doesn't exist)
+        self.add_line_item(name=key, values=values)
 
     def value(self, name: str, year: int) -> float:
         """
