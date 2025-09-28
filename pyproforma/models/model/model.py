@@ -396,11 +396,7 @@ class Model(SerializationMixin):
                 )
 
             # Replace existing item or add new one
-            if key in self.line_item_names:
-                # Delete existing line item first, then add the new one
-                self.update.delete_line_item(key)
-
-            self.add_line_item(line_item=line_item_to_add)
+            self.add_line_item(line_item=line_item_to_add, replace=True)
             return
 
         elif isinstance(value, dict):
@@ -413,11 +409,7 @@ class Model(SerializationMixin):
             line_item_to_add = LineItem.from_dict(line_item_params)
 
             # Replace existing item or add new one
-            if key in self.line_item_names:
-                # Delete existing line item first, then add the new one
-                self.update.delete_line_item(key)
-
-            self.add_line_item(line_item=line_item_to_add)
+            self.add_line_item(line_item=line_item_to_add, replace=True)
             return
 
         elif isinstance(value, list):
