@@ -1143,11 +1143,10 @@ class Model(SerializationMixin):
         Returns:
             float: The calculated sum of all line items in the category
         """
-        category_item = self._category_definition(category)
         total = 0
-        for item in self._line_item_definitions:
-            if item.category == category_item.name:
-                value = value_matrix[year][item.name]
+        for item in self.line_item_metadata:
+            if item["category"] == category and item["source_type"] == "line_item":
+                value = value_matrix[year][item["name"]]
                 if value is not None:
                     total += value
         return total
