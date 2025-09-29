@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from ..constants import ValueFormat
 from ._utils import validate_name
 
+from .expression import Expression
+
 def _validate_values_keys(values: dict[int, float | None] | None):
     """Validate that all keys in the values dictionary are integers."""
     if values is not None:
@@ -131,53 +133,37 @@ class LineItem:
             f'Update condition for {self.name} has not been set yet. Use model.define() to define the update condition.'
         )
     
-    def _create_binary_operation(self, other: LineItem | float | callable, operation):
+    def _create_binary_operation(self, other: LineItem | float | Expression, operation) -> Expression:
         """Helper method to create binary operations with consistent logic."""
+
+        if not isinstance(other, (LineItem, int, float, Expression)):
+            raise ValueError(f'Unsupported type for operation: {type(other)}')
+        
+        other_expression = other
+        if isinstance(other, (int, float)):
+            other_expression = Expression(lambda year: other)
+        elif isinstance(other, LineItem):
+            other_expression = Expression(lambda year: other.get_value(year))
+            
         def operation_expr(year):
-            if isinstance(other, (int, float)):
-                return operation(self.get_value(year), other)
-            elif callable(other):
-                return operation(self.get_value(year), other(year))
-            else:
-                return operation(self.get_value(year), other.get_value(year))
-        return operation_expr
+            return operation(self.get_value(year), other_expression.fn(year))
+        return Expression(fn=operation_expr)
     
-    # DOES NOT CURRENTLY SUPPORT ONE CALLABLE ADDING ANOTHER CALLABLE
-    def __add__(self, other: LineItem | float | callable) -> callable:
+    def __add__(self, other: LineItem | float | Expression) -> Expression:
         return self._create_binary_operation(other, lambda a, b: a + b)
-    
-    def __sub__(self, other: LineItem | float) -> callable:
+
+    def __sub__(self, other: LineItem | float | Expression) -> Expression:
         return self._create_binary_operation(other, lambda a, b: a - b)
 
-    def __mul__(self, other: LineItem | float) -> callable:
+    def __mul__(self, other: LineItem | float | Expression) -> Expression:
         return self._create_binary_operation(other, lambda a, b: a * b)
 
-    def __true_div__(self, other: LineItem | float) -> callable:
+    def __true_div__(self, other: LineItem | float | Expression) -> Expression:
         return self._create_binary_operation(other, lambda a, b: a/b)
 
     def __getitem__(self, key):
-        return LaggedLineItem(reference=self, lag=key)
+        return Expression(lambda year: self.get_value(year + key))
     
     def __setitem__(self, key, value):
         self.values[key] = value
-
-@dataclass
-class LaggedLineItem:
-    reference: LineItem
-    lag: int
-    
-    def get_value(self, year):
-        return self.reference.get_value(year + self.lag)
-    
-    def __add__(self, other: LineItem | float) -> callable:
-        return lambda year: self.reference.__add__(other)(year + self.lag)
-    
-    def __sub__(self, other: LineItem | float) -> callable:
-        return lambda year: self.reference.__sub__(other)(year + self.lag)
-
-
-    def __mul__(self, other: LineItem | float) -> callable:
-        return lambda year: self.reference.__mul__(other)(year + self.lag)
-
-
     

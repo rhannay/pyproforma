@@ -6,3 +6,4 @@ from .results import CategoryResults as CategoryResults
 from .results import ConstraintResults as ConstraintResults
 from .results import LineItemResults as LineItemResults
 from .model.functional_api_model import FunctionalApiModel, create_functional_api_model
+from .expression import Expression as Expression
