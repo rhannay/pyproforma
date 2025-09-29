@@ -132,7 +132,7 @@ class TestCategoryResultsProperties:
         assert category_results.name == "sales_revenue"
 
         # Verify the line item's category was updated in the model
-        sales_item = model_for_property_tests.line_item_definition("sales")
+        sales_item = model_for_property_tests._line_item_definition("sales")
         assert sales_item.category == "sales_revenue"
 
         # Verify we can access the category with the new name
@@ -189,7 +189,7 @@ class TestCategoryResultsProperties:
         # Verify the category definition was updated in the model
         category_def = next(
             cat
-            for cat in model_for_property_tests.category_definitions
+            for cat in model_for_property_tests._category_definitions
             if cat.name == "revenue"
         )
         assert category_def.label == "Sales Revenue"
@@ -743,6 +743,282 @@ class TestCategoryResultsIntegration:
         assert df.loc["product_sales", 2023] == 100000
         assert df.loc["service_revenue", 2023] == 50000
         assert df.loc["total_income", 2023] == 150000
+
+
+class TestCategoryResultsDeleteMethod:
+    """Test the delete method of CategoryResults."""
+
+    @pytest.fixture
+    def delete_test_model(self):
+        """Create a model specifically for testing delete functionality."""
+        line_items = [
+            LineItem(
+                name="product_sales",
+                category="revenue",
+                label="Product Sales",
+                values={2023: 100000, 2024: 120000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="service_revenue",
+                category="revenue",
+                label="Service Revenue",
+                values={2023: 50000, 2024: 60000},
+                value_format="no_decimals",
+            ),
+            LineItem(
+                name="salaries",
+                category="expenses",
+                label="Salaries",
+                values={2023: 40000, 2024: 45000},
+                value_format="no_decimals",
+            ),
+        ]
+
+        categories = [
+            Category(name="revenue", label="Revenue", include_total=True),
+            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="unused", label="Unused Category", include_total=False),
+        ]
+
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_delete_method_successfully_deletes_empty_category(self, delete_test_model):
+        """Test that delete method successfully removes category with no line items."""
+        # Get initial count
+        initial_count = len(delete_test_model._category_definitions)
+
+        # Create CategoryResults for unused category
+        unused_category = CategoryResults(delete_test_model, "unused")
+
+        # Verify the category exists and has no line items
+        assert unused_category.name == "unused"
+        assert len(unused_category.line_item_names) == 0
+
+        # Delete the category
+        unused_category.delete()
+
+        # Verify the category was deleted
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+        category_names = [cat.name for cat in delete_test_model._category_definitions]
+        assert "unused" not in category_names
+
+    def test_delete_method_fails_when_line_items_exist(self, delete_test_model):
+        """Test that delete method raises ValueError when line items exist."""
+        # Create CategoryResults for revenue category (which has line items)
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # Verify the category has line items
+        assert len(revenue_category.line_item_names) == 2
+        assert "product_sales" in revenue_category.line_item_names
+        assert "service_revenue" in revenue_category.line_item_names
+
+        # Attempt to delete should fail
+        with pytest.raises(ValueError) as excinfo:
+            revenue_category.delete()
+
+        error_msg = str(excinfo.value)
+        assert "Cannot delete category 'revenue'" in error_msg
+        assert "still contains line items" in error_msg
+        assert "product_sales, service_revenue" in error_msg
+        assert "Delete or move these line items" in error_msg
+
+    def test_delete_method_fails_when_single_line_item_exists(self, delete_test_model):
+        """Test that delete method fails even with just one line item in category."""
+        # Create CategoryResults for expenses category (which has one line item)
+        expenses_category = CategoryResults(delete_test_model, "expenses")
+
+        # Verify the category has one line item
+        assert len(expenses_category.line_item_names) == 1
+        assert "salaries" in expenses_category.line_item_names
+
+        # Attempt to delete should fail
+        with pytest.raises(ValueError) as excinfo:
+            expenses_category.delete()
+
+        error_msg = str(excinfo.value)
+        assert "Cannot delete category 'expenses'" in error_msg
+        assert "still contains line items: salaries" in error_msg
+
+    def test_delete_method_calls_model_delete_category(self, delete_test_model):
+        """Test that delete method calls model.update.delete_category correctly."""
+        unused_category = CategoryResults(delete_test_model, "unused")
+
+        # Track the initial state
+        initial_count = len(delete_test_model._category_definitions)
+
+        # Call delete - this should succeed and actually delete the category
+        unused_category.delete()
+
+        # Verify the category was actually deleted
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+        category_names = [cat.name for cat in delete_test_model._category_definitions]
+        assert "unused" not in category_names
+
+    def test_delete_method_after_moving_line_items(self, delete_test_model):
+        """Test that delete method succeeds after moving all line items."""
+        # Create CategoryResults for revenue category
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # Initially should fail due to line items
+        with pytest.raises(ValueError):
+            revenue_category.delete()
+
+        # Move all line items to expenses category
+        for item_name in revenue_category.line_item_names.copy():
+            delete_test_model.update.update_line_item(item_name, category="expenses")
+
+        # Verify category now has no line items
+        assert len(revenue_category.line_item_names) == 0
+
+        # Now deletion should succeed
+        initial_count = len(delete_test_model._category_definitions)
+        revenue_category.delete()
+
+        # Verify category was deleted
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+        category_names = [cat.name for cat in delete_test_model._category_definitions]
+        assert "revenue" not in category_names
+
+    def test_delete_method_after_deleting_line_items(self, delete_test_model):
+        """Test that delete method succeeds after deleting all line items."""
+        # Create CategoryResults for expenses category
+        expenses_category = CategoryResults(delete_test_model, "expenses")
+
+        # Initially should fail due to line items
+        with pytest.raises(ValueError):
+            expenses_category.delete()
+
+        # Delete all line items in the category
+        for item_name in expenses_category.line_item_names.copy():
+            delete_test_model.update.delete_line_item(item_name)
+
+        # Verify category now has no line items
+        assert len(expenses_category.line_item_names) == 0
+
+        # Now deletion should succeed
+        initial_count = len(delete_test_model._category_definitions)
+        expenses_category.delete()
+
+        # Verify category was deleted
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+        category_names = [cat.name for cat in delete_test_model._category_definitions]
+        assert "expenses" not in category_names
+
+    def test_delete_method_handles_model_delete_error(self, delete_test_model):
+        """Test that delete method properly propagates errors from model."""
+        # Create a category that has line items (so it should fail)
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # This should raise ValueError due to line items existing
+        with pytest.raises(ValueError) as excinfo:
+            revenue_category.delete()
+
+        error_msg = str(excinfo.value)
+        assert "Cannot delete category 'revenue'" in error_msg
+        assert "still contains line items" in error_msg
+
+    def test_delete_method_preserves_state_on_line_item_check_failure(
+        self, delete_test_model
+    ):
+        """Test that CategoryResults state is preserved if check fails."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+        original_name = revenue_category.name
+
+        # Mock the model's line_item_names_by_category method to raise an error
+        with patch.object(
+            revenue_category.model,
+            "line_item_names_by_category",
+            side_effect=RuntimeError("Check failed"),
+        ):
+            with pytest.raises(RuntimeError, match="Check failed"):
+                revenue_category.delete()
+
+        # Verify the original state is preserved
+        assert revenue_category.name == original_name
+
+    def test_delete_method_error_message_formatting(self, delete_test_model):
+        """Test that delete method error message is properly formatted."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        with pytest.raises(ValueError) as excinfo:
+            revenue_category.delete()
+
+        error_msg = str(excinfo.value)
+
+        # Check all parts of the error message
+        assert error_msg.startswith("Cannot delete category 'revenue'")
+        assert "still contains line items:" in error_msg
+        assert "product_sales, service_revenue" in error_msg
+        assert "Delete or move these line items to other categories first." in error_msg
+
+    def test_delete_method_integration_with_model_category_method(
+        self, delete_test_model
+    ):
+        """Test delete method integration when CategoryResults created via model."""
+        # Create CategoryResults through model.category() method
+        unused_category = delete_test_model.category("unused")
+
+        # Verify it's the correct type and has expected properties
+        assert isinstance(unused_category, CategoryResults)
+        assert unused_category.name == "unused"
+        assert len(unused_category.line_item_names) == 0
+
+        # Delete should work
+        initial_count = len(delete_test_model._category_definitions)
+        unused_category.delete()
+
+        # Verify deletion worked
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+
+    def test_delete_method_with_complex_category_names(self):
+        """Test delete method with categories that have complex names."""
+        line_items = []
+        categories = [
+            Category(
+                name="category_with_underscores", label="Category with Underscores"
+            ),
+            Category(name="category-with-dashes", label="Category with Dashes"),
+            Category(name="category123", label="Category with Numbers"),
+        ]
+
+        model = Model(line_items=line_items, years=[2024], categories=categories)
+
+        # Test deleting each category type
+        for category_name in [
+            "category_with_underscores",
+            "category-with-dashes",
+            "category123",
+        ]:
+            category_results = CategoryResults(model, category_name)
+            initial_count = len(model._category_definitions)
+
+            category_results.delete()
+
+            assert len(model._category_definitions) == initial_count - 1
+            remaining_names = [cat.name for cat in model._category_definitions]
+            assert category_name not in remaining_names
+
+    def test_delete_method_with_line_items_in_other_categories(self, delete_test_model):
+        """Test that delete method only checks line items in the specific category."""
+        # This test ensures that having line items in OTHER categories doesn't
+        # prevent deletion of an empty category
+
+        unused_category = CategoryResults(delete_test_model, "unused")
+
+        # Verify there are line items in other categories but not in 'unused'
+        assert len(unused_category.line_item_names) == 0
+
+        # Verify other categories have line items
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+        assert len(revenue_category.line_item_names) > 0
+
+        # Delete should succeed for unused category despite other categories
+        # having items
+        initial_count = len(delete_test_model._category_definitions)
+        unused_category.delete()
+
+        assert len(delete_test_model._category_definitions) == initial_count - 1
 
 
 class TestCategoryResultsEdgeCases:

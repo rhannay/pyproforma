@@ -15,6 +15,53 @@ def _validate_values_keys(values: dict[int, float | None] | None):
                 )
 
 
+def _is_values_dict(value_dict: dict) -> bool:
+    """
+    Check if a dictionary is a valid values dictionary for LineItem.
+
+    A values dictionary contains year:value pairs where:
+    - All keys are integers (years)
+    - All values are numeric (int/float/bool) or None
+
+    Args:
+        value_dict (dict): Dictionary to check
+
+    Returns:
+        bool: True if the dictionary is a valid values dictionary, False otherwise
+
+    Examples:
+        >>> _is_values_dict({2023: 100, 2024: 200})
+        True
+        >>> _is_values_dict({2023: 100.5, 2024: None})
+        True
+        >>> _is_values_dict({2023: True, 2024: False})
+        True
+        >>> _is_values_dict({"name": "revenue", "category": "income"})
+        False
+        >>> _is_values_dict({2023: "invalid"})
+        False
+        >>> _is_values_dict({})
+        False
+    """
+    if not value_dict:
+        return False
+
+    try:
+        # Use existing validation to check if all keys are integers
+        _validate_values_keys(value_dict)
+
+        # Check if all values are numeric (including boolean) or None
+        all_values_numeric = all(
+            isinstance(val, (int, float, bool)) or val is None
+            for val in value_dict.values()
+        )
+
+        return all_values_numeric
+    except ValueError:
+        # If validation fails, it's not a values dictionary
+        return False
+
+
 @dataclass
 class LineItem:
     """
@@ -30,7 +77,7 @@ class LineItem:
         name (str): Unique identifier for the line item. Must contain only letters,
             numbers, underscores, or hyphens (no spaces or special characters).
         category (str, optional): Category or type classification for the line item.
-            Defaults to "general" if not provided.
+            Defaults to "general" if None is provided.
         label (str, optional): Human-readable display name. Defaults to name if not provided.
         values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
             Values can be numbers or None. Defaults to empty dict if not provided.
@@ -70,7 +117,7 @@ class LineItem:
     """  # noqa: E501
 
     name: str
-    category: str = "general"
+    category: str = None
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
@@ -79,6 +126,17 @@ class LineItem:
     def __post_init__(self):
         validate_name(self.name)
         _validate_values_keys(self.values)
+
+        # Handle None category by converting to "general"
+        if self.category is None:
+            self.category = "general"
+
+        # Validate category is a string
+        if not isinstance(self.category, str):
+            raise TypeError(
+                f"LineItem category must be a string, "
+                f"got {type(self.category).__name__}"
+            )
 
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""

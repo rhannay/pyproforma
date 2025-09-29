@@ -192,7 +192,7 @@ class TestLineItemNamesByCategory:
             all_items_from_dict.extend(category_items)
 
         # Get actual line item names from the model definitions
-        actual_line_items = [item.name for item in basic_model.line_item_definitions]
+        actual_line_items = [item.name for item in basic_model._line_item_definitions]
 
         # Each actual line item should appear exactly once
         items_from_dict_set = set(all_items_from_dict)

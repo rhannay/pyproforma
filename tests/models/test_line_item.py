@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import LineItem, Model
-from pyproforma.models.line_item import _validate_values_keys
+from pyproforma.models.line_item import _is_values_dict, _validate_values_keys
 
 
 @pytest.fixture
@@ -512,3 +512,215 @@ class TestValidateValuesKeys:
 
         error_msg = str(excinfo.value)
         assert "must be an integer (year)" in error_msg
+
+
+class TestLineItemCategoryValidation:
+    """Test validation of LineItem category parameter."""
+
+    def test_category_none_defaults_to_general(self):
+        """Test that LineItem defaults category to 'general' when None is provided."""
+        item = LineItem(name="test_item", category=None, values={2023: 100})
+        assert item.category == "general"
+
+    def test_category_must_be_string(self):
+        """Test that LineItem raises TypeError when category is not a string."""
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got int"
+        ):
+            LineItem(name="test_item", category=123, values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got list"
+        ):
+            LineItem(name="test_item", category=["income"], values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got dict"
+        ):
+            LineItem(name="test_item", category={"name": "income"}, values={2023: 100})
+
+        with pytest.raises(
+            TypeError, match="LineItem category must be a string, got bool"
+        ):
+            LineItem(name="test_item", category=True, values={2023: 100})
+
+    def test_valid_string_categories_accepted(self):
+        """Test that valid string categories are accepted."""
+        # Normal category
+        item1 = LineItem(name="test1", category="income", values={2023: 100})
+        assert item1.category == "income"
+
+        # Empty string should be allowed (no longer validates whitespace)
+        item2 = LineItem(name="test2", category="", values={2023: 100})
+        assert item2.category == ""
+
+        # Whitespace category should be allowed
+        item3 = LineItem(name="test3", category="  spaces  ", values={2023: 100})
+        assert item3.category == "  spaces  "
+
+        # Special characters in category name
+        item4 = LineItem(name="test4", category="income-tax", values={2023: 100})
+        assert item4.category == "income-tax"
+
+        # Unicode characters
+        item5 = LineItem(name="test5", category="收入", values={2023: 100})
+        assert item5.category == "收入"
+
+    def test_default_category_still_works(self):
+        """Test that the default 'general' category works when no category provided."""
+        item = LineItem(name="test_item", values={2023: 100})
+        assert item.category == "general"
+
+    def test_category_validation_with_from_dict(self):
+        """Test that category validation works with from_dict method."""
+        # Valid string category
+        item1 = LineItem.from_dict(
+            {"name": "test1", "category": "income", "values": {2023: 100}}
+        )
+        assert item1.category == "income"
+
+        # None category should default to "general" in from_dict and direct construction
+        item2 = LineItem.from_dict(
+            {"name": "test2", "category": None, "values": {2023: 100}}
+        )
+        assert item2.category == "general"
+
+        # Also test direct construction with None
+        item2b = LineItem(name="test2b", category=None, values={2023: 100})
+        assert item2b.category == "general"
+
+        # Empty string category should default to "general" in from_dict
+        item3 = LineItem.from_dict(
+            {"name": "test3", "category": "", "values": {2023: 100}}
+        )
+        assert item3.category == "general"
+
+        # Missing category should default to "general" in from_dict
+        item4 = LineItem.from_dict({"name": "test4", "values": {2023: 100}})
+        assert item4.category == "general"
+
+
+class TestIsValuesDict:
+    """Test the _is_values_dict function."""
+
+    def test_valid_values_dictionary_integers(self):
+        """Test that valid values dictionaries with integers return True."""
+        # Basic case
+        assert _is_values_dict({2023: 100, 2024: 200}) is True
+
+        # Single year
+        assert _is_values_dict({2023: 100}) is True
+
+        # Multiple years with different integers
+        assert _is_values_dict({2020: 50, 2021: 75, 2022: 100, 2023: 125}) is True
+
+    def test_valid_values_dictionary_floats(self):
+        """Test that valid values dictionaries with floats return True."""
+        assert _is_values_dict({2023: 100.5, 2024: 200.75}) is True
+        assert _is_values_dict({2023: 0.0, 2024: 1.5}) is True
+
+    def test_valid_values_dictionary_mixed_numeric(self):
+        """Test that valid values dictionaries with mixed numeric types return True."""
+        assert _is_values_dict({2023: 100, 2024: 200.5}) is True
+        assert _is_values_dict({2023: 100.0, 2024: 200}) is True
+
+    def test_valid_values_dictionary_with_none(self):
+        """Test that values dictionaries with None values return True."""
+        assert _is_values_dict({2023: 100, 2024: None}) is True
+        assert _is_values_dict({2023: None, 2024: 200}) is True
+        assert _is_values_dict({2023: None, 2024: None}) is True
+
+    def test_valid_values_dictionary_negative_years(self):
+        """Test that values dictionaries work with negative years."""
+        assert _is_values_dict({-1: 100, 0: 200, 1: 300}) is True
+        assert _is_values_dict({-2023: 100}) is True
+
+    def test_empty_dictionary(self):
+        """Test that empty dictionaries return False."""
+        assert _is_values_dict({}) is False
+
+    def test_invalid_non_integer_keys(self):
+        """Test that dictionaries with non-integer keys return False."""
+        # String keys
+        assert _is_values_dict({"2023": 100, "2024": 200}) is False
+        assert _is_values_dict({"name": "revenue", "category": "income"}) is False
+
+        # Float keys
+        assert _is_values_dict({2023.0: 100, 2024.0: 200}) is False
+
+        # Mixed key types
+        assert _is_values_dict({2023: 100, "2024": 200}) is False
+
+    def test_valid_values_dictionary_booleans(self):
+        """Test that values dictionaries with boolean values return True."""
+        assert _is_values_dict({2023: True, 2024: False}) is True
+        assert _is_values_dict({2023: True}) is True
+        assert _is_values_dict({2023: False, 2024: True, 2025: False}) is True
+
+    def test_invalid_non_numeric_values(self):
+        """Test that dictionaries with non-numeric values return False."""
+        # String values
+        assert _is_values_dict({2023: "100", 2024: "200"}) is False
+        assert _is_values_dict({2023: "revenue"}) is False
+
+        # List values
+        assert _is_values_dict({2023: [100, 200]}) is False
+
+        # Dict values
+        assert _is_values_dict({2023: {"value": 100}}) is False
+
+    def test_lineitem_parameter_dictionaries(self):
+        """Test that LineItem parameter dictionaries return False."""
+        # Basic LineItem parameters
+        assert _is_values_dict({"name": "revenue", "category": "income"}) is False
+        assert (
+            _is_values_dict({"name": "expenses", "formula": "revenue * 0.8"}) is False
+        )
+
+        # Full LineItem parameters
+        assert (
+            _is_values_dict(
+                {
+                    "name": "revenue",
+                    "category": "income",
+                    "label": "Total Revenue",
+                    "formula": "1000",
+                    "value_format": "no_decimals",
+                }
+            )
+            is False
+        )
+
+        # LineItem parameters with values key
+        assert (
+            _is_values_dict(
+                {
+                    "name": "revenue",
+                    "category": "income",
+                    "values": {2023: 100, 2024: 200},
+                }
+            )
+            is False
+        )
+
+    def test_mixed_valid_invalid_cases(self):
+        """Test edge cases with mixed valid/invalid elements."""
+        # Mix of numeric and non-numeric values
+        assert _is_values_dict({2023: 100, 2024: "invalid"}) is False
+
+        # Mix of integer and non-integer keys
+        assert _is_values_dict({2023: 100, "invalid": 200}) is False
+
+    def test_special_numeric_values(self):
+        """Test with special numeric values."""
+        # Zero values
+        assert _is_values_dict({2023: 0, 2024: 0.0}) is True
+
+        # Negative values
+        assert _is_values_dict({2023: -100, 2024: -200.5}) is True
+
+        # Large values
+        assert _is_values_dict({2023: 1000000, 2024: 1e6}) is True
+
+        # Very small values
+        assert _is_values_dict({2023: 0.001, 2024: 1e-10}) is True

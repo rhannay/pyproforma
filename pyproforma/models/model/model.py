@@ -1,7 +1,10 @@
 import copy
 from typing import Union
 
+import pandas as pd
+
 from pyproforma.charts import Charts
+from pyproforma.constants import ValueFormat
 from pyproforma.models.multi_line_item import MultiLineItem
 
 # Namespace imports
@@ -10,7 +13,7 @@ from pyproforma.tables import Tables
 from ..category import Category
 from ..compare import Compare
 from ..constraint import Constraint
-from ..line_item import LineItem
+from ..line_item import LineItem, _is_values_dict
 from ..metadata import (
     generate_category_metadata,
     generate_constraint_metadata,
@@ -179,50 +182,82 @@ class Model(SerializationMixin):
         line_items: list[LineItem], categories: Union[list[Category], list[str]] = None
     ) -> list[Category]:
         """
-        Collect category definitions from provided categories or infer from line items.
+        Collect category definitions from provided categories and infer missing ones
+        from line items.
 
-        If categories are provided, use them as the base. Categories can be provided
-        as Category objects or as strings (which will be converted to Category objects
-        with name=label). If not provided, automatically infer categories from the
-        unique category names used in the line items. Multi-line items are no longer
-        added as category definitions - they are only captured in metadata.
+        Starts with categories provided in the args as the base. Then looks at
+        line_items to see if any have categories that aren't already included
+        in the base categories. If so, adds those missing categories as well.
 
         Args:
-            line_items (list[LineItem]): Line items to infer categories from
+            line_items (list[LineItem]): Line items to infer additional categories from
             categories (Union[list[Category], list[str]], optional): Explicit category
-                definitions as Category objects or strings
+                definitions as Category objects or strings to use as the base
 
         Returns:
             list[Category]: List of category definitions to use in the model
         """
-        if categories is None or len(categories) == 0:
-            # Auto-infer categories from line items when None or empty list
-            category_names = set([item.category for item in line_items])
-            category_definitions = []
-            for name in category_names:
-                category = Category(name=name, label=name)
-                category_definitions.append(category)
-        else:
-            # Handle provided categories - could be Category objects or strings
-            category_definitions = []
+        category_definitions = []
+        existing_category_names = set()
+
+        # Start with provided categories (if any)
+        if categories is not None and len(categories) > 0:
             for cat in categories:
                 if isinstance(cat, Category):
                     # Already a Category object, use as-is
                     category_definitions.append(cat)
+                    existing_category_names.add(cat.name)
                 elif isinstance(cat, str):
                     # String category name, convert to Category object
                     category = Category(name=cat, label=cat)
                     category_definitions.append(category)
+                    existing_category_names.add(cat)
                 else:
                     raise TypeError(
                         f"Categories must be Category objects or strings, "
                         f"got {type(cat)} for value: {cat}"
                     )
 
+        # # Look at line items for any categories not already included
+        # line_item_category_names = set([item.category for item in line_items])
+        # missing_category_names = line_item_category_names - existing_category_names
+
+        # # Add missing categories from line items
+        # for name in missing_category_names:
+        #     category = Category(name=name)
+        #     category_definitions.append(category)
+
         return category_definitions
+
+    def _add_missing_categories(self):
+        """
+        Add missing categories from line items to category definitions.
+
+        Looks at all the categories referenced in self._line_item_definitions and
+        if any category is missing in self._category_definitions, adds it with
+        Category(name=category_name).
+        """
+        # Get existing category names for quick lookup
+        existing_category_names = {cat.name for cat in self._category_definitions}
+
+        # Get all category names referenced by line items (excluding None)
+        line_item_category_names = {
+            item.category
+            for item in self._line_item_definitions
+            if item.category is not None
+        }
+
+        # Find categories that are referenced by line items but missing from definitions
+        missing_category_names = line_item_category_names - existing_category_names
+
+        # Add missing categories
+        for category_name in missing_category_names:
+            new_category = Category(name=category_name)
+            self._category_definitions.append(new_category)
 
     def _build_and_calculate(self):
         validate_years(self._years)
+        self._add_missing_categories()
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
         validate_multi_line_items(self.multi_line_items, self._category_definitions)
@@ -301,6 +336,210 @@ class Model(SerializationMixin):
         raise KeyError(
             "Key must be a tuple of (item_name, year) or a string item_name."
         )
+
+    def __setitem__(
+        self, key: str, value: Union[int, float, str, list, LineItem, dict]
+    ) -> None:
+        """
+        Add a new line item with values using dictionary-style access.
+
+        Creates a new line item with the given name and sets its values. The line item
+        will be added to the "general" category by default. LineItem objects and
+        dictionaries with LineItem parameters can replace existing line items, but
+        primitive values and values dictionaries cannot.
+
+        Args:
+            key (str): The name of the new line item to create
+            value (Union[int, float, str, list, LineItem, dict, pd.Series]): Either a
+                constant value to set for all years, a formula string for calculations,
+                a list of values corresponding to each year in the model, a LineItem
+                object to add directly, a dictionary of year:value pairs (values
+                dictionary), a dictionary of LineItem parameters, or a pandas Series
+                with years as index
+
+        Raises:
+            TypeError: If key is not a string or value is not a number, string, list,
+                LineItem, dict, or pandas Series
+            ValueError: If the model has no years defined, if list length doesn't
+                match number of years, if list contains non-numeric values, if
+                dictionary is malformed, if pandas Series index contains non-integer
+                values, or if a line item with the given key already exists (for
+                primitive values, formulas, values dictionaries, and pandas Series)
+
+        Examples:
+            >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
+            >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
+            >>> model['profit'] = "revenue - expenses"  # Creates with formula
+            >>> model['growth'] = [100, 110, 121]  # Creates with specific values
+            >>> model['revenue_2023'] = {2023: 100000, 2024: 110000}  # Values dict
+            >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
+            >>> model['costs'] = {"category": "expenses", "formula": "revenue * 0.6"}
+            >>>
+            >>> # pandas Series with years as index
+            >>> import pandas as pd
+            >>> series = pd.Series({2023: 50000, 2024: 55000})
+            >>> model['operating_costs'] = series  # Creates line item from Series
+            >>>
+            >>> # To update existing line items, use the update namespace:
+            >>> model.update.update_line_item('revenue', values={2023: 1200})
+        """
+        # Validate that key is a string
+        if not isinstance(key, str):
+            raise TypeError(
+                f"Line item name must be a string, got {type(key).__name__}"
+            )
+
+        # Check if model has years defined
+        if not self._years:
+            raise ValueError("Cannot add line item: model has no years defined")
+
+        # Handle different value types
+        if isinstance(value, LineItem):
+            # Handle LineItem object - can replace existing items
+            line_item_to_add = value
+            if line_item_to_add.name != key:
+                # Create a copy with the new name if names don't match
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=value.category,
+                    label=value.label,
+                    formula=value.formula,
+                    values=value.values,
+                    value_format=value.value_format,
+                )
+
+            # Replace existing item or add new one
+            self.add_line_item(line_item=line_item_to_add, replace=True)
+            return
+
+        elif isinstance(value, pd.Series):
+            # Handle pandas Series - convert to values dictionary
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with pandas Series. Use LineItem or dict "
+                    "with LineItem parameters to replace, or update attributes "
+                    "directly."
+                )
+
+            # Convert pandas Series to dictionary
+            values_dict = value.to_dict()
+
+            # Validate that the converted dictionary is a valid values dictionary
+            if not _is_values_dict(values_dict):
+                raise TypeError(
+                    "pandas Series must have integer index (years) and numeric "
+                    "values, got invalid Series structure"
+                )
+
+            # Create line item with values dictionary
+            self.add_line_item(name=key, values=values_dict)
+            return
+
+        elif isinstance(value, dict):
+            # Special case: empty dictionary creates line item with just name
+            if len(value) == 0:
+                # Check if line item already exists - throw error if it does
+                if key in self.line_item_names:
+                    raise ValueError(
+                        f"Line item '{key}' already exists. "
+                        "Cannot set existing line item to empty dictionary. "
+                        "Use LineItem or dict with LineItem parameters to replace, "
+                        "or update attributes directly."
+                    )
+                else:
+                    # Create line item with just the name, no values or other properties
+                    self.add_line_item(name=key)
+                    return
+
+            # Check if this is a values dictionary (year:value pairs) or parameters
+            if _is_values_dict(value):
+                # Handle values dictionary - cannot replace existing items
+                if key in self.line_item_names:
+                    raise ValueError(
+                        f"Line item '{key}' already exists. "
+                        "Cannot replace with values dictionary. Use LineItem or "
+                        "dict with LineItem parameters to replace, or update "
+                        "attributes directly."
+                    )
+
+                # Create line item with values dictionary
+                self.add_line_item(name=key, values=value)
+                return
+            else:
+                # Handle dictionary with LineItem parameters - can replace items
+                # Create a copy of the dict and ensure the name matches the key
+                line_item_params = value.copy()
+                line_item_params["name"] = key  # Override name with key
+
+                # Create LineItem from dictionary parameters
+                line_item_to_add = LineItem.from_dict(line_item_params)
+
+                # Replace existing item or add new one
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+                return
+
+        elif isinstance(value, list):
+            # Check if line item already exists - primitive types cannot replace items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with primitive values. Use LineItem or dict "
+                    "to replace, or update attributes directly."
+                )
+
+            # Validate list length matches number of years
+            if len(value) != len(self._years):
+                raise ValueError(
+                    f"List length ({len(value)}) must match number of years "
+                    f"({len(self._years)}). Years: {self._years}"
+                )
+
+            # Validate all list elements are numeric
+            for i, val in enumerate(value):
+                if not isinstance(val, (int, float)):
+                    raise TypeError(
+                        f"All list values must be int or float, "
+                        f"got {type(val).__name__} at index {i} (value: {val})"
+                    )
+
+            # Create values dictionary mapping years to list values
+            values = {year: float(val) for year, val in zip(self._years, value)}
+
+        elif isinstance(value, str):
+            # Handle string as formula - cannot replace existing items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with formula string. Use LineItem or dict "
+                    "with LineItem parameters to replace, or update attributes "
+                    "directly."
+                )
+
+            # Create line item with formula
+            self.add_line_item(name=key, formula=value)
+            return
+
+        elif isinstance(value, (int, float)):
+            # Check if line item already exists - primitive types cannot replace items
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with primitive values. Use LineItem or dict "
+                    "to replace, or update attributes directly."
+                )
+
+            # Create values dictionary with the constant value for all years
+            values = {year: float(value) for year in self._years}
+
+        else:
+            raise TypeError(
+                f"Value must be an int, float, str, list, LineItem, dict, "
+                f"pandas Series, got {type(value).__name__}"
+            )
+
+        # Add new line item (we already checked that it doesn't exist)
+        self.add_line_item(name=key, values=values)
 
     def value(self, name: str, year: int) -> float:
         """
@@ -724,16 +963,20 @@ class Model(SerializationMixin):
         return line_item_names
 
     @property
-    def line_item_definitions(self) -> tuple[LineItem, ...]:
+    def category_names(self) -> list[str]:
         """
-        Read-only access to line item definitions.
+        Get list of all category names.
 
         Returns:
-            tuple[LineItem, ...]: Immutable tuple of line item definitions
+            list[str]: List of category names
         """
-        return self._line_item_definitions
+        return [category["name"] for category in self.category_metadata]
 
-    def line_item_definition(self, name: str) -> LineItem:
+    # ============================================================================
+    # METADATA & INTERNAL LOOKUPS
+    # ============================================================================
+
+    def _line_item_definition(self, name: str) -> LineItem:
         """
         Get a line item definition by name.
 
@@ -757,27 +1000,7 @@ class Model(SerializationMixin):
             f"Valid line item names are: {valid_line_items}"
         )
 
-    @property
-    def category_names(self) -> list[str]:
-        """
-        Get list of all category names.
-
-        Returns:
-            list[str]: List of category names
-        """
-        return [category["name"] for category in self.category_metadata]
-
-    @property
-    def category_definitions(self) -> tuple[Category, ...]:
-        """
-        Read-only access to category definitions.
-
-        Returns:
-            tuple[Category, ...]: Immutable tuple of category definitions
-        """
-        return self._category_definitions
-
-    def category_definition(self, name: str) -> Category:
+    def _category_definition(self, name: str) -> Category:
         """
         Get a category definition by name.
 
@@ -800,7 +1023,7 @@ class Model(SerializationMixin):
             f"Valid categories are: {valid_categories}"
         )
 
-    def constraint_definition(self, name: str) -> Constraint:
+    def _constraint_definition(self, name: str) -> Constraint:
         """Get a constraint definition by name.
 
         Args:
@@ -820,10 +1043,6 @@ class Model(SerializationMixin):
             f"Constraint with name '{name}' not found. "
             f"Valid constraint names are: {valid_constraints}"
         )
-
-    # ============================================================================
-    # METADATA & INTERNAL LOOKUPS
-    # ============================================================================
 
     def _get_item_metadata(self, item_name: str) -> dict:
         """
@@ -939,11 +1158,10 @@ class Model(SerializationMixin):
         Returns:
             float: The calculated sum of all line items in the category
         """
-        category_item = self.category_definition(category)
         total = 0
-        for item in self._line_item_definitions:
-            if item.category == category_item.name:
-                value = value_matrix[year][item.name]
+        for item in self.line_item_metadata:
+            if item["category"] == category and item["source_type"] == "line_item":
+                value = value_matrix[year][item["name"]]
                 if value is not None:
                     total += value
         return total
@@ -1024,7 +1242,7 @@ class Model(SerializationMixin):
     def _is_last_item_in_category(self, name: str) -> bool:
         """Check if the given item name is the last item in its category"""
         # Find the item with the given name and get its category
-        target_item = self.line_item_definition(name)
+        target_item = self._line_item_definition(name)
 
         # Get all items in the same category
         items_in_category = [
@@ -1035,6 +1253,111 @@ class Model(SerializationMixin):
 
         # Check if this is the last item in the category list
         return items_in_category[-1].name == name
+
+    # ============================================================================
+    # CONVENIENCE METHODS
+    # ============================================================================
+
+    def add_line_item(
+        self,
+        line_item: LineItem | None = None,
+        *,
+        name: str | None = None,
+        category: str | None = None,
+        label: str | None = None,
+        values: dict[int, float] | None = None,
+        formula: str | None = None,
+        value_format: ValueFormat = "no_decimals",
+        replace: bool = False,
+    ) -> None:
+        """
+        Add a new line item to the model.
+
+        This is a convenience method that directly calls the update namespace's add_line_item method.
+        It accepts either an already-created LineItem instance or the parameters to create a new one.
+
+        Args:
+            line_item (LineItem, optional): An already-created LineItem instance to add
+            name (str, optional): Name for new LineItem - required if line_item is None
+            category (str, optional): Category for new LineItem. Defaults to "general" if None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            values (dict[int, float], optional): Dictionary mapping years to explicit values
+            formula (str, optional): Formula string for calculating values
+            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+            replace (bool, optional): If True, replace existing line item with same name. Defaults to False.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the line item cannot be added (validation fails), or if both
+                line_item and name are provided, or if neither is provided, or if a line item
+                with the same name already exists and replace=False
+
+        Examples:
+            >>> # Method 1: Pass a LineItem instance
+            >>> model.add_line_item(existing_line_item)
+
+            >>> # Method 2: Create from parameters
+            >>> model.add_line_item(name="revenue", category="income", values={2023: 100000})
+
+            >>> # Method 3: Replace existing line item
+            >>> model.add_line_item(name="revenue", values={2023: 150000}, replace=True)
+        """  # noqa: E501
+        self.update.add_line_item(
+            line_item=line_item,
+            name=name,
+            category=category,
+            label=label,
+            values=values,
+            formula=formula,
+            value_format=value_format,
+            replace=replace,
+        )
+
+    def add_category(
+        self,
+        category: Category | None = None,
+        *,
+        name: str | None = None,
+        label: str | None = None,
+        total_label: str | None = None,
+        include_total: bool = True,
+    ) -> None:
+        """
+        Add a new category to the model.
+
+        This is a convenience method that directly calls the update namespace's add_category method.
+        It accepts either an already-created Category instance or the parameters to create a new one.
+
+        Args:
+            category (Category, optional): An already-created Category instance to add
+            name (str, optional): Name for new Category - required if category is None
+            label (str, optional): Human-readable display name. Defaults to name if not provided.
+            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
+            include_total (bool, optional): Whether to include a total for this category. Defaults to True
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the category cannot be added (validation fails), or if both
+                category and name are provided, or if neither is provided
+
+        Examples:
+            >>> # Method 1: Pass a Category instance
+            >>> model.add_category(existing_category)
+
+            >>> # Method 2: Create from parameters
+            >>> model.add_category(name="assets", label="Assets", include_total=True)
+        """  # noqa: E501
+        self.update.add_category(
+            category=category,
+            name=name,
+            label=label,
+            total_label=total_label,
+            include_total=include_total,
+        )
 
     # ============================================================================
     # SERIALIZATION METHODS

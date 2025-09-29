@@ -36,7 +36,7 @@ def basic_model() -> Model:
 def test_fixture_loads(basic_model: Model):
     """Test that the basic model fixture loads correctly."""
     assert isinstance(basic_model, Model)
-    assert len(basic_model.line_item_definitions) == 4
+    assert len(basic_model._line_item_definitions) == 4
     assert basic_model["revenue", 2023] == 100
     assert basic_model["costs", 2023] == 70
     assert basic_model["profit", 2023] == 30
@@ -140,15 +140,15 @@ def test_scenario_formula_updates(basic_model):
     )
 
     # Check that formulas were updated and recalculated
-    assert scenario_model.line_item_definition("costs").formula == "revenue * 0.6"
+    assert scenario_model._line_item_definition("costs").formula == "revenue * 0.6"
     assert scenario_model["costs", 2023] == 60  # 100 * 0.6 = 60
 
     assert (
-        scenario_model.line_item_definition("margin").formula
+        scenario_model._line_item_definition("margin").formula
         == "profit / revenue * 100"
     )
     assert scenario_model["margin", 2023] == 40  # (100-60)/100 * 100 = 40
-    assert scenario_model.line_item_definition("margin").value_format == "no_decimals"
+    assert scenario_model._line_item_definition("margin").value_format == "no_decimals"
 
 
 def test_scenario_rename_items(basic_model):
@@ -204,8 +204,8 @@ def test_scenario_change_category(basic_model):
     )
 
     # Check that categories were updated
-    assert scenario_model.line_item_definition("revenue").category == "profit"
-    assert scenario_model.line_item_definition("costs").category == "profit"
+    assert scenario_model._line_item_definition("revenue").category == "profit"
+    assert scenario_model._line_item_definition("costs").category == "profit"
 
 
 def test_scenario_all_properties(basic_model):
@@ -234,7 +234,7 @@ def test_scenario_all_properties(basic_model):
     )
 
     # Check that all properties were updated
-    updated_item = scenario_model.line_item_definition("total_revenue")
+    updated_item = scenario_model._line_item_definition("total_revenue")
     assert updated_item.name == "total_revenue"
     assert updated_item.category == "profit"
     assert updated_item.label == "Total Revenue"
@@ -254,12 +254,12 @@ def test_scenario_mixed_updates(basic_model):
 
     # Check that all updates were applied correctly
     assert scenario_model["revenue", 2023] == 200
-    assert scenario_model.line_item_definition("revenue").label == "Annual Revenue"
+    assert scenario_model._line_item_definition("revenue").label == "Annual Revenue"
 
-    assert scenario_model.line_item_definition("costs").formula == "revenue * 0.5"
+    assert scenario_model._line_item_definition("costs").formula == "revenue * 0.5"
     assert scenario_model["costs", 2023] == 100  # 200 * 0.5
 
-    assert scenario_model.line_item_definition("profit").value_format == "two_decimals"
+    assert scenario_model._line_item_definition("profit").value_format == "two_decimals"
     assert scenario_model["profit", 2023] == 100  # 200 - 100
 
 
@@ -270,11 +270,11 @@ def test_scenario_preserves_model_structure(basic_model):
     )
 
     # Check that model structure is preserved
-    assert len(scenario_model.category_definitions) == len(
-        basic_model.category_definitions
+    assert len(scenario_model._category_definitions) == len(
+        basic_model._category_definitions
     )
-    assert len(scenario_model.line_item_definitions) == len(
-        basic_model.line_item_definitions
+    assert len(scenario_model._line_item_definitions) == len(
+        basic_model._line_item_definitions
     )
     assert scenario_model.years == basic_model.years
     assert len(scenario_model.constraints) == len(basic_model.constraints)
