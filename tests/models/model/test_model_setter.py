@@ -811,3 +811,67 @@ class TestPandasSeriesSetter:
             dict_value = model_with_years["dict_item", year]
             series_value = model_with_years["series_item", year]
             assert dict_value == series_value
+
+
+class TestEmptyDictSetItem:
+    """Test __setitem__ method with empty dictionary."""
+
+    @pytest.fixture
+    def model_with_years(self):
+        """Create a model with years for testing."""
+        return Model(years=[2023, 2024, 2025])
+
+    def test_empty_dict_creates_line_item_with_name_only(self, model_with_years):
+        """Test that setting a line item to an empty dict creates it with just the name."""
+        # Initially no line items
+        initial_line_items = [
+            name
+            for name in model_with_years.line_item_names
+            if not name.startswith("total_")
+        ]
+        assert len(initial_line_items) == 0
+
+        # Set a line item to an empty dictionary
+        model_with_years["new_line_item"] = {}
+
+        # Check that the line item was created
+        assert "new_line_item" in model_with_years.line_item_names
+
+        # Check that the line item has None values for all years
+        line_item_result = model_with_years.line_item("new_line_item")
+        values = line_item_result.values
+        expected_values = {2023: None, 2024: None, 2025: None}
+        assert values == expected_values
+
+        # Check that the line item definition has minimal properties
+        line_item_def = model_with_years._line_item_definition("new_line_item")
+        assert line_item_def.name == "new_line_item"
+        assert line_item_def.values is None  # No explicit values set
+        assert line_item_def.formula is None  # No formula set
+        assert line_item_def.category == "general"  # Default category
+
+    def test_empty_dict_on_existing_line_item_raises_error(self, model_with_years):
+        """Test that setting an empty dict for an existing line item raises error."""
+        # First create a line item with some values
+        model_with_years["existing_item"] = {2023: 100, 2024: 200}
+
+        # Verify it has the expected values
+        assert model_with_years["existing_item", 2023] == 100
+        assert model_with_years["existing_item", 2024] == 200
+
+        # Setting it to an empty dict should raise an error
+        with pytest.raises(
+            ValueError,
+            match="Line item 'existing_item' already exists. "
+            "Cannot set existing line item to empty dictionary.",
+        ):
+            model_with_years["existing_item"] = {}
+
+    def test_empty_dict_no_years_raises_error(self):
+        """Test that empty dict with no years defined raises ValueError."""
+        empty_model = Model()
+
+        with pytest.raises(
+            ValueError, match="Cannot add line item: model has no years defined"
+        ):
+            empty_model["test_item"] = {}

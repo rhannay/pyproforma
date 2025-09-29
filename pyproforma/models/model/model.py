@@ -437,6 +437,21 @@ class Model(SerializationMixin):
             return
 
         elif isinstance(value, dict):
+            # Special case: empty dictionary creates line item with just name
+            if len(value) == 0:
+                # Check if line item already exists - throw error if it does
+                if key in self.line_item_names:
+                    raise ValueError(
+                        f"Line item '{key}' already exists. "
+                        "Cannot set existing line item to empty dictionary. "
+                        "Use LineItem or dict with LineItem parameters to replace, "
+                        "or update attributes directly."
+                    )
+                else:
+                    # Create line item with just the name, no values or other properties
+                    self.add_line_item(name=key)
+                    return
+
             # Check if this is a values dictionary (year:value pairs) or parameters
             if _is_values_dict(value):
                 # Handle values dictionary - cannot replace existing items
