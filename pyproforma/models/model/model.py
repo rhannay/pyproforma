@@ -1,6 +1,8 @@
 import copy
 from typing import Union
 
+import pandas as pd
+
 from pyproforma.charts import Charts
 from pyproforma.constants import ValueFormat
 from pyproforma.models.multi_line_item import MultiLineItem
@@ -348,19 +350,21 @@ class Model(SerializationMixin):
 
         Args:
             key (str): The name of the new line item to create
-            value (Union[int, float, str, list, LineItem, dict]): Either a constant
-                value to set for all years, a formula string for calculations, a list
-                of values corresponding to each year in the model, a LineItem object
-                to add directly, a dictionary of year:value pairs (values dictionary),
-                or a dictionary of LineItem parameters
+            value (Union[int, float, str, list, LineItem, dict, pd.Series]): Either a
+                constant value to set for all years, a formula string for calculations,
+                a list of values corresponding to each year in the model, a LineItem
+                object to add directly, a dictionary of year:value pairs (values
+                dictionary), a dictionary of LineItem parameters, or a pandas Series
+                with years as index
 
         Raises:
             TypeError: If key is not a string or value is not a number, string, list,
-                LineItem, or dict
+                LineItem, dict, or pandas Series
             ValueError: If the model has no years defined, if list length doesn't
                 match number of years, if list contains non-numeric values, if
-                dictionary is malformed, or if a line item with the given key
-                already exists (for primitive values, formulas, and values dictionaries)
+                dictionary is malformed, if pandas Series index contains non-integer
+                values, or if a line item with the given key already exists (for
+                primitive values, formulas, values dictionaries, and pandas Series)
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
@@ -370,6 +374,11 @@ class Model(SerializationMixin):
             >>> model['revenue_2023'] = {2023: 100000, 2024: 110000}  # Values dict
             >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
             >>> model['costs'] = {"category": "expenses", "formula": "revenue * 0.6"}
+            >>>
+            >>> # pandas Series with years as index
+            >>> import pandas as pd
+            >>> series = pd.Series({2023: 50000, 2024: 55000})
+            >>> model['operating_costs'] = series  # Creates line item from Series
             >>>
             >>> # To update existing line items, use the update namespace:
             >>> model.update.update_line_item('revenue', values={2023: 1200})
@@ -401,6 +410,30 @@ class Model(SerializationMixin):
 
             # Replace existing item or add new one
             self.add_line_item(line_item=line_item_to_add, replace=True)
+            return
+
+        elif isinstance(value, pd.Series):
+            # Handle pandas Series - convert to values dictionary
+            if key in self.line_item_names:
+                raise ValueError(
+                    f"Line item '{key}' already exists. "
+                    "Cannot replace with pandas Series. Use LineItem or dict "
+                    "with LineItem parameters to replace, or update attributes "
+                    "directly."
+                )
+
+            # Convert pandas Series to dictionary
+            values_dict = value.to_dict()
+
+            # Validate that the converted dictionary is a valid values dictionary
+            if not _is_values_dict(values_dict):
+                raise TypeError(
+                    "pandas Series must have integer index (years) and numeric "
+                    "values, got invalid Series structure"
+                )
+
+            # Create line item with values dictionary
+            self.add_line_item(name=key, values=values_dict)
             return
 
         elif isinstance(value, dict):
@@ -486,8 +519,8 @@ class Model(SerializationMixin):
 
         else:
             raise TypeError(
-                f"Value must be an int, float, str, list, LineItem, or dict, "
-                f"got {type(value).__name__}"
+                f"Value must be an int, float, str, list, LineItem, dict, "
+                f"pandas Series, got {type(value).__name__}"
             )
 
         # Add new line item (we already checked that it doesn't exist)

@@ -726,3 +726,88 @@ class TestSetterStringFormula:
         assert model_with_years["list_values", 2023] == 10.0
         assert model_with_years["list_values", 2024] == 20.0
         assert model_with_years["list_values", 2025] == 30.0
+
+
+class TestPandasSeriesSetter:
+    """Test __setitem__ method with pandas Series."""
+
+    @pytest.fixture
+    def model_with_years(self):
+        """Create a model with years for testing."""
+        return Model(years=[2023, 2024, 2025])
+
+    def test_setter_with_pandas_series(self, model_with_years):
+        """Test setting a line item with a pandas Series."""
+        pd = pytest.importorskip("pandas")
+
+        # Create a pandas Series with years as index
+        series = pd.Series({2023: 100.0, 2024: 110.0, 2025: 121.0})
+
+        # Set the series as a line item
+        model_with_years["growth_series"] = series
+
+        # Verify the line item was created
+        assert "growth_series" in model_with_years.line_item_names
+
+        # Verify values are set correctly
+        assert model_with_years["growth_series", 2023] == 100.0
+        assert model_with_years["growth_series", 2024] == 110.0
+        assert model_with_years["growth_series", 2025] == 121.0
+
+        # Verify it can be accessed via line_item method
+        line_item_results = model_with_years.line_item("growth_series")
+        expected_values = {2023: 100.0, 2024: 110.0, 2025: 121.0}
+        assert line_item_results.values == expected_values
+
+    def test_setter_with_pandas_series_float_index(self, model_with_years):
+        """Test that pandas Series with non-integer index raises TypeError."""
+        pd = pytest.importorskip("pandas")
+
+        # Create a pandas Series with float index (should fail)
+        series = pd.Series({2023.0: 100.0, 2024.0: 110.0})
+
+        with pytest.raises(TypeError, match="pandas Series must have integer index"):
+            model_with_years["invalid_series"] = series
+
+    def test_setter_with_pandas_series_string_index(self, model_with_years):
+        """Test that pandas Series with string index raises TypeError."""
+        pd = pytest.importorskip("pandas")
+
+        # Create a pandas Series with string index (should fail)
+        series = pd.Series({"2023": 100.0, "2024": 110.0})
+
+        with pytest.raises(TypeError, match="pandas Series must have integer index"):
+            model_with_years["invalid_series"] = series
+
+    def test_setter_with_pandas_series_existing_line_item(self, model_with_years):
+        """Test that pandas Series cannot replace existing line items."""
+        pd = pytest.importorskip("pandas")
+
+        # First create a line item
+        model_with_years["existing_item"] = 100
+
+        # Try to replace with pandas Series (should fail)
+        series = pd.Series({2023: 200.0, 2024: 220.0})
+
+        with pytest.raises(
+            ValueError, match="Line item 'existing_item' already exists"
+        ):
+            model_with_years["existing_item"] = series
+
+    def test_setter_pandas_series_compared_to_dict(self, model_with_years):
+        """Test that pandas Series produces same results as equivalent dict."""
+        pd = pytest.importorskip("pandas")
+
+        # Create equivalent Series and dict
+        values_dict = {2023: 50.0, 2024: 75.0, 2025: 100.0}
+        series = pd.Series(values_dict)
+
+        # Set both in model
+        model_with_years["dict_item"] = values_dict
+        model_with_years["series_item"] = series
+
+        # Verify they produce identical results
+        for year in [2023, 2024, 2025]:
+            dict_value = model_with_years["dict_item", year]
+            series_value = model_with_years["series_item", year]
+            assert dict_value == series_value
