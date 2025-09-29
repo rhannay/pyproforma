@@ -4,7 +4,7 @@ from .models import Category as Category
 from .models import Constraint as Constraint
 from .models import LineItem as LineItem
 from .models import Model as Model
-from .models import FunctionalApiModel, create_function_api_model
+from .models import FunctionalApiModel, create_functional_api_model
 
 from .tables import TableGenerationError as TableGenerationError
 
