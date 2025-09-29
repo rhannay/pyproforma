@@ -118,6 +118,39 @@ class CategoryResults:
         """Whether the category was auto-generated."""
         return self._category_metadata["system_generated"]
 
+    def delete(self) -> None:
+        """
+        Delete this category from the model.
+
+        This method removes the category from the model entirely. After calling this
+        method, the CategoryResults object should not be used as the underlying category
+        no longer exists.
+
+        The deletion will fail if there are any line items that still reference this
+        category. All line items must be deleted or moved to other categories before
+        a category can be deleted.
+
+        Raises:
+            ValueError: If the category cannot be deleted because line items still
+                       reference it
+            KeyError: If the category is not found in the model
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> revenue_category.delete()  # Removes 'revenue' category from the model
+        """
+        # Check if any line items still reference this category
+        line_items_in_category = self.line_item_names
+        if line_items_in_category:
+            raise ValueError(
+                f"Cannot delete category '{self.name}' because it still contains "
+                f"line items: {', '.join(line_items_in_category)}. "
+                f"Delete or move these line items to other categories first."
+            )
+
+        # Delete the category from the model
+        self.model.update.delete_category(self.name)
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================
