@@ -1,8 +1,10 @@
-from dataclasses import dataclass
+from __future__ import annotations
+from dataclasses import dataclass, field
 
 from ..constants import ValueFormat
 from ._utils import validate_name
 
+from .expression import Expression
 
 def _validate_values_keys(values: dict[int, float | None] | None):
     """Validate that all keys in the values dictionary are integers."""
@@ -119,7 +121,7 @@ class LineItem:
     name: str
     category: str = None
     label: str = None
-    values: dict[int, float | None] = None
+    values: dict[int, float | None] = field(default_factory=dict)
     formula: str = None
     value_format: ValueFormat = "no_decimals"
 
@@ -178,3 +180,48 @@ class LineItem:
             formula=item_dict.get("formula"),
             value_format=item_dict.get("value_format", "no_decimals"),
         )
+
+    def get_value(self, year) -> float:
+        if year not in self.values:
+            self.set_value(year)
+        return self.values[year]
+    
+    def set_value(self, year):
+        raise NotImplementedError(
+            f'Update condition for {self.name} has not been set yet. Use model.define() to define the update condition.'
+        )
+    
+    def _create_binary_operation(self, other: LineItem | float | Expression, operation) -> Expression:
+        """Helper method to create binary operations with consistent logic."""
+
+        if not isinstance(other, (LineItem, int, float, Expression)):
+            raise ValueError(f'Unsupported type for operation: {type(other)}')
+        
+        other_expression = other
+        if isinstance(other, (int, float)):
+            other_expression = Expression(lambda year: other)
+        elif isinstance(other, LineItem):
+            other_expression = Expression(lambda year: other.get_value(year))
+            
+        def operation_expr(year):
+            return operation(self.get_value(year), other_expression.fn(year))
+        return Expression(fn=operation_expr)
+    
+    def __add__(self, other: LineItem | float | Expression) -> Expression:
+        return self._create_binary_operation(other, lambda a, b: a + b)
+
+    def __sub__(self, other: LineItem | float | Expression) -> Expression:
+        return self._create_binary_operation(other, lambda a, b: a - b)
+
+    def __mul__(self, other: LineItem | float | Expression) -> Expression:
+        return self._create_binary_operation(other, lambda a, b: a * b)
+
+    def __true_div__(self, other: LineItem | float | Expression) -> Expression:
+        return self._create_binary_operation(other, lambda a, b: a/b)
+
+    def __getitem__(self, key):
+        return Expression(lambda year: self.get_value(year + key))
+    
+    def __setitem__(self, key, value):
+        self.values[key] = value
+    
