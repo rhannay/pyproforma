@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import yaml
 
+from .._utils import validate_periods
+from ..line_item import LineItem
+
 if TYPE_CHECKING:
     from .model import Model
 
@@ -221,9 +224,6 @@ class SerializationMixin:
             >>> model.years
             [2023, 2024, 2025]
         """
-        from .._utils import validate_periods
-        from ..line_item import LineItem
-
         # Validate input
         if not isinstance(df, pd.DataFrame):
             raise TypeError(
