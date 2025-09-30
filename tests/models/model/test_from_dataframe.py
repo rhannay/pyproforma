@@ -318,7 +318,7 @@ class TestFromDataFrame:
         assert names[2] == 'beta'
 
     def test_dataframe_sanitizes_names_with_spaces(self):
-        """Test that names with spaces are converted to underscores."""
+        """Test that names with spaces are converted to lowercase with underscores."""
         df = pd.DataFrame({
             'name': ['Gross Profit', 'Net Income', 'Cost of Goods Sold'],
             2023: [100, 200, 300]
@@ -326,9 +326,10 @@ class TestFromDataFrame:
 
         model = Model.from_dataframe(df)
 
-        # Names should have spaces replaced with underscores
-        assert 'Gross_Profit' in model.line_item_names
-        assert 'Net_Income' in model.line_item_names
-        assert 'Cost_of_Goods_Sold' in model.line_item_names
-        assert model['Gross_Profit', 2023] == 100
-        assert model['Net_Income', 2023] == 200
+        # Names should be lowercase with spaces replaced with underscores
+        assert 'gross_profit' in model.line_item_names
+        assert 'net_income' in model.line_item_names
+        assert 'cost_of_goods_sold' in model.line_item_names
+        assert model['gross_profit', 2023] == 100
+        assert model['net_income', 2023] == 200
+        assert model['cost_of_goods_sold', 2023] == 300

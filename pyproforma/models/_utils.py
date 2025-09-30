@@ -18,6 +18,67 @@ def validate_name(name):
         )
 
 
+def convert_to_name(name: str) -> str:
+    """
+    Convert a string to a valid line item name.
+
+    Sanitizes the input string by converting to lowercase, replacing spaces
+    with underscores, and removing any invalid characters. The resulting name
+    must contain only letters, numbers, underscores, or hyphens.
+
+    Args:
+        name (str): The string to convert to a valid name
+
+    Returns:
+        str: A valid line item name
+
+    Raises:
+        ValueError: If the name cannot be converted to a valid format or
+            if the resulting name is empty after sanitization
+
+    Examples:
+        >>> convert_to_name("Gross Profit")
+        'gross_profit'
+
+        >>> convert_to_name("Net Income (2023)")
+        'net_income_2023'
+
+        >>> convert_to_name("Revenue - Total")
+        'revenue_-_total'
+    """
+    if not name or not isinstance(name, str):
+        raise ValueError("Name must be a non-empty string")
+
+    # Convert to lowercase
+    sanitized = name.lower()
+
+    # Replace spaces with underscores
+    sanitized = sanitized.replace(' ', '_')
+
+    # Remove any characters that are not letters, numbers, underscores, or hyphens
+    sanitized = re.sub(r'[^a-z0-9_-]', '', sanitized)
+
+    # Remove leading/trailing underscores and collapse multiple underscores
+    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
+
+    # Validate the resulting name
+    if not sanitized:
+        raise ValueError(
+            f"Could not convert '{name}' to a valid name: "
+            "result is empty after sanitization"
+        )
+
+    try:
+        validate_name(sanitized)
+    except ValueError:
+        raise ValueError(
+            f"Could not convert '{name}' to a valid name: "
+            f"sanitization resulted in invalid name '{sanitized}'"
+        )
+
+    return sanitized
+
+
 def validate_periods(
     periods: List[Union[int, str]], fill_in_periods: bool = False
 ) -> List[int]:

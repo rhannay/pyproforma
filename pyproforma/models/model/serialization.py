@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import yaml
 
-from .._utils import validate_periods
+from .._utils import convert_to_name, validate_periods
 from ..line_item import LineItem
 
 if TYPE_CHECKING:
@@ -263,8 +263,7 @@ class SerializationMixin:
             name = str(name)
 
             # Sanitize the name to ensure it meets validation requirements
-            # Replace spaces with underscores and remove any invalid characters
-            name = name.replace(' ', '_')
+            name = convert_to_name(name)
 
             # Build values dictionary for this line item
             values = {}
