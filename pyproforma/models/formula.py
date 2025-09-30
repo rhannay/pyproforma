@@ -15,6 +15,9 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     validates that the line item name itself is in the valid names, checks for circular
     references (i.e., a formula referencing its own name without a time offset or with [0]),
     and ensures no positive time offsets are used (future references are not allowed).
+    
+    Special formulas like "category_total:category_name" are recognized and skipped from
+    regular validation.
 
     Args:
         formula (str): The formula string to validate (e.g., "revenue - expenses" or "revenue[-1] * 1.1")
@@ -36,6 +39,8 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         # Raises ValueError - circular reference without time offset
         >>> validate_formula("revenue[1] + expenses", "projection", ["revenue", "expenses", "projection"])
         # Raises ValueError - positive time offset not allowed
+        >>> validate_formula("category_total:revenue", "total_rev", ["total_rev"])
+        # No error - category_total formulas are skipped
     """  # noqa: E501
     # Check that the line item name is in valid_names
     if name not in valid_names:
@@ -43,6 +48,14 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
 
     # Strip whitespace from the formula
     formula = formula.strip()
+    
+    # Check if this is a category_total formula - if so, skip regular validation
+    # Pattern: "category_total:" followed by optional space and category name
+    category_total_pattern = r'^category_total:\s*\w+$'
+    if re.match(category_total_pattern, formula):
+        # This is a category_total formula, skip regular validation
+        # The category name will be validated during calculation
+        return
 
     # Extract variables from time-offset patterns like revenue[-1], cost[-2], etc.
     offset_vars = re.findall(r"([\w.]+)\[(-?\d+)\]", formula)

@@ -703,3 +703,257 @@ class TestCalculateCategoryTotal:
 
         assert "Category 'any_category' not found in metadata" in str(exc_info.value)
         assert "Available categories: []" in str(exc_info.value)
+
+
+class TestParseCategoryTotalFormula:
+    """Test cases for the _parse_category_total_formula() helper function."""
+
+    def test_parse_category_total_basic(self):
+        """Test parsing basic category_total formula without space."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        result = _parse_category_total_formula("category_total:revenue")
+        assert result == "revenue"
+
+    def test_parse_category_total_with_space(self):
+        """Test parsing category_total formula with space after colon."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        result = _parse_category_total_formula("category_total: revenue")
+        assert result == "revenue"
+
+    def test_parse_category_total_with_multiple_spaces(self):
+        """Test parsing category_total formula with multiple spaces after colon."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        result = _parse_category_total_formula("category_total:   expenses")
+        assert result == "expenses"
+
+    def test_parse_category_total_with_underscore_in_name(self):
+        """Test parsing category_total formula with underscore in category name."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        result = _parse_category_total_formula("category_total:net_income")
+        assert result == "net_income"
+
+    def test_parse_category_total_not_matching(self):
+        """Test that regular formulas return None."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        assert _parse_category_total_formula("revenue * 2") is None
+        assert _parse_category_total_formula("revenue + expenses") is None
+        assert _parse_category_total_formula("100") is None
+
+    def test_parse_category_total_empty_string(self):
+        """Test that empty string returns None."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        assert _parse_category_total_formula("") is None
+
+    def test_parse_category_total_none(self):
+        """Test that None returns None."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        assert _parse_category_total_formula(None) is None
+
+    def test_parse_category_total_with_extra_text(self):
+        """Test that formulas with extra text don't match."""
+        from pyproforma.models.model.value_matrix import _parse_category_total_formula
+        
+        assert _parse_category_total_formula("category_total:revenue + 100") is None
+        assert _parse_category_total_formula("2 * category_total:revenue") is None
+
+
+class TestCategoryTotalFormula:
+    """Test cases for using category_total:category_name in formulas."""
+
+    @pytest.fixture
+    def basic_categories(self):
+        """Create basic categories for testing."""
+        return [
+            Category(name="revenue", label="Revenue", include_total=False),
+            Category(name="expenses", label="Expenses", include_total=False),
+            Category(name="summary", label="Summary", include_total=False),
+        ]
+
+    def test_category_total_formula_basic(self, basic_categories):
+        """Test basic category_total formula usage."""
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000, 2024: 1200}
+        )
+        revenue2 = LineItem(
+            name="revenue2", category="revenue", values={2023: 500, 2024: 600}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+
+        model = Model(
+            line_items=[revenue1, revenue2, total_revenue],
+            years=[2023, 2024],
+            categories=basic_categories,
+        )
+
+        # Check that the total is calculated correctly
+        assert model.value("total_revenue", 2023) == 1500
+        assert model.value("total_revenue", 2024) == 1800
+
+    def test_category_total_formula_with_space(self, basic_categories):
+        """Test category_total formula with space after colon."""
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000}
+        )
+        revenue2 = LineItem(
+            name="revenue2", category="revenue", values={2023: 500}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total: revenue"
+        )
+
+        model = Model(
+            line_items=[revenue1, revenue2, total_revenue],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        assert model.value("total_revenue", 2023) == 1500
+
+    def test_category_total_formula_with_none_values(self, basic_categories):
+        """Test that None values are treated as 0 in category_total formula."""
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000}
+        )
+        revenue2 = LineItem(
+            name="revenue2", category="revenue", values={2023: None}
+        )
+        revenue3 = LineItem(
+            name="revenue3", category="revenue", values={2023: 500}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+
+        model = Model(
+            line_items=[revenue1, revenue2, revenue3, total_revenue],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        # None should be treated as 0
+        assert model.value("total_revenue", 2023) == 1500
+
+    def test_category_total_formula_order_independent(self, basic_categories):
+        """Test that category_total formula works regardless of line item order."""
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000}
+        )
+        revenue2 = LineItem(
+            name="revenue2", category="revenue", values={2023: 500}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+
+        # Test with total_revenue first
+        model1 = Model(
+            line_items=[total_revenue, revenue1, revenue2],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        # Test with total_revenue last
+        model2 = Model(
+            line_items=[revenue1, revenue2, total_revenue],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        # Test with total_revenue in the middle
+        model3 = Model(
+            line_items=[revenue1, total_revenue, revenue2],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        assert model1.value("total_revenue", 2023) == 1500
+        assert model2.value("total_revenue", 2023) == 1500
+        assert model3.value("total_revenue", 2023) == 1500
+
+    def test_category_total_formula_empty_category(self, basic_categories):
+        """Test category_total formula with empty category."""
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+
+        model = Model(
+            line_items=[total_revenue],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        # Empty category should sum to 0
+        assert model.value("total_revenue", 2023) == 0
+
+    def test_category_total_formula_invalid_category(self, basic_categories):
+        """Test that invalid category raises error."""
+        total = LineItem(
+            name="total", category="summary", formula="category_total:nonexistent"
+        )
+
+        with pytest.raises(KeyError, match="Category 'nonexistent' not found"):
+            Model(
+                line_items=[total],
+                years=[2023],
+                categories=basic_categories,
+            )
+
+    def test_category_total_formula_with_multiple_categories(self, basic_categories):
+        """Test using category_total formulas for multiple categories."""
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000}
+        )
+        revenue2 = LineItem(
+            name="revenue2", category="revenue", values={2023: 500}
+        )
+        expense1 = LineItem(
+            name="expense1", category="expenses", values={2023: 300}
+        )
+        expense2 = LineItem(
+            name="expense2", category="expenses", values={2023: 200}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+        total_expenses = LineItem(
+            name="total_expenses", category="summary", formula="category_total:expenses"
+        )
+
+        model = Model(
+            line_items=[revenue1, revenue2, expense1, expense2, total_revenue, total_expenses],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        assert model.value("total_revenue", 2023) == 1500
+        assert model.value("total_expenses", 2023) == 500
+
+    def test_category_total_formula_does_not_use_evaluate(self, basic_categories):
+        """Test that category_total formula does not use regular evaluate()."""
+        # This tests that the category_total pattern takes precedence over evaluate()
+        # If we tried to use evaluate() with "category_total:revenue", it would fail
+        revenue1 = LineItem(
+            name="revenue1", category="revenue", values={2023: 1000}
+        )
+        total_revenue = LineItem(
+            name="total_revenue", category="summary", formula="category_total:revenue"
+        )
+
+        model = Model(
+            line_items=[revenue1, total_revenue],
+            years=[2023],
+            categories=basic_categories,
+        )
+
+        # Should work without error - this would fail if it tried to use evaluate()
+        assert model.value("total_revenue", 2023) == 1000
+
