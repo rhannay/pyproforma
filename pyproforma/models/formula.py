@@ -184,7 +184,10 @@ def _validate_indexed_value(
 
 
 def evaluate(
-    formula: str, value_matrix: Dict[int, Dict[str, float]], year: int
+    formula: str,
+    value_matrix: Dict[int, Dict[str, float]],
+    year: int,
+    line_item_metadata: List[Dict] = None,
 ) -> Union[int, float]:
     """
     Safely evaluate a mathematical expression using AST with value matrix lookup.
@@ -194,6 +197,8 @@ def evaluate(
         value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year
             and variable name. None values are treated as 0.0.
         year (int): The current year for which to evaluate the formula
+        line_item_metadata (List[Dict], optional): List of dictionaries containing
+            metadata for line items. Defaults to None.
 
     Returns:
         Union[int, float]: The result of the mathematical expression
@@ -240,6 +245,29 @@ def evaluate(
             return value
         elif isinstance(node, ast.Subscript):  # Variable with indexing like var[-1]
             return _validate_indexed_value(node, value_matrix, year)
+        elif isinstance(node, ast.Call):  # Function calls like category_total()
+            func_name = (
+                node.func.id if isinstance(node.func, ast.Name) else str(node.func)
+            )
+            args = [_evaluate_node(arg) for arg in node.args]
+
+            if func_name == "category_total":
+                if len(args) != 1:
+                    raise ValueError(
+                        f"category_total expects exactly 1 argument "
+                        f"(category_name), got {len(args)}"
+                    )
+                category_name = args[0]
+                if not isinstance(category_name, str):
+                    raise ValueError(
+                        f"category_total expects a string category name, "
+                        f"got {type(category_name)}"
+                    )
+                return category_total(
+                    category_name, value_matrix, year, line_item_metadata
+                )
+            else:
+                raise ValueError(f"Unsupported function: {func_name}")
         elif isinstance(node, ast.BinOp):  # Binary operations (+, -, *, /, etc.)
             left = _evaluate_node(node.left)
             right = _evaluate_node(node.right)
@@ -275,3 +303,56 @@ def evaluate(
         raise ZeroDivisionError("Division by zero in formula") from e
     except Exception as e:
         raise ValueError(f"Error evaluating formula '{formula}': {str(e)}") from e
+
+
+def category_total(
+    category_name: str,
+    value_matrix: Dict[int, Dict[str, float]],
+    year: int,
+    line_item_metadata: List[Dict],
+) -> float:
+    """
+    Calculate category total based on value matrix and line item metadata.
+
+    Args:
+        category_name (str): The name of the category to sum.
+        value_matrix (Dict[int, Dict[str, float]]): Matrix of values organized by year
+            and variable name.
+        year (int): The current year for which to calculate the category total.
+        line_item_metadata (List[Dict]): List of dictionaries containing
+            metadata for line items.
+
+    Returns:
+        float: The sum of all values for line items in the specified category.
+    """
+    # Handle None metadata
+    if line_item_metadata is None:
+        return 0.0
+
+    # Find all line item names that belong to the specified category
+    line_item_names = []
+    for metadata in line_item_metadata:
+        if metadata.get("category") == category_name:
+            name = metadata.get("name")
+            if name is not None:  # Only add non-None names
+                line_item_names.append(name)
+
+    # Sum the values for those line items in the specified year
+    total = 0.0
+    if year in value_matrix:
+        for name in line_item_names:
+            if name in value_matrix[year]:
+                value = value_matrix[year][name]
+                if value is not None:
+                    total += value
+                # If value is None, treat as 0 (no addition needed)
+            else:
+                raise ValueError(
+                    f"Line item '{name}' with category '{category_name}' "
+                    f"not found in value matrix for year {year}"
+                )
+    else:
+        # If the year doesn't exist, always throw an error
+        raise ValueError(f"Year {year} not found in value matrix")
+
+    return total
