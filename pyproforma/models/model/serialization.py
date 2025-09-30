@@ -262,6 +262,10 @@ class SerializationMixin:
             # Convert name to string if it isn't already
             name = str(name)
 
+            # Sanitize the name to ensure it meets validation requirements
+            # Replace spaces with underscores and remove any invalid characters
+            name = name.replace(' ', '_')
+
             # Build values dictionary for this line item
             values = {}
             for year_col in year_columns:
