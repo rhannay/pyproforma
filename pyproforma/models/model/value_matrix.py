@@ -6,6 +6,7 @@ that stores all calculated values for line items, categories, and generators
 across all years in a financial model.
 """
 
+import re
 from typing import TYPE_CHECKING, Any, Dict, Union
 
 from ..formula import evaluate
@@ -48,7 +49,6 @@ def _parse_category_total_formula(formula: str) -> str | None:
 
     # Check if formula matches the category_total pattern
     # Pattern: "category_total:" followed by optional space and category name
-    import re
     pattern = r'^category_total:\s*(\w+)$'
     match = re.match(pattern, formula.strip())
 
