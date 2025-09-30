@@ -11,17 +11,21 @@ class TestCalculateLineItemValue:
         hardcoded_values = {2020: 1.0, 2021: 2.0}
         vals = {}
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2020, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2020, "test_item", []
+            )
             == 1.0
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2021, "test_item", []
+            )
             == 2.0
         )
 
         # Should return None when no value and no formula
         result = calculate_line_item_value(
-            hardcoded_values, None, vals, 2022, "test_item"
+            hardcoded_values, None, vals, 2022, "test_item", []
         )
         assert result is None
 
@@ -31,33 +35,35 @@ class TestCalculateLineItemValue:
         vals = {}
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2020, "test_item"
+                hardcoded_values, formula, vals, 2020, "test_item", []
             )
             == 1.0
         )
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2021, "test_item"
+                hardcoded_values, formula, vals, 2021, "test_item", []
             )
             == 2.0
         )
         vals = {2021: {"test_item": 2.0}}
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2022, "test_item"
+                hardcoded_values, formula, vals, 2022, "test_item", []
             )
             == 2.0 * 1.05
         )
         val = {2022: {"test_item": 2.1}}
         assert (
-            calculate_line_item_value(hardcoded_values, formula, val, 2023, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, formula, val, 2023, "test_item", []
+            )
             == 2.1 * 1.05
         )
 
         # Test for year referencing [-1] but previous value does not exist
         with pytest.raises(ValueError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2019, "test_item"
+                hardcoded_values, formula, vals, 2019, "test_item", []
             )
         assert "2018 not found" in str(excinfo.value)
 
@@ -67,20 +73,20 @@ class TestCalculateLineItemValue:
         vals = {}
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2020, "test_item"
+                hardcoded_values, formula, vals, 2020, "test_item", []
             )
             == 1.0
         )
 
         # Should return None when no value and no formula
         result = calculate_line_item_value(
-            hardcoded_values, formula, vals, 2021, "test_item"
+            hardcoded_values, formula, vals, 2021, "test_item", []
         )
         assert result is None
 
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2022, "test_item"
+                hardcoded_values, formula, vals, 2022, "test_item", []
             )
             == 2.0
         )
@@ -90,7 +96,7 @@ class TestCalculateLineItemValue:
         vals = {2020: {"test_item": 2.0}}
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, vals, 2021, "test_item"
+                hardcoded_values, formula, vals, 2021, "test_item", []
             )
             == 2.0 * 1.05
         )
@@ -100,7 +106,9 @@ class TestCalculateLineItemValue:
         formula = "item1 * 2"
         vals = {2021: {"item1": 5.0}}
         assert (
-            calculate_line_item_value(hardcoded_values, formula, vals, 2021, "item2")
+            calculate_line_item_value(
+                hardcoded_values, formula, vals, 2021, "item2", []
+            )
             == 5.0 * 2
         )
 
@@ -111,17 +119,23 @@ class TestCalculateLineItemValue:
 
         # Non-None values still work as before
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2020, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2020, "test_item", []
+            )
             == 1.0
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2022, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2022, "test_item", []
+            )
             == 3.0
         )
 
         # None value with no formula returns None
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_item")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2021, "test_item", []
+            )
             is None
         )
 
@@ -129,7 +143,7 @@ class TestCalculateLineItemValue:
         formula = "test_item[-1] * 2"
         vals_with_prev = {2020: {"test_item": 1.0}}
         result = calculate_line_item_value(
-            hardcoded_values, formula, vals_with_prev, 2021, "test_item"
+            hardcoded_values, formula, vals_with_prev, 2021, "test_item", []
         )
         assert result == 2.0  # 1.0 * 2
 
@@ -171,7 +185,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, invalid_interim_values, 2020, "test_item"
+                hardcoded_values, None, invalid_interim_values, 2020, "test_item", []
             )
         assert "All keys must be integers representing years" in str(excinfo.value)
 
@@ -190,7 +204,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, invalid_interim_values, 2020, "test_item"
+                hardcoded_values, None, invalid_interim_values, 2020, "test_item", []
             )
         assert "Years must be in ascending order" in str(excinfo.value)
 
@@ -206,7 +220,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, invalid_interim_values, 2020, "test_item"
+                hardcoded_values, None, invalid_interim_values, 2020, "test_item", []
             )
         assert "Values for years [2020] must be dictionaries" in str(excinfo.value)
 
@@ -225,7 +239,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, invalid_interim_values, 2020, "test_item"
+                hardcoded_values, None, invalid_interim_values, 2020, "test_item", []
             )
         assert "Year 2021 has inconsistent variable names" in str(excinfo.value)
 
@@ -243,7 +257,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueMatrixValidationError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, invalid_interim_values, 2020, "test_item"
+                hardcoded_values, None, invalid_interim_values, 2020, "test_item", []
             )
         assert "Last year (2021) contains extra variables" in str(excinfo.value)
 
@@ -260,7 +274,7 @@ class TestCalculateLineItemValueValidation:
 
         # Should not raise an error
         result = calculate_line_item_value(
-            hardcoded_values, None, valid_interim_values, 2020, "test_item"
+            hardcoded_values, None, valid_interim_values, 2020, "test_item", []
         )
         assert result == 100.0
 
@@ -273,7 +287,7 @@ class TestCalculateLineItemValueValidation:
 
         # Should not raise an error
         result = calculate_line_item_value(
-            hardcoded_values, None, empty_interim_values, 2020, "test_item"
+            hardcoded_values, None, empty_interim_values, 2020, "test_item", []
         )
         assert result == 100.0
 
@@ -284,7 +298,7 @@ class TestCalculateLineItemValueValidation:
 
         with pytest.raises(ValueError) as excinfo:
             calculate_line_item_value(
-                hardcoded_values, None, interim_values, 2020, "test_item"
+                hardcoded_values, None, interim_values, 2020, "test_item", []
             )
         assert (
             "Value for test_item in year 2020 already exists in interim values"
@@ -302,17 +316,23 @@ class TestCalculateLineItemValueNoneValues:
 
         # Non-None values work as before
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2020, "test_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2020, "test_none", []
+            )
             == 100.0
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2022, "test_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2022, "test_none", []
+            )
             == 200.0
         )
 
         # None value with no formula returns None
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "test_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2021, "test_none", []
+            )
             is None
         )
 
@@ -320,7 +340,7 @@ class TestCalculateLineItemValueNoneValues:
         formula = "test_none[-1] * 1.5"
         vals_with_prev = {2020: {"test_none": 100.0}}
         result = calculate_line_item_value(
-            hardcoded_values, formula, vals_with_prev, 2021, "test_none"
+            hardcoded_values, formula, vals_with_prev, 2021, "test_none", []
         )
         assert result == 150.0  # 100.0 * 1.5
 
@@ -331,15 +351,21 @@ class TestCalculateLineItemValueNoneValues:
 
         # None values with no formula return None
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2020, "all_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2020, "all_none", []
+            )
             is None
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2021, "all_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2021, "all_none", []
+            )
             is None
         )
         assert (
-            calculate_line_item_value(hardcoded_values, None, vals, 2022, "all_none")
+            calculate_line_item_value(
+                hardcoded_values, None, vals, 2022, "all_none", []
+            )
             is None
         )
 
@@ -347,7 +373,7 @@ class TestCalculateLineItemValueNoneValues:
         formula = "all_none[-1] * 2"
         vals_with_prev = {2019: {"all_none": 10.0}}
         result = calculate_line_item_value(
-            hardcoded_values, formula, vals_with_prev, 2020, "all_none"
+            hardcoded_values, formula, vals_with_prev, 2020, "all_none", []
         )
         assert result == 20.0  # 10.0 * 2
 
@@ -358,19 +384,19 @@ class TestCalculateLineItemValueNoneValues:
         interim_values = {}
         assert (
             calculate_line_item_value(
-                hardcoded_values, None, interim_values, 2020, "none_test"
+                hardcoded_values, None, interim_values, 2020, "none_test", []
             )
             == 100.0
         )
         assert (
             calculate_line_item_value(
-                hardcoded_values, None, interim_values, 2021, "none_test"
+                hardcoded_values, None, interim_values, 2021, "none_test", []
             )
             is None
         )
         assert (
             calculate_line_item_value(
-                hardcoded_values, None, interim_values, 2022, "none_test"
+                hardcoded_values, None, interim_values, 2022, "none_test", []
             )
             == 200.0
         )
@@ -382,7 +408,7 @@ class TestCalculateLineItemValueNoneValues:
 
         interim_values = {}
         result = calculate_line_item_value(
-            hardcoded_values, None, interim_values, 2020, "empty"
+            hardcoded_values, None, interim_values, 2020, "empty", []
         )
         assert result is None
 
@@ -394,7 +420,7 @@ class TestCalculateLineItemValueNoneValues:
         # Formula should be used since year not in values (None doesn't count as having a value)  # noqa: E501
         interim_values = {2021: {"test_item": 50.0}}
         result = calculate_line_item_value(
-            hardcoded_values, formula, interim_values, 2021, "formula_test"
+            hardcoded_values, formula, interim_values, 2021, "formula_test", []
         )
         assert result == 100.0  # 50 * 2
 
@@ -408,7 +434,7 @@ class TestCalculateLineItemValueNoneValues:
         # 2020: explicit value
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, interim_values, 2020, "complex_test"
+                hardcoded_values, formula, interim_values, 2020, "complex_test", []
             )
             == 100.0
         )
@@ -416,21 +442,21 @@ class TestCalculateLineItemValueNoneValues:
         # 2021: None value should now use formula, referencing 2020
         interim_values = {2020: {"complex_test": 100.0}}
         result_2021 = calculate_line_item_value(
-            hardcoded_values, formula, interim_values, 2021, "complex_test"
+            hardcoded_values, formula, interim_values, 2021, "complex_test", []
         )
         assert result_2021 == pytest.approx(110.0)  # 100.0 * 1.1
 
         # 2022: no explicit value, should use formula with 2021 value
         interim_values = {2021: {"complex_test": 110.0}}
         result_2022 = calculate_line_item_value(
-            hardcoded_values, formula, interim_values, 2022, "complex_test"
+            hardcoded_values, formula, interim_values, 2022, "complex_test", []
         )
         assert result_2022 == pytest.approx(121.0)  # 110.0 * 1.1
 
         # 2023: explicit value (should override formula)
         assert (
             calculate_line_item_value(
-                hardcoded_values, formula, {}, 2023, "complex_test"
+                hardcoded_values, formula, {}, 2023, "complex_test", []
             )
             == 300.0
         )

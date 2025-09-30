@@ -337,7 +337,7 @@ class TestLineItemNoneValues:
         # 2020: explicit value
         assert (
             calculate_line_item_value(
-                item.values, item.formula, interim_values, 2020, item.name
+                item.values, item.formula, interim_values, 2020, item.name, []
             )
             == 100.0
         )
@@ -345,20 +345,27 @@ class TestLineItemNoneValues:
         # 2021: None value should now use formula, but formula would reference 2020
         interim_values = {2020: {"complex_test": 100.0}}
         result_2021 = calculate_line_item_value(
-            item.values, item.formula, interim_values, 2021, item.name
+            item.values, item.formula, interim_values, 2021, item.name, []
         )
         assert result_2021 == pytest.approx(110.0)  # 100.0 * 1.1
 
         # 2022: no explicit value, should use formula with 2021 value
         interim_values = {2021: {"complex_test": 110.0}}
         result_2022 = calculate_line_item_value(
-            item.values, item.formula, interim_values, 2022, item.name
+            item.values, item.formula, interim_values, 2022, item.name, []
         )
         assert result_2022 == pytest.approx(121.0)  # 110.0 * 1.1
 
         # 2023: explicit value (should override formula)
         assert (
-            calculate_line_item_value(item.values, item.formula, {}, 2023, item.name)
+            calculate_line_item_value(
+                item.values,
+                item.formula,
+                {},
+                2023,
+                item.name,
+                []
+            )
             == 300.0
         )
 

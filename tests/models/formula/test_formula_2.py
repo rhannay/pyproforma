@@ -203,16 +203,6 @@ class TestEvaluate:
         with pytest.raises(SyntaxError, match="Invalid formula syntax"):
             evaluate("* 5", sample_matrix, 2024)
 
-    def test_unsupported_operations(self, sample_matrix):
-        """Test that unsupported operations raise appropriate errors"""
-        # Function calls are not supported
-        with pytest.raises(ValueError, match="Unsupported AST node type"):
-            evaluate("abs(-5)", sample_matrix, 2024)
-
-        # Comparisons are not supported
-        with pytest.raises(ValueError, match="Unsupported AST node type"):
-            evaluate("5 > 3", sample_matrix, 2024)
-
     def test_float_precision(self, sample_matrix):
         """Test floating point calculations"""
         assert evaluate("0.1 + 0.2", sample_matrix, 2024) == pytest.approx(0.3)

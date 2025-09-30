@@ -98,6 +98,7 @@ def calculate_line_item_value(
     interim_values_by_year: dict,
     year: int,
     name: str,
+    line_item_metadata: list[dict],
 ) -> float | None:
     """
     Calculate the value for a line item in a specific year.
@@ -139,7 +140,7 @@ def calculate_line_item_value(
 
     # If no explicit value (missing key or None value), use formula
     if formula:
-        return evaluate(formula, interim_values_by_year, year)
+        return evaluate(formula, interim_values_by_year, year, line_item_metadata)
     # If no formula is defined, return None
     return None
 
@@ -275,6 +276,7 @@ def generate_value_matrix(
                             value_matrix,
                             year,
                             item.name,
+                            line_item_metadata
                         )
                         calculated_items.add(item.name)
                         items_calculated_this_round.append(item)
