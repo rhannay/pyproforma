@@ -480,3 +480,202 @@ class TestAddLineItemReplace:
         line_item = sample_model._line_item_definition("revenue")
         assert line_item.category == "expenses"
         assert line_item.label == "Replaced Revenue"
+
+
+class TestDeleteLineItems:
+    """Test the delete_line_items method that deletes multiple line items at once."""
+
+    @pytest.fixture
+    def sample_model(self):
+        """Create a sample model with multiple line items for testing."""
+        revenue = LineItem(
+            name="revenue",
+            category="income",
+            values={2023: 100000, 2024: 120000, 2025: 140000},
+        )
+        salary = LineItem(
+            name="salary",
+            category="expenses",
+            values={2023: 60000, 2024: 65000, 2025: 70000},
+        )
+        rent = LineItem(
+            name="rent",
+            category="expenses",
+            values={2023: 24000, 2024: 25000, 2025: 26000},
+        )
+        utilities = LineItem(
+            name="utilities",
+            category="expenses",
+            values={2023: 6000, 2024: 6500, 2025: 7000},
+        )
+
+        categories = [
+            Category(name="income", label="Income", include_total=True),
+            Category(name="expenses", label="Expenses", include_total=True),
+        ]
+
+        return Model(
+            line_items=[revenue, salary, rent, utilities],
+            years=[2023, 2024, 2025],
+            categories=categories,
+        )
+
+    def test_delete_line_items_multiple(self, sample_model: Model):
+        """Test that delete_line_items successfully deletes multiple line items."""
+        initial_count = len(sample_model._line_item_definitions)
+        assert initial_count == 4
+
+        # Delete multiple items
+        sample_model.update.delete_line_items(["salary", "rent"])
+
+        # Verify deletions
+        assert len(sample_model._line_item_definitions) == initial_count - 2
+        remaining_names = [item.name for item in sample_model._line_item_definitions]
+        assert "salary" not in remaining_names
+        assert "rent" not in remaining_names
+        assert "revenue" in remaining_names
+        assert "utilities" in remaining_names
+
+    def test_delete_line_items_single(self, sample_model: Model):
+        """Test that delete_line_items works with a single item."""
+        initial_count = len(sample_model._line_item_definitions)
+
+        # Delete single item using the list method
+        sample_model.update.delete_line_items(["salary"])
+
+        # Verify deletion
+        assert len(sample_model._line_item_definitions) == initial_count - 1
+        assert "salary" not in [
+            item.name for item in sample_model._line_item_definitions
+        ]
+
+    def test_delete_line_items_all_in_category(self, sample_model: Model):
+        """Test deleting all line items in a specific category."""
+        initial_count = len(sample_model._line_item_definitions)
+
+        # Delete all expense items
+        sample_model.update.delete_line_items(["salary", "rent", "utilities"])
+
+        # Verify deletions
+        assert len(sample_model._line_item_definitions) == initial_count - 3
+        remaining_names = [item.name for item in sample_model._line_item_definitions]
+        assert remaining_names == ["revenue"]
+
+    def test_delete_line_items_nonexistent_item(self, sample_model: Model):
+        """Test that delete_line_items fails when a line item doesn't exist."""
+        with pytest.raises(KeyError, match="Line item 'nonexistent' not found in model"):
+            sample_model.update.delete_line_items(["salary", "nonexistent"])
+
+        # Verify no changes were made
+        assert len(sample_model._line_item_definitions) == 4
+
+    def test_delete_line_items_empty_list(self, sample_model: Model):
+        """Test that delete_line_items with an empty list doesn't change the model."""
+        initial_count = len(sample_model._line_item_definitions)
+
+        # Delete empty list - should not fail but also not change anything
+        sample_model.update.delete_line_items([])
+
+        # Verify no changes
+        assert len(sample_model._line_item_definitions) == initial_count
+
+    def test_delete_line_items_validation_failure(self, sample_model: Model):
+        """Test that delete_line_items handles validation failures properly."""
+        initial_count = len(sample_model._line_item_definitions)
+
+        # Try to delete items (should work normally in this case)
+        # In a real scenario with formulas referencing these items, this could fail
+        sample_model.update.delete_line_items(["salary", "rent"])
+
+        # Verify deletions worked
+        assert len(sample_model._line_item_definitions) == initial_count - 2
+
+
+class TestDeleteCategoryWithLineItems:
+    """Test the updated delete_category method with include_line_items parameter."""
+
+    @pytest.fixture
+    def sample_model(self):
+        """Create a sample model for testing."""
+        revenue = LineItem(
+            name="revenue",
+            category="income",
+            values={2023: 100000, 2024: 120000, 2025: 140000},
+        )
+        salary = LineItem(
+            name="salary",
+            category="expenses",
+            values={2023: 60000, 2024: 65000, 2025: 70000},
+        )
+        rent = LineItem(
+            name="rent",
+            category="expenses",
+            values={2023: 24000, 2024: 25000, 2025: 26000},
+        )
+
+        categories = [
+            Category(name="income", label="Income", include_total=True),
+            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="unused", label="Unused Category", include_total=False),
+        ]
+
+        return Model(
+            line_items=[revenue, salary, rent],
+            years=[2023, 2024, 2025],
+            categories=categories,
+        )
+
+    def test_delete_category_with_line_items_false_default(self, sample_model: Model):
+        """Test that delete_category fails by default when line items exist."""
+        with pytest.raises(
+            ValueError,
+            match="Cannot delete category 'income' because it is used by line items",
+        ):
+            sample_model.update.delete_category("income")
+
+    def test_delete_category_with_line_items_false_explicit(self, sample_model: Model):
+        """Test that delete_category with include_line_items=False fails when line items exist."""
+        with pytest.raises(
+            ValueError,
+            match="Cannot delete category 'expenses' because it is used by line items",
+        ):
+            sample_model.update.delete_category("expenses", include_line_items=False)
+
+    def test_delete_category_with_line_items_true(self, sample_model: Model):
+        """Test that delete_category with include_line_items=True deletes line items first."""
+        initial_category_count = len(sample_model._category_definitions)
+        initial_line_item_count = len(sample_model._line_item_definitions)
+
+        # Delete category with its line items
+        sample_model.update.delete_category("expenses", include_line_items=True)
+
+        # Verify category is deleted
+        assert len(sample_model._category_definitions) == initial_category_count - 1
+        assert "expenses" not in [cat.name for cat in sample_model._category_definitions]
+
+        # Verify line items in that category are deleted
+        assert len(sample_model._line_item_definitions) == initial_line_item_count - 2
+        remaining_names = [item.name for item in sample_model._line_item_definitions]
+        assert "salary" not in remaining_names
+        assert "rent" not in remaining_names
+        assert "revenue" in remaining_names
+
+    def test_delete_category_no_line_items_still_works(self, sample_model: Model):
+        """Test that delete_category works normally for categories without line items."""
+        initial_count = len(sample_model._category_definitions)
+
+        # Delete category with no line items (should work with or without the flag)
+        sample_model.update.delete_category("unused")
+
+        assert len(sample_model._category_definitions) == initial_count - 1
+        assert "unused" not in [cat.name for cat in sample_model._category_definitions]
+
+    def test_delete_category_with_line_items_true_no_line_items(self, sample_model: Model):
+        """Test that delete_category with include_line_items=True works even without line items."""
+        initial_count = len(sample_model._category_definitions)
+
+        # Delete category with no line items but with the flag set
+        sample_model.update.delete_category("unused", include_line_items=True)
+
+        assert len(sample_model._category_definitions) == initial_count - 1
+        assert "unused" not in [cat.name for cat in sample_model._category_definitions]

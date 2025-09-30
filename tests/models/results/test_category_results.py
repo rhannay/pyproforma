@@ -1129,3 +1129,115 @@ class TestCategoryResultsEdgeCases:
             ValueError, match="Category 'metrics' does not include totals"
         ):
             category_results.totals()
+
+
+class TestCategoryResultsDeleteWithLineItems:
+    """Test the delete method of CategoryResults with include_line_items parameter."""
+
+    @pytest.fixture
+    def delete_test_model(self):
+        """Create a model specifically for testing delete functionality with line items."""
+        line_items = [
+            LineItem(
+                name="product_sales",
+                category="revenue",
+                label="Product Sales",
+                values={2023: 100000, 2024: 120000},
+            ),
+            LineItem(
+                name="service_revenue",
+                category="revenue",
+                label="Service Revenue",
+                values={2023: 50000, 2024: 60000},
+            ),
+            LineItem(
+                name="salaries",
+                category="expenses",
+                label="Salaries",
+                values={2023: 80000, 2024: 85000},
+            ),
+        ]
+
+        categories = [
+            Category(name="revenue", label="Revenue"),
+            Category(name="expenses", label="Expenses"),
+            Category(name="unused", label="Unused Category"),
+        ]
+
+        years = [2023, 2024]
+
+        return Model(line_items=line_items, categories=categories, years=years)
+
+    def test_delete_with_line_items_false_default_fails(self, delete_test_model):
+        """Test that delete() with default parameter fails when line items exist."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # Should fail because line items exist
+        with pytest.raises(ValueError) as excinfo:
+            revenue_category.delete()
+
+        error_msg = str(excinfo.value)
+        assert "Cannot delete category 'revenue'" in error_msg
+        assert "still contains line items" in error_msg
+
+    def test_delete_with_line_items_false_explicit_fails(self, delete_test_model):
+        """Test that delete(include_line_items=False) explicitly fails when line items exist."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # Should fail because line items exist
+        with pytest.raises(ValueError) as excinfo:
+            revenue_category.delete(include_line_items=False)
+
+        error_msg = str(excinfo.value)
+        assert "Cannot delete category 'revenue'" in error_msg
+        assert "still contains line items" in error_msg
+
+    def test_delete_with_line_items_true_succeeds(self, delete_test_model):
+        """Test that delete(include_line_items=True) deletes category and its line items."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        initial_category_count = len(delete_test_model._category_definitions)
+        initial_line_item_count = len(delete_test_model._line_item_definitions)
+
+        # Should succeed and delete line items too
+        revenue_category.delete(include_line_items=True)
+
+        # Verify category is deleted
+        assert len(delete_test_model._category_definitions) == initial_category_count - 1
+        assert "revenue" not in [
+            cat.name for cat in delete_test_model._category_definitions
+        ]
+
+        # Verify line items in that category are deleted
+        assert len(delete_test_model._line_item_definitions) == initial_line_item_count - 2
+        remaining_names = [item.name for item in delete_test_model._line_item_definitions]
+        assert "product_sales" not in remaining_names
+        assert "service_revenue" not in remaining_names
+        assert "salaries" in remaining_names
+
+    def test_delete_empty_category_with_flag_succeeds(self, delete_test_model):
+        """Test that delete(include_line_items=True) works for empty categories."""
+        unused_category = CategoryResults(delete_test_model, "unused")
+
+        initial_count = len(delete_test_model._category_definitions)
+
+        # Should succeed even though there are no line items to delete
+        unused_category.delete(include_line_items=True)
+
+        assert len(delete_test_model._category_definitions) == initial_count - 1
+        assert "unused" not in [
+            cat.name for cat in delete_test_model._category_definitions
+        ]
+
+    def test_delete_preserves_other_categories(self, delete_test_model):
+        """Test that deleting one category doesn't affect others."""
+        revenue_category = CategoryResults(delete_test_model, "revenue")
+
+        # Delete revenue category with its line items
+        revenue_category.delete(include_line_items=True)
+
+        # Verify other categories and their line items are preserved
+        assert "expenses" in [cat.name for cat in delete_test_model._category_definitions]
+        assert "salaries" in [
+            item.name for item in delete_test_model._line_item_definitions
+        ]
