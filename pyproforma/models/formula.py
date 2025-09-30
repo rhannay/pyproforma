@@ -15,7 +15,7 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
     validates that the line item name itself is in the valid names, checks for circular
     references (i.e., a formula referencing its own name without a time offset or with [0]),
     and ensures no positive time offsets are used (future references are not allowed).
-    
+
     Special formulas like "category_total:category_name" are recognized and skipped from
     regular validation.
 
@@ -48,7 +48,7 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
 
     # Strip whitespace from the formula
     formula = formula.strip()
-    
+
     # Check if this is a category_total formula - if so, skip regular validation
     # Pattern: "category_total:" followed by optional space and category name
     category_total_pattern = r'^category_total:\s*\w+$'

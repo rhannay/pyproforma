@@ -25,16 +25,16 @@ class ValueMatrixValidationError(Exception):
 def _parse_category_total_formula(formula: str) -> str | None:
     """
     Parse a category_total formula and extract the category name.
-    
+
     Checks if the formula follows the pattern "category_total:category_name"
     where there may or may not be a space after the colon.
-    
+
     Args:
         formula (str): The formula string to parse
-        
+
     Returns:
         str | None: The category name if the formula matches the pattern, None otherwise
-        
+
     Examples:
         >>> _parse_category_total_formula("category_total:revenue")
         'revenue'
@@ -45,13 +45,13 @@ def _parse_category_total_formula(formula: str) -> str | None:
     """
     if not formula:
         return None
-    
+
     # Check if formula matches the category_total pattern
     # Pattern: "category_total:" followed by optional space and category name
     import re
     pattern = r'^category_total:\s*(\w+)$'
     match = re.match(pattern, formula.strip())
-    
+
     if match:
         return match.group(1)
     return None
@@ -150,7 +150,7 @@ def calculate_line_item_value(
         hardcoded_values (dict[int, float | None]): Dictionary mapping years to explicit values.
             None values will be ignored and formulas will be used instead.
         formula (str | None): Formula string for calculating values when explicit
-            values are not available or are None. Can be a standard formula or 
+            values are not available or are None. Can be a standard formula or
             "category_total:category_name" pattern.
         interim_values_by_year (dict): Dictionary containing calculated values
             by year, used to prevent circular references and for formula calculations.
@@ -188,7 +188,8 @@ def calculate_line_item_value(
             # This is a category_total formula
             if line_item_metadata is None:
                 raise ValueError(
-                    f"line_item_metadata is required when using category_total formula for '{name}'"
+                    f"line_item_metadata is required when using "
+                    f"category_total formula for '{name}'"
                 )
             # Get values for the current year
             values_by_name = interim_values_by_year.get(year, {})
@@ -371,7 +372,10 @@ def generate_value_matrix(
                         raise e
 
                     # Check if this is a category not found error - should be raised immediately  # noqa: E501
-                    if isinstance(e, KeyError) and "not found in category definitions" in str(e):
+                    if (
+                        isinstance(e, KeyError)
+                        and "not found in category definitions" in str(e)
+                    ):
                         raise e
 
                     # Check if this is a missing variable error vs dependency issue
