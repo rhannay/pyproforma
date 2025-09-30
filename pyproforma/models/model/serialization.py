@@ -221,8 +221,8 @@ class SerializationMixin:
             >>> model.years
             [2023, 2024, 2025]
         """
-        from ..line_item import LineItem
         from .._utils import validate_periods
+        from ..line_item import LineItem
 
         # Validate input
         if not isinstance(df, pd.DataFrame):

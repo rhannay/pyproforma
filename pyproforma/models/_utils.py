@@ -79,7 +79,8 @@ def validate_periods(
                 )
         else:
             raise ValueError(
-                f"Period must be an integer or string, got {type(period).__name__}: {period}"
+                f"Period must be an integer or string, got "
+                f"{type(period).__name__}: {period}"
             )
 
     # Check for duplicates

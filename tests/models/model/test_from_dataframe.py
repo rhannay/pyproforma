@@ -23,7 +23,8 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [2023, 2024, 2025]
-        # Note: Model automatically creates category totals, so there are more line items
+        # Note: Model automatically creates category totals,
+        # so there are more line items
         assert 'revenue' in model.line_item_names
         assert 'expenses' in model.line_item_names
         assert 'profit' in model.line_item_names
@@ -191,8 +192,8 @@ class TestFromDataFrame:
 
     def test_duplicate_years_raise_error(self):
         """Test that duplicate year columns raise ValueError."""
-        # Create a DataFrame with duplicate column names by directly using the constructor
-        # with duplicate column names in the columns parameter
+        # Create a DataFrame with duplicate column names by directly
+        # using the constructor with duplicate column names
         data = {'name': ['revenue'], 'col1': [1000], 'col2': [1100]}
         df = pd.DataFrame(data, columns=['name', 2023, 2023])
 
@@ -251,7 +252,10 @@ class TestFromDataFrame:
         assert 'revenue' in model.line_item_names
         assert 'profit' in model.line_item_names
         # Check that we only have the 2 defined items (plus category total)
-        defined_items = [name for name in model.line_item_names if not name.startswith('total_')]
+        defined_items = [
+            name for name in model.line_item_names
+            if not name.startswith('total_')
+        ]
         assert len(defined_items) == 2
 
     def test_dataframe_with_negative_years(self):
