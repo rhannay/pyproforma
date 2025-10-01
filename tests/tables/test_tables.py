@@ -44,7 +44,7 @@ class TestTableCreation:
         categories = [
             Category(name="revenue", label="Revenue"),
             Category(name="expense", label="Expenses"),
-            Category(name="calculated", label="Calculated", include_total=False),
+            Category(name="calculated", label="Calculated"),
         ]
 
         # Define calculated formulas as LineItems

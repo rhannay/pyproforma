@@ -72,10 +72,10 @@ class TestModelCopy:
         ]
 
         categories = [
-            Category(name="income", label="Income Statement", include_total=True),
-            Category(name="costs", label="Cost Items", include_total=True),
-            Category(name="calculated", label="Calculated Items", include_total=False),
-            Category(name="assumptions", label="Assumptions", include_total=False),
+            Category(name="income", label="Income Statement"),
+            Category(name="costs", label="Cost Items"),
+            Category(name="calculated", label="Calculated Items"),
+            Category(name="assumptions", label="Assumptions"),
         ]
 
         return Model(

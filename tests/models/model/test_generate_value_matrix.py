@@ -822,9 +822,9 @@ class TestCategoryTotalFormula:
     def basic_categories(self):
         """Create basic categories for testing."""
         return [
-            Category(name="revenue", label="Revenue", include_total=False),
-            Category(name="expenses", label="Expenses", include_total=False),
-            Category(name="summary", label="Summary", include_total=False),
+            Category(name="revenue", label="Revenue"),
+            Category(name="expenses", label="Expenses"),
+            Category(name="summary", label="Summary"),
         ]
 
     def test_category_total_formula_basic(self, basic_categories):

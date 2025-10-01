@@ -182,8 +182,8 @@ class TestUnifiedUpdateFunctionality:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Expenses"),
         ]
 
         return Model(

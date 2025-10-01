@@ -545,7 +545,7 @@ class TestModelInitWithStringCategories:
             Category(name="income", label="Revenue Streams"),  # Category object
             "costs",  # String
             # Category object with custom settings
-            Category(name="assets", label="Company Assets", include_total=False),
+            Category(name="assets", label="Company Assets"),
         ]
 
         model = Model(

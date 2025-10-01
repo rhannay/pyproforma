@@ -102,8 +102,8 @@ class TestModelValidateFormulas:
             name="margin", category="metrics", formula="total_revenue * 0.1"
         )
 
-        revenue_cat = Category(name="revenue", include_total=True)
-        metrics_cat = Category(name="metrics", include_total=False)
+        revenue_cat = Category(name="revenue")
+        metrics_cat = Category(name="metrics")
 
         # Should not raise any exception
         model = Model(

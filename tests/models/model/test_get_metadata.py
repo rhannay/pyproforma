@@ -173,9 +173,9 @@ class TestGetCategoryMetadata:
             LineItem(name="rent", category="expenses", values={2023: 20000}),
         ]
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Operating Expenses", include_total=True),
-            Category(name="assets", label="Assets", include_total=False),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Operating Expenses"),
+            Category(name="assets", label="Assets"),
         ]
         return Model(
             line_items=line_items,
