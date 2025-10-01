@@ -24,8 +24,6 @@ class UpdateNamespace:
         *,
         name: str | None = None,
         label: str | None = None,
-        total_label: str | None = None,
-        include_total: bool = True,
     ) -> None:
         """
         Add a new category to the model.
@@ -38,8 +36,6 @@ class UpdateNamespace:
             category (Category, optional): An already-created Category instance to add
             name (str, optional): Name for new Category - required if category is None
             label (str, optional): Human-readable display name. Defaults to name if not provided.
-            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
-            include_total (bool, optional): Whether to include a total for this category. Defaults to True
 
         Returns:
             None
@@ -53,7 +49,7 @@ class UpdateNamespace:
             >>> model.update.add_category(existing_category)
 
             >>> # Method 2: Create from parameters
-            >>> model.update.add_category(name="assets", label="Assets", include_total=True)
+            >>> model.update.add_category(name="assets", label="Assets")
         """  # noqa: E501
         # Validate that exactly one of category or name is provided
         if category is not None and name is not None:
@@ -75,8 +71,6 @@ class UpdateNamespace:
                 new_category = Category(
                     name=name,
                     label=label,
-                    total_label=total_label,
-                    include_total=include_total,
                 )
             except ValueError as e:
                 # Re-raise Category creation errors with our standard format
@@ -235,8 +229,6 @@ class UpdateNamespace:
         category: Category = None,
         new_name: str = None,
         label: str = None,
-        total_label: str = None,
-        include_total: bool = None,
     ) -> None:
         """
         Update a category in the model by name.
@@ -253,8 +245,6 @@ class UpdateNamespace:
             category (Category, optional): New Category instance to replace the existing one
             new_name (str, optional): New name for the category
             label (str, optional): New label for the category
-            total_label (str, optional): New total label for the category
-            include_total (bool, optional): Whether to include a total for this category
 
         Returns:
             None
@@ -292,12 +282,6 @@ class UpdateNamespace:
                 updated_category = Category(
                     name=new_name if new_name is not None else existing_category.name,
                     label=label if label is not None else existing_category.label,
-                    total_label=total_label
-                    if total_label is not None
-                    else existing_category.total_label,
-                    include_total=include_total
-                    if include_total is not None
-                    else existing_category.include_total,
                 )
             except ValueError as e:
                 # Re-raise Category creation errors with our standard format

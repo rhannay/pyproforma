@@ -99,21 +99,6 @@ class CategoryResults:
         return self.model.line_item_names_by_category(self._name)
 
     @property
-    def include_total(self) -> bool:
-        """Whether the category includes a total row."""
-        return self._category_metadata["include_total"]
-
-    @property
-    def total_name(self) -> str:
-        """The name used for the category total."""
-        return self._category_metadata["total_name"]
-
-    @property
-    def total_label(self) -> str:
-        """The display label for the category total."""
-        return self._category_metadata["total_label"]
-
-    @property
     def system_generated(self) -> bool:
         """Whether the category was auto-generated."""
         return self._category_metadata["system_generated"]
@@ -160,28 +145,6 @@ class CategoryResults:
     # VALUE ACCESS METHODS
     # ============================================================================
 
-    def totals(self) -> dict[int, float]:
-        """
-        Return a dictionary of year: total value for this category.
-
-        Returns:
-            dict[int, float]: Dictionary mapping years to category totals
-
-        Raises:
-            ValueError: If the category doesn't include totals
-        """
-        if not self.include_total:
-            raise ValueError(f"Category '{self.name}' does not include totals")
-
-        totals = {}
-        for year in self.model.years:
-            try:
-                totals[year] = self.model.category_total(self.name, year)
-            except KeyError:
-                totals[year] = 0.0
-
-        return totals
-
     def values(self) -> dict[str, dict[int, float]]:
         """
         Return a nested dictionary of item_name: {year: value} for all items in category.
@@ -221,14 +184,6 @@ class CategoryResults:
             ]
 
         df = pd.DataFrame(df_data, index=self.line_item_names)
-
-        # Add total row if category includes totals
-        if self.include_total:
-            try:
-                total_row = self.totals()
-                df.loc[self.total_name] = [total_row[year] for year in self.model.years]
-            except (ValueError, KeyError):
-                pass
 
         return df
 
@@ -296,24 +251,11 @@ class CategoryResults:
         num_items = len(self.line_item_names)
         item_names = self.line_item_names
 
-        # Get totals for all years if category includes totals
-        total_info = ""
-        if self.include_total and self.model.years:
-            try:
-                totals_list = []
-                for year in self.model.years:
-                    total_value = self.model.category_total(self.name, year)
-                    formatted_total = f"{total_value:,.0f}"
-                    totals_list.append(formatted_total)
-                total_info = f"\nTotals: {', '.join(totals_list)}"
-            except (KeyError, AttributeError):
-                total_info = "\nTotals: Not available"
-
         summary_text = (
             f"CategoryResults('{self.name}')\n"
             f"Label: {self.label}\n"
             f"Line Items: {num_items}\n"
-            f"Items: {', '.join(item_names)}{total_info}"
+            f"Items: {', '.join(item_names)}"
         )
 
         if html:

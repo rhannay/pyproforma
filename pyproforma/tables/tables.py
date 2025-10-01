@@ -93,7 +93,7 @@ class Tables:
         for category_name in self._model.category_names:
             rows.extend(
                 self._category_rows(
-                    category_name, include_total=False, hardcoded_color=hardcoded_color
+                    category_name, hardcoded_color=hardcoded_color
                 )
             )
         return rows
@@ -101,41 +101,29 @@ class Tables:
     def _category_rows(
         self,
         category_name: str,
-        include_total: bool = False,
         hardcoded_color: Optional[str] = None,
     ):
         rows = []
         category = self._model.category(category_name)
         rows.append(rt.LabelRow(label=category.label, bold=True))
 
-        # Check if we need to add bottom border to the last item
-        has_total = include_total and category.include_total
-
         # Get line item names for this category using metadata
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        for i, item_name in enumerate(line_item_names):
-            # Add bottom border to the last item if there's a total row coming after
-            is_last_item = i == len(line_item_names) - 1
-            bottom_border = "single" if has_total and is_last_item else None
-
+        for item_name in line_item_names:
             rows.append(
                 rt.ItemRow(
                     name=item_name,
                     hardcoded_color=hardcoded_color,
-                    bottom_border=bottom_border,
                 )
             )
 
-        if include_total and category.include_total:
-            rows.append(rt.ItemRow(name=category.total_name, bold=True))
         return rows
 
     def category(
         self,
         category_name: str,
         include_name: bool = False,
-        include_total: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
@@ -144,7 +132,6 @@ class Tables:
         Args:
             category_name (str): The name of the category to generate the table for.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
-            include_total (bool, optional): Whether to include category totals if the category has them configured. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -153,7 +140,7 @@ class Tables:
             Table: A Table object containing the category items.
         """  # noqa: E501
         rows = self._category_rows(
-            category_name, include_total=include_total, hardcoded_color=hardcoded_color
+            category_name, hardcoded_color=hardcoded_color
         )
         return self.from_template(rows, include_name=include_name)
 
