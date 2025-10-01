@@ -49,7 +49,7 @@ def _parse_category_total_formula(formula: str) -> str | None:
 
     # Check if formula matches the category_total pattern
     # Pattern: "category_total:" followed by optional space and category name
-    pattern = r'^category_total:\s*(\w+)$'
+    pattern = r"^category_total:\s*(\w+)$"
     match = re.match(pattern, formula.strip())
 
     if match:
@@ -208,7 +208,7 @@ def _calculate_category_total(
     values_by_name: dict[str, float],
     line_item_metadata: list[dict],
     category_name: str,
-    category_metadata: list[dict] | None = None,
+    category_metadata: list[dict],
 ) -> float:
     """
     Calculate the sum of all line items in a category.
@@ -221,7 +221,7 @@ def _calculate_category_total(
         values_by_name (dict): Dictionary mapping item names to their values
         line_item_metadata (list[dict]): Metadata for all defined names
         category_name (str): The name of the category to sum
-        category_metadata (list[dict] | None): Metadata for all defined categories.
+        category_metadata (list[dict]): Metadata for all defined categories.
             Used to validate that category exists even if it has no line items.
 
     Returns:
@@ -231,35 +231,17 @@ def _calculate_category_total(
         KeyError: If the category name is not found in metadata or if line items
                  in the category are not found in values
     """
-    # First check if category exists in category_metadata if provided
-    if category_metadata is not None:
-        category_exists_in_definitions = any(
-            cat.get("name") == category_name for cat in category_metadata
+    # Check if category exists in category_metadata
+    category_exists_in_definitions = any(
+        cat.get("name") == category_name for cat in category_metadata
+    )
+    if not category_exists_in_definitions:
+        available_categories = sorted(
+            set(cat.get("name") for cat in category_metadata if cat.get("name"))
         )
-        if not category_exists_in_definitions:
-            available_categories = sorted(
-                set(cat.get("name") for cat in category_metadata if cat.get("name"))
-            )
-            raise KeyError(
-                f"Category '{category_name}' not found in category definitions. Available categories: {available_categories}"  # noqa: E501
-            )
-    else:
-        # If category_metadata not provided, check if category has any line items
-        category_exists = any(
-            metadata.get("source_type") == "line_item"
-            and metadata.get("category") == category_name
-            for metadata in line_item_metadata
+        raise KeyError(
+            f"Category '{category_name}' not found in category definitions. Available categories: {available_categories}"  # noqa: E501
         )
-        if not category_exists:
-            available_categories = set(
-                metadata.get("category")
-                for metadata in line_item_metadata
-                if metadata.get("source_type") == "line_item"
-                and metadata.get("category") is not None
-            )
-            raise KeyError(
-                f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"  # noqa: E501
-            )
 
     # Find all line items that belong to this category and sum their values
     total = 0
@@ -284,7 +266,6 @@ def _calculate_category_total(
 def generate_value_matrix(
     years: list[int],
     line_item_definitions: list[Union["LineItem", "MultiLineItem"]],
-    # category_definitions: list["Category"],
     category_metadata: list[dict],
     line_item_metadata: list[dict],
 ) -> dict[int, dict[str, float]]:
@@ -372,10 +353,9 @@ def generate_value_matrix(
                         raise e
 
                     # Check if this is a category not found error - should be raised immediately  # noqa: E501
-                    if (
-                        isinstance(e, KeyError)
-                        and "not found in category definitions" in str(e)
-                    ):
+                    if isinstance(
+                        e, KeyError
+                    ) and "not found in category definitions" in str(e):
                         raise e
 
                     # Check if this is a missing variable error vs dependency issue
@@ -432,7 +412,10 @@ def generate_value_matrix(
                         all_items_calculated and items_in_category
                     ):  # Only if category has items
                         category_total = _calculate_category_total(
-                            value_matrix[year], line_item_metadata, category["name"]
+                            value_matrix[year],
+                            line_item_metadata,
+                            category["name"],
+                            category_metadata,
                         )
                         total_name = category["total_name"]
                         value_matrix[year][total_name] = category_total
