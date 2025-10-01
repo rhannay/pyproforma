@@ -118,7 +118,7 @@ class CategoryResults:
         """Whether the category was auto-generated."""
         return self._category_metadata["system_generated"]
 
-    def delete(self) -> None:
+    def delete(self, include_line_items: bool = False) -> None:
         """
         Delete this category from the model.
 
@@ -127,29 +127,34 @@ class CategoryResults:
         no longer exists.
 
         The deletion will fail if there are any line items that still reference this
-        category. All line items must be deleted or moved to other categories before
-        a category can be deleted.
+        category, unless include_line_items is True. If include_line_items is True,
+        all line items in the category will be deleted first.
+
+        Args:
+            include_line_items (bool): If True, delete all line items in this category
+                                      before deleting the category. Defaults to False.
 
         Raises:
             ValueError: If the category cannot be deleted because line items still
-                       reference it
+                       reference it and include_line_items is False
             KeyError: If the category is not found in the model
 
         Examples:
             >>> revenue_category = model.category('revenue')
-            >>> revenue_category.delete()  # Removes 'revenue' category from the model
+            >>> revenue_category.delete()  # Fails if category has line items
+            >>> revenue_category.delete(include_line_items=True)  # Deletes line items first
         """
         # Check if any line items still reference this category
         line_items_in_category = self.line_item_names
-        if line_items_in_category:
+        if line_items_in_category and not include_line_items:
             raise ValueError(
                 f"Cannot delete category '{self.name}' because it still contains "
                 f"line items: {', '.join(line_items_in_category)}. "
                 f"Delete or move these line items to other categories first."
             )
 
-        # Delete the category from the model
-        self.model.update.delete_category(self.name)
+        # Delete the category from the model (which will also delete line items if requested)
+        self.model.update.delete_category(self.name, include_line_items=include_line_items)
 
     # ============================================================================
     # VALUE ACCESS METHODS
