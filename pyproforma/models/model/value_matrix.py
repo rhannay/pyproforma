@@ -6,6 +6,7 @@ that stores all calculated values for line items, categories, and generators
 across all years in a financial model.
 """
 
+import re
 from typing import TYPE_CHECKING, Any, Dict, Union
 
 from ..formula import evaluate
@@ -20,6 +21,40 @@ class ValueMatrixValidationError(Exception):
     """Raised when value matrix validation fails."""
 
     pass
+
+
+def _parse_category_total_formula(formula: str) -> str | None:
+    """
+    Parse a category_total formula and extract the category name.
+
+    Checks if the formula follows the pattern "category_total:category_name"
+    where there may or may not be a space after the colon.
+
+    Args:
+        formula (str): The formula string to parse
+
+    Returns:
+        str | None: The category name if the formula matches the pattern, None otherwise
+
+    Examples:
+        >>> _parse_category_total_formula("category_total:revenue")
+        'revenue'
+        >>> _parse_category_total_formula("category_total: revenue")
+        'revenue'
+        >>> _parse_category_total_formula("revenue * 2")
+        None
+    """
+    if not formula:
+        return None
+
+    # Check if formula matches the category_total pattern
+    # Pattern: "category_total:" followed by optional space and category name
+    pattern = r"^category_total:\s*(\w+)$"
+    match = re.match(pattern, formula.strip())
+
+    if match:
+        return match.group(1)
+    return None
 
 
 def validate_value_matrix(
@@ -98,6 +133,8 @@ def calculate_line_item_value(
     interim_values_by_year: dict,
     year: int,
     name: str,
+    line_item_metadata: list[dict] | None = None,
+    category_metadata: list[dict] | None = None,
 ) -> float | None:
     """
     Calculate the value for a line item in a specific year.
@@ -105,24 +142,31 @@ def calculate_line_item_value(
     The function follows this precedence:
     1. Check if value already exists in interim_values_by_year (raises error if found)
     2. Return explicit value from hardcoded_values if available for the year and not None
-    3. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
-    4. Return None if no value or formula is available
+    3. Check if formula is category_total:category_name pattern and calculate category total
+    4. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
+    5. Return None if no value or formula is available
 
     Args:
         hardcoded_values (dict[int, float | None]): Dictionary mapping years to explicit values.
             None values will be ignored and formulas will be used instead.
         formula (str | None): Formula string for calculating values when explicit
-            values are not available or are None.
+            values are not available or are None. Can be a standard formula or
+            "category_total:category_name" pattern.
         interim_values_by_year (dict): Dictionary containing calculated values
             by year, used to prevent circular references and for formula calculations.
         year (int): The year for which to get the value.
         name (str): The name of the line item (used for error messages and duplicate checking).
+        line_item_metadata (list[dict] | None): Metadata for all defined names. Required
+            if formula uses the category_total:category_name pattern.
+        category_metadata (list[dict] | None): Metadata for all defined categories. Required
+            if formula uses the category_total:category_name pattern.
 
     Returns:
         float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
 
     Raises:
-        ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid.
+        ValueError: If value already exists in interim_values_by_year or if interim_values_by_year is invalid,
+            or if category_total pattern is used without line_item_metadata.
     """  # noqa: E501
     # Validate interim values by year
     validate_value_matrix(interim_values_by_year)
@@ -137,6 +181,22 @@ def calculate_line_item_value(
     if year in hardcoded_values and hardcoded_values[year] is not None:
         return hardcoded_values[year]
 
+    # Check if formula uses category_total pattern
+    if formula:
+        category_name = _parse_category_total_formula(formula)
+        if category_name is not None:
+            # This is a category_total formula
+            if line_item_metadata is None:
+                raise ValueError(
+                    f"line_item_metadata is required when using "
+                    f"category_total formula for '{name}'"
+                )
+            # Get values for the current year
+            values_by_name = interim_values_by_year.get(year, {})
+            return _calculate_category_total(
+                values_by_name, line_item_metadata, category_name, category_metadata
+            )
+
     # If no explicit value (missing key or None value), use formula
     if formula:
         return evaluate(formula, interim_values_by_year, year)
@@ -145,7 +205,10 @@ def calculate_line_item_value(
 
 
 def _calculate_category_total(
-    values_by_name: dict[str, float], line_item_metadata: list[dict], category_name: str
+    values_by_name: dict[str, float],
+    line_item_metadata: list[dict],
+    category_name: str,
+    category_metadata: list[dict],
 ) -> float:
     """
     Calculate the sum of all line items in a category.
@@ -158,6 +221,8 @@ def _calculate_category_total(
         values_by_name (dict): Dictionary mapping item names to their values
         line_item_metadata (list[dict]): Metadata for all defined names
         category_name (str): The name of the category to sum
+        category_metadata (list[dict]): Metadata for all defined categories.
+            Used to validate that category exists even if it has no line items.
 
     Returns:
         float: The calculated sum of all line items in the category
@@ -166,21 +231,16 @@ def _calculate_category_total(
         KeyError: If the category name is not found in metadata or if line items
                  in the category are not found in values
     """
-    # Check if the category exists in metadata
-    category_exists = any(
-        metadata.get("source_type") == "line_item"
-        and metadata.get("category") == category_name
-        for metadata in line_item_metadata
+    # Check if category exists in category_metadata
+    category_exists_in_definitions = any(
+        cat.get("name") == category_name for cat in category_metadata
     )
-    if not category_exists:
-        available_categories = set(
-            metadata.get("category")
-            for metadata in line_item_metadata
-            if metadata.get("source_type") == "line_item"
-            and metadata.get("category") is not None
+    if not category_exists_in_definitions:
+        available_categories = sorted(
+            set(cat.get("name") for cat in category_metadata if cat.get("name"))
         )
         raise KeyError(
-            f"Category '{category_name}' not found in metadata. Available categories: {sorted(available_categories)}"  # noqa: E501
+            f"Category '{category_name}' not found in category definitions. Available categories: {available_categories}"  # noqa: E501
         )
 
     # Find all line items that belong to this category and sum their values
@@ -206,7 +266,6 @@ def _calculate_category_total(
 def generate_value_matrix(
     years: list[int],
     line_item_definitions: list[Union["LineItem", "MultiLineItem"]],
-    # category_definitions: list["Category"],
     category_metadata: list[dict],
     line_item_metadata: list[dict],
 ) -> dict[int, dict[str, float]]:
@@ -275,6 +334,8 @@ def generate_value_matrix(
                             value_matrix,
                             year,
                             item.name,
+                            line_item_metadata,
+                            category_metadata,
                         )
                         calculated_items.add(item.name)
                         items_calculated_this_round.append(item)
@@ -289,6 +350,12 @@ def generate_value_matrix(
                         and "has None value" in str(e)
                         and "Cannot use None values in formulas" in str(e)
                     ):
+                        raise e
+
+                    # Check if this is a category not found error - should be raised immediately  # noqa: E501
+                    if isinstance(
+                        e, KeyError
+                    ) and "not found in category definitions" in str(e):
                         raise e
 
                     # Check if this is a missing variable error vs dependency issue
@@ -345,7 +412,10 @@ def generate_value_matrix(
                         all_items_calculated and items_in_category
                     ):  # Only if category has items
                         category_total = _calculate_category_total(
-                            value_matrix[year], line_item_metadata, category["name"]
+                            value_matrix[year],
+                            line_item_metadata,
+                            category["name"],
+                            category_metadata,
                         )
                         total_name = category["total_name"]
                         value_matrix[year][total_name] = category_total
