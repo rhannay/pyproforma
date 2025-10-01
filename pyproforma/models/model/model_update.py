@@ -719,17 +719,19 @@ class UpdateNamespace:
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
 
-    def delete_category(self, name: str) -> None:
+    def delete_category(self, name: str, include_line_items: bool = False) -> None:
         """
         Delete a category from the model by name.
 
         This method validates the deletion by first testing it on a copy of
         the model, then applies the change to the actual model if successful.
         Note that deleting a category will fail if there are line items that
-        reference this category.
+        reference this category, unless include_line_items is True.
 
         Args:
             name (str): Name of the category to delete
+            include_line_items (bool): If True, delete all line items in this category
+                                      before deleting the category. Defaults to False.
 
         Returns:
             None
@@ -737,10 +739,12 @@ class UpdateNamespace:
         Raises:
             ValueError: If the category cannot be deleted (validation fails),
                        such as when line items still reference this category
+                       and include_line_items is False
             KeyError: If the category with the given name is not found
 
         Examples:
             >>> model.update.delete_category("old_category")
+            >>> model.update.delete_category("old_category", include_line_items=True)
         """
         # Verify the category exists
         category_to_delete = None
@@ -756,11 +760,18 @@ class UpdateNamespace:
         line_items_using_category = [
             item for item in self._model._line_item_definitions if item.category == name
         ]
+        
         if line_items_using_category:
-            item_names = [item.name for item in line_items_using_category]
-            raise ValueError(
-                f"Cannot delete category '{name}' because it is used by line items: {', '.join(item_names)}"  # noqa: E501
-            )
+            if include_line_items:
+                # Delete all line items in this category first
+                item_names = [item.name for item in line_items_using_category]
+                self.delete_line_items(item_names)
+            else:
+                # Fail if line items exist and we're not deleting them
+                item_names = [item.name for item in line_items_using_category]
+                raise ValueError(
+                    f"Cannot delete category '{name}' because it is used by line items: {', '.join(item_names)}"  # noqa: E501
+                )
 
         # Test on a copy of the model first
         try:
@@ -831,6 +842,55 @@ class UpdateNamespace:
         except Exception as e:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to delete line item '{name}': {str(e)}") from e
+
+    def delete_line_items(self, names: list[str]) -> None:
+        """
+        Delete multiple line items from the model by their names.
+
+        This method validates the deletion by first testing it on a copy of
+        the model, then applies the change to the actual model if successful.
+        All line items are deleted in a single operation.
+
+        Args:
+            names (list[str]): List of line item names to delete
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If any line item cannot be deleted (validation fails)
+            KeyError: If any line item with the given name is not found
+
+        Examples:
+            >>> model.update.delete_line_items(["expense_item", "revenue_item"])
+        """
+        # Verify all line items exist
+        for name in names:
+            try:
+                self._model._line_item_definition(name)
+            except KeyError:
+                raise KeyError(f"Line item '{name}' not found in model")
+
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+            # Remove all line items from the copy
+            names_set = set(names)
+            model_copy._line_item_definitions = [
+                item for item in model_copy._line_item_definitions if item.name not in names_set
+            ]
+            model_copy._build_and_calculate()
+
+            # If we get here, the deletion was successful on the copy
+            # Now apply it to the actual model
+            self._model._line_item_definitions = [
+                item for item in self._model._line_item_definitions if item.name not in names_set
+            ]
+            self._model._build_and_calculate()
+
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to delete line items {names}: {str(e)}") from e
 
     # ============================================================================
     # CONSTRAINT METHODS
