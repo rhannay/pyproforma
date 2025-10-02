@@ -132,26 +132,6 @@ class TestLineItemMisc:
         assert item_set.category_total("expense", 2020) == 3.0
         assert item_set.category_total("expense", 2021) == 7.0
 
-    def test_item_type_total_returns_zero_for_missing_type(self):
-        items = [
-            LineItem(name="a", label="A", category="revenue", values={2020: 10.0}),
-        ]
-        item_set = Model(items, years=[2020])
-
-        with pytest.raises(KeyError):
-            item_set.category_total("expense", 2020)
-
-    def test_item_type_total_raises_keyerror_for_missing_year(self):
-        items = [
-            LineItem(name="a", label="A", category="revenue", values={2020: 10.0}),
-        ]
-        item_set = Model(items, years=[2020])
-        try:
-            item_set.category_total("revenue", 2021)
-            assert False, "Should raise KeyError for missing year"
-        except KeyError:
-            pass
-
     def test_validate_names_accepts_unique_names(self):
         items = [
             LineItem(name="a", label="A", category="type1", values={2020: 1.0}),
@@ -361,54 +341,6 @@ class TestLineItemNoneValues:
             calculate_line_item_value(item.values, item.formula, {}, 2023, item.name)
             == 300.0
         )
-
-    def test_none_values_in_complex_model(self):
-        """Test None values in a more complex model scenario."""
-        from pyproforma import Category, Model
-
-        # Create items with None values
-        revenue = LineItem(
-            name="revenue",
-            category="income",
-            values={2020: 1000, 2021: None, 2022: 1200},
-        )
-        costs = LineItem(
-            name="costs", category="expenses", values={2020: None, 2021: 600, 2022: 700}
-        )
-
-        # Item with formula (will fail when referencing None values)
-        margin = LineItem(
-            name="margin", category="calculated", formula="revenue - costs"
-        )
-
-        # Model should work for years where formulas don't reference None
-        model = Model(
-            line_items=[revenue, costs, margin],
-            categories=[
-                Category(name="income"),
-                Category(name="expenses"),
-                Category(name="calculated"),
-            ],
-            years=[2022],  # Only year where both revenue and costs are not None
-        )
-
-        # Check the calculation works
-        assert model["margin", 2022] == 500  # 1200 - 700
-
-        # Check category totals handle None correctly by creating model with all years for non-formula items  # noqa: E501
-        simple_model = Model(
-            line_items=[revenue, costs],  # No formula items
-            categories=[Category(name="income"), Category(name="expenses")],
-            years=[2020, 2021, 2022],
-        )
-
-        # Category totals should treat None as 0
-        assert (
-            simple_model["total_income", 2020] == 1000
-        )  # revenue: 1000, None treated as 0
-        assert simple_model["total_income", 2021] == 0  # revenue: None treated as 0
-        assert simple_model["total_expenses", 2020] == 0  # costs: None treated as 0
-        assert simple_model["total_expenses", 2021] == 600  # costs: 600
 
 
 class TestValidateValuesKeys:

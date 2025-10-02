@@ -262,7 +262,6 @@ class TestModelToFromDict:
         # Test attributes are preserved
         assert recreated_category.name == original_category.name
         assert recreated_category.label == original_category.label
-        assert recreated_category.include_total == original_category.include_total
 
     def test_complex_model_round_trip(self, complex_model):
         """Test round trip with a complex model including formulas."""

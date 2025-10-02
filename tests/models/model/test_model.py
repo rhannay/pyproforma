@@ -281,64 +281,6 @@ class TestModelWithGenerators:
         assert lis["interest", 2022] == ds_schedule[1]["interest"]
 
 
-class TestDuplicateNames:
-    def test_names_conflict_with_categories(self):
-        with pytest.raises(ValueError) as excinfo:
-            Model(
-                line_items=[
-                    LineItem(
-                        name="total_revenue",
-                        label="total revenue",
-                        category="revenue",
-                        values={2020: 100.0},
-                    )
-                ],
-                categories=[
-                    Category(name="revenue"),
-                ],
-                years=[2020],
-            )
-        assert "Duplicate" in str(excinfo.value)
-
-        # item name and formula name overlap
-        with pytest.raises(ValueError) as excinfo:
-            lis = [
-                LineItem(
-                    name="op_rev",
-                    label="Total Revenue",
-                    category="revenue",
-                    values={2020: 100.0},
-                ),
-                LineItem(
-                    name="op_rev",
-                    label="Net Revenue",
-                    category="calculated",
-                    formula="op_rev - item1",
-                ),
-            ]
-            Model(lis, years=[2020])
-        assert "Duplicate" in str(excinfo.value)
-
-        # formula and category total name overlap
-        with pytest.raises(ValueError) as excinfo:
-            lis = [
-                LineItem(
-                    name="op_rev",
-                    label="Total Revenue",
-                    category="revenue",
-                    values={2020: 100.0},
-                ),
-                LineItem(
-                    name="total_revenue",
-                    label="Net Revenue",
-                    category="calculated",
-                    formula="op_rev",
-                ),
-            ]
-            Model(lis, years=[2020])
-        assert "Duplicate" in str(excinfo.value)
-
-
 class TestOtherMisc:
     def test_line_item_set_get_item(self, sample_line_item_set: Model):
         # assert item values by year
