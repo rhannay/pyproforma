@@ -92,9 +92,6 @@ class TestConstantPassed:
         line_item_def = model_with_years._line_item_definition("test_item")
         assert line_item_def.category == "general"
 
-        # Verify it appears in the general category totals
-        assert "total_general" in model_with_years.line_item_names
-
     def test_setter_error_no_years(self, empty_model):
         """Test that setting a value raises ValueError when model has no years."""
         with pytest.raises(
@@ -558,9 +555,6 @@ class TestSetterStringFormula:
         # Verify the line item is in general category
         added_item = model_with_years._line_item_definition("test_formula")
         assert added_item.category == "general"
-
-        # Verify it appears in category totals
-        assert "total_general" in model_with_years.line_item_names
 
     def test_setter_string_formula_with_math_functions(self, model_with_years):
         """Test string formula with mathematical functions."""

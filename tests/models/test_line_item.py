@@ -114,24 +114,6 @@ class TestLineItemMisc:
         LineItem(name="test", label="Test", category="test", values={2020: 1.0})
         # No exception should be raised
 
-    def test_item_type_total_basic(self):
-        items = [
-            LineItem(
-                name="a", label="A", category="revenue", values={2020: 10.0, 2021: 20.0}
-            ),
-            LineItem(
-                name="b", label="B", category="revenue", values={2020: 5.0, 2021: 15.0}
-            ),
-            LineItem(
-                name="c", label="C", category="expense", values={2020: 3.0, 2021: 7.0}
-            ),
-        ]
-        item_set = Model(items, years=[2020, 2021])
-        assert item_set.category_total("revenue", 2020) == 15.0
-        assert item_set.category_total("revenue", 2021) == 35.0
-        assert item_set.category_total("expense", 2020) == 3.0
-        assert item_set.category_total("expense", 2021) == 7.0
-
     def test_validate_names_accepts_unique_names(self):
         items = [
             LineItem(name="a", label="A", category="type1", values={2020: 1.0}),
@@ -235,30 +217,6 @@ class TestLineItemNoneValues:
             values={2020: None, 2021: None, 2022: None},
         )
         assert all(value is None for value in item.values.values())
-
-    def test_none_values_in_model_category_totals(self):
-        """Test that None values are treated as 0 in category totals."""
-        from pyproforma import Category, Model
-
-        items = [
-            LineItem(
-                name="item1", category="revenue", values={2020: 100.0, 2021: None}
-            ),
-            LineItem(
-                name="item2", category="revenue", values={2020: None, 2021: 200.0}
-            ),
-            LineItem(name="item3", category="revenue", values={2020: 50.0, 2021: 75.0}),
-        ]
-
-        model = Model(
-            line_items=items, categories=[Category(name="revenue")], years=[2020, 2021]
-        )
-
-        # 2020: 100 + 0 + 50 = 150 (None treated as 0)
-        assert model["total_revenue", 2020] == 150.0
-
-        # 2021: 0 + 200 + 75 = 275 (None treated as 0)
-        assert model["total_revenue", 2021] == 275.0
 
     def test_formula_error_with_none_values(self):
         """Test that formulas treat None values as zero."""

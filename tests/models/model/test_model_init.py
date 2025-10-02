@@ -537,7 +537,6 @@ class TestModelInitWithStringCategories:
             assert isinstance(category, Category)
             # Should be equal for string-created categories
             assert category.name == category.label
-            assert category.include_total is True  # Default value
 
     def test_model_with_mixed_category_types(self, basic_line_items):
         """Test that Model can handle a mix of Category objects and strings."""
@@ -574,15 +573,12 @@ class TestModelInitWithStringCategories:
 
         # Category object should preserve original properties
         assert income_cat.label == "Revenue Streams"
-        assert income_cat.include_total is True
 
         # String category should have name=label
         assert costs_cat.label == "costs"
-        assert costs_cat.include_total is True
 
         # Category object with custom settings should preserve them
         assert assets_cat.label == "Company Assets"
-        assert assets_cat.include_total is False
 
     def test_empty_string_categories_list(self, basic_line_items):
         """Test that Model can handle empty list of string categories."""
@@ -678,7 +674,3 @@ class TestModelInitWithStringCategories:
         # Test category access works
         income_category = model.category("income")
         assert income_category.name == "income"
-
-        # Test that category totals work
-        assert model.category_total("income", 2023) == 100000  # Just revenue
-        assert model.category_total("costs", 2023) == 50000  # Just expenses

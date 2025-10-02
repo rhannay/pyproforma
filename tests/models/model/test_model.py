@@ -81,7 +81,7 @@ class TestLineItemsWithFormulas:
             name="net_revenue",
             label="Net Revenue",
             category="calculated",
-            formula="total_revenue - total_expense",
+            formula="rev_1 + rev_2 - exp_1",
         )
 
         return Model(
@@ -118,14 +118,6 @@ class TestLineItemsWithFormulas:
             300.0 * 1.05 * 1.05 + 100.0 + 50.0 + 50.0
         ) - (200.0 * 0.95 * 0.95)
 
-        assert sample_line_item_set_2["total_revenue", 2020] == 300.0 + 100.0
-        assert sample_line_item_set_2["total_revenue", 2021] == (
-            300.0 * 1.05 + 100.0 + 50.0
-        )
-        assert sample_line_item_set_2["total_revenue", 2022] == (
-            300.0 * 1.05 * 1.05 + 100.0 + 50.0 + 50.0
-        )
-
 
 class TestModelWithBalanceSheetConcept:
     @pytest.fixture
@@ -160,7 +152,7 @@ class TestModelWithBalanceSheetConcept:
             label="Ending Cash",
             category="balance",
             values={},
-            formula="begin_cash + total_revenue - total_expense",
+            formula="begin_cash + rev_1 + rev_2 - exp_1",
         )
 
         return Model(
@@ -302,9 +294,6 @@ class TestOtherMisc:
             sample_line_item_set["item1", 2022]
         assert "Year 2022 not found" in str(excinfo.value)
 
-        # get a category total
-        assert sample_line_item_set["total_revenue", 2020] == 300.0
-
     def test_getitem_string_returns_line_item_results(
         self, sample_line_item_set: Model
     ):
@@ -357,22 +346,6 @@ class TestOtherMisc:
         assert sample._is_last_item_in_category("item3") is True
         assert sample._is_last_item_in_category("item4") is True
 
-    def test_category_total(self):
-        sample = Model(
-            line_items=[
-                LineItem(name="item1", category="revenue", values={2020: 100.0}),
-                LineItem(name="item2", category="expense", values={2020: 200.0}),
-                LineItem(name="item3", category="revenue", values={2020: 150.0}),
-                LineItem(name="item4", category="expense", values={2020: 250.0}),
-            ],
-            categories=[Category(name="revenue"), Category(name="expense")],
-            years=[2020],
-        )
-
-        # Test category total calculation
-        assert sample.category_total("revenue", 2020) == 250.0
-        assert sample.category_total("expense", 2020) == 450.0
-
     def test_get_item_info(self):
         sample = Model(
             line_items=[
@@ -405,12 +378,6 @@ class TestOtherMisc:
         assert assumption_info["label"] == "Growth Rate"
         assert assumption_info["value_format"] == "two_decimals"
         assert assumption_info["source_type"] == "line_item"
-
-        # Test getting item info for category total
-        total_info = sample._get_item_metadata("total_revenue")
-        assert total_info["name"] == "total_revenue"
-        assert total_info["source_type"] == "category"
-        assert total_info["source_name"] == "revenue"
 
         # Test KeyError for non-existent item
         with pytest.raises(KeyError) as excinfo:

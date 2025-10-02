@@ -58,7 +58,7 @@ class TestModelToFromDict:
             LineItem(
                 name="profit",
                 category="calculated",
-                formula="total_income - total_costs",
+                formula="revenue - expenses",
             ),
             LineItem(
                 name="growth_rate",
@@ -426,13 +426,6 @@ class TestModelToFromDict:
         )
         assert "formula" in revenue_item
         assert revenue_item["formula"] == "revenue[-1] * (1 + growth_rate)"
-
-        # Check that categories preserve all attributes
-        income_cat = next(
-            cat for cat in result["categories"] if cat["name"] == "income"
-        )
-        assert "include_total" in income_cat
-        assert income_cat["include_total"]
 
         # Check that assumption line items preserve all attributes
         growth_rate = next(

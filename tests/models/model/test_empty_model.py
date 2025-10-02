@@ -106,7 +106,7 @@ class TestEmptyModelInitialization:
         model = Model(line_items=[line_item])
 
         assert model.years == []
-        assert len(model.line_item_names) == 2  # test + category total
+        assert len(model.line_item_names) == 1
         assert model.line_item_names[0] == "test"
 
         # Structural access should work
@@ -126,7 +126,7 @@ class TestEmptyModelInitialization:
         model = Model(line_items=[line_item], years=[])
 
         assert model.years == []
-        assert len(model.line_item_names) == 2  # test + category total
+        assert len(model.line_item_names) == 1  # test only
         assert model.line_item_names[0] == "test"
 
         # Test that we can add years later and make it functional

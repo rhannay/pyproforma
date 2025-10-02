@@ -77,27 +77,6 @@ class TestGetItemMetadata:
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "expenses"
 
-    def test_get_item_metadata_category_total(self, basic_model):
-        """Test getting metadata for a category total."""
-        # Category totals should be in the line_item_metadata
-        category_totals = [
-            item
-            for item in basic_model.line_item_metadata
-            if item["source_type"] == "category"
-        ]
-
-        # Should have category totals for income and costs
-        assert len(category_totals) >= 2
-
-        # Test getting metadata for a category total
-        income_total = next(
-            item for item in category_totals if item["source_name"] == "income"
-        )
-        metadata = basic_model._get_item_metadata(income_total["name"])
-
-        assert metadata["source_type"] == "category"
-        assert metadata["source_name"] == "income"
-
     def test_get_item_metadata_multi_line_item_output(
         self, model_with_multi_line_items
     ):
@@ -209,9 +188,6 @@ class TestGetCategoryMetadata:
 
         assert metadata["name"] == "income"
         assert metadata["label"] == "Income"
-        assert metadata["include_total"]
-        assert "total_name" in metadata
-        assert "total_label" in metadata
 
     def test_get_category_metadata_category_without_total(self, basic_model):
         """Test getting metadata for a category without totals."""
@@ -219,7 +195,6 @@ class TestGetCategoryMetadata:
 
         assert metadata["name"] == "assets"
         assert metadata["label"] == "Assets"
-        assert not metadata["include_total"]
 
     def test_get_category_metadata_auto_generated_category(self):
         """Test getting metadata for auto-generated categories."""
@@ -257,7 +232,6 @@ class TestGetCategoryMetadata:
         assert metadata["name"] == "income"
         # Should have appropriate metadata structure
         assert "label" in metadata
-        assert "include_total" in metadata
 
     def test_get_category_metadata_invalid_name_raises_error(self, basic_model):
         """Test that getting metadata for invalid category raises KeyError."""
