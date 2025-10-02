@@ -522,7 +522,7 @@ class TestGenerateValueMatrix:
         net_revenues = LineItem(
             name="net_revenues",
             category="net_income",
-            formula="total_revenue - total_expenses",
+            formula="rev1 + rev2 - exp1 - exp2",
         )
 
         # Intentionally shuffled order
@@ -546,8 +546,6 @@ class TestGenerateValueMatrix:
             assert matrix[year]["rev2"] == rev2.values[year]
             assert matrix[year]["exp1"] == exp1.values[year]
             assert matrix[year]["exp2"] == exp2.values[year]
-            assert matrix[year]["total_revenue"] == expected_revenue_total
-            assert matrix[year]["total_expenses"] == expected_expenses_total
             assert (
                 matrix[year]["net_revenues"]
                 == expected_revenue_total - expected_expenses_total

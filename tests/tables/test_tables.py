@@ -52,21 +52,21 @@ class TestTableCreation:
             name="gross_profit",
             label="Gross Profit",
             category="calculated",
-            formula="total_revenue - cost_of_goods",
+            formula="revenue_sales + revenue_services - cost_of_goods",
         )
 
         net_profit = LineItem(
             name="net_profit",
             label="Net Profit",
             category="calculated",
-            formula="total_revenue - total_expense",
+            formula="gross_profit - operating_expenses",
         )
 
         profit_margin = LineItem(
             name="profit_margin",
             label="Profit Margin %",
             category="calculated",
-            formula="net_profit / total_revenue * 100",
+            formula="net_profit / (revenue_sales + revenue_services) * 100",
         )
 
         return Model(

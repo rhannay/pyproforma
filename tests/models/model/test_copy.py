@@ -57,7 +57,7 @@ class TestModelCopy:
             LineItem(
                 name="profit",
                 category="calculated",
-                formula="total_income - total_costs",
+                formula="revenue - expenses",
             ),
             LineItem(
                 name="growth_rate",
