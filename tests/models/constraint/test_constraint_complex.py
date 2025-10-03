@@ -53,7 +53,7 @@ class TestConstraintsWithComplexModels:
 
         # Test that model functions correctly
         assert len(model.constraints) == 2
-        assert len(model.multi_line_items) == 1
+        assert len(model.generators) == 1
         assert len(model._line_item_definitions) == 2
 
         # Test that values can be accessed
@@ -175,7 +175,7 @@ class TestConstraintsWithComplexModels:
 
         # Verify all components are preserved
         assert len(reconstructed_model.constraints) == 2
-        assert len(reconstructed_model.multi_line_items) == 1
+        assert len(reconstructed_model.generators) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
         assert (
             len(reconstructed_model._category_definitions) == 2

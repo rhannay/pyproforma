@@ -989,7 +989,7 @@ class TestLineItemResultsDeleteMethod:
         """Test that delete method raises ValueError for generator source types."""
         # Mock metadata to simulate a generator item
         mock_metadata = {
-            "source_type": "multi_line_item_generator",
+            "source_type": "generator_generator",
             "label": "Test Generator",
             "value_format": "no_decimals",
             "formula": None,
@@ -1005,7 +1005,7 @@ class TestLineItemResultsDeleteMethod:
                 generator_results.delete()
 
         error_msg = str(excinfo.value)
-        expected_msg = "Cannot delete multi_line_item_generator item 'test_generator'"
+        expected_msg = "Cannot delete generator_generator item 'test_generator'"
         assert expected_msg in error_msg
         assert "Only line_item types support deletion" in error_msg
 
@@ -1339,7 +1339,7 @@ class TestLineItemResultsCategoryProperty:
         assert "Cannot set category on category item 'income'" in error_msg
         assert "Only line_item types support category modification" in error_msg
 
-    def test_category_setter_raises_error_for_multi_line_item(
+    def test_category_setter_raises_error_for_generator(
         self, category_testing_model
     ):
         """Test that category setter raises ValueError for multi-line item types."""
@@ -1362,7 +1362,7 @@ class TestLineItemResultsCategoryProperty:
                 multi_line_results.category = "other"
 
         error_msg = str(excinfo.value)
-        assert "Cannot set category on multi_line_item item 'debt_payment'" in error_msg
+        assert "Cannot set category on generator item 'debt_payment'" in error_msg
         assert "Only line_item types support category modification" in error_msg
 
     def test_category_setter_creates_new_category(self, category_testing_model):

@@ -1,12 +1,12 @@
 import pytest
 
-from pyproforma.models.generator.abc_class import MultiLineItem
+from pyproforma.models.generator.abc_class import Generator
 from pyproforma.models.generator.debt import Debt
 from pyproforma.models.generator.short_term_debt import ShortTermDebt
 
 
 class TestGeneratorRoundTrip:
-    """Test round-trip serialization/deserialization of multi line items."""
+    """Test round-trip serialization/deserialization of generators."""
 
     def test_debt_round_trip_basic(self):
         """Test basic debt round-trip without existing debt service."""
@@ -270,7 +270,7 @@ class TestGeneratorRoundTrip:
     def test_from_dict_invalid_type(self):
         """Test that from_dict raises error for invalid type."""
         with pytest.raises(
-            ValueError, match="Unknown multi line item type: invalid_type"
+            ValueError, match="Unknown generator type: invalid_type"
         ):
             Generator.from_dict({"type": "invalid_type"})
 

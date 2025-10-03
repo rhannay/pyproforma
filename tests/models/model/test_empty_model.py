@@ -27,7 +27,7 @@ class TestEmptyModelInitialization:
         # Check empty collections
         assert len(model._line_item_definitions) == 0
         assert len(model._category_definitions) == 0
-        assert len(model.multi_line_items) == 0
+        assert len(model.generators) == 0
         assert len(model.constraints) == 0
 
     def test_empty_model_with_custom_years(self):
@@ -46,11 +46,11 @@ class TestEmptyModelInitialization:
         assert summary["years_count"] == 0
         assert summary["line_items_count"] == 0
         assert summary["categories_count"] == 0
-        assert summary["multi_line_items_count"] == 0
+        assert summary["generators_count"] == 0
         assert summary["constraints_count"] == 0
         assert summary["defined_names_count"] == 0
         assert summary["line_items_by_category"] == {}
-        assert summary["multi_line_item_names"] == []
+        assert summary["generator_names"] == []
         assert summary["constraint_names"] == []
 
     def test_empty_model_with_empty_lists(self):

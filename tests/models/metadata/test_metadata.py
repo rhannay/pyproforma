@@ -110,7 +110,7 @@ class TestGenerateCategoryMetadata:
             },
             {
                 "name": "debt",
-                "label": "debt (Multi-Line Item)",
+                "label": "debt (Generator)",
                 "system_generated": True,
             },
         ]
@@ -146,12 +146,12 @@ class TestGenerateCategoryMetadata:
         expected = [
             {
                 "name": "debt1",
-                "label": "debt1 (Multi-Line Item)",
+                "label": "debt1 (Generator)",
                 "system_generated": True,
             },
             {
                 "name": "debt2",
-                "label": "debt2 (Multi-Line Item)",
+                "label": "debt2 (Generator)",
                 "system_generated": True,
             },
         ]
@@ -529,9 +529,9 @@ class TestGenerateLineItemMetadata:
         rev1_item = next(item for item in result if item["name"] == "rev1")
         assert rev1_item["source_type"] == "line_item"
 
-        # Check multi-line items are included
+        # Check generators are included
         debt_items = [
-            item for item in result if item["source_type"] == "multi_line_item"
+            item for item in result if item["source_type"] == "generator"
         ]
         assert len(debt_items) == len(debt.defined_names)
 

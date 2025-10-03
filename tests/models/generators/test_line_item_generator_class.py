@@ -270,7 +270,7 @@ class TestGeneratorRoundTrip:
     def test_from_dict_invalid_type(self):
         """Test that from_dict raises error for invalid type."""
         with pytest.raises(
-            ValueError, match="Unknown multi line item type: invalid_type"
+            ValueError, match="Unknown generator type: invalid_type"
         ):
             Generator.from_dict({"type": "invalid_type"})
 

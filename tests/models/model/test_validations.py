@@ -541,7 +541,7 @@ class TestValidateGenerators:
 
         with pytest.raises(
             ValueError,
-            match="Multi line item names cannot match category names: debt_service",
+            match="Generator names cannot match category names: debt_service",
         ):
             validate_generators(generators, categories)
 
@@ -568,7 +568,7 @@ class TestValidateGenerators:
             validate_generators(generators, categories)
 
         error_msg = str(exc_info.value)
-        assert "Multi line item names cannot match category names:" in error_msg
+        assert "Generator names cannot match category names:" in error_msg
         assert "debt_service" in error_msg
         assert "income" in error_msg
 
