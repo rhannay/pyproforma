@@ -1273,7 +1273,7 @@ class TestLineItemResultsCategoryProperty:
         ]
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
+            Category(name="income", label="Income"),
             Category(name="costs", label="Costs"),
             Category(name="profit", label="Profit"),
         ]
@@ -1291,24 +1291,6 @@ class TestLineItemResultsCategoryProperty:
 
         assert revenue_item.category == "income"
         assert expenses_item.category == "costs"
-
-    def test_category_property_getter_for_category_total(self, category_testing_model):
-        """Test that category property getter works for category totals."""
-        # Find the category total name
-        category_total_name = None
-        for metadata in category_testing_model.line_item_metadata:
-            if (
-                metadata["source_type"] == "category"
-                and metadata["source_name"] == "income"
-            ):
-                category_total_name = metadata["name"]
-                break
-
-        assert category_total_name is not None
-        category_total_item = LineItemResults(
-            category_testing_model, category_total_name
-        )
-        assert category_total_item.category == "category_totals"
 
     def test_category_setter_updates_model(self, category_testing_model):
         """Test that category setter updates the category in the model."""

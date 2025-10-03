@@ -1072,7 +1072,7 @@ class Model(SerializationMixin):
 
         Returns:
             dict: Dictionary containing category metadata including name, label,
-                  include_total, total_name, total_label, and system_generated
+                  and system_generated
 
         Raises:
             KeyError: If the category name is not found in category metadata
@@ -1110,61 +1110,6 @@ class Model(SerializationMixin):
             f"Constraint '{constraint_name}' not found in model. "
             f"Available constraints: {available_constraints}"
         )
-
-    # ============================================================================
-    # CATEGORY TOTALS
-    # ============================================================================
-
-    def category_total(self, category: str, year: int) -> float:
-        """
-        Retrieve a pre-calculated category total from the model's value matrix.
-
-        This is a lookup method that returns the already computed total for a category
-        from the model's value matrix. The total must have been previously calculated
-        during model initialization.
-
-        Args:
-            category (str): The category name to get the total for
-            year (int): The year to get the total for
-
-        Returns:
-            float: The pre-calculated category total
-
-        Raises:
-            KeyError: If the category total is not found in defined names or value matrix
-        """  # noqa: E501
-        # find category total name
-        total_name_lookup = {
-            x["source_name"]: x["name"]
-            for x in self.line_item_metadata
-            if x["source_type"] == "category"
-        }
-        total_name = total_name_lookup[category]
-        return self.value(total_name, year)
-
-    def _category_total(self, value_matrix, category: str, year: int) -> float:
-        """
-        Calculate the sum of all line items in a category for a specific year.
-
-        This is an internal calculation method that computes the category total
-        by summing all line item values in the specified category. Used during
-        model initialization to populate the value matrix. None values are treated as 0.
-
-        Args:
-            value_matrix (dict): The value matrix containing calculated line item values
-            category (str): The category name to calculate the total for
-            year (int): The year to calculate the total for
-
-        Returns:
-            float: The calculated sum of all line items in the category
-        """
-        total = 0
-        for item in self.line_item_metadata:
-            if item["category"] == category and item["source_type"] == "line_item":
-                value = value_matrix[year][item["name"]]
-                if value is not None:
-                    total += value
-        return total
 
     # ============================================================================
     # UTILITIES & DISPLAY
@@ -1321,8 +1266,6 @@ class Model(SerializationMixin):
         *,
         name: str | None = None,
         label: str | None = None,
-        total_label: str | None = None,
-        include_total: bool = True,
     ) -> None:
         """
         Add a new category to the model.
@@ -1334,8 +1277,6 @@ class Model(SerializationMixin):
             category (Category, optional): An already-created Category instance to add
             name (str, optional): Name for new Category - required if category is None
             label (str, optional): Human-readable display name. Defaults to name if not provided.
-            total_label (str, optional): Label for the category total. Defaults to "Total {label}"
-            include_total (bool, optional): Whether to include a total for this category. Defaults to True
 
         Returns:
             None
@@ -1349,14 +1290,12 @@ class Model(SerializationMixin):
             >>> model.add_category(existing_category)
 
             >>> # Method 2: Create from parameters
-            >>> model.add_category(name="assets", label="Assets", include_total=True)
+            >>> model.add_category(name="assets", label="Assets")
         """  # noqa: E501
         self.update.add_category(
             category=category,
             name=name,
             label=label,
-            total_label=total_label,
-            include_total=include_total,
         )
 
     # ============================================================================

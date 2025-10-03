@@ -85,7 +85,9 @@ class TestConstraintsWithComplexModels:
                 formula="base_revenue * (1 + growth_rate)",
             ),
             LineItem(
-                name="net_income", category="calculated", formula="total_income * 0.8"
+                name="net_income",
+                category="calculated",
+                formula="(base_revenue + projected_revenue) * 0.8",
             ),
         ]
 
@@ -136,8 +138,8 @@ class TestConstraintsWithComplexModels:
         ]
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="costs", label="Costs", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
         ]
 
         line_item_generators = [
@@ -179,7 +181,7 @@ class TestConstraintsWithComplexModels:
             len(reconstructed_model._category_definitions) == 2
         )  # Multi-line items no longer create category definitions
         assert (
-            len(reconstructed_model.category_metadata) == 4
+            len(reconstructed_model.category_metadata) == 3
         )  # 2 user categories + 1 multi-line item + 1 category_totals
 
         # Verify constraint details

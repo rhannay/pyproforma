@@ -163,9 +163,7 @@ class TestAddCategoryConvenienceMethod:
         """Test adding a category using parameters."""
         model = Model(years=[2023, 2024])
 
-        model.add_category(
-            name="assets", label="Assets & Inventory", include_total=True
-        )
+        model.add_category(name="assets", label="Assets & Inventory")
 
         assert "assets" in model.category_names
 
@@ -248,6 +246,17 @@ class TestConvenienceMethodsIntegration:
         )
 
         model.add_line_item(
+            name="total_revenue",
+            category="totals",
+            formula="category_total: revenue",
+        )
+        model.add_line_item(
+            name="total_expenses",
+            category="totals",
+            formula="category_total: expenses",
+        )
+
+        model.add_line_item(
             name="marketing", category="expenses", formula="total_revenue * 0.1"
         )
 
@@ -267,7 +276,6 @@ class TestConvenienceMethodsIntegration:
             "net_profit",
             "total_revenue",
             "total_expenses",
-            "total_profit",
         ]
         for item in expected_line_items:
             assert item in model.line_item_names

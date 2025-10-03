@@ -22,8 +22,8 @@ class TestUpdateConstraintMethods:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="costs", label="Costs", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
         ]
 
         return Model(

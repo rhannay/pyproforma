@@ -185,8 +185,7 @@ class TestAddMissingCategories:
 
         # Create one category with custom properties
         existing_category = Category(
-            name="income", label="Revenue Streams", include_total=False
-        )
+            name="income", label="Revenue Streams")
         categories = [existing_category]
 
         model = Model.__new__(Model)  # Create instance without calling __init__
@@ -207,7 +206,6 @@ class TestAddMissingCategories:
             cat for cat in model._category_definitions if cat.name == "income"
         )
         assert income_category.label == "Revenue Streams"
-        assert income_category.include_total is False
 
         # Verify new category has default properties
         balance_sheet_category = next(

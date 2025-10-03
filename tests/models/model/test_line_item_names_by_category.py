@@ -116,22 +116,19 @@ class TestLineItemNamesByCategory:
         result = basic_model.line_item_names_by_category(None)
 
         assert isinstance(result, dict)
-        expected_categories = {"revenue", "costs", "expenses", "category_totals"}
+        expected_categories = {"revenue", "costs", "expenses"}
         assert set(result.keys()) == expected_categories
 
         assert set(result["revenue"]) == {"revenue_sales", "revenue_other"}
         assert set(result["costs"]) == {"cost_materials", "cost_labor"}
         assert set(result["expenses"]) == {"expense_admin"}
-        # category_totals contains the total line items for each category
-        expected_totals = {"total_revenue", "total_costs", "total_expenses"}
-        assert set(result["category_totals"]) == expected_totals
 
     def test_with_default_none_returns_dict(self, basic_model):
         """Test that calling without arguments returns a dictionary."""
         result = basic_model.line_item_names_by_category()
 
         assert isinstance(result, dict)
-        expected_categories = {"revenue", "costs", "expenses", "category_totals"}
+        expected_categories = {"revenue", "costs", "expenses"}
         assert set(result.keys()) == expected_categories
 
     def test_empty_category_included_in_dict(self, model_with_empty_category):
@@ -220,7 +217,6 @@ class TestLineItemNamesByCategory:
         result_dict = model.line_item_names_by_category(None)
         expected_dict = {
             "single_category": ["single_item"],
-            "category_totals": ["total_single_category"],
         }
         assert result_dict == expected_dict
 

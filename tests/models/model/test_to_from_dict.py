@@ -58,7 +58,7 @@ class TestModelToFromDict:
             LineItem(
                 name="profit",
                 category="calculated",
-                formula="total_income - total_costs",
+                formula="revenue - expenses",
             ),
             LineItem(
                 name="growth_rate",
@@ -73,10 +73,10 @@ class TestModelToFromDict:
         ]
 
         categories = [
-            Category(name="income", label="Income Statement", include_total=True),
-            Category(name="costs", label="Cost Items", include_total=True),
-            Category(name="calculated", label="Calculated Items", include_total=False),
-            Category(name="assumptions", label="Assumptions", include_total=False),
+            Category(name="income", label="Income Statement"),
+            Category(name="costs", label="Cost Items"),
+            Category(name="calculated", label="Calculated Items"),
+            Category(name="assumptions", label="Assumptions"),
         ]
 
         return Model(
@@ -262,7 +262,6 @@ class TestModelToFromDict:
         # Test attributes are preserved
         assert recreated_category.name == original_category.name
         assert recreated_category.label == original_category.label
-        assert recreated_category.include_total == original_category.include_total
 
     def test_complex_model_round_trip(self, complex_model):
         """Test round trip with a complex model including formulas."""
@@ -427,13 +426,6 @@ class TestModelToFromDict:
         )
         assert "formula" in revenue_item
         assert revenue_item["formula"] == "revenue[-1] * (1 + growth_rate)"
-
-        # Check that categories preserve all attributes
-        income_cat = next(
-            cat for cat in result["categories"] if cat["name"] == "income"
-        )
-        assert "include_total" in income_cat
-        assert income_cat["include_total"]
 
         # Check that assumption line items preserve all attributes
         growth_rate = next(

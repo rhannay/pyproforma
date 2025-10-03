@@ -23,8 +23,8 @@ class TestUnifiedUpdateNamespace:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Expenses"),
         ]
 
         return Model(
@@ -195,8 +195,8 @@ class TestAddLineItemReplace:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Expenses"),
         ]
 
         return Model(
@@ -510,8 +510,8 @@ class TestDeleteLineItems:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Expenses"),
         ]
 
         return Model(
@@ -614,9 +614,9 @@ class TestDeleteCategoryWithLineItems:
         )
 
         categories = [
-            Category(name="income", label="Income", include_total=True),
-            Category(name="expenses", label="Expenses", include_total=True),
-            Category(name="unused", label="Unused Category", include_total=False),
+            Category(name="income", label="Income"),
+            Category(name="expenses", label="Expenses"),
+            Category(name="unused", label="Unused Category"),
         ]
 
         return Model(

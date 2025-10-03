@@ -94,27 +94,6 @@ class TestModelValidateFormulas:
         assert "Error in formula for line item 'invalid_growth'" in error_msg
         assert "unknown_var" in error_msg
 
-    def test_category_totals_in_formulas(self):
-        """Test that formulas can correctly reference category totals."""
-        rev1 = LineItem(name="rev1", category="revenue", values={2023: 600})
-        rev2 = LineItem(name="rev2", category="revenue", values={2023: 400})
-        margin = LineItem(
-            name="margin", category="metrics", formula="total_revenue * 0.1"
-        )
-
-        revenue_cat = Category(name="revenue", include_total=True)
-        metrics_cat = Category(name="metrics", include_total=False)
-
-        # Should not raise any exception
-        model = Model(
-            line_items=[rev1, rev2, margin],
-            categories=[revenue_cat, metrics_cat],
-            years=[2023],
-        )
-
-        # Verify it works correctly
-        assert model.value("total_revenue", 2023) == 1000
-        assert model.value("margin", 2023) == 100.0
 
     def test_empty_and_none_formulas_ignored(self):
         """Test that empty and None formulas are not validated."""

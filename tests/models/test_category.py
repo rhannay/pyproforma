@@ -42,41 +42,28 @@ class TestCategory:
             Category(name=name)
         assert "Name must only contain" in str(excinfo.value)
 
-    def test_include_total_defaults_to_true(self):
+    def test_category_with_label(self):
+        category = Category(name="revenue", label="Revenue Sources")
+        assert category.name == "revenue"
+        assert category.label == "Revenue Sources"
+
+    def test_category_without_label(self):
         category = Category(name="revenue")
-        assert category.include_total is True
-
-    def test_include_total_false_sets_total_properties_to_none(self):
-        category = Category(name="revenue", include_total=False)
-        assert category.include_total is False
-        assert category.total_name is None
-        assert category.total_label is None
-
-    def test_include_total_with_custom_labels(self):
-        category = Category(
-            name="revenue",
-            label="Operating Revenue",
-            total_label="Total Operating Revenue",
-            include_total=True,
-        )
-        assert category.include_total is True
-        assert category.label == "Operating Revenue"
-        assert category.total_label == "Total Operating Revenue"
+        assert category.name == "revenue"
+        assert category.label is None
 
     def test_category_repr_same_as_str(self):
-        category = Category(name="revenue", include_total=True)
+        category = Category(name="revenue")
         assert repr(category) == str(category)
 
-        category_no_total = Category(name="expense", include_total=False)
-        assert repr(category_no_total) == str(category_no_total)
+        category_with_label = Category(name="expense", label="Expenses")
+        assert repr(category_with_label) == str(category_with_label)
 
     def test_category_serialization_round_trip(self):
         """Test that to_dict -> from_dict preserves all Category data."""
         original = Category(
             name="test_category",
             label="Test Category",
-            total_label="Total Test Category",
-            include_total=True,
         )
 
         # Convert to dict and back
@@ -86,14 +73,11 @@ class TestCategory:
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
         assert reconstructed.label == original.label
-        assert reconstructed.total_label == original.total_label
-        assert reconstructed.total_name == original.total_name
-        assert reconstructed.include_total == original.include_total
 
-    def test_category_serialization_round_trip_no_total(self):
-        """Test serialization round trip for Category with include_total=False."""
+    def test_category_serialization_round_trip_no_label(self):
+        """Test serialization round trip for Category without label."""
         original = Category(
-            name="no_total_category", label="No Total Category", include_total=False
+            name="no_label_category"
         )
 
         # Convert to dict and back
@@ -102,10 +86,7 @@ class TestCategory:
 
         # Verify all attributes are preserved
         assert reconstructed.name == original.name
-        assert reconstructed.label == original.label
-        assert reconstructed.total_label is None
-        assert reconstructed.total_name is None
-        assert reconstructed.include_total == original.include_total
+        assert reconstructed.label is None
 
     def test_category_rejects_reserved_names(self):
         """Test that Category rejects reserved names like 'category_totals'."""

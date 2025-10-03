@@ -386,40 +386,6 @@ def generate_value_matrix(
             for item in items_calculated_this_round:
                 remaining_items.remove(item)
 
-            # After each round, check if we can calculate any category totals
-            for category in category_metadata:
-                if (
-                    category["include_total"]
-                    and category["total_name"] not in value_matrix[year]
-                ):
-                    # Check if all items in this category have been calculated
-                    # Only look at LineItem objects for category totals, not MultiLineItems  # noqa: E501
-                    line_items_only = [
-                        item
-                        for item in line_item_definitions
-                        if hasattr(item, "name") and not hasattr(item, "defined_names")
-                    ]
-                    items_in_category = [
-                        item
-                        for item in line_items_only
-                        if item.category == category["name"]
-                    ]
-                    all_items_calculated = all(
-                        item.name in calculated_items for item in items_in_category
-                    )
-
-                    if (
-                        all_items_calculated and items_in_category
-                    ):  # Only if category has items
-                        category_total = _calculate_category_total(
-                            value_matrix[year],
-                            line_item_metadata,
-                            category["name"],
-                            category_metadata,
-                        )
-                        total_name = category["total_name"]
-                        value_matrix[year][total_name] = category_total
-
             # If no progress was made this round, we have circular dependencies
             if not items_calculated_this_round:
                 break

@@ -522,7 +522,7 @@ class TestGenerateValueMatrix:
         net_revenues = LineItem(
             name="net_revenues",
             category="net_income",
-            formula="total_revenue - total_expenses",
+            formula="rev1 + rev2 - exp1 - exp2",
         )
 
         # Intentionally shuffled order
@@ -546,8 +546,6 @@ class TestGenerateValueMatrix:
             assert matrix[year]["rev2"] == rev2.values[year]
             assert matrix[year]["exp1"] == exp1.values[year]
             assert matrix[year]["exp2"] == exp2.values[year]
-            assert matrix[year]["total_revenue"] == expected_revenue_total
-            assert matrix[year]["total_expenses"] == expected_expenses_total
             assert (
                 matrix[year]["net_revenues"]
                 == expected_revenue_total - expected_expenses_total
@@ -822,9 +820,9 @@ class TestCategoryTotalFormula:
     def basic_categories(self):
         """Create basic categories for testing."""
         return [
-            Category(name="revenue", label="Revenue", include_total=False),
-            Category(name="expenses", label="Expenses", include_total=False),
-            Category(name="summary", label="Summary", include_total=False),
+            Category(name="revenue", label="Revenue"),
+            Category(name="expenses", label="Expenses"),
+            Category(name="summary", label="Summary"),
         ]
 
     def test_category_total_formula_basic(self, basic_categories):

@@ -35,9 +35,6 @@ def generate_category_metadata(
         List[Dict]: A list of dictionaries, each containing:
             - 'name' (str): The category name
             - 'label' (str): The display label for the category
-            - 'include_total' (bool): Whether the category includes a total row
-            - 'total_name' (str): The name used for the category total
-            - 'total_label' (str): The display label for the category total
             - 'system_generated' (bool): Whether this is a system-generated category
     """
     category_metadata = []
@@ -45,24 +42,11 @@ def generate_category_metadata(
     # Add metadata for category definitions
     for category in category_definitions:
         label = category.label if category.label is not None else category.name
-        if category.include_total:
-            total_label = (
-                category.total_label
-                if category.total_label is not None
-                else f"Total {label}"
-            )
-            total_name = f"total_{category.name}"
-        else:
-            total_label = None
-            total_name = None
 
         category_metadata.append(
             {
                 "name": category.name,
                 "label": label,
-                "include_total": category.include_total,
-                "total_name": total_name,
-                "total_label": total_label,
                 "system_generated": False,
             }
         )
@@ -76,26 +60,9 @@ def generate_category_metadata(
                     {
                         "name": multi_item.name,
                         "label": f"{multi_item.name} (Multi-Line Item)",
-                        "include_total": False,
-                        "total_name": None,
-                        "total_label": None,
                         "system_generated": True,
                     }
                 )
-
-    # Add 'category_totals' category if any categories have totals
-    categories_with_totals = [cat for cat in category_metadata if cat["include_total"]]
-    if categories_with_totals:
-        category_metadata.append(
-            {
-                "name": "category_totals",
-                "label": "Category Totals",
-                "include_total": False,
-                "total_name": None,
-                "total_label": None,
-                "system_generated": True,
-            }
-        )
 
     return category_metadata
 
@@ -110,8 +77,8 @@ def generate_line_item_metadata(
     namespace.
 
     This function aggregates identifiers from all model components including
-    line items, category totals, and line item generators to
-    build a unified namespace for value lookups and validation.
+    line items and line item generators to build a unified namespace for
+    value lookups and validation.
 
     Args:
         line_item_definitions (List[LineItem]): List of line item definitions
@@ -126,7 +93,7 @@ def generate_line_item_metadata(
               (None, 'str', 'no_decimals', 'two_decimals', 'percent',
               'percent_one_decimal', 'percent_two_decimals')
             - 'source_type' (str): The component type that defines this name
-              ('line_item', 'category', 'multi_line_item')
+              ('line_item', 'multi_line_item')
             - 'source_name' (str): The original source object's name
             - 'category' (str): The category name
             - 'formula' (str or None): The formula string for line items
@@ -138,16 +105,12 @@ def generate_line_item_metadata(
         ValueError: If duplicate names are found across different components
 
     Example:
-        For a model with revenue line item and revenue category:
+        For a model with revenue line item:
         [
             {'name': 'revenue', 'label': 'Revenue',
              'value_format': 'no_decimals', 'source_type': 'line_item',
              'source_name': 'revenue', 'category': 'income',
-             'formula': 'sales * price', 'hardcoded_values': {2023: 100000}},
-            {'name': 'total_revenue', 'label': 'Total Revenue',
-             'value_format': 'no_decimals', 'source_type': 'category',
-             'source_name': 'revenue', 'category': 'category_totals',
-             'formula': None, 'hardcoded_values': None}
+             'formula': 'sales * price', 'hardcoded_values': {2023: 100000}}
         ]
     """
     defined_names = []
@@ -172,29 +135,6 @@ def generate_line_item_metadata(
                 "hardcoded_values": hardcoded_values,
             }
         )
-
-    # Add category totals from metadata
-    for category_meta in category_metadata:
-        if category_meta["include_total"]:
-            # Only include category total if there are line items in category
-            items_in_category = [
-                item
-                for item in line_item_definitions
-                if item.category == category_meta["name"]
-            ]
-            if items_in_category:  # Only add total if category has items
-                defined_names.append(
-                    {
-                        "name": category_meta["total_name"],
-                        "label": category_meta["total_label"],
-                        "value_format": "no_decimals",
-                        "source_type": "category",
-                        "source_name": category_meta["name"],
-                        "category": "category_totals",
-                        "formula": None,
-                        "hardcoded_values": None,
-                    }
-                )
 
     # Add multi-line item generators
     for generator in multi_line_items:
