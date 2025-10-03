@@ -141,3 +141,102 @@ class TestTableCreation:
             table.rows[1].cells[2].value is None
         )  # No previous value to compare against  # noqa: E501
         assert table.rows[1].cells[3].value == 1.0  # 100% change from 0.05 to 0.10
+
+    def test_line_items_with_filter(self, sample_model: Model):
+        """Test that line_items() can filter by line_item_names."""
+        # Test with specific line items from different categories
+        table = sample_model.tables.line_items(
+            line_item_names=["revenue_sales", "cost_of_goods"]
+        )
+        assert table is not None, "Filtered line items table creation failed"
+
+        # Count the actual item rows (excluding label rows)
+        item_row_count = sum(
+            1 for row in table.rows if hasattr(row, "cells") and len(row.cells) > 0
+            and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
+        )
+        assert item_row_count == 2, (
+            f"Should have 2 item rows, got {item_row_count}"
+        )
+
+        # Verify the right items are in the table
+        labels_in_table = [
+            row.cells[0].value for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+            and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
+        ]
+        assert "Sales Revenue" in labels_in_table
+        assert "Cost of Goods Sold" in labels_in_table
+
+    def test_line_items_with_filter_single_category(self, sample_model: Model):
+        """Test filtering to items from a single category."""
+        # Only revenue items
+        table = sample_model.tables.line_items(
+            line_item_names=["revenue_sales", "revenue_services"]
+        )
+        assert table is not None
+
+        # Should have Revenue category label + 2 items
+        # Count category labels
+        category_labels = [
+            row.cells[0].value for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+            and row.cells[0].value == "Revenue"
+        ]
+        assert len(category_labels) == 1, (
+            "Should have exactly one Revenue category label"
+        )
+
+    def test_line_items_with_empty_filter(self, sample_model: Model):
+        """Test that empty line_item_names list returns empty table."""
+        table = sample_model.tables.line_items(line_item_names=[])
+        assert table is not None
+        # Should have no rows (no categories shown because no items)
+        assert len(table.rows) == 0, "Empty filter should result in empty table"
+
+    def test_line_items_with_none_filter(self, sample_model: Model):
+        """Test that None line_item_names includes all items (default behavior)."""
+        table_with_none = sample_model.tables.line_items(line_item_names=None)
+        table_without_arg = sample_model.tables.line_items()
+
+        # Both should have the same number of rows
+        assert len(table_with_none.rows) == len(table_without_arg.rows), (
+            "None filter should behave same as no argument"
+        )
+
+    def test_line_items_filter_nonexistent_items(self, sample_model: Model):
+        """Test filtering with non-existent line item names."""
+        # Filter with items that don't exist - should return empty table
+        table = sample_model.tables.line_items(
+            line_item_names=["nonexistent_item_1", "nonexistent_item_2"]
+        )
+        assert table is not None
+        assert len(table.rows) == 0, (
+            "Non-existent items should result in empty table"
+        )
+
+    def test_line_items_filter_preserves_category_order(self, sample_model: Model):
+        """Test that filtered items maintain category order."""
+        # Get items from multiple categories in model order
+        table = sample_model.tables.line_items(
+            line_item_names=["revenue_sales", "operating_expenses", "net_profit"]
+        )
+        assert table is not None
+
+        # Extract category labels in order
+        category_labels = []
+        for row in table.rows:
+            if hasattr(row, "cells") and len(row.cells) > 0:
+                cell_value = row.cells[0].value
+                # Category labels are bold - check if this is a category row
+                if cell_value in ["Revenue", "Expenses", "Calculated"]:
+                    if cell_value not in category_labels:
+                        category_labels.append(cell_value)
+
+        # Categories should appear in the order defined in the model
+        expected_order = ["Revenue", "Expenses", "Calculated"]
+        actual_order = [cat for cat in expected_order if cat in category_labels]
+        assert category_labels == actual_order, (
+            f"Categories should maintain model order. "
+            f"Expected {actual_order}, got {category_labels}"
+        )
