@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestModelToFromDict:
@@ -356,7 +356,7 @@ class TestModelToFromDict:
             line_items=line_items,
             years=[2023],
             categories=categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         # to_dict should work

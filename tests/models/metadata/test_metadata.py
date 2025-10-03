@@ -13,7 +13,7 @@ from pyproforma.models.metadata import (
     generate_constraint_metadata,
     generate_line_item_metadata,
 )
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestGenerateCategoryMetadata:
@@ -418,7 +418,7 @@ class TestGenerateLineItemMetadata:
                 "name": debt_name,
                 "label": debt_name,
                 "value_format": "no_decimals",
-                "source_type": "multi_line_item",
+                "source_type": "generator",
                 "source_name": "debt",
                 "category": "debt",
                 "formula": None,

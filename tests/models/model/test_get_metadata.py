@@ -2,7 +2,7 @@ import pytest
 
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestGetItemMetadata:
@@ -53,7 +53,7 @@ class TestGetItemMetadata:
         ]
         return Model(
             line_items=line_items,
-            multi_line_items=multi_line_items,
+            generators=multi_line_items,
             years=[2023, 2024, 2025],
         )
 
@@ -178,7 +178,7 @@ class TestGetCategoryMetadata:
         ]
         return Model(
             line_items=line_items,
-            multi_line_items=multi_line_items,
+            generators=multi_line_items,
             years=[2023, 2024, 2025],
         )
 

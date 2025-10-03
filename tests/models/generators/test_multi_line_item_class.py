@@ -1,11 +1,11 @@
 import pytest
 
-from pyproforma.models.multi_line_item.abc_class import MultiLineItem
-from pyproforma.models.multi_line_item.debt import Debt
-from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
+from pyproforma.models.generator.abc_class import MultiLineItem
+from pyproforma.models.generator.debt import Debt
+from pyproforma.models.generator.short_term_debt import ShortTermDebt
 
 
-class TestMultiLineItemRoundTrip:
+class TestGeneratorRoundTrip:
     """Test round-trip serialization/deserialization of multi line items."""
 
     def test_debt_round_trip_basic(self):
@@ -30,7 +30,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["existing_debt_service"] is None
 
         # Create new instance from dict using factory
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify it's the right type
         assert isinstance(recreated_debt, Debt)
@@ -71,7 +71,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["existing_debt_service"] == existing_debt_service
 
         # Create new instance from dict
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify all attributes match
         assert recreated_debt.name == original_debt.name
@@ -102,7 +102,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["term"] == "loan_term"
 
         # Create new instance from dict
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify all attributes match
         assert recreated_debt.name == original_debt.name
@@ -136,7 +136,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["interest_rate"] == 0.04
 
         # Create new instance from dict using factory
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify it's the right type
         assert isinstance(recreated_debt, ShortTermDebt)
@@ -171,7 +171,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["paydown"] == {}
 
         # Create new instance from dict
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify all attributes match
         assert recreated_debt.name == original_debt.name
@@ -199,7 +199,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["interest_rate"] == {2024: 0.05, 2025: 0.06, 2026: 0.065}
 
         # Create new instance from dict
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify all attributes match
         assert recreated_debt.name == original_debt.name
@@ -229,7 +229,7 @@ class TestMultiLineItemRoundTrip:
         assert debt_dict["interest_rate"] == "prime_rate"
 
         # Create new instance from dict
-        recreated_debt = MultiLineItem.from_dict(debt_dict)
+        recreated_debt = Generator.from_dict(debt_dict)
 
         # Verify all attributes match
         assert recreated_debt.name == original_debt.name
@@ -252,7 +252,7 @@ class TestMultiLineItemRoundTrip:
         current_debt = original_debt
         for i in range(5):
             debt_dict = current_debt.to_dict()
-            current_debt = MultiLineItem.from_dict(debt_dict)
+            current_debt = Generator.from_dict(debt_dict)
 
         # Verify final result matches original
         assert current_debt.name == original_debt.name
@@ -262,24 +262,24 @@ class TestMultiLineItemRoundTrip:
 
     def test_registry_contains_both_types(self):
         """Test that both multi line item types are registered."""
-        assert "debt" in MultiLineItem._registry
-        assert "short_term_debt" in MultiLineItem._registry
-        assert MultiLineItem._registry["debt"] == Debt
-        assert MultiLineItem._registry["short_term_debt"] == ShortTermDebt
+        assert "debt" in Generator._registry
+        assert "short_term_debt" in Generator._registry
+        assert Generator._registry["debt"] == Debt
+        assert Generator._registry["short_term_debt"] == ShortTermDebt
 
     def test_from_dict_invalid_type(self):
         """Test that from_dict raises error for invalid type."""
         with pytest.raises(
             ValueError, match="Unknown multi line item type: invalid_type"
         ):
-            MultiLineItem.from_dict({"type": "invalid_type"})
+            Generator.from_dict({"type": "invalid_type"})
 
     def test_from_dict_missing_type(self):
         """Test that from_dict raises error for missing type."""
         with pytest.raises(
             ValueError, match="Configuration must include a 'type' field"
         ):
-            MultiLineItem.from_dict({"name": "test"})
+            Generator.from_dict({"name": "test"})
 
     def test_cross_generator_round_trip(self):
         """Test creating different multi line item types from dicts."""
@@ -302,16 +302,16 @@ class TestMultiLineItemRoundTrip:
         }
 
         # Create instances using factory
-        debt_instance = MultiLineItem.from_dict(debt_config)
-        short_term_instance = MultiLineItem.from_dict(short_term_config)
+        debt_instance = Generator.from_dict(debt_config)
+        short_term_instance = Generator.from_dict(short_term_config)
 
         # Verify types
         assert isinstance(debt_instance, Debt)
         assert isinstance(short_term_instance, ShortTermDebt)
 
         # Verify round-trip works for both
-        debt_round_trip = MultiLineItem.from_dict(debt_instance.to_dict())
-        short_term_round_trip = MultiLineItem.from_dict(short_term_instance.to_dict())
+        debt_round_trip = Generator.from_dict(debt_instance.to_dict())
+        short_term_round_trip = Generator.from_dict(short_term_instance.to_dict())
 
         assert isinstance(debt_round_trip, Debt)
         assert isinstance(short_term_round_trip, ShortTermDebt)
@@ -352,7 +352,7 @@ class TestMultiLineItemRoundTrip:
         }
 
         # Should still work with from_dict
-        recreated_debt = MultiLineItem.from_dict(json_like_dict)
+        recreated_debt = Generator.from_dict(json_like_dict)
 
         # par_amount should be converted back to integer keys
         assert recreated_debt._par_amount == {2024: 1000000, 2025: 500000}
@@ -381,7 +381,7 @@ class TestMultiLineItemRoundTrip:
         }
 
         # Should still work with from_dict
-        recreated_short_term = MultiLineItem.from_dict(json_like_short_term)
+        recreated_short_term = Generator.from_dict(json_like_short_term)
 
         # Keys should be converted back to integers
         assert recreated_short_term._draws == {2024: 100000, 2025: 150000}

@@ -1345,7 +1345,7 @@ class TestLineItemResultsCategoryProperty:
         """Test that category setter raises ValueError for multi-line item types."""
         # Mock metadata to simulate a multi-line item
         mock_metadata = {
-            "source_type": "multi_line_item",
+            "source_type": "generator",
             "label": "Debt Schedule",
             "value_format": "no_decimals",
             "category": "debt",

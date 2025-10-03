@@ -1,6 +1,6 @@
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestConstraintsWithComplexModels:
@@ -47,7 +47,7 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            multi_line_items=line_item_generators,
+            generators=line_item_generators,
             constraints=constraints,
         )
 
@@ -165,7 +165,7 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            multi_line_items=line_item_generators,
+            generators=line_item_generators,
             constraints=constraints,
         )
 

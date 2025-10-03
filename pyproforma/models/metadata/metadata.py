@@ -8,7 +8,7 @@ model components including categories and line items.
 from typing import Dict, List
 
 from pyproforma.constants import CONSTRAINT_OPERATOR_SYMBOLS
-from pyproforma.models.multi_line_item import MultiLineItem
+from pyproforma.models.generator import Generator
 
 from ..category import Category
 from ..constraint import Constraint
@@ -16,20 +16,20 @@ from ..line_item import LineItem
 
 
 def generate_category_metadata(
-    category_definitions: List[Category], multi_line_items: List[MultiLineItem] = None
+    category_definitions: List[Category], generators: List[Generator] = None
 ) -> List[Dict]:
     """
-    Collect category metadata from category definitions and multi-line items.
+    Collect category metadata from category definitions and generators.
 
     This function extracts key information from each category definition
     to create a comprehensive metadata structure for categories, and also
-    creates category metadata entries for multi-line items (without creating
+    creates category metadata entries for generators (without creating
     actual Category objects for them).
 
     Args:
         category_definitions (List[Category]): List of category definitions
-        multi_line_items (List[MultiLineItem], optional): List of multi-line item
-            generators
+        generators (List[Generator], optional): List of generator
+            objects
 
     Returns:
         List[Dict]: A list of dictionaries, each containing:
@@ -51,15 +51,15 @@ def generate_category_metadata(
             }
         )
 
-    # Add metadata for multi-line items (as system-generated categories)
-    if multi_line_items is not None:
+    # Add metadata for generators (as system-generated categories)
+    if generators is not None:
         existing_category_names = {cat["name"] for cat in category_metadata}
-        for multi_item in multi_line_items:
-            if multi_item.name not in existing_category_names:
+        for generator in generators:
+            if generator.name not in existing_category_names:
                 category_metadata.append(
                     {
-                        "name": multi_item.name,
-                        "label": f"{multi_item.name} (Multi-Line Item)",
+                        "name": generator.name,
+                        "label": f"{generator.name} (Generator)",
                         "system_generated": True,
                     }
                 )
@@ -70,20 +70,20 @@ def generate_category_metadata(
 def generate_line_item_metadata(
     line_item_definitions: List[LineItem],
     category_metadata: List[Dict],
-    multi_line_items: List[MultiLineItem],
+    generators: List[Generator],
 ) -> List[Dict]:
     """
     Collects all defined names across the model to create a comprehensive
     namespace.
 
     This function aggregates identifiers from all model components including
-    line items and line item generators to build a unified namespace for
+    line items and generators to build a unified namespace for
     value lookups and validation.
 
     Args:
         line_item_definitions (List[LineItem]): List of line item definitions
         category_metadata (List[Dict]): List of category metadata dictionaries
-        multi_line_items (List[MultiLineItem]): List of multi-line item generators
+        generators (List[Generator]): List of generator objects
 
     Returns:
         List[Dict]: A list of dictionaries, each containing:
@@ -93,7 +93,7 @@ def generate_line_item_metadata(
               (None, 'str', 'no_decimals', 'two_decimals', 'percent',
               'percent_one_decimal', 'percent_two_decimals')
             - 'source_type' (str): The component type that defines this name
-              ('line_item', 'multi_line_item')
+              ('line_item', 'generator')
             - 'source_name' (str): The original source object's name
             - 'category' (str): The category name
             - 'formula' (str or None): The formula string for line items
@@ -136,15 +136,15 @@ def generate_line_item_metadata(
             }
         )
 
-    # Add multi-line item generators
-    for generator in multi_line_items:
+    # Add generators
+    for generator in generators:
         for gen_name in generator.defined_names:
             defined_names.append(
                 {
                     "name": gen_name,
                     "label": gen_name,
                     "value_format": "no_decimals",
-                    "source_type": "multi_line_item",
+                    "source_type": "generator",
                     "source_name": generator.name,
                     "category": generator.name,
                     "formula": None,

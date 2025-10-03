@@ -9,7 +9,7 @@ from pyproforma.models.model.value_matrix import (
     _calculate_category_total,
     generate_value_matrix,
 )
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestGenerateValueMatrix:
@@ -354,14 +354,14 @@ class TestGenerateValueMatrix:
             line_items=[revenue, net_income],
             years=[2023],
             categories=basic_categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         model2 = Model(
             line_items=[net_income, revenue],  # Different order
             years=[2023],
             categories=basic_categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         matrix1 = generate_value_matrix(

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Union
 from ..formula import evaluate
 
 if TYPE_CHECKING:
-    from pyproforma.models.multi_line_item import MultiLineItem
+    from pyproforma.models.generator import Generator
 
     from ..line_item import LineItem
 
@@ -265,20 +265,20 @@ def _calculate_category_total(
 
 def generate_value_matrix(
     years: list[int],
-    line_item_definitions: list[Union["LineItem", "MultiLineItem"]],
+    line_item_definitions: list[Union["LineItem", "Generator"]],
     category_metadata: list[dict],
     line_item_metadata: list[dict],
 ) -> dict[int, dict[str, float]]:
     """
     Generate the value matrix containing all calculated values for the model.
 
-    This function calculates all line item values, multi line item outputs,
+    This function calculates all line item values, generator outputs,
     and category totals for each year in the model. It handles dependency resolution
     by calculating items in the correct order based on formula dependencies.
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, MultiLineItem]]): List of line item definitions and multi line items
+        line_item_definitions (list[Union[LineItem, Generator]]): List of line item definitions and generators
         category_metadata (list[dict]): Metadata for all defined categories
         line_item_metadata (list[dict]): Metadata for all defined names
 
@@ -306,11 +306,11 @@ def generate_value_matrix(
 
             for item in remaining_items:
                 try:
-                    # Check if this is a MultiLineItem or LineItem
-                    # MultiLineItems have get_values() and defined_names, LineItems have name attribute  # noqa: E501
+                    # Check if this is a Generator or LineItem
+                    # Generators have get_values() and defined_names, LineItems have name attribute  # noqa: E501
 
                     if hasattr(item, "get_values") and hasattr(item, "defined_names"):
-                        # Handle MultiLineItem - get multiple values
+                        # Handle Generator - get multiple values
                         generated_values = item.get_values(value_matrix, year)
 
                         # Update value matrix with the generated values
@@ -395,7 +395,7 @@ def generate_value_matrix(
             failed_items = []
             for item in remaining_items:
                 if hasattr(item, "get_values") and hasattr(item, "defined_names"):
-                    # MultiLineItem
+                    # Generator
                     failed_items.extend(
                         item.defined_names
                     )  # Add all names from the generator

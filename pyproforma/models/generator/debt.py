@@ -2,14 +2,14 @@ from typing import Any, Dict, List, Optional
 
 from pyproforma.models._utils import validate_name
 from pyproforma.models.model.value_matrix import validate_value_matrix
-from pyproforma.models.multi_line_item.abc_class import MultiLineItem
+from pyproforma.models.generator.abc_class import Generator
 
 
-@MultiLineItem.register("debt")
-class Debt(MultiLineItem):
+@Generator.register("debt")
+class Debt(Generator):
     """
     Debt class for modeling debt related line items.
-    Inherits from MultiLineItem.
+    Inherits from Generator.
 
     This class will handle debt related calculations including principal, interest payments,  # noqa: E501
     and debt service schedule. Currently a placeholder implementation.
