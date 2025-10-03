@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Removed tuple access pattern `model['name', year]` for getting values
+  - Use `model.value('name', year)` instead for getting specific values
+
 ## [0.1.14] - 2025-10-02
 
 ### Changed
