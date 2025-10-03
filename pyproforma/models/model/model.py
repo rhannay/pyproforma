@@ -81,7 +81,7 @@ class Model(SerializationMixin):
         >>>
         >>> # Access values
         >>> model.value("revenue", 2023)  # 1000
-        >>> model["expenses", 2024]  # 800
+        >>> model.value("expenses", 2024)  # 800
         >>>
         >>> # Analysis
         >>> model.category("income").total()  # Category totals by year
@@ -94,7 +94,7 @@ class Model(SerializationMixin):
         >>>
         >>> # Scenario analysis
         >>> scenario = model.scenario([("revenue", {"updated_values": {2023: 1200}})])
-        >>> scenario["revenue", 2023]  # 1200 in scenario, original unchanged
+        >>> scenario.value("revenue", 2023)  # 1200 in scenario, original unchanged
 
     Key Methods:
         - value(name, year): Get value for any item/year
@@ -305,36 +305,28 @@ class Model(SerializationMixin):
     # CORE DATA ACCESS (Magic Methods & Primary Interface)
     # ============================================================================
 
-    def __getitem__(self, key: Union[tuple, str]) -> Union[float, LineItemResults]:
+    def __getitem__(self, key: str) -> LineItemResults:
         """
-        Get item values or LineItemResults using dictionary-style access.
-
-        Supports two access patterns:
-        - Tuple (item_name, year): Returns the float value for that item and year
-        - String item_name: Returns a LineItemResults object for exploring the item
+        Get LineItemResults using dictionary-style access.
 
         Args:
-            key: Either a tuple of (item_name, year) or a string item_name
+            key (str): The name of the item to get LineItemResults for
 
         Returns:
-            Union[float, LineItemResults]: Float value for tuple keys,
-                LineItemResults object for string keys
+            LineItemResults: LineItemResults object for exploring the item
 
         Raises:
-            KeyError: If key format is invalid, item name not found,
-                or year not in model
+            KeyError: If key format is invalid or item name not found
+            TypeError: If key is not a string
 
         Examples:
-            >>> model["revenue", 2023]  # Returns float value: 1000.0
             >>> model["revenue"]        # Returns LineItemResults object
         """
-        if isinstance(key, tuple):
-            key_name, year = key
-            return self.value(key_name, year)
-        elif isinstance(key, str):
+        if isinstance(key, str):
             return self.line_item(key)
-        raise KeyError(
-            "Key must be a tuple of (item_name, year) or a string item_name."
+        raise TypeError(
+            "Key must be a string item_name. "
+            "Use model.value(name, year) to get specific values."
         )
 
     def __setitem__(
@@ -370,7 +362,7 @@ class Model(SerializationMixin):
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
             >>> model['profit_margin'] = 0.15  # Creates line item with 0.15 for years
             >>> model['profit'] = "revenue - expenses"  # Creates with formula
-            >>> model['growth'] = [100, 110, 121]  # Creates with specific values
+            >>> model['growth'] = [100, 110, 121]  # Creates with specific year values
             >>> model['revenue_2023'] = {2023: 100000, 2024: 110000}  # Values dict
             >>> model['expenses'] = LineItem(name="expenses", formula="revenue * 0.8")
             >>> model['costs'] = {"category": "expenses", "formula": "revenue * 0.6"}
@@ -572,7 +564,7 @@ class Model(SerializationMixin):
             Dictionary-style lookup at the Model level is also supported:
 
             ```python
-            model["revenue", 2023]  # Equivalent to model.value("revenue", 2023)
+            model.value("revenue", 2023)  # Get revenue for 2023
             ```
         """
         name_lookup = {item["name"]: item for item in self.line_item_metadata}
@@ -816,8 +808,8 @@ class Model(SerializationMixin):
             ... ])
             >>>
             >>> # Compare scenarios
-            >>> base_profit = model["profit", 2023]
-            >>> scenario_profit = scenario_model["profit", 2023]
+            >>> base_profit = model.value("profit", 2023)
+            >>> scenario_profit = scenario_model.value("profit", 2023)
             >>> print(f"Base: {base_profit}, Scenario: {scenario_profit}")
             >>>
             >>> # Chain scenarios for complex analysis

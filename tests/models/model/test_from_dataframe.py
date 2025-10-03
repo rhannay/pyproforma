@@ -29,11 +29,11 @@ class TestFromDataFrame:
         assert 'expenses' in model.line_item_names
         assert 'profit' in model.line_item_names
 
-        assert model['revenue', 2023] == 1000
-        assert model['revenue', 2024] == 1200
-        assert model['revenue', 2025] == 1400
-        assert model['expenses', 2023] == 600
-        assert model['profit', 2025] == 600
+        assert model.value("revenue", 2023) == 1000
+        assert model.value("revenue", 2024) == 1200
+        assert model.value("revenue", 2025) == 1400
+        assert model.value("expenses", 2023) == 600
+        assert model.value("profit", 2025) == 600
 
     def test_dataframe_with_string_years(self):
         """Test creating a model from DataFrame with string year columns."""
@@ -48,8 +48,8 @@ class TestFromDataFrame:
         assert model.years == [2023, 2024]
         assert 'revenue' in model.line_item_names
         assert 'costs' in model.line_item_names
-        assert model['revenue', 2023] == 1000
-        assert model['costs', 2024] == 450
+        assert model.value("revenue", 2023) == 1000
+        assert model.value("costs", 2024) == 450
 
     def test_dataframe_with_mixed_string_and_int_years(self):
         """Test DataFrame with both string and integer year columns."""
@@ -63,7 +63,7 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [2023, 2024, 2025]
-        assert model['revenue', 2024] == 1100
+        assert model.value("revenue", 2024) == 1100
 
     def test_dataframe_unsorted_years(self):
         """Test that years are sorted even if DataFrame columns are not."""
@@ -90,10 +90,10 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [2023, 2024, 2025]
-        assert model['revenue', 2023] == 1000
-        assert model['revenue', 2024] == 1200
+        assert model.value("revenue", 2023) == 1000
+        assert model.value("revenue", 2024) == 1200
         # Revenue 2025 should be None/missing
-        assert model['expenses', 2024] == 700
+        assert model.value("expenses", 2024) == 700
 
     def test_fill_in_periods_false(self):
         """Test that gaps in years are not filled when fill_in_periods=False."""
@@ -123,9 +123,9 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df, fill_in_periods=True)
 
         assert model.years == [2023, 2024, 2025]
-        assert model['revenue', 2023] == 1000
+        assert model.value("revenue", 2023) == 1000
         # 2024 should exist but revenue should be None/0
-        assert model['revenue', 2025] == 1400
+        assert model.value("revenue", 2025) == 1400
 
     def test_single_line_item(self):
         """Test creating a model with single line item."""
@@ -139,7 +139,7 @@ class TestFromDataFrame:
 
         assert model.years == [2023, 2024]
         assert 'revenue' in model.line_item_names
-        assert model['revenue', 2023] == 1000
+        assert model.value("revenue", 2023) == 1000
 
     def test_single_year(self):
         """Test creating a model with single year."""
@@ -151,8 +151,8 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [2023]
-        assert model['revenue', 2023] == 1000
-        assert model['expenses', 2023] == 600
+        assert model.value("revenue", 2023) == 1000
+        assert model.value("expenses", 2023) == 600
 
     def test_empty_dataframe_raises_error(self):
         """Test that empty DataFrame raises ValueError."""
@@ -236,7 +236,7 @@ class TestFromDataFrame:
 
         assert '100' in model.line_item_names
         assert '200' in model.line_item_names
-        assert model['100', 2023] == 1000
+        assert model.value("100", 2023) == 1000
 
     def test_dataframe_skips_rows_with_missing_names(self):
         """Test that rows with missing names are skipped."""
@@ -270,8 +270,8 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [-1, 0, 1]
-        assert model['revenue', -1] == 900
-        assert model['revenue', 0] == 1000
+        assert model.value("revenue", -1) == 900
+        assert model.value("revenue", 0) == 1000
 
     def test_dataframe_with_large_years(self):
         """Test creating model with very large year values."""
@@ -285,7 +285,7 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df)
 
         assert model.years == [9998, 9999, 10000]
-        assert model['revenue', 9998] == 1000
+        assert model.value("revenue", 9998) == 1000
 
     def test_fill_in_periods_with_large_gap(self):
         """Test fill_in_periods with a larger gap."""
@@ -298,8 +298,8 @@ class TestFromDataFrame:
         model = Model.from_dataframe(df, fill_in_periods=True)
 
         assert model.years == [2020, 2021, 2022, 2023, 2024, 2025]
-        assert model['revenue', 2020] == 1000
-        assert model['revenue', 2025] == 1500
+        assert model.value("revenue", 2020) == 1000
+        assert model.value("revenue", 2025) == 1500
         # Middle years should have None/0 values
 
     def test_dataframe_preserves_line_item_order(self):
@@ -330,6 +330,6 @@ class TestFromDataFrame:
         assert 'gross_profit' in model.line_item_names
         assert 'net_income' in model.line_item_names
         assert 'cost_of_goods_sold' in model.line_item_names
-        assert model['gross_profit', 2023] == 100
-        assert model['net_income', 2023] == 200
-        assert model['cost_of_goods_sold', 2023] == 300
+        assert model.value("gross_profit", 2023) == 100
+        assert model.value("net_income", 2023) == 200
+        assert model.value("cost_of_goods_sold", 2023) == 300

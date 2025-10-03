@@ -37,10 +37,10 @@ def test_fixture_loads(basic_model: Model):
     """Test that the basic model fixture loads correctly."""
     assert isinstance(basic_model, Model)
     assert len(basic_model._line_item_definitions) == 4
-    assert basic_model["revenue", 2023] == 100
-    assert basic_model["costs", 2023] == 70
-    assert basic_model["profit", 2023] == 30
-    assert basic_model["margin", 2023] == 0.3  # 30/100 = 0.3
+    assert basic_model.value("revenue", 2023) == 100
+    assert basic_model.value("costs", 2023) == 70
+    assert basic_model.value("profit", 2023) == 30
+    assert basic_model.value("margin", 2023) == 0.3  # 30/100 = 0.3
 
 
 def test_update_multiple_line_items_basic(basic_model):
@@ -54,12 +54,12 @@ def test_update_multiple_line_items_basic(basic_model):
     )
 
     # Check that values were updated
-    assert basic_model["revenue", 2023] == 200
-    assert basic_model["costs", 2023] == 120
+    assert basic_model.value("revenue", 2023) == 200
+    assert basic_model.value("costs", 2023) == 120
 
     # Check that formulas were recalculated
-    assert basic_model["profit", 2023] == 80
-    assert basic_model["margin", 2023] == 0.4  # 80/200 = 0.4
+    assert basic_model.value("profit", 2023) == 80
+    assert basic_model.value("margin", 2023) == 0.4  # 80/200 = 0.4
 
 
 def test_update_certaint_values(basic_model):
@@ -73,26 +73,26 @@ def test_update_certaint_values(basic_model):
     )
 
     # Check that only specified years were updated
-    assert basic_model["revenue", 2023] == 250
-    assert basic_model["revenue", 2024] == 110  # Unchanged
-    assert basic_model["costs", 2024] == 150
-    assert basic_model["costs", 2023] == 70  # Unchanged
+    assert basic_model.value("revenue", 2023) == 250
+    assert basic_model.value("revenue", 2024) == 110  # Unchanged
+    assert basic_model.value("costs", 2024) == 150
+    assert basic_model.value("costs", 2023) == 70  # Unchanged
 
     # Check that formulas were recalculated
-    assert basic_model["profit", 2023] == 250 - 70
-    assert basic_model["margin", 2023] == (250 - 70) / 250  # Updated profit and margin)
+    assert basic_model.value("profit", 2023) == 250 - 70
+    assert basic_model.value("margin", 2023) == (250 - 70) / 250  # Updated profit and margin)
 
 
 def test_update_multiple_line_items_empty_list(basic_model):
     """Test that passing an empty list does nothing."""
     # Get original state
-    original_revenue = basic_model["revenue", 2023]
+    original_revenue = basic_model.value("revenue", 2023)
 
     # Update with empty list
     basic_model.update.update_multiple_line_items([])
 
     # Check that nothing changed
-    assert basic_model["revenue", 2023] == original_revenue
+    assert basic_model.value("revenue", 2023) == original_revenue
 
 
 def test_update_multiple_line_items_formulas(basic_model):
@@ -110,12 +110,12 @@ def test_update_multiple_line_items_formulas(basic_model):
 
     # Check that formulas were updated and recalculated
     assert basic_model._line_item_definition("costs").formula == "revenue * 0.6"
-    assert basic_model["costs", 2023] == 60  # 100 * 0.6 = 60
+    assert basic_model.value("costs", 2023) == 60  # 100 * 0.6 = 60
 
     assert (
         basic_model._line_item_definition("margin").formula == "profit / revenue * 100"
     )
-    assert basic_model["margin", 2023] == 40  # (100-60)/100 * 100 = 40
+    assert basic_model.value("margin", 2023) == 40  # (100-60)/100 * 100 = 40
     assert basic_model._line_item_definition("margin").value_format == "no_decimals"
 
 
@@ -147,7 +147,7 @@ def test_update_multiple_line_items_rename(basic_model):
     assert "costs" not in basic_model.line_item_names
 
     # Check that formulas still work (they should be updated automatically)
-    assert basic_model["profit", 2023] == 30
+    assert basic_model.value("profit", 2023) == 30
 
 
 def test_update_multiple_line_items_invalid_name(basic_model):
@@ -175,7 +175,7 @@ def test_update_multiple_line_items_invalid_formula(basic_model):
         )
 
     # Check that no changes were applied (transaction rolled back)
-    assert basic_model["revenue", 2023] == 100
+    assert basic_model.value("revenue", 2023) == 100
     assert basic_model._line_item_definition("profit").formula == "revenue - costs"
 
 
@@ -238,11 +238,11 @@ def test_update_multiple_line_items_mixed_updates(basic_model):
     )
 
     # Check that all updates were applied correctly
-    assert basic_model["revenue", 2023] == 200
+    assert basic_model.value("revenue", 2023) == 200
     assert basic_model._line_item_definition("revenue").label == "Annual Revenue"
 
     assert basic_model._line_item_definition("costs").formula == "revenue * 0.5"
-    assert basic_model["costs", 2023] == 100  # 200 * 0.5
+    assert basic_model.value("costs", 2023) == 100  # 200 * 0.5
 
     assert basic_model._line_item_definition("profit").value_format == "two_decimals"
-    assert basic_model["profit", 2023] == 100  # 200 - 100
+    assert basic_model.value("profit", 2023) == 100  # 200 - 100

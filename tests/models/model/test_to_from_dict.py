@@ -383,8 +383,12 @@ class TestModelToFromDict:
         recreated_model = Model.from_dict(model_dict)
 
         # Test magic method access
-        assert recreated_model["revenue", 2023] == simple_model["revenue", 2023]
-        assert recreated_model["expenses", 2024] == simple_model["expenses", 2024]
+        assert recreated_model.value("revenue", 2023) == simple_model.value(
+            "revenue", 2023
+        )
+        assert recreated_model.value("expenses", 2024) == simple_model.value(
+            "expenses", 2024
+        )
 
         # Test helper methods
         assert (

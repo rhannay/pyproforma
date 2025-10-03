@@ -34,8 +34,8 @@ model = Model(
 )
 
 # Access values
-print(f"Revenue 2023: ${model['revenue', 2023]:,}")
-print(f"Profit 2024: ${model['profit', 2024]:,}")
+print(f"Revenue 2023: ${model.value('revenue', 2023):,}")
+print(f"Profit 2024: ${model.value('profit', 2024):,}")
 
 # Create analysis objects
 revenue_analysis = model.line_item('revenue')

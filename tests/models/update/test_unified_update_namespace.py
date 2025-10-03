@@ -412,7 +412,7 @@ class TestAddLineItemReplace:
 
         # Verify the model is still functional
         assert "revenue" in sample_model.line_item_names
-        assert sample_model["revenue", 2023] == original_value
+        assert sample_model.value("revenue", 2023) == original_value
 
     def test_add_line_item_replace_rollback_on_failure_with_line_item_object(
         self, sample_model
@@ -563,7 +563,9 @@ class TestDeleteLineItems:
 
     def test_delete_line_items_nonexistent_item(self, sample_model: Model):
         """Test that delete_line_items fails when a line item doesn't exist."""
-        with pytest.raises(KeyError, match="Line item 'nonexistent' not found in model"):
+        with pytest.raises(
+            KeyError, match="Line item 'nonexistent' not found in model"
+        ):
             sample_model.update.delete_line_items(["salary", "nonexistent"])
 
         # Verify no changes were made
@@ -651,7 +653,9 @@ class TestDeleteCategoryWithLineItems:
 
         # Verify category is deleted
         assert len(sample_model._category_definitions) == initial_category_count - 1
-        assert "expenses" not in [cat.name for cat in sample_model._category_definitions]
+        assert "expenses" not in [
+            cat.name for cat in sample_model._category_definitions
+        ]
 
         # Verify line items in that category are deleted
         assert len(sample_model._line_item_definitions) == initial_line_item_count - 2
@@ -670,7 +674,9 @@ class TestDeleteCategoryWithLineItems:
         assert len(sample_model._category_definitions) == initial_count - 1
         assert "unused" not in [cat.name for cat in sample_model._category_definitions]
 
-    def test_delete_category_with_line_items_true_no_line_items(self, sample_model: Model):
+    def test_delete_category_with_line_items_true_no_line_items(
+        self, sample_model: Model
+    ):
         """Test that delete_category with include_line_items=True works even without line items."""
         initial_count = len(sample_model._category_definitions)
 
