@@ -261,8 +261,8 @@ class TestModelCopy:
         copied = simple_model.copy()
 
         # Test magic method access
-        assert copied["revenue", 2023] == simple_model["revenue", 2023]
-        assert copied["expenses", 2024] == simple_model["expenses", 2024]
+        assert copied.value("revenue", 2023) == simple_model.value("revenue", 2023)
+        assert copied.value("expenses", 2024) == simple_model.value("expenses", 2024)
 
         # Test helper methods
         assert (

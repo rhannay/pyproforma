@@ -359,8 +359,6 @@ class TestConstraintIntegration:
         # Test that normal model operations work
         assert model.value("revenue", 2023) == 100000
         assert model.value("expenses", 2024) == 60000
-        assert model["revenue", 2023] == 100000
-        assert model["expenses", 2024] == 60000
 
         # Test that constraints are still accessible
         assert len(model.constraints) == 2

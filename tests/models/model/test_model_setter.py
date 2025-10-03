@@ -23,9 +23,9 @@ class TestConstantPassed:
         assert "new_item" in model_with_years.line_item_names
 
         # Verify values are set correctly for all years
-        assert model_with_years["new_item", 2023] == 99.0
-        assert model_with_years["new_item", 2024] == 99.0
-        assert model_with_years["new_item", 2025] == 99.0
+        assert model_with_years.value("new_item", 2023) == 99.0
+        assert model_with_years.value("new_item", 2024) == 99.0
+        assert model_with_years.value("new_item", 2025) == 99.0
 
         # Verify it can be accessed via line_item method
         line_item_results = model_with_years.line_item("new_item")
@@ -40,9 +40,9 @@ class TestConstantPassed:
         assert "profit_margin" in model_with_years.line_item_names
 
         # Verify values are set correctly for all years
-        assert model_with_years["profit_margin", 2023] == 0.15
-        assert model_with_years["profit_margin", 2024] == 0.15
-        assert model_with_years["profit_margin", 2025] == 0.15
+        assert model_with_years.value("profit_margin", 2023) == 0.15
+        assert model_with_years.value("profit_margin", 2024) == 0.15
+        assert model_with_years.value("profit_margin", 2025) == 0.15
 
     def test_setter_with_zero_value(self, model_with_years):
         """Test setting a line item with zero value."""
@@ -52,9 +52,9 @@ class TestConstantPassed:
         assert "zero_item" in model_with_years.line_item_names
 
         # Verify values are set correctly for all years
-        assert model_with_years["zero_item", 2023] == 0.0
-        assert model_with_years["zero_item", 2024] == 0.0
-        assert model_with_years["zero_item", 2025] == 0.0
+        assert model_with_years.value("zero_item", 2023) == 0.0
+        assert model_with_years.value("zero_item", 2024) == 0.0
+        assert model_with_years.value("zero_item", 2025) == 0.0
 
     def test_setter_with_negative_value(self, model_with_years):
         """Test setting a line item with a negative value."""
@@ -64,9 +64,9 @@ class TestConstantPassed:
         assert "negative_item" in model_with_years.line_item_names
 
         # Verify values are set correctly for all years
-        assert model_with_years["negative_item", 2023] == -50.5
-        assert model_with_years["negative_item", 2024] == -50.5
-        assert model_with_years["negative_item", 2025] == -50.5
+        assert model_with_years.value("negative_item", 2023) == -50.5
+        assert model_with_years.value("negative_item", 2024) == -50.5
+        assert model_with_years.value("negative_item", 2025) == -50.5
 
     def test_setter_multiple_items(self, model_with_years):
         """Test setting multiple line items with different values."""
@@ -80,9 +80,9 @@ class TestConstantPassed:
         assert "item3" in model_with_years.line_item_names
 
         # Verify values are set correctly
-        assert model_with_years["item1", 2023] == 100.0
-        assert model_with_years["item2", 2024] == 200.5
-        assert model_with_years["item3", 2025] == 0.0
+        assert model_with_years.value("item1", 2023) == 100.0
+        assert model_with_years.value("item2", 2024) == 200.5
+        assert model_with_years.value("item3", 2025) == 0.0
 
     def test_setter_line_item_added_to_general_category(self, model_with_years):
         """Test that new line items are added to the 'general' category."""
@@ -136,7 +136,7 @@ class TestConstantPassed:
         model_with_years["existing_item"] = 100
 
         # Verify it exists
-        assert model_with_years["existing_item", 2023] == 100.0
+        assert model_with_years.value("existing_item", 2023) == 100.0
 
         # Now try to set it again with a primitive value
         # This should raise ValueError since primitive replacements are not allowed
@@ -166,15 +166,15 @@ class TestConstantPassed:
         copied_model = model_with_years.copy()
         assert "revenue" in copied_model.line_item_names
         assert "expenses" in copied_model.line_item_names
-        assert copied_model["revenue", 2023] == 1000.0
-        assert copied_model["expenses", 2023] == 800.0
+        assert copied_model.value("revenue", 2023) == 1000.0
+        assert copied_model.value("expenses", 2023) == 800.0
 
     def test_setter_with_single_year_model(self):
         """Test setter works correctly with a single-year model."""
         single_year_model = Model(years=[2023])
         single_year_model["test_item"] = 42
 
-        assert single_year_model["test_item", 2023] == 42.0
+        assert single_year_model.value("test_item", 2023) == 42.0
         line_item_results = single_year_model.line_item("test_item")
         assert line_item_results.values == {2023: 42.0}
 
@@ -186,7 +186,7 @@ class TestConstantPassed:
 
         # Verify all years have the correct value
         for year in years:
-            assert large_model["test_item", year] == 500.0
+            assert large_model.value("test_item", year) == 500.0
 
         # Verify the values dictionary is correct
         line_item_results = large_model.line_item("test_item")
@@ -201,9 +201,9 @@ class TestConstantPassed:
         assert "list_item" in model_with_years.line_item_names
 
         # Verify values are set correctly for all years
-        assert model_with_years["list_item", 2023] == 1000.0
-        assert model_with_years["list_item", 2024] == 1100.0
-        assert model_with_years["list_item", 2025] == 1210.0
+        assert model_with_years.value("list_item", 2023) == 1000.0
+        assert model_with_years.value("list_item", 2024) == 1100.0
+        assert model_with_years.value("list_item", 2025) == 1210.0
 
         # Verify it can be accessed via line_item method
         line_item_results = model_with_years.line_item("list_item")
@@ -215,16 +215,16 @@ class TestConstantPassed:
         model_with_years["mixed_list"] = [100, 110.5, 121]
 
         # Verify values are set correctly
-        assert model_with_years["mixed_list", 2023] == 100.0
-        assert model_with_years["mixed_list", 2024] == 110.5
-        assert model_with_years["mixed_list", 2025] == 121.0
+        assert model_with_years.value("mixed_list", 2023) == 100.0
+        assert model_with_years.value("mixed_list", 2024) == 110.5
+        assert model_with_years.value("mixed_list", 2025) == 121.0
 
     def test_setter_with_single_item_list(self):
         """Test setter with single-year model and single-item list."""
         single_year_model = Model(years=[2023])
         single_year_model["single_list"] = [42]
 
-        assert single_year_model["single_list", 2023] == 42.0
+        assert single_year_model.value("single_list", 2023) == 42.0
 
     def test_setter_error_list_wrong_length(self, model_with_years):
         """Test that list with wrong length raises ValueError."""
@@ -264,7 +264,7 @@ class TestConstantPassed:
         """Test that updating existing line item with list values raises ValueError."""
         # Create initial item with constant value
         model_with_years["update_test"] = 500
-        assert model_with_years["update_test", 2023] == 500.0
+        assert model_with_years.value("update_test", 2023) == 500.0
 
         # Try to update with list values - should raise ValueError
         with pytest.raises(
@@ -293,8 +293,8 @@ class TestConstantPassed:
         copied_model = model_with_years.copy()
         assert "revenue" in copied_model.line_item_names
         assert "expenses" in copied_model.line_item_names
-        assert copied_model["revenue", 2023] == 1000.0
-        assert copied_model["expenses", 2024] == 850.0
+        assert copied_model.value("revenue", 2023) == 1000.0
+        assert copied_model.value("expenses", 2024) == 850.0
 
 
 class TestSetterLineItem:
@@ -312,8 +312,8 @@ class TestSetterLineItem:
 
         # Verify the line item was added
         assert "revenue" in model_with_years.line_item_names
-        assert model_with_years["revenue", 2023] == 1000
-        assert model_with_years["revenue", 2024] == 1000
+        assert model_with_years.value("revenue", 2023) == 1000
+        assert model_with_years.value("revenue", 2024) == 1000
 
         # Verify the line item properties
         added_item = model_with_years._line_item_definition("revenue")
@@ -329,7 +329,7 @@ class TestSetterLineItem:
         # Verify the line item was added with the key name
         assert "expenses" in model_with_years.line_item_names
         assert "original_name" not in model_with_years.line_item_names
-        assert model_with_years["expenses", 2023] == 500
+        assert model_with_years.value("expenses", 2023) == 500
 
         # Verify the line item has the key name
         added_item = model_with_years._line_item_definition("expenses")
@@ -340,14 +340,14 @@ class TestSetterLineItem:
         """Test that setting LineItem on existing item replaces it."""
         # First add a line item
         model_with_years["existing"] = 1000
-        assert model_with_years["existing", 2023] == 1000
+        assert model_with_years.value("existing", 2023) == 1000
 
         # Set a LineItem with same key - should replace
         line_item = LineItem(name="new_item", category="income", formula="2000")
         model_with_years["existing"] = line_item
 
         # Verify the replacement worked
-        assert model_with_years["existing", 2023] == 2000
+        assert model_with_years.value("existing", 2023) == 2000
         added_item = model_with_years._line_item_definition("existing")
         assert added_item.name == "existing"  # Should use key name
         assert added_item.category == "income"  # Should have new properties
@@ -372,7 +372,7 @@ class TestSetterLineItem:
         assert added_item.value_format == "currency"
 
         # Verify it calculates correctly
-        assert model_with_years["detailed_item", 2023] == 1500
+        assert model_with_years.value("detailed_item", 2023) == 1500
 
 
 class TestSetterDictionary:
@@ -393,8 +393,8 @@ class TestSetterDictionary:
 
         # Verify the line item was added
         assert "revenue" in model_with_years.line_item_names
-        assert model_with_years["revenue", 2023] == 1000
-        assert model_with_years["revenue", 2024] == 1000
+        assert model_with_years.value("revenue", 2023) == 1000
+        assert model_with_years.value("revenue", 2024) == 1000
 
         # Verify the line item properties
         added_item = model_with_years._line_item_definition("revenue")
@@ -414,7 +414,7 @@ class TestSetterDictionary:
         # Verify the line item was added with the key name
         assert "expenses" in model_with_years.line_item_names
         assert "original_name" not in model_with_years.line_item_names
-        assert model_with_years["expenses", 2023] == 500
+        assert model_with_years.value("expenses", 2023) == 500
 
         # Verify the line item has the key name
         added_item = model_with_years._line_item_definition("expenses")
@@ -429,8 +429,8 @@ class TestSetterDictionary:
         }
 
         # Verify the values are set correctly
-        assert model_with_years["margin", 2023] == 0.15
-        assert model_with_years["margin", 2024] == 0.18
+        assert model_with_years.value("margin", 2023) == 0.15
+        assert model_with_years.value("margin", 2024) == 0.18
 
         # Verify properties
         added_item = model_with_years._line_item_definition("margin")
@@ -443,7 +443,7 @@ class TestSetterDictionary:
         # Verify the line item was added with default values
         assert "basic" in model_with_years.line_item_names
         # Should be None since no formula or values provided
-        assert model_with_years["basic", 2023] is None
+        assert model_with_years.value("basic", 2023) is None
 
         # Verify the line item has the key name
         added_item = model_with_years._line_item_definition("basic")
@@ -454,7 +454,7 @@ class TestSetterDictionary:
         # This should work but ignore invalid parameters
         model_with_years["test_item"] = {"formula": "100", "invalid_param": "ignored"}
 
-        assert model_with_years["test_item", 2023] == 100
+        assert model_with_years.value("test_item", 2023) == 100
         added_item = model_with_years._line_item_definition("test_item")
         assert not hasattr(added_item, "invalid_param")
 
@@ -467,13 +467,13 @@ class TestSetterDictionary:
         """Test that setting dict on existing item replaces it."""
         # First add a line item
         model_with_years["existing"] = 1000
-        assert model_with_years["existing", 2023] == 1000
+        assert model_with_years.value("existing", 2023) == 1000
 
         # Set a dict with same key - should replace
         model_with_years["existing"] = {"formula": "3000", "category": "costs"}
 
         # Verify the replacement worked
-        assert model_with_years["existing", 2023] == 3000
+        assert model_with_years.value("existing", 2023) == 3000
         added_item = model_with_years._line_item_definition("existing")
         assert added_item.name == "existing"
         assert added_item.category == "costs"
@@ -507,9 +507,9 @@ class TestSetterStringFormula:
         assert added_item.formula == "1000 * 0.2"
 
         # Verify values are calculated correctly for all years
-        assert model_with_years["profit", 2023] == 200.0
-        assert model_with_years["profit", 2024] == 200.0
-        assert model_with_years["profit", 2025] == 200.0
+        assert model_with_years.value("profit", 2023) == 200.0
+        assert model_with_years.value("profit", 2024) == 200.0
+        assert model_with_years.value("profit", 2025) == 200.0
 
     def test_setter_with_reference_formula_string(self, model_with_base_data):
         """Test setting a line item with a formula referencing other line items."""
@@ -524,9 +524,9 @@ class TestSetterStringFormula:
 
         # Verify values are calculated correctly for all years
         # revenue * (1 - 0.6) = revenue * 0.4
-        assert model_with_base_data["profit", 2023] == 400.0  # 1000 * 0.4
-        assert model_with_base_data["profit", 2024] == 440.0  # 1100 * 0.4
-        assert model_with_base_data["profit", 2025] == 480.0  # 1200 * 0.4
+        assert model_with_base_data.value("profit", 2023) == 400.0  # 1000 * 0.4
+        assert model_with_base_data.value("profit", 2024) == 440.0  # 1100 * 0.4
+        assert model_with_base_data.value("profit", 2025) == 480.0  # 1200 * 0.4
 
     def test_setter_with_complex_formula_string(self, model_with_base_data):
         """Test setting a line item with a complex formula string."""
@@ -544,9 +544,9 @@ class TestSetterStringFormula:
 
         # Verify values are calculated correctly
         # revenue * 0.4 * 0.75 = revenue * 0.3
-        assert model_with_base_data["net_profit", 2023] == 300.0  # 1000 * 0.3
-        assert model_with_base_data["net_profit", 2024] == 330.0  # 1100 * 0.3
-        assert model_with_base_data["net_profit", 2025] == 360.0  # 1200 * 0.3
+        assert model_with_base_data.value("net_profit", 2023) == 300.0  # 1000 * 0.3
+        assert model_with_base_data.value("net_profit", 2024) == 330.0  # 1100 * 0.3
+        assert model_with_base_data.value("net_profit", 2025) == 360.0  # 1200 * 0.3
 
     def test_setter_string_formula_category_default(self, model_with_years):
         """Test that string formula line items get default 'general' category."""
@@ -564,7 +564,7 @@ class TestSetterStringFormula:
 
         # Verify calculation (should be 1000 * 1.05^3 ≈ 1157.625)
         expected = 1000 * (1.05**3)
-        assert abs(model_with_years["compound_growth", 2023] - expected) < 0.01
+        assert abs(model_with_years.value("compound_growth", 2023) - expected) < 0.01
 
     def test_setter_string_formula_overwrite_prevention(self, model_with_base_data):
         """Test that string formulas cannot overwrite existing line items."""
@@ -614,7 +614,7 @@ class TestSetterStringFormula:
         model_with_years["complex_calc"] = "base_value * 1.5 + 200 - 50"
 
         # Verify calculation: 1000 * 1.5 + 200 - 50 = 1650
-        assert model_with_years["complex_calc", 2023] == 1650.0
+        assert model_with_years.value("complex_calc", 2023) == 1650.0
 
         # Verify formula is preserved exactly
         added_item = model_with_years._line_item_definition("complex_calc")
@@ -636,7 +636,7 @@ class TestSetterStringFormula:
         # Test model copy includes the formula item
         copied_model = model_with_base_data.copy()
         assert "margin" in copied_model.line_item_names
-        assert copied_model["margin", 2023] == 100.0  # 1000 * 0.1
+        assert copied_model.value("margin", 2023) == 100.0  # 1000 * 0.1
 
         # Verify formula is preserved in copy
         copied_item = copied_model._line_item_definition("margin")
@@ -648,7 +648,7 @@ class TestSetterStringFormula:
         single_year_model["base"] = 500
         single_year_model["calculated"] = "base * 2"
 
-        assert single_year_model["calculated", 2023] == 1000.0
+        assert single_year_model.value("calculated", 2023) == 1000.0
 
         # Verify formula is set correctly
         added_item = single_year_model._line_item_definition("calculated")
@@ -662,7 +662,7 @@ class TestSetterStringFormula:
         model_with_years["final"] = "step2 + 100"
 
         # Verify the chain calculation: 1000 * 1.1 * 1.2 + 100 = 1420
-        assert model_with_years["final", 2023] == 1420.0
+        assert model_with_years.value("final", 2023) == 1420.0
 
         # Verify all formulas are preserved
         assert model_with_years._line_item_definition("base").formula == "1000"
@@ -679,10 +679,10 @@ class TestSetterStringFormula:
         model_with_years["negative_string"] = "-250"
 
         # Verify calculations
-        assert model_with_years["integer_string", 2023] == 42.0
-        assert abs(model_with_years["float_string", 2023] - 3.14159) < 0.00001
-        assert model_with_years["scientific_notation", 2023] == 1500.0
-        assert model_with_years["negative_string", 2023] == -250.0
+        assert model_with_years.value("integer_string", 2023) == 42.0
+        assert abs(model_with_years.value("float_string", 2023) - 3.14159) < 0.00001
+        assert model_with_years.value("scientific_notation", 2023) == 1500.0
+        assert model_with_years.value("negative_string", 2023) == -250.0
 
         # Verify formulas are preserved exactly as entered
         assert model_with_years._line_item_definition("integer_string").formula == "42"
@@ -711,15 +711,14 @@ class TestSetterStringFormula:
         # But we can test that the formula method works
 
         # Verify the constant values match
-        assert (
-            model_with_years["constant_int", 2023]
-            == model_with_years["constant_formula", 2023]
+        assert model_with_years.value("constant_int", 2023) == model_with_years.value(
+            "constant_formula", 2023
         )
 
         # Verify list values are set correctly
-        assert model_with_years["list_values", 2023] == 10.0
-        assert model_with_years["list_values", 2024] == 20.0
-        assert model_with_years["list_values", 2025] == 30.0
+        assert model_with_years.value("list_values", 2023) == 10.0
+        assert model_with_years.value("list_values", 2024) == 20.0
+        assert model_with_years.value("list_values", 2025) == 30.0
 
 
 class TestPandasSeriesSetter:
@@ -744,9 +743,9 @@ class TestPandasSeriesSetter:
         assert "growth_series" in model_with_years.line_item_names
 
         # Verify values are set correctly
-        assert model_with_years["growth_series", 2023] == 100.0
-        assert model_with_years["growth_series", 2024] == 110.0
-        assert model_with_years["growth_series", 2025] == 121.0
+        assert model_with_years.value("growth_series", 2023) == 100.0
+        assert model_with_years.value("growth_series", 2024) == 110.0
+        assert model_with_years.value("growth_series", 2025) == 121.0
 
         # Verify it can be accessed via line_item method
         line_item_results = model_with_years.line_item("growth_series")
@@ -802,8 +801,8 @@ class TestPandasSeriesSetter:
 
         # Verify they produce identical results
         for year in [2023, 2024, 2025]:
-            dict_value = model_with_years["dict_item", year]
-            series_value = model_with_years["series_item", year]
+            dict_value = model_with_years.value("dict_item", year)
+            series_value = model_with_years.value("series_item", year)
             assert dict_value == series_value
 
 
@@ -850,8 +849,8 @@ class TestEmptyDictSetItem:
         model_with_years["existing_item"] = {2023: 100, 2024: 200}
 
         # Verify it has the expected values
-        assert model_with_years["existing_item", 2023] == 100
-        assert model_with_years["existing_item", 2024] == 200
+        assert model_with_years.value("existing_item", 2023) == 100
+        assert model_with_years.value("existing_item", 2024) == 200
 
         # Setting it to an empty dict should raise an error
         with pytest.raises(

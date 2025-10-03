@@ -185,11 +185,11 @@ class CumulativeChangeRow(BaseRow):
 
         # Get the base year value (first year)
         base_year = model.years[0]
-        base_value = model[self.name, base_year]
+        base_value = model.value(self.name, base_year)
 
         # Add cells for each year with cumulative change calculation
         for year in model.years:
-            current_value = model[self.name, year]
+            current_value = model.value(self.name, year)
 
             # Calculate cumulative change from base year (absolute change)
             if base_value is None or current_value is None:
@@ -234,11 +234,11 @@ class CumulativePercentChangeRow(BaseRow):
 
         # Get the base year value (first year)
         base_year = model.years[0]
-        base_value = model[self.name, base_year]
+        base_value = model.value(self.name, base_year)
 
         # Add cells for each year with cumulative percent change calculation
         for year in model.years:
-            current_value = model[self.name, year]
+            current_value = model.value(self.name, year)
 
             # Calculate cumulative percent change from base year
             if base_value is None or current_value is None or base_value == 0:

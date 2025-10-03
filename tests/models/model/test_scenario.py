@@ -37,10 +37,10 @@ def test_fixture_loads(basic_model: Model):
     """Test that the basic model fixture loads correctly."""
     assert isinstance(basic_model, Model)
     assert len(basic_model._line_item_definitions) == 4
-    assert basic_model["revenue", 2023] == 100
-    assert basic_model["costs", 2023] == 70
-    assert basic_model["profit", 2023] == 30
-    assert basic_model["margin", 2023] == 0.3  # 30/100 = 0.3
+    assert basic_model.value("revenue", 2023) == 100
+    assert basic_model.value("costs", 2023) == 70
+    assert basic_model.value("profit", 2023) == 30
+    assert basic_model.value("margin", 2023) == 0.3  # 30/100 = 0.3
 
 
 def test_scenario_returns_new_model(basic_model):
@@ -58,8 +58,8 @@ def test_scenario_returns_new_model(basic_model):
 def test_scenario_original_model_unchanged(basic_model):
     """Test that the original model is not modified when creating a scenario."""
     # Store original values
-    original_revenue_2023 = basic_model["revenue", 2023]
-    original_profit_2023 = basic_model["profit", 2023]
+    original_revenue_2023 = basic_model.value("revenue", 2023)
+    original_profit_2023 = basic_model.value("profit", 2023)
 
     # Create scenario with changes
     scenario_model = basic_model.scenario(
@@ -70,13 +70,13 @@ def test_scenario_original_model_unchanged(basic_model):
     )
 
     # Original model should be unchanged
-    assert basic_model["revenue", 2023] == original_revenue_2023
-    assert basic_model["profit", 2023] == original_profit_2023
+    assert basic_model.value("revenue", 2023) == original_revenue_2023
+    assert basic_model.value("profit", 2023) == original_profit_2023
 
     # Scenario model should have changes
-    assert scenario_model["revenue", 2023] == 200
-    assert scenario_model["costs", 2023] == 120
-    assert scenario_model["profit", 2023] == 80  # 200 - 120
+    assert scenario_model.value("revenue", 2023) == 200
+    assert scenario_model.value("costs", 2023) == 120
+    assert scenario_model.value("profit", 2023) == 80  # 200 - 120
 
 
 def test_scenario_basic_value_updates(basic_model):
@@ -89,12 +89,12 @@ def test_scenario_basic_value_updates(basic_model):
     )
 
     # Check that values were updated in scenario
-    assert scenario_model["revenue", 2023] == 200
-    assert scenario_model["costs", 2023] == 120
+    assert scenario_model.value("revenue", 2023) == 200
+    assert scenario_model.value("costs", 2023) == 120
 
     # Check that formulas were recalculated in scenario
-    assert scenario_model["profit", 2023] == 80
-    assert scenario_model["margin", 2023] == 0.4  # 80/200 = 0.4
+    assert scenario_model.value("profit", 2023) == 80
+    assert scenario_model.value("margin", 2023) == 0.4  # 80/200 = 0.4
 
 
 def test_scenario_updated_values(basic_model):
@@ -107,14 +107,14 @@ def test_scenario_updated_values(basic_model):
     )
 
     # Check that only specified years were updated
-    assert scenario_model["revenue", 2023] == 250
-    assert scenario_model["revenue", 2024] == 110  # Unchanged
-    assert scenario_model["costs", 2024] == 150
-    assert scenario_model["costs", 2023] == 70  # Unchanged
+    assert scenario_model.value("revenue", 2023) == 250
+    assert scenario_model.value("revenue", 2024) == 110  # Unchanged
+    assert scenario_model.value("costs", 2024) == 150
+    assert scenario_model.value("costs", 2023) == 70  # Unchanged
 
     # Check that formulas were recalculated
-    assert scenario_model["profit", 2023] == 250 - 70  # 180
-    assert scenario_model["margin", 2023] == (250 - 70) / 250  # 0.72
+    assert scenario_model.value("profit", 2023) == 250 - 70  # 180
+    assert scenario_model.value("margin", 2023) == (250 - 70) / 250  # 0.72
 
 
 def test_scenario_empty_list(basic_model):
@@ -123,8 +123,8 @@ def test_scenario_empty_list(basic_model):
 
     # Should be different instances but same values
     assert scenario_model is not basic_model
-    assert scenario_model["revenue", 2023] == basic_model["revenue", 2023]
-    assert scenario_model["profit", 2023] == basic_model["profit", 2023]
+    assert scenario_model.value("revenue", 2023) == basic_model.value("revenue", 2023)
+    assert scenario_model.value("profit", 2023) == basic_model.value("profit", 2023)
 
 
 def test_scenario_formula_updates(basic_model):
@@ -141,13 +141,13 @@ def test_scenario_formula_updates(basic_model):
 
     # Check that formulas were updated and recalculated
     assert scenario_model._line_item_definition("costs").formula == "revenue * 0.6"
-    assert scenario_model["costs", 2023] == 60  # 100 * 0.6 = 60
+    assert scenario_model.value("costs", 2023) == 60  # 100 * 0.6 = 60
 
     assert (
         scenario_model._line_item_definition("margin").formula
         == "profit / revenue * 100"
     )
-    assert scenario_model["margin", 2023] == 40  # (100-60)/100 * 100 = 40
+    assert scenario_model.value("margin", 2023) == 40  # (100-60)/100 * 100 = 40
     assert scenario_model._line_item_definition("margin").value_format == "no_decimals"
 
 
@@ -172,7 +172,7 @@ def test_scenario_rename_items(basic_model):
     assert "costs" not in scenario_model.line_item_names
 
     # Check that formulas still work
-    assert scenario_model["profit", 2023] == 30
+    assert scenario_model.value("profit", 2023) == 30
 
 
 def test_scenario_invalid_name_error(basic_model):
@@ -253,14 +253,14 @@ def test_scenario_mixed_updates(basic_model):
     )
 
     # Check that all updates were applied correctly
-    assert scenario_model["revenue", 2023] == 200
+    assert scenario_model.value("revenue", 2023) == 200
     assert scenario_model._line_item_definition("revenue").label == "Annual Revenue"
 
     assert scenario_model._line_item_definition("costs").formula == "revenue * 0.5"
-    assert scenario_model["costs", 2023] == 100  # 200 * 0.5
+    assert scenario_model.value("costs", 2023) == 100  # 200 * 0.5
 
     assert scenario_model._line_item_definition("profit").value_format == "two_decimals"
-    assert scenario_model["profit", 2023] == 100  # 200 - 100
+    assert scenario_model.value("profit", 2023) == 100  # 200 - 100
 
 
 def test_scenario_preserves_model_structure(basic_model):
@@ -289,12 +289,12 @@ def test_scenario_chaining(basic_model):
     conservative = basic_model.scenario([("costs", {"updated_values": {2023: 90}})])
 
     # Verify each scenario has different values
-    assert optimistic["profit", 2023] == 130  # 200 - 70
-    assert pessimistic["profit", 2023] == 10  # 80 - 70
-    assert conservative["profit", 2023] == 10  # 100 - 90
+    assert optimistic.value("profit", 2023) == 130  # 200 - 70
+    assert pessimistic.value("profit", 2023) == 10  # 80 - 70
+    assert conservative.value("profit", 2023) == 10  # 100 - 90
 
     # Original should be unchanged
-    assert basic_model["profit", 2023] == 30
+    assert basic_model.value("profit", 2023) == 30
 
 
 def test_scenario_documentation_example(basic_model):
@@ -308,8 +308,8 @@ def test_scenario_documentation_example(basic_model):
     )
 
     # Verify the scenario works as documented
-    base_profit = basic_model["profit", 2023]
-    scenario_profit = scenario_model["profit", 2023]
+    base_profit = basic_model.value("profit", 2023)
+    scenario_profit = scenario_model.value("profit", 2023)
 
     assert base_profit == 30
     assert scenario_profit == 60  # 150 - (150 * 0.6) = 150 - 90 = 60
@@ -318,5 +318,5 @@ def test_scenario_documentation_example(basic_model):
     optimistic = basic_model.scenario([("revenue", {"updated_values": {2023: 200}})])
     pessimistic = basic_model.scenario([("revenue", {"updated_values": {2023: 80}})])
 
-    assert optimistic["profit", 2023] == 130  # 200 - 70
-    assert pessimistic["profit", 2023] == 10  # 80 - 70
+    assert optimistic.value("profit", 2023) == 130  # 200 - 70
+    assert pessimistic.value("profit", 2023) == 10  # 80 - 70

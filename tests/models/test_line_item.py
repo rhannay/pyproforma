@@ -235,10 +235,10 @@ class TestLineItemNoneValues:
         )
 
         # This should work fine
-        assert model["calculated", 2020] == 200.0  # 100.0 * 2
+        assert model.value("calculated", 2020) == 200.0  # 100.0 * 2
 
         # This should now work too, treating None as 0
-        assert model["calculated", 2021] == 0.0  # None (treated as 0) * 2 = 0
+        assert model.value("calculated", 2021) == 0.0  # None (treated as 0) * 2 = 0
 
     def test_serialization_preserves_none_values(self):
         """Test that to_dict and from_dict preserve None values correctly."""

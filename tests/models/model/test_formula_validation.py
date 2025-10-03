@@ -15,11 +15,11 @@ def test_simple_model_with_formulas_works():
     model = Model(line_items=[a, b], years=[2023, 2024])
 
     # Test the values are calculated correctly
-    assert model["a", 2023] == 10
-    assert model["a", 2024] == 20
+    assert model.value("a", 2023) == 10
+    assert model.value("a", 2024) == 20
 
-    assert model["b", 2023] == 20  # 10 * 2
-    assert model["b", 2024] == 40  # 20 * 2
+    assert model.value("b", 2023) == 20  # 10 * 2
+    assert model.value("b", 2024) == 40  # 20 * 2
 
 
 def test_formula_error_raises_with_undefined_line_item():

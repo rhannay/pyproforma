@@ -101,20 +101,20 @@ class TestLineItemsWithFormulas:
         )  # Added 'calculated' category
         assert sample_line_item_set_2.years == [2020, 2021, 2022]
 
-        assert sample_line_item_set_2["rev_1", 2020] == 300.0
-        assert sample_line_item_set_2["rev_1", 2021] == 300.0 * 1.05
-        assert sample_line_item_set_2["rev_1", 2022] == 300.0 * 1.05 * 1.05
-        assert sample_line_item_set_2["rev_2", 2020] == 100.0
-        assert sample_line_item_set_2["rev_2", 2021] == 100.0 + 50.0
-        assert sample_line_item_set_2["rev_2", 2022] == 100.0 + 50.0 + 50.0
-        assert sample_line_item_set_2["exp_1", 2020] == 200.0
-        assert sample_line_item_set_2["exp_1", 2021] == 200.0 * 0.95
-        assert sample_line_item_set_2["exp_1", 2022] == 200.0 * 0.95 * 0.95
-        assert sample_line_item_set_2["net_revenue", 2020] == 200.0
-        assert sample_line_item_set_2["net_revenue", 2021] == (
+        assert sample_line_item_set_2["rev_1"].value(2020) == 300.0
+        assert sample_line_item_set_2["rev_1"].value(2021) == 300.0 * 1.05
+        assert sample_line_item_set_2["rev_1"].value(2022) == 300.0 * 1.05 * 1.05
+        assert sample_line_item_set_2["rev_2"].value(2020) == 100.0
+        assert sample_line_item_set_2["rev_2"].value(2021) == 100.0 + 50.0
+        assert sample_line_item_set_2["rev_2"].value(2022) == 100.0 + 50.0 + 50.0
+        assert sample_line_item_set_2["exp_1"].value(2020) == 200.0
+        assert sample_line_item_set_2["exp_1"].value(2021) == 200.0 * 0.95
+        assert sample_line_item_set_2["exp_1"].value(2022) == 200.0 * 0.95 * 0.95
+        assert sample_line_item_set_2["net_revenue"].value(2020) == 200.0
+        assert sample_line_item_set_2["net_revenue"].value(2021) == (
             300.0 * 1.05 + 100.0 + 50.0
         ) - (200.0 * 0.95)
-        assert sample_line_item_set_2["net_revenue", 2022] == (
+        assert sample_line_item_set_2["net_revenue"].value(2022) == (
             300.0 * 1.05 * 1.05 + 100.0 + 50.0 + 50.0
         ) - (200.0 * 0.95 * 0.95)
 
@@ -162,12 +162,12 @@ class TestModelWithBalanceSheetConcept:
         )
 
     def test_line_item_set_init(self, sample_line_item_set: Model):
-        assert sample_line_item_set["rev_1", 2020] == 300.0
+        assert sample_line_item_set.value("rev_1", 2020) == 300.0
         expected_end_cash_2020 = 1000.0 + 300.0 + 100.0 - 200.0
-        assert sample_line_item_set["end_cash", 2020] == expected_end_cash_2020
-        assert sample_line_item_set["begin_cash", 2021] == expected_end_cash_2020
+        assert sample_line_item_set.value("end_cash", 2020) == expected_end_cash_2020
+        assert sample_line_item_set.value("begin_cash", 2021) == expected_end_cash_2020
         expected_end_cash_2021 = expected_end_cash_2020 + 400.0 + 200.0 - 300.0
-        assert sample_line_item_set["end_cash", 2021] == expected_end_cash_2021
+        assert sample_line_item_set.value("end_cash", 2021) == expected_end_cash_2021
 
 
 class TestSetWithAssumptions:
@@ -204,9 +204,9 @@ class TestSetWithAssumptions:
         value_matrix = liset._value_matrix
         assert "rate_increase" in value_matrix[2020]
         assert value_matrix[2020]["rate_increase"] == 0.05
-        assert liset["rate_increase", 2020] == 0.05
-        assert liset["rate_increase", 2021] == 0.07
-        assert liset["rate_increase", 2022] is None
+        assert liset.value("rate_increase", 2020) == 0.05
+        assert liset.value("rate_increase", 2021) == 0.07
+        assert liset.value("rate_increase", 2022) is None
 
     def test_line_item_uses_assumption(self):
         liset = Model(
@@ -259,25 +259,25 @@ class TestModelWithGenerators:
         ds_schedule = Debt.generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
 
         assert isinstance(lis, Model)
-        assert lis["debt_principal", 2020] == 0
-        assert lis["debt_principal", 2021] == ds_schedule[0]["principal"]
-        assert lis["debt_principal", 2022] == ds_schedule[1]["principal"]
-        assert lis["principal", 2020] == 300.0
-        assert lis["principal", 2021] == ds_schedule[0]["principal"]
-        assert lis["principal", 2022] == ds_schedule[1]["principal"]
-        assert lis["debt_interest", 2020] == 0
-        assert lis["debt_interest", 2021] == ds_schedule[0]["interest"]
-        assert lis["debt_interest", 2022] == ds_schedule[1]["interest"]
-        assert lis["interest", 2020] == 100.0
-        assert lis["interest", 2021] == ds_schedule[0]["interest"]
-        assert lis["interest", 2022] == ds_schedule[1]["interest"]
+        assert lis.value("debt_principal", 2020) == 0
+        assert lis.value("debt_principal", 2021) == ds_schedule[0]["principal"]
+        assert lis.value("debt_principal", 2022) == ds_schedule[1]["principal"]
+        assert lis.value("principal", 2020) == 300.0
+        assert lis.value("principal", 2021) == ds_schedule[0]["principal"]
+        assert lis.value("principal", 2022) == ds_schedule[1]["principal"]
+        assert lis.value("debt_interest", 2020) == 0
+        assert lis.value("debt_interest", 2021) == ds_schedule[0]["interest"]
+        assert lis.value("debt_interest", 2022) == ds_schedule[1]["interest"]
+        assert lis.value("interest", 2020) == 100.0
+        assert lis.value("interest", 2021) == ds_schedule[0]["interest"]
+        assert lis.value("interest", 2022) == ds_schedule[1]["interest"]
 
 
 class TestOtherMisc:
     def test_line_item_set_get_item(self, sample_line_item_set: Model):
         # assert item values by year
-        assert sample_line_item_set["item1", 2020] == 100.0
-        assert sample_line_item_set["item2", 2021] == 75.0
+        assert sample_line_item_set["item1"].value(2020) == 100.0
+        assert sample_line_item_set["item2"].value(2021) == 75.0
 
         # check categories
         sorted_1 = sorted(
@@ -287,11 +287,11 @@ class TestOtherMisc:
         assert sorted_1[1].name == "revenue"
 
         with pytest.raises(KeyError) as excinfo:
-            sample_line_item_set["item4", 2020]
+            sample_line_item_set["item4"].value(2020)
         assert "not found" in str(excinfo.value)
 
         with pytest.raises(KeyError) as excinfo:
-            sample_line_item_set["item1", 2022]
+            sample_line_item_set["item1"].value(2022)
         assert "Year 2022 not found" in str(excinfo.value)
 
     def test_getitem_string_returns_line_item_results(
@@ -321,12 +321,10 @@ class TestOtherMisc:
         with pytest.raises(KeyError):
             sample_line_item_set["nonexistent"]
 
-        # Test invalid key type raises KeyError
-        with pytest.raises(KeyError) as excinfo:
+        # Test invalid key type raises TypeError
+        with pytest.raises(TypeError) as excinfo:
             sample_line_item_set[123]
-        assert "Key must be a tuple of (item_name, year) or a string item_name" in str(
-            excinfo.value
-        )
+        assert "Key must be a string item_name" in str(excinfo.value)
 
     def test_is_last_item_in_category(self):
         sample = Model(
