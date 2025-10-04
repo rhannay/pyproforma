@@ -31,8 +31,8 @@ from .validations import (
     validate_categories,
     validate_constraints,
     validate_formulas,
-    validate_line_items,
     validate_generators,
+    validate_line_items,
     validate_years,
 )
 from .value_matrix import generate_value_matrix
