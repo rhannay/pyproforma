@@ -66,18 +66,23 @@ class Tables:
         self,
         line_item_names: Optional[list[str]] = None,
         include_name: bool = False,
+        include_category_labels: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table containing line items without category organization.
+        Generate a table containing line items with optional category organization.
 
         Creates a table that displays line items from the model. If no specific
-        line items are provided, includes all line items from the model.
+        line items are provided, includes all line items from the model. When
+        include_category_labels is True, groups items by category with category
+        headers.
 
         Args:
             line_item_names (Optional[list[str]]): List of line item names to include.
                                                   If None, includes all line items. Defaults to None.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
+            include_category_labels (bool, optional): Whether to group line items by category
+                                                     and include category header rows. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -89,20 +94,46 @@ class Tables:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
             >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
+            >>> table = model.tables.line_items(include_category_labels=True)
         """  # noqa: E501
         # Get line items to include
         if line_item_names is None:
-            # Get all line items in their existing order
-            items_to_include = self._model.line_item_names
+            # Get all line items in their existing order using metadata
+            items_metadata = self._model.line_item_metadata.copy()
         else:
-            items_to_include = line_item_names
+            # Filter metadata to only include specified items
+            items_metadata = [
+                item
+                for item in self._model.line_item_metadata
+                if item["name"] in line_item_names
+            ]
 
-        # Create ItemRow configurations for each line item
+        # Sort by category if we need category labels
+        if include_category_labels:
+            items_metadata = sorted(items_metadata, key=lambda x: x["category"])
+
+        # Create template
         template = []
-        for item_name in items_to_include:
+        current_category = None
+
+        for item in items_metadata:
+            # Add category label if needed and this is a new category
+            if include_category_labels:
+                item_category = item["category"]
+                if item_category != current_category:
+                    # Get category label from model
+                    category_metadata = self._model._get_category_metadata(
+                        item_category
+                    )
+                    category_label = category_metadata["label"]
+
+                    template.append(rt.LabelRow(label=category_label, bold=True))
+                    current_category = item_category
+
+            # Add the item row
             template.append(
                 rt.ItemRow(
-                    name=item_name,
+                    name=item["name"],
                     hardcoded_color=hardcoded_color,
                 )
             )
