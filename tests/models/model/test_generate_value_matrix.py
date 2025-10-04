@@ -9,7 +9,7 @@ from pyproforma.models.model.value_matrix import (
     _calculate_category_total,
     generate_value_matrix,
 )
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestGenerateValueMatrix:
@@ -59,19 +59,19 @@ class TestGenerateValueMatrix:
         # All models should produce the same value matrix
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.multi_line_items,
+            model1._line_item_definitions + model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.multi_line_items,
+            model2._line_item_definitions + model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
         matrix3 = generate_value_matrix(
             model3.years,
-            model3._line_item_definitions + model3.multi_line_items,
+            model3._line_item_definitions + model3.generators,
             model3.category_metadata,
             model3.line_item_metadata,
         )
@@ -113,13 +113,13 @@ class TestGenerateValueMatrix:
 
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.multi_line_items,
+            model1._line_item_definitions + model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.multi_line_items,
+            model2._line_item_definitions + model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
@@ -354,25 +354,25 @@ class TestGenerateValueMatrix:
             line_items=[revenue, net_income],
             years=[2023],
             categories=basic_categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         model2 = Model(
             line_items=[net_income, revenue],  # Different order
             years=[2023],
             categories=basic_categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.multi_line_items,
+            model1._line_item_definitions + model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.multi_line_items,
+            model2._line_item_definitions + model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
@@ -418,7 +418,7 @@ class TestGenerateValueMatrix:
 
         matrix = generate_value_matrix(
             model.years,
-            model._line_item_definitions + model.multi_line_items,
+            model._line_item_definitions + model.generators,
             model.category_metadata,
             model.line_item_metadata,
         )
@@ -534,7 +534,7 @@ class TestGenerateValueMatrix:
 
         matrix = generate_value_matrix(
             model.years,
-            model._line_item_definitions + model.multi_line_items,
+            model._line_item_definitions + model.generators,
             model.category_metadata,
             model.line_item_metadata,
         )

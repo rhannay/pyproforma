@@ -1,6 +1,6 @@
 import pytest
 
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestCalculateDebtOutstandingForIssue:

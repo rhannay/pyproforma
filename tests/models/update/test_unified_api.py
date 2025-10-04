@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestUnifiedAddFunctionality:
@@ -244,7 +244,7 @@ class TestUnifiedDeleteFunctionality:
             line_items=[revenue],
             years=[2023, 2024, 2025],
             categories=categories,
-            multi_line_items=[debt1],
+            generators=[debt1],
         )
 
     def test_delete_line_item_basic(self, sample_model_with_generators: Model):

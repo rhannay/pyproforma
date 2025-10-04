@@ -278,7 +278,7 @@ def test_scenario_preserves_model_structure(basic_model):
     )
     assert scenario_model.years == basic_model.years
     assert len(scenario_model.constraints) == len(basic_model.constraints)
-    assert len(scenario_model.multi_line_items) == len(basic_model.multi_line_items)
+    assert len(scenario_model.generators) == len(basic_model.generators)
 
 
 def test_scenario_chaining(basic_model):

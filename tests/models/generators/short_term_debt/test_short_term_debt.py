@@ -1,6 +1,6 @@
 import pytest
 
-from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
+from pyproforma.models.generator.short_term_debt import ShortTermDebt
 
 from .utils import _is_close
 
