@@ -69,11 +69,10 @@ class Tables:
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table containing all line items organized by category.
+        Generate a table containing line items without category organization.
 
-        Creates a table that displays all line items from the model, organized
-        by their respective categories. Each category is shown with a bold header
-        followed by its line items, and includes category totals if configured.
+        Creates a table that displays line items from the model. If no specific
+        line items are provided, includes all line items from the model.
 
         Args:
             line_item_names (Optional[list[str]]): List of line item names to include.
@@ -84,17 +83,31 @@ class Tables:
                                            displayed in this color. Defaults to None.
 
         Returns:
-            Table: A Table object containing all line items grouped by category.
+            Table: A Table object containing the specified line items.
 
         Examples:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
             >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
         """  # noqa: E501
-        rows = self._line_item_rows(
-            line_item_names=line_item_names, hardcoded_color=hardcoded_color
-        )
-        return self.from_template(rows, include_name=include_name)
+        # Get line items to include
+        if line_item_names is None:
+            # Get all line items in their existing order
+            items_to_include = self._model.line_item_names
+        else:
+            items_to_include = line_item_names
+
+        # Create ItemRow configurations for each line item
+        template = []
+        for item_name in items_to_include:
+            template.append(
+                rt.ItemRow(
+                    name=item_name,
+                    hardcoded_color=hardcoded_color,
+                )
+            )
+
+        return self.from_template(template, include_name=include_name)
 
     def _line_item_rows(
         self,
@@ -163,9 +176,7 @@ class Tables:
         Returns:
             Table: A Table object containing the category items.
         """  # noqa: E501
-        rows = self._category_rows(
-            category_name, hardcoded_color=hardcoded_color
-        )
+        rows = self._category_rows(category_name, hardcoded_color=hardcoded_color)
         return self.from_template(rows, include_name=include_name)
 
     def line_item(
