@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 from pyproforma.models._utils import validate_name
-from pyproforma.models.model.value_matrix import validate_value_matrix
 from pyproforma.models.generator.abc_class import Generator
+from pyproforma.models.model.value_matrix import validate_value_matrix
 
 
 @Generator.register("debt")
