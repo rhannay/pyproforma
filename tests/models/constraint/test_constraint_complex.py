@@ -1,6 +1,6 @@
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestConstraintsWithComplexModels:
@@ -47,13 +47,13 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            multi_line_items=line_item_generators,
+            generators=line_item_generators,
             constraints=constraints,
         )
 
         # Test that model functions correctly
         assert len(model.constraints) == 2
-        assert len(model.multi_line_items) == 1
+        assert len(model.generators) == 1
         assert len(model._line_item_definitions) == 2
 
         # Test that values can be accessed
@@ -165,7 +165,7 @@ class TestConstraintsWithComplexModels:
             line_items=line_items,
             years=[2023, 2024],
             categories=categories,
-            multi_line_items=line_item_generators,
+            generators=line_item_generators,
             constraints=constraints,
         )
 
@@ -175,7 +175,7 @@ class TestConstraintsWithComplexModels:
 
         # Verify all components are preserved
         assert len(reconstructed_model.constraints) == 2
-        assert len(reconstructed_model.multi_line_items) == 1
+        assert len(reconstructed_model.generators) == 1
         assert len(reconstructed_model._line_item_definitions) == 2
         assert (
             len(reconstructed_model._category_definitions) == 2

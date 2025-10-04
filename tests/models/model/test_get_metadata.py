@@ -2,7 +2,7 @@ import pytest
 
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.constraint import Constraint
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestGetItemMetadata:
@@ -53,7 +53,7 @@ class TestGetItemMetadata:
         ]
         return Model(
             line_items=line_items,
-            multi_line_items=multi_line_items,
+            generators=multi_line_items,
             years=[2023, 2024, 2025],
         )
 
@@ -77,15 +77,15 @@ class TestGetItemMetadata:
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "expenses"
 
-    def test_get_item_metadata_multi_line_item_output(
+    def test_get_item_metadata_generator_output(
         self, model_with_multi_line_items
     ):
-        """Test getting metadata for multi line item generated items."""
-        # Multi line items generate multiple items in the metadata
+        """Test getting metadata for generator generated items."""
+        # Generators generate multiple items in the metadata
         debt_items = [
             item
             for item in model_with_multi_line_items.line_item_metadata
-            if item["source_type"] == "multi_line_item"
+            if item["source_type"] == "generator"
         ]
 
         assert len(debt_items) > 0
@@ -94,7 +94,7 @@ class TestGetItemMetadata:
         debt_item = debt_items[0]
         metadata = model_with_multi_line_items._get_item_metadata(debt_item["name"])
 
-        assert metadata["source_type"] == "multi_line_item"
+        assert metadata["source_type"] == "generator"
         assert metadata["source_name"] == "debt_schedule"
 
     def test_get_item_metadata_invalid_name_raises_error(self, basic_model):
@@ -178,7 +178,7 @@ class TestGetCategoryMetadata:
         ]
         return Model(
             line_items=line_items,
-            multi_line_items=multi_line_items,
+            generators=multi_line_items,
             years=[2023, 2024, 2025],
         )
 

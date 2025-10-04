@@ -5,7 +5,7 @@ import pandas as pd
 
 from pyproforma.charts import Charts
 from pyproforma.constants import ValueFormat
-from pyproforma.models.multi_line_item import MultiLineItem
+from pyproforma.models.generator import Generator
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -32,7 +32,7 @@ from .validations import (
     validate_constraints,
     validate_formulas,
     validate_line_items,
-    validate_multi_line_items,
+    validate_generators,
     validate_years,
 )
 from .value_matrix import generate_value_matrix
@@ -42,7 +42,7 @@ class Model(SerializationMixin):
     """
     Core financial modeling framework for building pro forma financial statements.
 
-    Creates structured financial models with line items, categories, multi line items,
+    Creates structured financial models with line items, categories, generators,
     and constraints. Supports multi-year modeling, automatic dependency resolution,
     and rich output formatting.
 
@@ -58,7 +58,7 @@ class Model(SerializationMixin):
         categories (list[Category], optional): Category definitions
             (auto-inferred if None)
         constraints (list[Constraint], optional): Validation constraints
-        multi_line_items (list[MultiLineItem], optional): Components that generate
+        generators (list[Generator], optional): Components that generate
             multiple line items
 
     Examples:
@@ -122,14 +122,14 @@ class Model(SerializationMixin):
         years: list[int] = None,
         categories: Union[list[Category], list[str]] = None,
         constraints: list[Constraint] = None,
-        multi_line_items: list[MultiLineItem] = None,
+        generators: list[Generator] = None,
     ):
         self._years = years if years is not None else []
         self._line_item_definitions = self._collect_line_item_definitions(line_items)
         self._category_definitions = self._collect_category_definitions(
             self._line_item_definitions, categories
         )
-        self.multi_line_items = multi_line_items if multi_line_items is not None else []
+        self.generators = generators if generators is not None else []
         self.constraints = constraints if constraints is not None else []
 
         self._build_and_calculate()
@@ -265,21 +265,21 @@ class Model(SerializationMixin):
         self._add_missing_categories()
         validate_categories(self._category_definitions)
         validate_line_items(self._line_item_definitions, self._category_definitions)
-        validate_multi_line_items(self.multi_line_items, self._category_definitions)
+        validate_generators(self.generators, self._category_definitions)
         validate_constraints(self.constraints, self._line_item_definitions)
 
         self.category_metadata = generate_category_metadata(
-            self._category_definitions, self.multi_line_items
+            self._category_definitions, self.generators
         )
         self.line_item_metadata = generate_line_item_metadata(
-            self._line_item_definitions, self.category_metadata, self.multi_line_items
+            self._line_item_definitions, self.category_metadata, self.generators
         )
         self.constraint_metadata = generate_constraint_metadata(self.constraints)
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
 
         self._value_matrix = generate_value_matrix(
             self._years,
-            self._line_item_definitions + self.multi_line_items,
+            self._line_item_definitions + self.generators,
             self.category_metadata,
             self.line_item_metadata,
         )
@@ -790,7 +790,7 @@ class Model(SerializationMixin):
         # Create deep copies of all mutable objects
         copied_line_items = copy.deepcopy(self._line_item_definitions)
         copied_categories = copy.deepcopy(self._category_definitions)
-        copied_multi_line_items = copy.deepcopy(self.multi_line_items)
+        copied_generators = copy.deepcopy(self.generators)
         copied_constraints = copy.deepcopy(self.constraints)
         copied_years = copy.deepcopy(self._years)
 
@@ -799,7 +799,7 @@ class Model(SerializationMixin):
             line_items=copied_line_items,
             years=copied_years,
             categories=copied_categories,
-            multi_line_items=copied_multi_line_items,
+            generators=copied_generators,
             constraints=copied_constraints,
         )
 
@@ -1147,10 +1147,10 @@ class Model(SerializationMixin):
                 - years: List of years in the model
                 - line_items_count: Number of line items
                 - categories_count: Number of categories
-                - multi_line_items_count: Number of multi line items
+                - generators_count: Number of generators
                 - constraints_count: Number of constraints
                 - line_items_by_category: Dictionary mapping category names to lists of line item names
-                - multi_line_item_names: List of multi line item names
+                - generator_names: List of generator names
                 - constraint_names: List of constraint names
                 - defined_names_count: Total number of defined names (items that can be referenced)
         """  # noqa: E501
@@ -1173,10 +1173,10 @@ class Model(SerializationMixin):
             ),
             "line_items_count": len(self._line_item_definitions),
             "categories_count": len(self.category_metadata),
-            "multi_line_items_count": len(self.multi_line_items),
+            "generators_count": len(self.generators),
             "constraints_count": len(self.constraints),
             "line_items_by_category": line_items_by_category,
-            "multi_line_item_names": [gen.name for gen in self.multi_line_items],
+            "generator_names": [gen.name for gen in self.generators],
             "constraint_names": [const.name for const in self.constraints],
             "defined_names_count": len(self.line_item_metadata),
             "category_totals": [
@@ -1202,7 +1202,7 @@ class Model(SerializationMixin):
         )
         lines.append(f"Line Items: {summary['line_items_count']}<br>")
         lines.append(f"Categories: {summary['categories_count']}<br>")
-        lines.append(f"Multi Line Items: {summary['multi_line_items_count']}<br>")
+        lines.append(f"Generators: {summary['generators_count']}<br>")
         lines.append(f"Constraints: {summary['constraints_count']}<br>")
 
         return "".join(lines)

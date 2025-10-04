@@ -1,6 +1,6 @@
 from pyproforma.models.line_item import LineItem
 from pyproforma.models.model.model import Model
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 from .utils import _get_p_i, _is_close
 
@@ -47,7 +47,7 @@ class TestDebtParamsFromValueMatrix:
                 )
             ],
             years=years,
-            multi_line_items=[debt],  # Add the debt generator directly to the model
+            generators=[debt],  # Add the debt generator directly to the model
         )
 
         # Test first year (2020)
@@ -131,7 +131,7 @@ class TestDebtParamsFromValueMatrix:
                 ),
             ],
             years=years,
-            multi_line_items=[debt],  # Add the debt generator directly to the model
+            generators=[debt],  # Add the debt generator directly to the model
         )
 
         # Test first year (2020) - only first issuance exists
@@ -216,7 +216,7 @@ class TestDebtParamsFromValueMatrix:
                 ),
             ],
             years=years,
-            multi_line_items=[debt],  # Add the debt generator directly to the model
+            generators=[debt],  # Add the debt generator directly to the model
         )
 
         # Verify the chain of reference values are calculated correctly

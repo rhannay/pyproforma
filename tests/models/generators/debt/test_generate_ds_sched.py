@@ -1,6 +1,6 @@
 import math
 
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 def test_generate_debt_service_schedule_basic():

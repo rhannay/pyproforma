@@ -9,11 +9,11 @@ from pyproforma.models.model.validations import (
     validate_categories,
     validate_constraints,
     validate_formulas,
+    validate_generators,
     validate_line_items,
-    validate_multi_line_items,
     validate_years,
 )
-from pyproforma.models.multi_line_item import Debt, ShortTermDebt
+from pyproforma.models.generator import Debt, ShortTermDebt
 
 
 class TestValidateCategories:
@@ -385,24 +385,24 @@ class TestValidateConstraints:
         assert "Constraint 'check' references unknown line item 'revenue'" in error_msg
 
 
-class TestValidateMultiLineItems:
-    """Test the validate_multi_line_items function."""
+class TestValidateGenerators:
+    """Test the validate_generators function."""
 
-    def test_empty_multi_line_items_pass_validation(self):
-        """Test that empty multi line items list passes validation."""
+    def test_empty_generators_pass_validation(self):
+        """Test that empty generators list passes validation."""
         categories = [Category("income"), Category("expense")]
-        validate_multi_line_items([], categories)
+        validate_generators([], categories)
 
-    def test_none_multi_line_items_pass_validation(self):
-        """Test that None multi line items passes validation."""
+    def test_none_generators_pass_validation(self):
+        """Test that None generators passes validation."""
         # Test with None converted to empty list - the function expects a list
         categories = [Category("income"), Category("expense")]
-        validate_multi_line_items([], categories)
+        validate_generators([], categories)
 
-    def test_valid_multi_line_items_pass_validation(self):
-        """Test that valid multi line items pass validation."""
+    def test_valid_generators_pass_validation(self):
+        """Test that valid generators pass validation."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(name="debt1", par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(
                 name="short_debt",
@@ -414,26 +414,26 @@ class TestValidateMultiLineItems:
         ]
 
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items, categories)
+        validate_generators(generators, categories)
 
-    def test_duplicate_multi_line_item_names_raise_error(self):
-        """Test that duplicate multi line item names raise ValueError."""
+    def test_duplicate_generator_names_raise_error(self):
+        """Test that duplicate generator names raise ValueError."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(name="debt1", par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name="debt1", par_amount={2023: 2000}, interest_rate=0.04, term=3),
         ]
 
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items, categories)
+            validate_generators(generators, categories)
 
         error_msg = str(exc_info.value)
-        assert "Duplicate multi line item names not allowed: debt1" in error_msg
+        assert "Duplicate generator names not allowed: debt1" in error_msg
 
-    def test_multiple_duplicate_multi_line_item_names(self):
-        """Test error message when multiple multi line item names are duplicated."""
+    def test_multiple_duplicate_generator_names(self):
+        """Test error message when multiple generator names are duplicated."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(name="debt1", par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name="debt1", par_amount={2023: 1500}, interest_rate=0.04, term=3),
             ShortTermDebt(
@@ -445,17 +445,17 @@ class TestValidateMultiLineItems:
         ]
 
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items, categories)
+            validate_generators(generators, categories)
 
         error_msg = str(exc_info.value)
-        assert "Duplicate multi line item names not allowed:" in error_msg
+        assert "Duplicate generator names not allowed:" in error_msg
         assert "debt1" in error_msg
         assert "short1" in error_msg
 
     def test_mixed_types_with_same_names_raise_error(self):
-        """Test that different multi line item types with same names raise ValueError."""  # noqa: E501
+        """Test that different generator types with same names raise ValueError."""  # noqa: E501
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(name="debt_item", par_amount={2023: 1000}, interest_rate=0.05, term=5),
             ShortTermDebt(
                 name="debt_item",
@@ -467,38 +467,38 @@ class TestValidateMultiLineItems:
         ]
 
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items, categories)
+            validate_generators(generators, categories)
 
         error_msg = str(exc_info.value)
-        assert "Duplicate multi line item names not allowed: debt_item" in error_msg
+        assert "Duplicate generator names not allowed: debt_item" in error_msg
 
-    def test_multi_line_item_names_case_sensitive(self):
-        """Test that multi line item names are case sensitive."""
+    def test_generator_names_case_sensitive(self):
+        """Test that generator names are case sensitive."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(name="Debt1", par_amount={2023: 1000}, interest_rate=0.05, term=5),
             Debt(name="debt1", par_amount={2023: 2000}, interest_rate=0.04, term=3),
         ]
 
         # Should not raise any exception (different case = different names)
-        validate_multi_line_items(multi_line_items, categories)
+        validate_generators(generators, categories)
 
-    def test_single_multi_line_item(self):
-        """Test basic case with one multi line item."""
+    def test_single_generator(self):
+        """Test basic case with one generator."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(
                 name="single_debt", par_amount={2023: 1000}, interest_rate=0.05, term=5
             )
         ]
 
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items, categories)
+        validate_generators(generators, categories)
 
-    def test_multiple_different_multi_line_items(self):
-        """Test multiple different multi line items with unique names."""
+    def test_multiple_different_generators(self):
+        """Test multiple different generators with unique names."""
         categories = [Category("income"), Category("expense")]
-        multi_line_items = [
+        generators = [
             Debt(
                 name="long_term_debt",
                 par_amount={2023: 1000},
@@ -528,12 +528,12 @@ class TestValidateMultiLineItems:
         ]
 
         # Should not raise any exception
-        validate_multi_line_items(multi_line_items, categories)
+        validate_generators(generators, categories)
 
-    def test_multi_line_item_name_conflicts_with_category(self):
-        """Test that multi line item names that conflict with category names raise ValueError."""  # noqa: E501
+    def test_generator_name_conflicts_with_category(self):
+        """Test that generator names that conflict with category names raise ValueError."""  # noqa: E501
         categories = [Category("income"), Category("debt_service")]
-        multi_line_items = [
+        generators = [
             Debt(
                 name="debt_service", par_amount={2023: 1000}, interest_rate=0.05, term=5
             )  # conflicts with category
@@ -541,18 +541,18 @@ class TestValidateMultiLineItems:
 
         with pytest.raises(
             ValueError,
-            match="Multi line item names cannot match category names: debt_service",
+            match="Generator names cannot match category names: debt_service",
         ):
-            validate_multi_line_items(multi_line_items, categories)
+            validate_generators(generators, categories)
 
-    def test_multiple_multi_line_item_category_conflicts(self):
-        """Test that multiple multi line item names conflicting with categories are reported."""  # noqa: E501
+    def test_multiple_generator_category_conflicts(self):
+        """Test that multiple generator names conflicting with categories are reported."""  # noqa: E501
         categories = [
             Category("income"),
             Category("debt_service"),
             Category("expenses"),
         ]
-        multi_line_items = [
+        generators = [
             Debt(
                 name="debt_service", par_amount={2023: 1000}, interest_rate=0.05, term=5
             ),  # conflicts
@@ -565,10 +565,10 @@ class TestValidateMultiLineItems:
         ]
 
         with pytest.raises(ValueError) as exc_info:
-            validate_multi_line_items(multi_line_items, categories)
+            validate_generators(generators, categories)
 
         error_msg = str(exc_info.value)
-        assert "Multi line item names cannot match category names:" in error_msg
+        assert "Generator names cannot match category names:" in error_msg
         assert "debt_service" in error_msg
         assert "income" in error_msg
 
@@ -821,8 +821,8 @@ class TestValidateFormulas:
         # Should not raise any exception
         validate_formulas(line_items, metadata)
 
-    def test_formula_with_multi_line_item_references(self):
-        """Test that formulas can reference multi line item outputs from metadata."""
+    def test_formula_with_generator_references(self):
+        """Test that formulas can reference generator outputs from metadata."""
         line_items = [
             LineItem(name="revenue", category="income", values={2023: 1000}),
             LineItem(
@@ -844,7 +844,7 @@ class TestValidateFormulas:
                 "name": "debt_interest_expense",
                 "label": "Debt Interest Expense",
                 "value_format": "no_decimals",
-                "source_type": "multi_line_item",
+                "source_type": "generator",
                 "source_name": "debt1",
                 "category": None,
             },

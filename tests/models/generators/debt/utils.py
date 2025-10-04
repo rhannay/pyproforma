@@ -1,6 +1,6 @@
 import math
 
-from pyproforma.models.multi_line_item import Debt
+from pyproforma.models.generator import Debt
 
 
 def _get_p_i(i, p, t, sy, y):
