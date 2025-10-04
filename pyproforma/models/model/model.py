@@ -19,15 +19,20 @@ from ..metadata import (
     generate_constraint_metadata,
     generate_line_item_metadata,
 )
-from ..results import CategoryResults, ConstraintResults, LineItemResults
+from ..results import (
+    CategoryResults,
+    ConstraintResults,
+    LineItemResults,
+    LineItemsResults,
+)
 from .model_update import UpdateNamespace
 from .serialization import SerializationMixin
 from .validations import (
     validate_categories,
     validate_constraints,
     validate_formulas,
-    validate_line_items,
     validate_generators,
+    validate_line_items,
     validate_years,
 )
 from .value_matrix import generate_value_matrix
@@ -629,6 +634,32 @@ class Model(SerializationMixin):
                 )
 
         return LineItemResults(self, item_name)
+
+    def line_items(self, line_item_names: list[str]) -> LineItemsResults:
+        """
+        Get a LineItemsResults object for exploring and managing multiple line items.
+
+        This method returns a LineItemsResults instance that provides convenient methods
+        for batch operations on multiple line items, such as setting categories for all
+        items at once.
+
+        Args:
+            line_item_names (list[str]): List of line item names to include
+
+        Returns:
+            LineItemsResults: An object with methods for managing multiple line items
+
+        Raises:
+            ValueError: If line_item_names is None or empty
+            KeyError: If any line item name is not found in the model
+
+        Examples:
+            >>> items = model.line_items(['revenue', 'costs', 'profit'])
+            >>> print(items.names)  # Shows list of line item names
+            >>> items.set_category('financials')  # Sets category for all items
+            >>> revenue = items.line_item('revenue')  # Get specific item
+        """
+        return LineItemsResults(self, line_item_names)
 
     def category(self, category_name: str = None) -> CategoryResults:
         """
