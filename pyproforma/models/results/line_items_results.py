@@ -34,9 +34,12 @@ class LineItemsResults:
             line_item_names: List of line item names to include
 
         Raises:
-            ValueError: If line_item_names is None or empty
+            ValueError: If line_item_names is None, empty, or not a list
             KeyError: If any line item name is not found in the model
         """
+        if not isinstance(line_item_names, list):
+            raise ValueError("line_item_names must be a list")
+
         if line_item_names is None or len(line_item_names) == 0:
             raise ValueError("line_item_names must be a non-empty list")
 
@@ -168,9 +171,7 @@ class LineItemsResults:
         items_list = ", ".join(self._line_item_names)
 
         summary_text = (
-            f"LineItemsResults\n"
-            f"Number of Items: {num_items}\n"
-            f"Items: {items_list}"
+            f"LineItemsResults\nNumber of Items: {num_items}\nItems: {items_list}"
         )
 
         if html:

@@ -101,7 +101,43 @@ class TestLineItemsResultsInitialization:
         """Test that None raises ValueError."""
         with pytest.raises(ValueError) as exc_info:
             LineItemsResults(model_with_line_items, None)
-        assert "non-empty list" in str(exc_info.value)
+        assert "must be a list" in str(exc_info.value)
+
+    def test_init_string_raises_error(self, model_with_line_items):
+        """Test that passing a string instead of list raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            LineItemsResults(model_with_line_items, "product_sales")
+        assert "must be a list" in str(exc_info.value)
+
+    def test_init_tuple_raises_error(self, model_with_line_items):
+        """Test that passing a tuple instead of list raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            LineItemsResults(
+                model_with_line_items, ("product_sales", "service_revenue")
+            )
+        assert "must be a list" in str(exc_info.value)
+
+    def test_init_set_raises_error(self, model_with_line_items):
+        """Test that passing a set instead of list raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            LineItemsResults(
+                model_with_line_items, {"product_sales", "service_revenue"}
+            )
+        assert "must be a list" in str(exc_info.value)
+
+    def test_init_integer_raises_error(self, model_with_line_items):
+        """Test that passing an integer instead of list raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            LineItemsResults(model_with_line_items, 123)
+        assert "must be a list" in str(exc_info.value)
+
+    def test_init_dict_raises_error(self, model_with_line_items):
+        """Test that passing a dict instead of list raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            LineItemsResults(
+                model_with_line_items, {"product_sales": 1, "service_revenue": 2}
+            )
+        assert "must be a list" in str(exc_info.value)
 
     def test_init_invalid_line_item_name_raises_error(self, model_with_line_items):
         """Test that invalid line item name raises KeyError."""
