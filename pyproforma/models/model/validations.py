@@ -2,12 +2,12 @@
 Validation functions for model components.
 
 This module contains validation logic for model components including
-categories, constraints, multi line items, and formulas.
+categories, constraints, generators, and formulas.
 """
 
 from typing import List
 
-from pyproforma.models.multi_line_item import MultiLineItem
+from pyproforma.models.generator import Generator
 
 from ..category import Category
 from ..constraint import Constraint
@@ -105,40 +105,40 @@ def validate_constraints(constraints: List[Constraint], line_items: List[LineIte
             )
 
 
-def validate_multi_line_items(
-    multi_line_items: List[MultiLineItem], categories: List[Category]
+def validate_generators(
+    generators: List[Generator], categories: List[Category]
 ):
     """
-    Validates that all multi line items have unique names and don't conflict with category names.  # noqa: E501
+    Validates that all generators have unique names and don't conflict with category names.  # noqa: E501
 
     Args:
-        multi_line_items (List[MultiLineItem]): List of multi line items to validate
+        generators (List[Generator]): List of generators to validate
         categories (List[Category]): List of categories to check for name conflicts
 
     Raises:
-        ValueError: If two or more multi line items have the same name, or if a multi
-                   line item name conflicts with a category name.
+        ValueError: If two or more generators have the same name, or if a generator
+                   name conflicts with a category name.
     """  # noqa: E501
-    if not multi_line_items:
+    if not generators:
         return
 
-    generator_names = [generator.name for generator in multi_line_items]
+    generator_names = [generator.name for generator in generators]
     duplicates = set(
         [name for name in generator_names if generator_names.count(name) > 1]
     )
 
     if duplicates:
         raise ValueError(
-            f"Duplicate multi line item names not allowed: {', '.join(sorted(duplicates))}"  # noqa: E501
+            f"Duplicate generator names not allowed: {', '.join(sorted(duplicates))}"  # noqa: E501
         )
 
-    # Validate that multi line item names don't conflict with category names
+    # Validate that generator names don't conflict with category names
     category_names = [category.name for category in categories]
     conflicts = [name for name in generator_names if name in category_names]
 
     if conflicts:
         raise ValueError(
-            f"Multi line item names cannot match category names: {', '.join(sorted(conflicts))}"  # noqa: E501
+            f"Generator names cannot match category names: {', '.join(sorted(conflicts))}"  # noqa: E501
         )
 
 

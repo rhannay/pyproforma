@@ -1,7 +1,7 @@
 import pytest
 
 from pyproforma import Category, Constraint, LineItem, Model
-from pyproforma.models.multi_line_item.debt import Debt
+from pyproforma.models.generator.debt import Debt
 
 
 class TestModelInitWithDuplicateGenerators:
@@ -55,13 +55,13 @@ class TestModelInitWithDuplicateGenerators:
         # This SHOULD raise a ValueError for duplicate generator names
         # but currently it will raise a ValueError for duplicate defined_names instead
         with pytest.raises(
-            ValueError, match="Duplicate multi line item names not allowed"
+            ValueError, match="Duplicate generator names not allowed"
         ):
             Model(
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=basic_categories,
-                multi_line_items=generators,
+                generators=generators,
             )
 
     def test_generator_name_same_as_line_item_is_allowed(
@@ -82,13 +82,13 @@ class TestModelInitWithDuplicateGenerators:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=basic_categories,
-            multi_line_items=[debt_generator],
+            generators=[debt_generator],
         )
 
         # Verify both the line item and generator are present
         assert len(model._line_item_definitions) == 2
-        assert len(model.multi_line_items) == 1
-        assert model.multi_line_items[0].name == "revenue"
+        assert len(model.generators) == 1
+        assert model.generators[0].name == "revenue"
 
         # Verify defined names include both line item and generator variables
         defined_names = [item["name"] for item in model.line_item_metadata]
@@ -117,13 +117,13 @@ class TestModelInitWithDuplicateGenerators:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=basic_categories,
-            multi_line_items=generators,
+            generators=generators,
         )
 
         # Verify both generators are present
-        assert len(model.multi_line_items) == 2
-        assert model.multi_line_items[0].name == "company_debt"
-        assert model.multi_line_items[1].name == "equipment_debt"
+        assert len(model.generators) == 2
+        assert model.generators[0].name == "company_debt"
+        assert model.generators[1].name == "equipment_debt"
 
         # Verify defined names include both generators' variables
         defined_names = [item["name"] for item in model.line_item_metadata]
@@ -142,7 +142,7 @@ class TestModelInitWithDuplicateGenerators:
 
         Currently this test WILL FAIL because the code doesn't validate generator names directly.  # noqa: E501
         """  # noqa: E501
-        from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
+        from pyproforma.models.generator.short_term_debt import ShortTermDebt
 
         # Create a debt generator
         debt_generator = Debt(
@@ -163,13 +163,13 @@ class TestModelInitWithDuplicateGenerators:
         # This SHOULD raise a ValueError for duplicate generator names
         # but currently it may pass or raise for different reasons
         with pytest.raises(
-            ValueError, match="Duplicate multi line item names not allowed"
+            ValueError, match="Duplicate generator names not allowed"
         ):
             Model(
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=basic_categories,
-                multi_line_items=generators,
+                generators=generators,
             )
 
 
@@ -211,7 +211,7 @@ class TestModelInitWithDuplicateCategories:
                 line_items=basic_line_items,
                 years=[2023, 2024],
                 categories=duplicate_categories,
-                multi_line_items=[],
+                generators=[],
             )
 
     def test_different_category_names_work_correctly(self, basic_line_items):
@@ -228,7 +228,7 @@ class TestModelInitWithDuplicateCategories:
             line_items=basic_line_items,
             years=[2023, 2024],
             categories=unique_categories,
-            multi_line_items=[],
+            generators=[],
         )
 
         # Verify all categories are present

@@ -1,6 +1,6 @@
 from pyproforma.models.line_item import LineItem
 from pyproforma.models.model.model import Model
-from pyproforma.models.multi_line_item.short_term_debt import ShortTermDebt
+from pyproforma.models.generator.short_term_debt import ShortTermDebt
 
 from .utils import _is_close
 
@@ -37,7 +37,7 @@ class TestShortTermDebtInModel:
         model = Model(
             line_items=[],  # No additional line items needed for fixed parameters
             years=years,
-            multi_line_items=[std],
+            generators=[std],
         )
 
         # Test year 2020 values (draw only)
@@ -101,7 +101,7 @@ class TestShortTermDebtInModel:
                 )
             ],
             years=years,
-            multi_line_items=[std],
+            generators=[std],
         )
 
         # Test debt outstanding remains constant (no draws/paydowns)
@@ -180,7 +180,7 @@ class TestShortTermDebtInModel:
                 ),
             ],
             years=years,
-            multi_line_items=[std],
+            generators=[std],
         )
 
         # Test debt outstanding calculations
@@ -229,7 +229,7 @@ class TestShortTermDebtInModel:
         )
 
         # Create a model with the generator
-        model = Model(line_items=[], years=[2020, 2021], multi_line_items=[std])
+        model = Model(line_items=[], years=[2020, 2021], generators=[std])
 
         # Test that all defined names are in the model and accessible
         expected_names = [

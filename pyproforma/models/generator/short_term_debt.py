@@ -2,14 +2,14 @@ from typing import Any, Dict, List, Optional
 
 from pyproforma.models._utils import validate_name
 from pyproforma.models.model.value_matrix import validate_value_matrix
-from pyproforma.models.multi_line_item.abc_class import MultiLineItem
+from pyproforma.models.generator.abc_class import Generator
 
 
-@MultiLineItem.register("short_term_debt")
-class ShortTermDebt(MultiLineItem):
+@Generator.register("short_term_debt")
+class ShortTermDebt(Generator):
     """
     ShortTermDebt class for modeling short-term debt line items.
-    Inherits from MultiLineItem ABC.
+    Inherits from Generator ABC.
 
     A generator for modeling short-term debt instruments such as credit lines, revolving credit,  # noqa: E501
     or other variable debt facilities.
@@ -149,7 +149,7 @@ class ShortTermDebt(MultiLineItem):
         }
 
     # ----------------------------------
-    # MAIN PUBLIC API METHODS (MultiLineItem ABC)
+    # MAIN PUBLIC API METHODS (Generator ABC)
     # ----------------------------------
 
     @property
