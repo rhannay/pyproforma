@@ -63,7 +63,10 @@ class Tables:
         return table
 
     def line_items(
-        self, include_name: bool = False, hardcoded_color: Optional[str] = None
+        self,
+        line_item_names: Optional[list[str]] = None,
+        include_name: bool = False,
+        hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
         Generate a table containing all line items organized by category.
@@ -73,6 +76,8 @@ class Tables:
         followed by its line items, and includes category totals if configured.
 
         Args:
+            line_item_names (Optional[list[str]]): List of line item names to include.
+                                                  If None, includes all line items. Defaults to None.
             include_name (bool, optional): Whether to include the name column. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
@@ -83,17 +88,26 @@ class Tables:
 
         Examples:
             >>> table = model.tables.line_items()
+            >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
             >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
         """  # noqa: E501
-        rows = self._line_item_rows(hardcoded_color=hardcoded_color)
+        rows = self._line_item_rows(
+            line_item_names=line_item_names, hardcoded_color=hardcoded_color
+        )
         return self.from_template(rows, include_name=include_name)
 
-    def _line_item_rows(self, hardcoded_color: Optional[str] = None):
+    def _line_item_rows(
+        self,
+        line_item_names: Optional[list[str]] = None,
+        hardcoded_color: Optional[str] = None,
+    ):
         rows = []
         for category_name in self._model.category_names:
             rows.extend(
                 self._category_rows(
-                    category_name, hardcoded_color=hardcoded_color
+                    category_name,
+                    line_item_names=line_item_names,
+                    hardcoded_color=hardcoded_color,
                 )
             )
         return rows
@@ -101,22 +115,32 @@ class Tables:
     def _category_rows(
         self,
         category_name: str,
+        line_item_names: Optional[list[str]] = None,
         hardcoded_color: Optional[str] = None,
     ):
         rows = []
         category = self._model.category(category_name)
-        rows.append(rt.LabelRow(label=category.label, bold=True))
 
         # Get line item names for this category using metadata
-        line_item_names = self._model.line_item_names_by_category(category_name)
+        category_line_items = self._model.line_item_names_by_category(category_name)
 
-        for item_name in line_item_names:
-            rows.append(
-                rt.ItemRow(
-                    name=item_name,
-                    hardcoded_color=hardcoded_color,
+        # Filter by line_item_names if provided
+        if line_item_names is not None:
+            category_line_items = [
+                name for name in category_line_items if name in line_item_names
+            ]
+
+        # Only add category label if there are items to show
+        if category_line_items:
+            rows.append(rt.LabelRow(label=category.label, bold=True))
+
+            for item_name in category_line_items:
+                rows.append(
+                    rt.ItemRow(
+                        name=item_name,
+                        hardcoded_color=hardcoded_color,
+                    )
                 )
-            )
 
         return rows
 
