@@ -13,7 +13,17 @@ def test_dataclass_row_config_creation():
     assert item_config.name == "revenue"
     assert item_config.bold is True
     assert item_config.value_format == "currency"
-    assert item_config.include_name is False  # default value
+    assert item_config.included_cols == ["label"]  # default value
+
+    # Test creating an ItemRow with custom included_cols
+    item_config_with_cols = ItemRow(
+        name="revenue",
+        included_cols=["name", "label", "category"],
+        bold=True,
+        value_format="currency",
+    )
+
+    assert item_config_with_cols.included_cols == ["name", "label", "category"]
 
     # Test creating a LabelRow
     label_config = LabelRow(label="Income Statement", bold=True)
@@ -30,6 +40,7 @@ def test_dict_to_row_config():
         "name": "revenue",
         "bold": True,
         "value_format": "currency",
+        "included_cols": ["name", "label"],
     }
 
     item_config = dict_to_row_config(item_dict)
@@ -37,6 +48,7 @@ def test_dict_to_row_config():
     assert item_config.name == "revenue"
     assert item_config.bold is True
     assert item_config.value_format == "currency"
+    assert item_config.included_cols == ["name", "label"]
 
     # Test label row config
     label_dict = {"type": "label", "label": "Income Statement", "bold": True}
@@ -50,7 +62,12 @@ def test_dict_to_row_config():
 def test_dataclass_serialization():
     """Test that dataclasses can be serialized to/from dict."""
     # Create a row config
-    item_config = ItemRow(name="revenue", bold=True, value_format="currency")
+    item_config = ItemRow(
+        name="revenue",
+        included_cols=["name", "label"],
+        bold=True,
+        value_format="currency",
+    )
 
     # Convert to dict
     config_dict = item_config.to_dict()
@@ -58,7 +75,7 @@ def test_dataclass_serialization():
     assert config_dict["name"] == "revenue"
     assert config_dict["bold"] is True
     assert config_dict["value_format"] == "currency"
-    assert config_dict["include_name"] is False
+    assert config_dict["included_cols"] == ["name", "label"]
 
     # Convert back from dict
     new_config = ItemRow.from_dict(config_dict)
@@ -66,7 +83,7 @@ def test_dataclass_serialization():
     assert new_config.name == "revenue"
     assert new_config.bold is True
     assert new_config.value_format == "currency"
-    assert new_config.include_name is False
+    assert new_config.included_cols == ["name", "label"]
 
 
 def test_mixed_template_types(sample_line_item_set: Model):
@@ -76,7 +93,12 @@ def test_mixed_template_types(sample_line_item_set: Model):
         {"type": "label", "label": "Income Statement", "bold": True},  # dict
         ItemRow(name="item1", bold=False),  # dataclass
         BlankRow(),  # dataclass
-        {"type": "item", "name": "item2", "bold": False},  # dict
+        {
+            "type": "item",
+            "name": "item2",
+            "bold": False,
+            "included_cols": ["label"],
+        },  # dict
     ]
 
     table = generate_table_from_template(sample_line_item_set, template)
@@ -90,3 +112,28 @@ def test_mixed_template_types(sample_line_item_set: Model):
 
     # Check that the third row is blank
     assert table.rows[2].cells[0].value == ""
+
+
+def test_itemrow_included_cols_validation():
+    """Test that ItemRow validates included_cols properly."""
+    import pytest
+
+    # Valid single column
+    item = ItemRow(name="revenue", included_cols="label")
+    assert item.included_cols == "label"
+
+    # Valid multiple columns
+    item = ItemRow(name="revenue", included_cols=["name", "label", "category"])
+    assert item.included_cols == ["name", "label", "category"]
+
+    # Invalid column should raise ValueError
+    with pytest.raises(ValueError, match="Invalid column 'invalid'"):
+        ItemRow(name="revenue", included_cols=["label", "invalid"])
+
+    # Empty list should raise ValueError
+    with pytest.raises(ValueError, match="included_cols cannot be an empty list"):
+        ItemRow(name="revenue", included_cols=[])
+
+    # Invalid single column should raise ValueError
+    with pytest.raises(ValueError, match="Invalid column 'bad'"):
+        ItemRow(name="revenue", included_cols="bad")
