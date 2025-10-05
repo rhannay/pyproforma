@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from . import row_types as rt
 from .table_class import Table
@@ -35,7 +35,9 @@ class Tables:
         """Initialize the main tables namespace with a Model."""
         self._model = model
 
-    def from_template(self, template: list[dict], include_name: bool = False) -> Table:
+    def from_template(
+        self, template: list[dict], col_labels: Union[str, list[str]] = "Years"
+    ) -> Table:
         """
         Generate a table from a template of row configurations.
 
@@ -43,8 +45,7 @@ class Tables:
             template (list[dict]): A list of row configuration dictionaries that define
                 the structure and content of the table. Each dictionary should specify
                 the row type and its parameters (e.g., ItemRow, LabelRow, etc.).
-            include_name (bool, optional): Whether to include a name column in the
-                generated table. Defaults to False.
+            col_labels: String or list of strings for label columns. Defaults to "Years".
 
         Returns:
             Table: A Table object containing the rows and data as specified by the template.
@@ -55,19 +56,20 @@ class Tables:
             ...     rt.ItemRow(name='sales_revenue'),
             ...     rt.ItemRow(name='other_revenue')
             ... ]
-            >>> table = tables.from_template(template, include_name=True)
+            >>> table = tables.from_template(template, col_labels="Years")
         """  # noqa: E501
         table = generate_table_from_template(
-            self._model, template, include_name=include_name
+            self._model, template, col_labels=col_labels
         )
         return table
 
     def line_items(
         self,
         line_item_names: Optional[list[str]] = None,
-        include_name: bool = False,
+        included_cols: Union[str, list[str]] = ["label"],
         include_category_labels: bool = False,
         hardcoded_color: Optional[str] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
     ) -> Table:
         """
         Generate a table containing line items with optional category organization.
@@ -80,12 +82,15 @@ class Tables:
         Args:
             line_item_names (Optional[list[str]]): List of line item names to include.
                                                   If None, includes all line items. Defaults to None.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
+            included_cols (Union[str, list[str]]): Columns to include. Can be 'label', 'name',
+                                                  or 'category'. Defaults to ["label"].
             include_category_labels (bool, optional): Whether to group line items by category
                                                      and include category header rows. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
 
         Returns:
             Table: A Table object containing the specified line items.
@@ -93,9 +98,26 @@ class Tables:
         Examples:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
+            >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
             >>> table = model.tables.line_items(include_category_labels=True)
         """  # noqa: E501
+        # Validate included_cols
+        valid_cols = {"label", "name", "category"}
+        if isinstance(included_cols, str):
+            included_cols_list = [included_cols]
+        else:
+            included_cols_list = included_cols
+
+        for col in included_cols_list:
+            if col not in valid_cols:
+                raise ValueError(
+                    f"Invalid column '{col}'. Must be one of: {valid_cols}"
+                )
+
+        # Set default col_labels if not provided
+        if col_labels is None:
+            col_labels = included_cols
+
         # Get line items to include
         if line_item_names is None:
             # Get all line items in their existing order using metadata
@@ -134,11 +156,12 @@ class Tables:
             template.append(
                 rt.ItemRow(
                     name=item["name"],
+                    included_cols=included_cols_list,
                     hardcoded_color=hardcoded_color,
                 )
             )
 
-        return self.from_template(template, include_name=include_name)
+        return self.from_template(template, col_labels=col_labels)
 
     def _line_item_rows(
         self,

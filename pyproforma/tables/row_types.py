@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
@@ -13,7 +13,9 @@ class BaseRow(ABC):
     """Base configuration for all row types."""
 
     @abstractmethod
-    def generate_row(self, model: "Model") -> Union[Row, list[Row]]:
+    def generate_row(
+        self, model: "Model", label_col_count: int = 1
+    ) -> Union[Row, list[Row]]:
         """Generate row(s) for this configuration."""
         pass
 
@@ -32,15 +34,33 @@ class ItemRow(BaseRow):
     """Configuration for item row generation."""
 
     name: str
+    included_cols: Union[str, list[str]] = field(default_factory=lambda: ["label"])
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
     hardcoded_color: Optional[str] = None
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "Model") -> Row:
+    def __post_init__(self):
+        """Validate included_cols after initialization."""
+        # Validate included_cols
+        valid_cols = {"name", "label", "category"}
+        if isinstance(self.included_cols, str):
+            included_cols_list = [self.included_cols]
+        else:
+            included_cols_list = self.included_cols
+            # Check for empty list
+            if not included_cols_list:
+                raise ValueError("included_cols cannot be an empty list")
+
+        for col in included_cols_list:
+            if col not in valid_cols:
+                raise ValueError(
+                    f"Invalid column '{col}'. Must be one of: {valid_cols}"
+                )
+
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row for a line item with its label and values across all years."""
         # Get line_item
         li = model.line_item(self.name)
@@ -49,27 +69,47 @@ class ItemRow(BaseRow):
         label = self.label if self.label is not None else li.label
         value_format = self.value_format or li.value_format
 
-        # Create cells for this row
+        # Create cells for this row based on included_cols
         cells = []
-        if self.include_name:
-            cells.append(
-                Cell(
-                    value=self.name,
-                    bold=self.bold,
-                    align="left",
-                    bottom_border=self.bottom_border,
-                    top_border=self.top_border,
+
+        # Convert included_cols to list if it's a string
+        if isinstance(self.included_cols, str):
+            cols_list = [self.included_cols]
+        else:
+            cols_list = self.included_cols
+
+        # Add cells based on included_cols
+        for col in cols_list:
+            if col == "name":
+                cells.append(
+                    Cell(
+                        value=self.name,
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
                 )
-            )
-        cells.append(
-            Cell(
-                value=label,
-                bold=self.bold,
-                align="left",
-                bottom_border=self.bottom_border,
-                top_border=self.top_border,
-            )
-        )
+            elif col == "label":
+                cells.append(
+                    Cell(
+                        value=label,
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
+                )
+            elif col == "category":
+                cells.append(
+                    Cell(
+                        value=li.category,
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
+                )
 
         # Add a cell for each year with the item's value for that year
         for year in model.years:
@@ -102,7 +142,7 @@ class ItemsByCategoryRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> list[Row]:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Row]:
         """Create rows for all line items in a specific category."""
         rows = []
         # Get all line items in the specified category
@@ -113,7 +153,7 @@ class ItemsByCategoryRow(BaseRow):
                 bold=self.bold,
                 value_format=self.value_format,
             )
-            rows.append(item_config.generate_row(model))
+            rows.append(item_config.generate_row(model, label_col_count))
         return rows
 
 
@@ -127,7 +167,7 @@ class PercentChangeRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing percent change of a line item from year to year."""
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -165,7 +205,7 @@ class CumulativeChangeRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing cumulative change of a line item from the base year."""
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -214,7 +254,7 @@ class CumulativePercentChangeRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing cumulative percent change of a line item from the base year."""  # noqa: E501
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -269,7 +309,7 @@ class ConstraintPassRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing constraint evaluation results across all years."""
         # Get the constraint results object
         constraint_results = model.constraint(self.constraint_name)
@@ -321,7 +361,7 @@ class ConstraintVarianceRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing constraint variance (actual - target) across all years."""  # noqa: E501
         # Get the constraint object
         constraint_results = model.constraint(self.constraint_name)
@@ -367,7 +407,7 @@ class ConstraintTargetRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row showing constraint target values across all years."""
 
         constraint_results = model.constraint(self.constraint_name)
@@ -378,9 +418,7 @@ class ConstraintTargetRow(BaseRow):
         # Default to same format as the constraint's target line item if not specified
         value_format = (
             self.value_format
-            or model.line_item(
-                constraint_results.line_item_name
-            ).value_format
+            or model.line_item(constraint_results.line_item_name).value_format
         )
 
         # Create cells for this row
@@ -410,14 +448,15 @@ class LabelRow(BaseRow):
     """Configuration for label row generation."""
 
     label: str
-    include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row with just a label in the leftmost column and empty cells for all years."""  # noqa: E501
         # Create cells for this row
         cells = [Cell(value=self.label, bold=self.bold, align="left")]
-        if self.include_name:
+
+        # Add blank cells for each additional label column (if label_col_count > 1)
+        for _ in range(label_col_count - 1):
             cells.append(Cell(value=""))
 
         # Add empty cells for each year
@@ -434,7 +473,7 @@ class BlankRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a blank row with empty cells for each column."""
         # Create empty cells - one for the label column and one for each year
         cells = [Cell(value="")]  # First cell is empty
@@ -458,7 +497,7 @@ class CustomRow(BaseRow):
     include_name: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model") -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row with custom label and values for specified years."""
         # Create cells for this row
         cells = []
