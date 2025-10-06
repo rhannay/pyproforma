@@ -152,17 +152,20 @@ class TestTableCreation:
 
         # Count the actual item rows (excluding label rows)
         item_row_count = sum(
-            1 for row in table.rows if hasattr(row, "cells") and len(row.cells) > 0
+            1
+            for row in table.rows
+            if hasattr(row, "cells")
+            and len(row.cells) > 0
             and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
         )
-        assert item_row_count == 2, (
-            f"Should have 2 item rows, got {item_row_count}"
-        )
+        assert item_row_count == 2, f"Should have 2 item rows, got {item_row_count}"
 
         # Verify the right items are in the table
         labels_in_table = [
-            row.cells[0].value for row in table.rows
-            if hasattr(row, "cells") and len(row.cells) > 0
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells")
+            and len(row.cells) > 0
             and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
         ]
         assert "Sales Revenue" in labels_in_table
@@ -179,8 +182,10 @@ class TestTableCreation:
         # Should have Revenue category label + 2 items
         # Count category labels
         category_labels = [
-            row.cells[0].value for row in table.rows
-            if hasattr(row, "cells") and len(row.cells) > 0
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells")
+            and len(row.cells) > 0
             and row.cells[0].value == "Revenue"
         ]
         assert len(category_labels) == 1, (
@@ -211,9 +216,7 @@ class TestTableCreation:
             line_item_names=["nonexistent_item_1", "nonexistent_item_2"]
         )
         assert table is not None
-        assert len(table.rows) == 0, (
-            "Non-existent items should result in empty table"
-        )
+        assert len(table.rows) == 0, "Non-existent items should result in empty table"
 
     def test_line_items_filter_preserves_category_order(self, sample_model: Model):
         """Test that filtered items maintain category order."""
@@ -239,4 +242,63 @@ class TestTableCreation:
         assert category_labels == actual_order, (
             f"Categories should maintain model order. "
             f"Expected {actual_order}, got {category_labels}"
+        )
+
+    def test_line_items_with_percent_change(self, sample_model: Model):
+        """Test that line_items() includes percent change rows when requested."""
+        # Test with include_percent_change=True
+        table = sample_model.tables.line_items(
+            include_percent_change=True,
+            line_item_names=["revenue_sales", "cost_of_goods"],
+        )
+        assert table is not None, "Line items table with percent change creation failed"
+
+        # Should have 4 rows total: 2 items + 2 percent change rows
+        assert len(table.rows) == 4, (
+            f"Should have 4 rows (2 items + 2 percent change), got {len(table.rows)}"
+        )
+
+        # Check that we have the correct pattern: Item -> PercentChange -> Item
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should have alternating pattern of item labels and percent change labels
+        expected_pattern = [
+            "Sales Revenue",
+            "Sales Revenue % Change",
+            "Cost of Goods Sold",
+            "Cost of Goods Sold % Change",
+        ]
+        assert row_labels == expected_pattern, (
+            f"Row labels should follow item/percent change pattern. "
+            f"Expected {expected_pattern}, got {row_labels}"
+        )
+
+    def test_line_items_without_percent_change(self, sample_model: Model):
+        """Test that line_items() does not include percent change rows by default."""
+        # Test with include_percent_change=False (default)
+        table = sample_model.tables.line_items(
+            line_item_names=["revenue_sales", "cost_of_goods"]
+        )
+        assert table is not None, "Line items table creation failed"
+
+        # Should have only 2 rows: 2 items
+        assert len(table.rows) == 2, (
+            f"Should have 2 rows (items only), got {len(table.rows)}"
+        )
+
+        # Check that we only have item labels
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        expected_labels = ["Sales Revenue", "Cost of Goods Sold"]
+        assert row_labels == expected_labels, (
+            f"Row labels should only be item labels. "
+            f"Expected {expected_labels}, got {row_labels}"
         )

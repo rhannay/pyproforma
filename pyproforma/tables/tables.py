@@ -68,6 +68,7 @@ class Tables:
         line_item_names: Optional[list[str]] = None,
         included_cols: Union[str, list[str]] = ["label"],
         include_category_labels: bool = False,
+        include_percent_change: bool = False,
         hardcoded_color: Optional[str] = None,
         col_labels: Optional[Union[str, list[str]]] = None,
     ) -> Table:
@@ -86,6 +87,8 @@ class Tables:
                                                   or 'category'. Defaults to ["label"].
             include_category_labels (bool, optional): Whether to group line items by category
                                                      and include category header rows. Defaults to False.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -100,6 +103,7 @@ class Tables:
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
             >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
             >>> table = model.tables.line_items(include_category_labels=True)
+            >>> table = model.tables.line_items(include_percent_change=True)
         """  # noqa: E501
         # Validate included_cols
         valid_cols = {"label", "name", "category"}
@@ -160,6 +164,10 @@ class Tables:
                     hardcoded_color=hardcoded_color,
                 )
             )
+
+            # Add percent change row if requested
+            if include_percent_change:
+                template.append(rt.PercentChangeRow(name=item["name"]))
 
         return self.from_template(template, col_labels=col_labels)
 

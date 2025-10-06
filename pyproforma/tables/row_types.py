@@ -164,7 +164,6 @@ class PercentChangeRow(BaseRow):
     name: str
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -181,9 +180,13 @@ class PercentChangeRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
-            cells.append(Cell(value=self.name, bold=self.bold, align="left"))
+
+        # Add label cell
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for additional label columns (if label_col_count > 1)
+        for _ in range(label_col_count - 1):
+            cells.append(Cell(value=""))
 
         # Add cells for each year with percent change calculation
         for year in model.years:
