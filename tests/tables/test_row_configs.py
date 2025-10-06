@@ -118,9 +118,9 @@ def test_itemrow_included_cols_validation():
     """Test that ItemRow validates included_cols properly."""
     import pytest
 
-    # Valid single column
-    item = ItemRow(name="revenue", included_cols="label")
-    assert item.included_cols == "label"
+    # Valid single column (must be in a list now)
+    item = ItemRow(name="revenue", included_cols=["label"])
+    assert item.included_cols == ["label"]
 
     # Valid multiple columns
     item = ItemRow(name="revenue", included_cols=["name", "label", "category"])
@@ -136,4 +136,4 @@ def test_itemrow_included_cols_validation():
 
     # Invalid single column should raise ValueError
     with pytest.raises(ValueError, match="Invalid column 'bad'"):
-        ItemRow(name="revenue", included_cols="bad")
+        ItemRow(name="revenue", included_cols=["bad"])

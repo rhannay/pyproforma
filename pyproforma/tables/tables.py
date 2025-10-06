@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Union
 
-from .. import row_types as rt
 from ..constants import VALID_COLS, ColumnType
+from . import row_types as rt
 from .table_class import Table
 from .table_generator import generate_table_from_template
 

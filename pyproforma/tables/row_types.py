@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from pyproforma import Model
 
-from ..constants import ValueFormat
+from ..constants import VALID_COLS, ColumnType, ValueFormat
 from .table_class import Cell, Row
 
 
@@ -34,7 +34,7 @@ class ItemRow(BaseRow):
     """Configuration for item row generation."""
 
     name: str
-    included_cols: Union[str, list[str]] = field(default_factory=lambda: ["label"])
+    included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
     bold: bool = False
@@ -45,19 +45,13 @@ class ItemRow(BaseRow):
     def __post_init__(self):
         """Validate included_cols after initialization."""
         # Validate included_cols
-        valid_cols = {"name", "label", "category"}
-        if isinstance(self.included_cols, str):
-            included_cols_list = [self.included_cols]
-        else:
-            included_cols_list = self.included_cols
-            # Check for empty list
-            if not included_cols_list:
-                raise ValueError("included_cols cannot be an empty list")
+        if not self.included_cols:
+            raise ValueError("included_cols cannot be an empty list")
 
-        for col in included_cols_list:
-            if col not in valid_cols:
+        for col in self.included_cols:
+            if col not in VALID_COLS:
                 raise ValueError(
-                    f"Invalid column '{col}'. Must be one of: {valid_cols}"
+                    f"Invalid column '{col}'. Must be one of: {VALID_COLS}"
                 )
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -72,14 +66,8 @@ class ItemRow(BaseRow):
         # Create cells for this row based on included_cols
         cells = []
 
-        # Convert included_cols to list if it's a string
-        if isinstance(self.included_cols, str):
-            cols_list = [self.included_cols]
-        else:
-            cols_list = self.included_cols
-
         # Add cells based on included_cols
-        for col in cols_list:
+        for col in self.included_cols:
             if col == "name":
                 cells.append(
                     Cell(
