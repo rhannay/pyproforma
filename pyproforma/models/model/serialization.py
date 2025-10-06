@@ -176,7 +176,12 @@ class SerializationMixin:
 
     @classmethod
     def from_dataframe(
-        cls, df: pd.DataFrame, fill_in_periods: bool = False
+        cls,
+        df: pd.DataFrame,
+        fill_in_periods: bool = False,
+        name_col: str = None,
+        label_col: str = None,
+        category_col: str = None,
     ) -> "Model":
         """
         Create Model from a pandas DataFrame.
@@ -191,13 +196,22 @@ class SerializationMixin:
                 numeric values for each year.
             fill_in_periods (bool, optional): If True, fills in missing years
                 between the minimum and maximum year. Default is False.
+            name_col (str, optional): Column name containing line item names.
+                If not provided, assumes the first column before period columns
+                contains names. Default is None.
+            label_col (str, optional): Column name containing line item labels.
+                If provided but name_col is not, derives names using convert_to_name().
+                Default is None.
+            category_col (str, optional): Column name containing line item categories.
+                Cannot be provided without name_col or label_col. Default is None.
 
         Returns:
             Model: New Model instance created from the DataFrame
 
         Raises:
             ValueError: If DataFrame is empty, has fewer than 2 columns, or
-                contains invalid year columns or duplicate years.
+                contains invalid year columns or duplicate years. Also raises
+                if category_col is provided without name_col or label_col.
             TypeError: If df is not a pandas DataFrame.
 
         Examples:
@@ -223,6 +237,25 @@ class SerializationMixin:
             >>> model = Model.from_dataframe(df, fill_in_periods=True)
             >>> model.years
             [2023, 2024, 2025]
+
+            >>> # With name and label columns
+            >>> df = pd.DataFrame({
+            ...     'item_name': ['revenue', 'expenses'],
+            ...     'display_label': ['Total Revenue', 'Total Expenses'],
+            ...     2023: [1000, 600],
+            ...     2024: [1200, 700]
+            ... })
+            >>> model = Model.from_dataframe(
+            ...     df, name_col='item_name', label_col='display_label'
+            ... )
+
+            >>> # With label column only (names derived from labels)
+            >>> df = pd.DataFrame({
+            ...     'display_label': ['Total Revenue', 'Total Expenses'],
+            ...     2023: [1000, 600],
+            ...     2024: [1200, 700]
+            ... })
+            >>> model = Model.from_dataframe(df, label_col='display_label')
         """
         # Validate input
         if not isinstance(df, pd.DataFrame):
@@ -239,11 +272,46 @@ class SerializationMixin:
                 "one for names and at least one for years"
             )
 
-        # Get the first column name (should be line item names)
-        name_column = df.columns[0]
+        # Validate parameter combinations
+        if category_col is not None and name_col is None and label_col is None:
+            raise ValueError(
+                "category_col cannot be provided without name_col or label_col. "
+                "LineItems require names."
+            )
 
-        # Get the year columns (all columns except the first)
-        year_columns = df.columns[1:]
+        # Determine which columns contain metadata (name, label, category)
+        metadata_columns = []
+        name_column = None
+        label_column = None
+        category_column = None
+
+        if name_col is not None:
+            if name_col not in df.columns:
+                raise ValueError(f"name_col '{name_col}' not found in DataFrame")
+            name_column = name_col
+            metadata_columns.append(name_col)
+
+        if label_col is not None:
+            if label_col not in df.columns:
+                raise ValueError(f"label_col '{label_col}' not found in DataFrame")
+            label_column = label_col
+            metadata_columns.append(label_col)
+
+        if category_col is not None:
+            if category_col not in df.columns:
+                raise ValueError(
+                    f"category_col '{category_col}' not found in DataFrame"
+                )
+            category_column = category_col
+            metadata_columns.append(category_col)
+
+        # If no metadata columns specified, use the first column as name
+        if not metadata_columns:
+            name_column = df.columns[0]
+            metadata_columns.append(name_column)
+
+        # Get the year columns (all columns except metadata columns)
+        year_columns = [col for col in df.columns if col not in metadata_columns]
 
         # Validate and normalize the periods (year columns)
         periods = validate_periods(
@@ -253,10 +321,22 @@ class SerializationMixin:
         # Create LineItem objects from the DataFrame
         line_items = []
         for _, row in df.iterrows():
-            name = row[name_column]
+            # Extract name, label, and category from the row
+            name = None
+            label = None
+            category = None
+
+            # Get name - either from name_column or derived from label
+            if name_column is not None:
+                name = row[name_column]
+            elif label_column is not None:
+                # Derive name from label using convert_to_name
+                label_value = row[label_column]
+                if not pd.isna(label_value):
+                    name = convert_to_name(str(label_value))
 
             # Skip rows with missing names
-            if pd.isna(name):
+            if name is None or (name_column is not None and pd.isna(name)):
                 continue
 
             # Convert name to string if it isn't already
@@ -264,6 +344,18 @@ class SerializationMixin:
 
             # Sanitize the name to ensure it meets validation requirements
             name = convert_to_name(name)
+
+            # Get label if label_column is specified
+            if label_column is not None:
+                label_value = row[label_column]
+                if not pd.isna(label_value):
+                    label = str(label_value)
+
+            # Get category if category_column is specified
+            if category_column is not None:
+                category_value = row[category_column]
+                if not pd.isna(category_value):
+                    category = str(category_value)
 
             # Build values dictionary for this line item
             values = {}
@@ -275,8 +367,10 @@ class SerializationMixin:
                 if not pd.isna(value):
                     values[year] = value
 
-            # Create LineItem with the name and values
-            line_item = LineItem(name=name, values=values)
+            # Create LineItem with the name, label, category, and values
+            line_item = LineItem(
+                name=name, label=label, category=category, values=values
+            )
             line_items.append(line_item)
 
         # Create and return the Model with validated years
