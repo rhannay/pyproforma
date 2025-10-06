@@ -67,7 +67,7 @@ class Tables:
         self,
         line_item_names: Optional[list[str]] = None,
         included_cols: Union[str, list[str]] = ["label"],
-        include_category_labels: bool = False,
+        group_by_category: bool = False,
         include_percent_change: bool = False,
         hardcoded_color: Optional[str] = None,
         col_labels: Optional[Union[str, list[str]]] = None,
@@ -77,7 +77,7 @@ class Tables:
 
         Creates a table that displays line items from the model. If no specific
         line items are provided, includes all line items from the model. When
-        include_category_labels is True, groups items by category with category
+        group_by_category is True, groups items by category with category
         headers.
 
         Args:
@@ -85,7 +85,7 @@ class Tables:
                                                   If None, includes all line items. Defaults to None.
             included_cols (Union[str, list[str]]): Columns to include. Can be 'label', 'name',
                                                   or 'category'. Defaults to ["label"].
-            include_category_labels (bool, optional): Whether to group line items by category
+            group_by_category (bool, optional): Whether to group line items by category
                                                      and include category header rows. Defaults to False.
             include_percent_change (bool, optional): Whether to include a percent change row
                                                     after each item row. Defaults to False.
@@ -102,7 +102,7 @@ class Tables:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
             >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
-            >>> table = model.tables.line_items(include_category_labels=True)
+            >>> table = model.tables.line_items(group_by_category=True)
             >>> table = model.tables.line_items(include_percent_change=True)
         """  # noqa: E501
         # Validate included_cols
@@ -135,7 +135,7 @@ class Tables:
             ]
 
         # Sort by category if we need category labels
-        if include_category_labels:
+        if group_by_category:
             items_metadata = sorted(items_metadata, key=lambda x: x["category"])
 
         # Create template
@@ -144,7 +144,7 @@ class Tables:
 
         for item in items_metadata:
             # Add category label if needed and this is a new category
-            if include_category_labels:
+            if group_by_category:
                 item_category = item["category"]
                 if item_category != current_category:
                     # Get category label from model
