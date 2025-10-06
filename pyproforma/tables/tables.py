@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Union
 
-from . import row_types as rt
+from .. import row_types as rt
+from ..constants import VALID_COLS, ColumnType
 from .table_class import Table
 from .table_generator import generate_table_from_template
 
@@ -66,11 +67,11 @@ class Tables:
     def line_items(
         self,
         line_item_names: Optional[list[str]] = None,
-        included_cols: Union[str, list[str]] = ["label"],
+        included_cols: list[ColumnType] = ["label"],
+        col_labels: Optional[Union[str, list[str]]] = None,
         group_by_category: bool = False,
         include_percent_change: bool = False,
         hardcoded_color: Optional[str] = None,
-        col_labels: Optional[Union[str, list[str]]] = None,
     ) -> Table:
         """
         Generate a table containing line items with optional category organization.
@@ -83,8 +84,10 @@ class Tables:
         Args:
             line_item_names (Optional[list[str]]): List of line item names to include.
                                                   If None, includes all line items. Defaults to None.
-            included_cols (Union[str, list[str]]): Columns to include. Can be 'label', 'name',
-                                                  or 'category'. Defaults to ["label"].
+            included_cols (list[ColumnType]): List of columns to include. Can contain 'label', 'name',
+                                             and/or 'category'. Defaults to ["label"].
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
             group_by_category (bool, optional): Whether to group line items by category
                                                      and include category header rows. Defaults to False.
             include_percent_change (bool, optional): Whether to include a percent change row
@@ -92,8 +95,6 @@ class Tables:
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
-            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
-                                                   or list of strings. Defaults to None.
 
         Returns:
             Table: A Table object containing the specified line items.
@@ -106,16 +107,10 @@ class Tables:
             >>> table = model.tables.line_items(include_percent_change=True)
         """  # noqa: E501
         # Validate included_cols
-        valid_cols = {"label", "name", "category"}
-        if isinstance(included_cols, str):
-            included_cols_list = [included_cols]
-        else:
-            included_cols_list = included_cols
-
-        for col in included_cols_list:
-            if col not in valid_cols:
+        for col in included_cols:
+            if col not in VALID_COLS:
                 raise ValueError(
-                    f"Invalid column '{col}'. Must be one of: {valid_cols}"
+                    f"Invalid column '{col}'. Must be one of: {VALID_COLS}"
                 )
 
         # Set default col_labels if not provided
@@ -160,7 +155,7 @@ class Tables:
             template.append(
                 rt.ItemRow(
                     name=item["name"],
-                    included_cols=included_cols_list,
+                    included_cols=included_cols,
                     hardcoded_color=hardcoded_color,
                 )
             )
