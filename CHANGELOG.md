@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `MultiLineItem` class to `Generator` (breaking change - no backward compatibility)
 - Removed tuple access pattern `model['name', year]` for getting values
   - Use `model.value('name', year)` instead for getting specific values
+- Updated approach to `Tables.line_items()` method with improved table generation and new result class methods
 
 ## [0.1.14] - 2025-10-02
 
