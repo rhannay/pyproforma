@@ -162,11 +162,11 @@ class TestCategoryMethod:
 
     def test_category_uses_line_items_method(self, sample_model):
         """
-        Test that category method produces same result as calling line_items with
-        category items.
+        Test that category method without totals produces same result as calling
+        line_items with category items.
         """
-        # Get category table
-        category_table = sample_model.tables.category("revenue")
+        # Get category table without totals to match line_items behavior
+        category_table = sample_model.tables.category("revenue", include_totals=False)
 
         # Get line items for the category
         revenue_items = sample_model.line_item_names_by_category("revenue")
@@ -214,3 +214,109 @@ class TestCategoryMethod:
         # Category name should be required (this should raise TypeError if missing)
         with pytest.raises(TypeError):
             sample_model.tables.category()
+
+
+class TestCategoryIncludeTotals:
+    """Test the include_totals parameter for Tables.category method."""
+
+    def test_category_with_totals_default(self, sample_model):
+        """Test that category includes totals by default."""
+        table = sample_model.tables.category("revenue")
+
+        # Should have more rows than just the line items (includes totals)
+        revenue_items = sample_model.line_item_names_by_category("revenue")
+        assert len(table.rows) > len(revenue_items)
+
+        # The last row should be a totals row
+        last_row = table.rows[-1]
+        # Should have "Total" in the label
+        assert "Total" in last_row.cells[0].value
+
+    def test_category_with_totals_true(self, sample_model):
+        """Test category with include_totals=True explicitly."""
+        table = sample_model.tables.category("revenue", include_totals=True)
+
+        # Should have more rows than just the line items
+        revenue_items = sample_model.line_item_names_by_category("revenue")
+        assert len(table.rows) > len(revenue_items)
+
+        # The last row should be a totals row
+        last_row = table.rows[-1]
+        assert "Total" in last_row.cells[0].value
+
+    def test_category_with_totals_false(self, sample_model):
+        """Test category with include_totals=False."""
+        table = sample_model.tables.category("revenue", include_totals=False)
+
+        # Should have exactly the number of line items (no totals)
+        revenue_items = sample_model.line_item_names_by_category("revenue")
+        assert len(table.rows) == len(revenue_items)
+
+        # No row should have "Total" in the label
+        for row in table.rows:
+            assert "Total" not in row.cells[0].value
+
+    def test_category_totals_row_styling(self, sample_model):
+        """Test that the totals row has correct styling (bold and top border)."""
+        table = sample_model.tables.category("revenue", include_totals=True)
+
+        # The last row should be the totals row
+        last_row = table.rows[-1]
+
+        # Should be bold
+        assert last_row.cells[0].bold is True
+
+        # Should have a top border
+        assert last_row.cells[0].top_border == "thin"
+
+    def test_category_totals_calculation(self, sample_model):
+        """Test that the totals row shows correct calculated values."""
+        table = sample_model.tables.category("revenue", include_totals=True)
+
+        # Get the totals row (last row)
+        totals_row = table.rows[-1]
+
+        # Get expected totals from the model
+        category_results = sample_model.category("revenue")
+
+        # Check that totals match for each year
+        for i, year in enumerate(sample_model.years):
+            # Cell index is i+1 because first cell is the label
+            expected_total = category_results.total(year)
+            actual_total = totals_row.cells[i + 1].value
+
+            assert actual_total == expected_total, (
+                f"Year {year}: expected {expected_total}, got {actual_total}"
+            )
+
+    def test_category_totals_with_hardcoded_color(self, sample_model):
+        """Test that totals work correctly with hardcoded_color parameter."""
+        table = sample_model.tables.category(
+            "revenue", include_totals=True, hardcoded_color="blue"
+        )
+
+        # Should have totals row
+        revenue_items = sample_model.line_item_names_by_category("revenue")
+        assert len(table.rows) > len(revenue_items)
+
+        # Last row should be totals
+        last_row = table.rows[-1]
+        assert "Total" in last_row.cells[0].value
+
+    def test_category_totals_single_item(self, single_item_model):
+        """Test totals row with a category that has only one item."""
+        table = single_item_model.tables.category("revenue", include_totals=True)
+
+        # Should have 2 rows: 1 line item + 1 totals
+        assert len(table.rows) == 2
+
+        # Last row should be totals
+        totals_row = table.rows[-1]
+        assert "Total" in totals_row.cells[0].value
+
+        # Totals should equal the single item's values
+        line_item = single_item_model.line_item("sales")
+        for i, year in enumerate(single_item_model.years):
+            expected_value = line_item.values.get(year, 0)
+            actual_value = totals_row.cells[i + 1].value
+            assert actual_value == expected_value

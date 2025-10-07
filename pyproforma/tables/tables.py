@@ -169,6 +169,7 @@ class Tables:
     def category(
         self,
         category_name: str,
+        include_totals: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
@@ -176,6 +177,8 @@ class Tables:
 
         Args:
             category_name (str): The name of the category to generate the table for.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -186,11 +189,28 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        # Use the line_items method to generate the table
-        return self.line_items(
-            line_item_names=line_item_names,
-            hardcoded_color=hardcoded_color,
-        )
+        # Create template with line items
+        template = []
+        for name in line_item_names:
+            template.append(
+                rt.ItemRow(
+                    name=name,
+                    included_cols=["label"],
+                    hardcoded_color=hardcoded_color,
+                )
+            )
+
+        # Add category total row if requested
+        if include_totals:
+            template.append(
+                rt.CategoryTotalRow(
+                    category_name=category_name,
+                    bold=True,
+                    top_border="thin",
+                )
+            )
+
+        return self.from_template(template, col_labels=["label"])
 
     def line_item(
         self,
