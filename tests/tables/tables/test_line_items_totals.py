@@ -202,7 +202,7 @@ class TestLineItemsIncludeTotals:
         # Get one item from each category
         revenue_item = "sales_revenue"
         expense_item = "cost_of_goods"
-        
+
         table = sample_model.tables.line_items(
             line_item_names=[revenue_item, expense_item], include_totals=True
         )
