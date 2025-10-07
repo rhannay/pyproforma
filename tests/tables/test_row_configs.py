@@ -137,3 +137,32 @@ def test_itemrow_included_cols_validation():
     # Invalid single column should raise ValueError
     with pytest.raises(ValueError, match="Invalid column 'bad'"):
         ItemRow(name="revenue", included_cols=["bad"])
+
+
+def test_blank_row_label_col_count(sample_line_item_set: Model):
+    """Test that BlankRow properly uses label_col_count parameter."""
+    blank_row = BlankRow()
+
+    # Test with default label_col_count (1)
+    row = blank_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Should have 1 label column + number of years
+    expected_cells = 1 + len(sample_line_item_set.years)
+    assert len(row.cells) == expected_cells
+
+    # All cells should be empty
+    for cell in row.cells:
+        assert cell.value == ""
+
+    # Test with label_col_count=3
+    row_with_three_labels = blank_row.generate_row(
+        sample_line_item_set, label_col_count=3
+    )
+
+    # Should have 3 label columns + number of years
+    expected_cells_three = 3 + len(sample_line_item_set.years)
+    assert len(row_with_three_labels.cells) == expected_cells_three
+
+    # All cells should be empty
+    for cell in row_with_three_labels.cells:
+        assert cell.value == ""

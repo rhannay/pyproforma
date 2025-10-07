@@ -461,14 +461,15 @@ class LabelRow(BaseRow):
 class BlankRow(BaseRow):
     """Configuration for blank row generation."""
 
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a blank row with empty cells for each column."""
-        # Create empty cells - one for the label column and one for each year
-        cells = [Cell(value="")]  # First cell is empty
-        if self.include_name:
+        # Create empty cells - start with label columns
+        cells = []
+
+        # Add empty cells for each label column
+        for _ in range(label_col_count):
             cells.append(Cell(value=""))
 
         # Add empty cell for each year
