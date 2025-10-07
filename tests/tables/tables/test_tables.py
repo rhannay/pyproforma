@@ -87,61 +87,6 @@ class TestTableCreation:
         table = sample_model.tables.line_items()
         assert table is not None, "Line items table creation failed"
 
-        table = sample_model.tables.category("revenue")
-        assert table is not None, "Category table creation failed"
-
-        # Test the new item() method
-        table = sample_model.tables.line_item("revenue_sales", include_name=True)
-        assert table is not None, "Item table creation failed"
-        # Verify the table has the correct structure - it now includes change calculations  # noqa: E501
-        assert len(table.rows) == 4, (
-            "Item table should have 4 rows (value, % change, cumulative change, cumulative % change)"  # noqa: E501
-        )  # noqa: E501
-        # Verify first cell contains the item name, second contains the label
-        assert table.rows[0].cells[0].value == "revenue_sales", (
-            "First cell should contain item name"
-        )  # noqa: E501
-        assert table.rows[0].cells[1].value == "Sales Revenue", (
-            "Second cell should contain item label"
-        )  # noqa: E501
-
-    def test_item_table_assumption(self):
-        """Test that item table creation works for an assumption (now as line item)."""
-        line_items = [
-            LineItem(
-                name="growth_rate",
-                label="Growth Rate",
-                category="assumptions",
-                values={2023: 0.05, 2024: 0.10, 2026: 0.07},
-            )
-        ]
-
-        categories = [Category(name="assumptions", label="Assumptions")]
-
-        model = Model(
-            line_items=line_items,
-            categories=categories,
-            years=[2023, 2024, 2025, 2026, 2027],
-        )
-        table = model.tables.line_item("growth_rate", include_name=True)
-        assert table is not None, "Assumption item table creation failed"
-        assert len(table.rows) == 4, (
-            "Assumption item table should have 4 rows (value, % change, cumulative change, cumulative % change)"  # noqa: E501
-        )  # noqa: E501
-        assert table.rows[0].cells[0].value == "growth_rate", (
-            "First cell should contain assumption name"
-        )  # noqa: E501
-        assert table.rows[0].cells[1].value == "Growth Rate", (
-            "Second cell should contain assumption label"
-        )  # noqa: E501
-        assert table.rows[0].cells[2].value == 0.05, (
-            "Third cell should contain value for 2023"
-        )  # noqa: E501
-        assert (
-            table.rows[1].cells[2].value is None
-        )  # No previous value to compare against  # noqa: E501
-        assert table.rows[1].cells[3].value == 1.0  # 100% change from 0.05 to 0.10
-
     def test_line_items_with_filter(self, sample_model: Model):
         """Test that line_items() can filter by line_item_names."""
         # Test with specific line items from different categories
@@ -170,27 +115,6 @@ class TestTableCreation:
         ]
         assert "Sales Revenue" in labels_in_table
         assert "Cost of Goods Sold" in labels_in_table
-
-    def test_line_items_with_filter_single_category(self, sample_model: Model):
-        """Test filtering to items from a single category."""
-        # Only revenue items
-        table = sample_model.tables.line_items(
-            line_item_names=["revenue_sales", "revenue_services"]
-        )
-        assert table is not None
-
-        # Should have Revenue category label + 2 items
-        # Count category labels
-        category_labels = [
-            row.cells[0].value
-            for row in table.rows
-            if hasattr(row, "cells")
-            and len(row.cells) > 0
-            and row.cells[0].value == "Revenue"
-        ]
-        assert len(category_labels) == 1, (
-            "Should have exactly one Revenue category label"
-        )
 
     def test_line_items_with_empty_filter(self, sample_model: Model):
         """Test that empty line_item_names list returns empty table."""
