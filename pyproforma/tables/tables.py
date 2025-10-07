@@ -206,7 +206,7 @@ class Tables:
                 rt.CategoryTotalRow(
                     category_name=category_name,
                     bold=True,
-                    top_border="thin",
+                    top_border="single",
                 )
             )
 
