@@ -54,8 +54,8 @@ class Tables:
         Examples:
             >>> template = [
             ...     rt.LabelRow(label='Revenue', bold=True),
-            ...     rt.ItemRow(name='sales_revenue'),
-            ...     rt.ItemRow(name='other_revenue')
+            ...     rt.ItemRow(name='sales_revenue', included_cols=['label']),
+            ...     rt.ItemRow(name='other_revenue', included_cols=['label'])
             ... ]
             >>> table = tables.from_template(template, col_labels="Years")
         """  # noqa: E501
@@ -187,6 +187,7 @@ class Tables:
         category_name: str,
         line_item_names: Optional[list[str]] = None,
         hardcoded_color: Optional[str] = None,
+        include_name: bool = False,
     ):
         rows = []
         category = self._model.category(category_name)
@@ -204,10 +205,14 @@ class Tables:
         if category_line_items:
             rows.append(rt.LabelRow(label=category.label, bold=True))
 
+            # Determine columns to include based on include_name parameter
+            cols = ["name", "label"] if include_name else ["label"]
+
             for item_name in category_line_items:
                 rows.append(
                     rt.ItemRow(
                         name=item_name,
+                        included_cols=cols,
                         hardcoded_color=hardcoded_color,
                     )
                 )
@@ -233,8 +238,10 @@ class Tables:
         Returns:
             Table: A Table object containing the category items.
         """  # noqa: E501
-        rows = self._category_rows(category_name, hardcoded_color=hardcoded_color)
-        return self.from_template(rows, include_name=include_name)
+        rows = self._category_rows(
+            category_name, hardcoded_color=hardcoded_color, include_name=include_name
+        )
+        return self.from_template(rows)
 
     def line_item(
         self,
@@ -255,13 +262,16 @@ class Tables:
         Returns:
             Table: A Table object containing the line item's label and values across years.
         """  # noqa: E501
+        # Determine columns to include based on include_name parameter
+        cols = ["name", "label"] if include_name else ["label"]
+
         rows = [
-            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
+            rt.ItemRow(name=name, included_cols=cols, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label="% Change"),
             rt.CumulativeChangeRow(name=name, label="Cumulative Change"),
             rt.CumulativePercentChangeRow(name=name, label="Cumulative % Change"),
         ]
-        return self.from_template(rows, include_name=include_name)
+        return self.from_template(rows)
 
     def constraint(self, constraint_name: str, color_code: bool = True) -> Table:
         """
@@ -277,7 +287,7 @@ class Tables:
         constraint_results = self._model.constraint(constraint_name)
         rows = [
             rt.LabelRow(label=constraint_results.label, bold=True),
-            rt.ItemRow(name=constraint_results.line_item_name),
+            rt.ItemRow(name=constraint_results.line_item_name, included_cols=["label"]),
             rt.ConstraintTargetRow(constraint_name=constraint_name, label="Target"),
             rt.ConstraintVarianceRow(constraint_name=constraint_name, label="Variance"),
             rt.ConstraintPassRow(
@@ -286,4 +296,4 @@ class Tables:
                 color_code=color_code,
             ),
         ]
-        return generate_table_from_template(self._model, rows, include_name=False)
+        return self.from_template(rows)
