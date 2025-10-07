@@ -703,3 +703,174 @@ class TestLineItemsResultsTableMethod:
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
         assert table_labels == direct_labels
+
+
+class TestLineItemsResultsTotalMethod:
+    """Test the total method of LineItemsResults."""
+
+    def test_total_sums_all_line_items(self, model_with_line_items):
+        """Test that total method sums all line items for a given year."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Total for 2023: product_sales=100000 + service_revenue=50000 = 150000
+        total_2023 = items.total(2023)
+        assert total_2023 == 150000.0
+
+        # Total for 2024: product_sales=120000 + service_revenue=60000 = 180000
+        total_2024 = items.total(2024)
+        assert total_2024 == 180000.0
+
+        # Total for 2025: product_sales=140000 + service_revenue=70000 = 210000
+        total_2025 = items.total(2025)
+        assert total_2025 == 210000.0
+
+    def test_total_with_single_item(self, model_with_line_items):
+        """Test total method with a single line item."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        # Should return the value of the single item
+        total_2023 = items.total(2023)
+        assert total_2023 == 100000.0
+
+        total_2024 = items.total(2024)
+        assert total_2024 == 120000.0
+
+    def test_total_with_all_items(self, model_with_line_items):
+        """Test total method with all line items in the model."""
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        # Total for 2023: 100000 + 50000 + 40000 + 24000 = 214000
+        total_2023 = items.total(2023)
+        assert total_2023 == 214000.0
+
+        # Total for 2024: 120000 + 60000 + 45000 + 24000 = 249000
+        total_2024 = items.total(2024)
+        assert total_2024 == 249000.0
+
+    def test_total_treats_none_as_zero(self):
+        """Test that total method treats None values as 0."""
+        from pyproforma import Category, LineItem, Model
+
+        # Create line items where some have None values
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test",
+                label="Item 1",
+                values={2023: 100.0, 2024: None, 2025: 200.0},  # None in 2024
+            ),
+            LineItem(
+                name="item2",
+                category="test",
+                label="Item 2",
+                values={2023: 50.0, 2024: 75.0, 2025: None},  # None in 2025
+            ),
+        ]
+
+        categories = [Category(name="test", label="Test")]
+        model = Model(
+            line_items=line_items, years=[2023, 2024, 2025], categories=categories
+        )
+
+        items = model.line_items(["item1", "item2"])
+
+        # 2023: 100 + 50 = 150 (no None values)
+        assert items.total(2023) == 150.0
+
+        # 2024: 0 + 75 = 75 (item1 is None, treated as 0)
+        assert items.total(2024) == 75.0
+
+        # 2025: 200 + 0 = 200 (item2 is None, treated as 0)
+        assert items.total(2025) == 200.0
+
+    def test_total_with_negative_values(self, model_with_line_items):
+        """Test total method with negative values (e.g., expenses)."""
+        items = LineItemsResults(model_with_line_items, ["salaries", "office_rent"])
+
+        # Both are expenses (negative impact), but stored as positive values
+        # Total for 2023: salaries=40000 + office_rent=24000 = 64000
+        total_2023 = items.total(2023)
+        assert total_2023 == 64000.0
+
+        # Total for 2024: salaries=45000 + office_rent=24000 = 69000
+        total_2024 = items.total(2024)
+        assert total_2024 == 69000.0
+
+    def test_total_mixed_revenue_and_expenses(self, model_with_line_items):
+        """Test total method with mixed revenue and expense items."""
+        items = LineItemsResults(model_with_line_items, ["product_sales", "salaries"])
+
+        # Mix of revenue and expense
+        # Total for 2023: product_sales=100000 + salaries=40000 = 140000
+        total_2023 = items.total(2023)
+        assert total_2023 == 140000.0
+
+        # Total for 2024: product_sales=120000 + salaries=45000 = 165000
+        total_2024 = items.total(2024)
+        assert total_2024 == 165000.0
+
+    def test_total_invalid_year_raises_error(self, model_with_line_items):
+        """Test that total method raises ValueError for invalid year."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Test with year not in model
+        with pytest.raises(ValueError) as exc_info:
+            items.total(2030)
+
+        assert "Year 2030 not found in model" in str(exc_info.value)
+        assert "Available years: [2023, 2024, 2025]" in str(exc_info.value)
+
+    def test_total_empty_items_list_returns_zero(self):
+        """Test total method with empty line items list."""
+        from pyproforma import Model
+
+        # Create model with no line items for this results set
+        model = Model(years=[2023, 2024], categories=[])
+
+        # This should raise an error during initialization since we require
+        # non-empty list
+        with pytest.raises(ValueError):
+            LineItemsResults(model, [])
+
+    def test_total_returns_float(self, model_with_line_items):
+        """Test that total method always returns a float."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        total = items.total(2023)
+        assert isinstance(total, float)
+        assert total == 100000.0
+
+    def test_total_with_zero_values(self):
+        """Test total method when some items have zero values."""
+        from pyproforma import Category, LineItem, Model
+
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test",
+                label="Item 1",
+                values={2023: 0.0, 2024: 100.0},
+            ),
+            LineItem(
+                name="item2",
+                category="test",
+                label="Item 2",
+                values={2023: 50.0, 2024: 0.0},
+            ),
+        ]
+
+        categories = [Category(name="test", label="Test")]
+        model = Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+        items = model.line_items(["item1", "item2"])
+
+        # 2023: 0 + 50 = 50
+        assert items.total(2023) == 50.0
+
+        # 2024: 100 + 0 = 100
+        assert items.total(2024) == 100.0
