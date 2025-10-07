@@ -71,6 +71,7 @@ class Tables:
         col_labels: Optional[Union[str, list[str]]] = None,
         group_by_category: bool = False,
         include_percent_change: bool = False,
+        include_totals: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
@@ -92,6 +93,8 @@ class Tables:
                                                      and include category header rows. Defaults to False.
             include_percent_change (bool, optional): Whether to include a percent change row
                                                     after each item row. Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -105,6 +108,7 @@ class Tables:
             >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
             >>> table = model.tables.line_items(group_by_category=True)
             >>> table = model.tables.line_items(include_percent_change=True)
+            >>> table = model.tables.line_items(include_totals=True)
         """  # noqa: E501
         # Validate included_cols
         for col in included_cols:
@@ -164,6 +168,18 @@ class Tables:
             if include_percent_change:
                 template.append(rt.PercentChangeRow(name=item["name"]))
 
+        # Add totals row if requested
+        if include_totals:
+            # Get the list of line item names for the total calculation
+            total_line_item_names = [item["name"] for item in items_metadata]
+            template.append(
+                rt.LineItemsTotalRow(
+                    line_item_names=total_line_item_names,
+                    bold=True,
+                    top_border="thin",
+                )
+            )
+
         return self.from_template(template, col_labels=col_labels)
 
     def category(
@@ -189,6 +205,14 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
+        # Use the line_items method if we don't need totals
+        if not include_totals:
+            return self.line_items(
+                line_item_names=line_item_names,
+                included_cols=["label"],
+                hardcoded_color=hardcoded_color,
+            )
+
         # Create template with line items
         template = []
         for name in line_item_names:
@@ -201,14 +225,13 @@ class Tables:
             )
 
         # Add category total row if requested
-        if include_totals:
-            template.append(
-                rt.CategoryTotalRow(
-                    category_name=category_name,
-                    bold=True,
-                    top_border="thin",
-                )
+        template.append(
+            rt.CategoryTotalRow(
+                category_name=category_name,
+                bold=True,
+                top_border="thin",
             )
+        )
 
         return self.from_template(template, col_labels=["label"])
 
