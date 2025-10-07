@@ -166,58 +166,6 @@ class Tables:
 
         return self.from_template(template, col_labels=col_labels)
 
-    def _line_item_rows(
-        self,
-        line_item_names: Optional[list[str]] = None,
-        hardcoded_color: Optional[str] = None,
-    ):
-        rows = []
-        for category_name in self._model.category_names:
-            rows.extend(
-                self._category_rows(
-                    category_name,
-                    line_item_names=line_item_names,
-                    hardcoded_color=hardcoded_color,
-                )
-            )
-        return rows
-
-    def _category_rows(
-        self,
-        category_name: str,
-        line_item_names: Optional[list[str]] = None,
-        hardcoded_color: Optional[str] = None,
-    ):
-        rows = []
-        category = self._model.category(category_name)
-
-        # Get line item names for this category using metadata
-        category_line_items = self._model.line_item_names_by_category(category_name)
-
-        # Filter by line_item_names if provided
-        if line_item_names is not None:
-            category_line_items = [
-                name for name in category_line_items if name in line_item_names
-            ]
-
-        # Only add category label if there are items to show
-        if category_line_items:
-            rows.append(rt.LabelRow(label=category.label, bold=True))
-
-            # Use default columns (just label, no name)
-            cols = ["label"]
-
-            for item_name in category_line_items:
-                rows.append(
-                    rt.ItemRow(
-                        name=item_name,
-                        included_cols=cols,
-                        hardcoded_color=hardcoded_color,
-                    )
-                )
-
-        return rows
-
     def category(
         self,
         category_name: str,
