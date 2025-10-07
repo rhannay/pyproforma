@@ -515,6 +515,82 @@ class BlankRow(BaseRow):
 
 
 @dataclass
+class CategoryTotalRow(BaseRow):
+    """Configuration for category total row generation."""
+
+    category_name: str
+    label: Optional[str] = None
+    value_format: Optional[ValueFormat] = None
+    bold: bool = False
+    bottom_border: Optional[str] = None
+    top_border: Optional[str] = None
+
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+        """Create a row showing category totals across all years."""
+        # Get the category results to access the total method
+        category_results = model.category(self.category_name)
+
+        # Use provided label or default to category label + "Total"
+        if self.label is None:
+            label = f"{category_results.label} Total"
+        else:
+            label = self.label
+
+        # Default to currency format if not specified
+        value_format = self.value_format or "currency"
+
+        # Create cells for this row
+        cells = []
+
+        # Add empty name cell if we have 2 or more label columns
+        if label_col_count >= 2:
+            cells.append(
+                Cell(
+                    value="",
+                    bold=self.bold,
+                    align="left",
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+
+        cells.append(
+            Cell(
+                value=label,
+                bold=self.bold,
+                align="left",
+                bottom_border=self.bottom_border,
+                top_border=self.top_border,
+            )
+        )
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(
+                Cell(
+                    value="",
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+
+        # Add cells for each year with category total for that year
+        for year in model.years:
+            total_value = category_results.total(year)
+            cells.append(
+                Cell(
+                    value=total_value,
+                    bold=self.bold,
+                    value_format=value_format,
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+
+        return Row(cells=cells)
+
+
+@dataclass
 class CustomRow(BaseRow):
     """Configuration for custom row generation with user-defined values."""
 
@@ -560,6 +636,7 @@ RowConfig = Union[
     ConstraintTargetRow,
     LabelRow,
     BlankRow,
+    CategoryTotalRow,
     CustomRow,
 ]
 
@@ -589,6 +666,8 @@ def dict_to_row_config(data: dict) -> RowConfig:
         return LabelRow(**config_data)
     elif row_type == "blank":
         return BlankRow(**config_data)
+    elif row_type == "category_total":
+        return CategoryTotalRow(**config_data)
     elif row_type == "custom":
         return CustomRow(**config_data)
     else:

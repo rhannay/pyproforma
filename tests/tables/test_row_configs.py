@@ -222,3 +222,82 @@ def test_custom_row_label_col_count(sample_line_item_set: Model):
     # First cell should be empty (name placeholder), second should be the label
     assert row_with_name.cells[0].value == ""
     assert row_with_name.cells[1].value == "Custom Label"
+
+
+def test_category_total_row_label_col_count(sample_line_item_set: Model):
+    """Test that CategoryTotalRow properly uses label_col_count parameter."""
+    from pyproforma.tables.row_types import CategoryTotalRow
+
+    # Add some items to income category for testing
+    sample_line_item_set.update.update_line_item("item1", category="income")
+    sample_line_item_set.update.update_line_item("item2", category="income")
+
+    category_total_row = CategoryTotalRow(category_name="income")
+
+    # Test with default label_col_count (1) - should only have label
+    row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Should have 1 label column + number of years
+    expected_cells = 1 + len(sample_line_item_set.years)
+    assert len(row.cells) == expected_cells
+
+    # First cell should be the label (default: category label + "Total")
+    assert "income Total" in row.cells[0].value
+
+    # Test with label_col_count=2 - should have empty name cell and label
+    row_with_name = category_total_row.generate_row(
+        sample_line_item_set, label_col_count=2
+    )
+
+    # Should have 2 label columns + number of years
+    expected_cells_two = 2 + len(sample_line_item_set.years)
+    assert len(row_with_name.cells) == expected_cells_two
+
+    # First cell should be empty (name placeholder), second should be the label
+    assert row_with_name.cells[0].value == ""
+    assert "income Total" in row_with_name.cells[1].value
+
+
+def test_category_total_row_custom_label(sample_line_item_set: Model):
+    """Test CategoryTotalRow with custom label."""
+    from pyproforma.tables.row_types import CategoryTotalRow
+
+    # Add some items to income category
+    sample_line_item_set.update.update_line_item("item1", category="income")
+
+    category_total_row = CategoryTotalRow(
+        category_name="income", label="Custom Total Label"
+    )
+
+    row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Should use custom label
+    assert row.cells[0].value == "Custom Total Label"
+
+
+def test_category_total_row_styling(sample_line_item_set: Model):
+    """Test CategoryTotalRow with styling options."""
+    from pyproforma.tables.row_types import CategoryTotalRow
+
+    # Add some items to income category
+    sample_line_item_set.update.update_line_item("item1", category="income")
+
+    category_total_row = CategoryTotalRow(
+        category_name="income",
+        bold=True,
+        bottom_border="thick",
+        top_border="thin",
+        value_format="percent",
+    )
+
+    row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Check styling is applied
+    assert row.cells[0].bold is True
+    assert row.cells[0].bottom_border == "thick"
+    assert row.cells[0].top_border == "thin"
+
+    # Check value cells have correct formatting
+    for i in range(1, len(row.cells)):  # Skip label cell
+        assert row.cells[i].value_format == "percent"
+        assert row.cells[i].bold is True
