@@ -127,7 +127,9 @@ class CategoryResults:
         Examples:
             >>> revenue_category = model.category('revenue')
             >>> revenue_category.delete()  # Fails if category has line items
-            >>> revenue_category.delete(include_line_items=True)  # Deletes line items first
+            >>> revenue_category.delete(
+            ...     include_line_items=True
+            ... )  # Deletes line items first
         """
         # Check if any line items still reference this category
         line_items_in_category = self.line_item_names
@@ -138,8 +140,11 @@ class CategoryResults:
                 f"Delete or move these line items to other categories first."
             )
 
-        # Delete the category from the model (which will also delete line items if requested)
-        self.model.update.delete_category(self.name, include_line_items=include_line_items)
+        # Delete the category from the model
+        # (which will also delete line items if requested)
+        self.model.update.delete_category(
+            self.name, include_line_items=include_line_items
+        )
 
     # ============================================================================
     # VALUE ACCESS METHODS
@@ -162,6 +167,47 @@ class CategoryResults:
                     values[item_name][year] = 0.0
 
         return values
+
+    def total(self, year: int) -> float:
+        """
+        Calculate the sum of all line items in this category for a given year.
+
+        This method uses the LineItemsResults.total() functionality by getting all
+        line items in this category and delegating to their total method. None values
+        are treated as 0.
+
+        Args:
+            year (int): The year for which to calculate the total
+
+        Returns:
+            float: The sum of all line item values in this category for the
+                   specified year
+
+        Raises:
+            ValueError: If the year is not in the model's years
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> total_revenue = revenue_category.total(2024)  # Sum of all revenue items
+            >>> costs_category = model.category('costs')
+            >>> total_costs = costs_category.total(2024)  # Sum of all cost items
+        """
+        # Get all line items in this category
+        line_item_names = self.line_item_names
+
+        # If no line items in category, return 0
+        if not line_item_names:
+            # Still validate the year exists in the model
+            if year not in self.model.years:
+                raise ValueError(
+                    f"Year {year} not found in model. "
+                    f"Available years: {self.model.years}"
+                )
+            return 0.0
+
+        # Use LineItemsResults.total() to calculate the sum
+        line_items_results = self.model.line_items(line_item_names)
+        return line_items_results.total(year)
 
     # ============================================================================
     # DATA CONVERSION METHODS
