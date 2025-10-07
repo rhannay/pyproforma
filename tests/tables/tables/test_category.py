@@ -128,7 +128,8 @@ class TestCategoryMethod:
 
     def test_category_nonexistent_category(self, sample_model):
         """Test category table with a nonexistent category name."""
-        # This might raise an exception or return empty table depending on implementation
+        # This might raise an exception or return empty table
+        # depending on implementation
         try:
             table = sample_model.tables.category("nonexistent_category")
             # If it doesn't raise an exception, it should return a valid table
@@ -160,7 +161,10 @@ class TestCategoryMethod:
         assert has_numeric_data, "Table should contain numeric data from line items"
 
     def test_category_uses_line_items_method(self, sample_model):
-        """Test that category method produces same result as calling line_items with category items."""
+        """
+        Test that category method produces same result as calling line_items with
+        category items.
+        """
         # Get category table
         category_table = sample_model.tables.category("revenue")
 
