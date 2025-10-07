@@ -187,7 +187,6 @@ class Tables:
         category_name: str,
         line_item_names: Optional[list[str]] = None,
         hardcoded_color: Optional[str] = None,
-        include_name: bool = False,
     ):
         rows = []
         category = self._model.category(category_name)
@@ -205,8 +204,8 @@ class Tables:
         if category_line_items:
             rows.append(rt.LabelRow(label=category.label, bold=True))
 
-            # Determine columns to include based on include_name parameter
-            cols = ["name", "label"] if include_name else ["label"]
+            # Use default columns (just label, no name)
+            cols = ["label"]
 
             for item_name in category_line_items:
                 rows.append(
@@ -222,26 +221,28 @@ class Tables:
     def category(
         self,
         category_name: str,
-        include_name: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table for a specific category.
+        Generate a table for a specific category showing all line items in that category.
 
         Args:
             category_name (str): The name of the category to generate the table for.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
 
         Returns:
-            Table: A Table object containing the category items.
+            Table: A Table object containing all line items in the specified category.
         """  # noqa: E501
-        rows = self._category_rows(
-            category_name, hardcoded_color=hardcoded_color, include_name=include_name
+        # Get all line item names for this category
+        line_item_names = self._model.line_item_names_by_category(category_name)
+
+        # Use the line_items method to generate the table
+        return self.line_items(
+            line_item_names=line_item_names,
+            hardcoded_color=hardcoded_color,
         )
-        return self.from_template(rows)
 
     def line_item(
         self,
