@@ -7,6 +7,9 @@ from .row_types import (
     BlankRow as BlankRow,
 )
 from .row_types import (
+    CategoryTotalRow as CategoryTotalRow,
+)
+from .row_types import (
     ConstraintPassRow as ConstraintPassRow,
 )
 from .row_types import (

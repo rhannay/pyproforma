@@ -917,9 +917,7 @@ class TestCategoryResultsEdgeCases:
             )
         ]
 
-        categories = [
-            Category(name="income_2024", label="Income 2024")
-        ]
+        categories = [Category(name="income_2024", label="Income 2024")]
 
         model = Model(line_items=line_items, years=[2024], categories=categories)
 
@@ -958,9 +956,7 @@ class TestCategoryResultsEdgeCases:
         """Test CategoryResults with category containing no line items."""
         line_items = []
 
-        categories = [
-            Category(name="empty_category", label="Empty Category")
-        ]
+        categories = [Category(name="empty_category", label="Empty Category")]
 
         model = Model(line_items=line_items, years=[2024], categories=categories)
 
@@ -1075,14 +1071,20 @@ class TestCategoryResultsDeleteWithLineItems:
         revenue_category.delete(include_line_items=True)
 
         # Verify category is deleted
-        assert len(delete_test_model._category_definitions) == initial_category_count - 1
+        assert (
+            len(delete_test_model._category_definitions) == initial_category_count - 1
+        )
         assert "revenue" not in [
             cat.name for cat in delete_test_model._category_definitions
         ]
 
         # Verify line items in that category are deleted
-        assert len(delete_test_model._line_item_definitions) == initial_line_item_count - 2
-        remaining_names = [item.name for item in delete_test_model._line_item_definitions]
+        assert (
+            len(delete_test_model._line_item_definitions) == initial_line_item_count - 2
+        )
+        remaining_names = [
+            item.name for item in delete_test_model._line_item_definitions
+        ]
         assert "product_sales" not in remaining_names
         assert "service_revenue" not in remaining_names
         assert "salaries" in remaining_names
@@ -1109,7 +1111,164 @@ class TestCategoryResultsDeleteWithLineItems:
         revenue_category.delete(include_line_items=True)
 
         # Verify other categories and their line items are preserved
-        assert "expenses" in [cat.name for cat in delete_test_model._category_definitions]
+        assert "expenses" in [
+            cat.name for cat in delete_test_model._category_definitions
+        ]
         assert "salaries" in [
             item.name for item in delete_test_model._line_item_definitions
         ]
+
+
+class TestCategoryResultsTotalMethod:
+    """Test the total method of CategoryResults."""
+
+    def test_total_sums_all_items_in_category(self, model_with_categories):
+        """Test that total method sums all line items in the category."""
+        income_category = CategoryResults(model_with_categories, "income")
+
+        # Total for 2023: product_sales=100000 + service_revenue=50000 = 150000
+        total_2023 = income_category.total(2023)
+        assert total_2023 == 150000.0
+
+        # Total for 2024: product_sales=120000 + service_revenue=60000 = 180000
+        total_2024 = income_category.total(2024)
+        assert total_2024 == 180000.0
+
+        # Total for 2025: product_sales=140000 + service_revenue=70000 = 210000
+        total_2025 = income_category.total(2025)
+        assert total_2025 == 210000.0
+
+    def test_total_with_different_category(self, model_with_categories):
+        """Test total method with a different category."""
+        costs_category = CategoryResults(model_with_categories, "costs")
+
+        # Total for 2023: salaries=40000 + office_rent=24000 = 64000
+        total_2023 = costs_category.total(2023)
+        assert total_2023 == 64000.0
+
+        # Total for 2024: salaries=45000 + office_rent=24000 = 69000
+        total_2024 = costs_category.total(2024)
+        assert total_2024 == 69000.0
+
+    def test_total_with_empty_category(self, model_with_categories):
+        """Test total method with category that has no line items."""
+        # metrics category has no line items initially
+        metrics_category = CategoryResults(model_with_categories, "metrics")
+
+        # Should return 0.0 for empty category
+        total_2023 = metrics_category.total(2023)
+        assert total_2023 == 0.0
+
+        total_2024 = metrics_category.total(2024)
+        assert total_2024 == 0.0
+
+    def test_total_with_none_values(self):
+        """Test total method when some items have None values."""
+        from pyproforma import Category, LineItem, Model
+
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test_cat",
+                label="Item 1",
+                values={2023: 100.0, 2024: None, 2025: 200.0},
+            ),
+            LineItem(
+                name="item2",
+                category="test_cat",
+                label="Item 2",
+                values={2023: 50.0, 2024: 75.0, 2025: None},
+            ),
+        ]
+
+        categories = [Category(name="test_cat", label="Test Category")]
+        model = Model(
+            line_items=line_items, years=[2023, 2024, 2025], categories=categories
+        )
+
+        category_results = CategoryResults(model, "test_cat")
+
+        # 2023: 100 + 50 = 150 (no None values)
+        assert category_results.total(2023) == 150.0
+
+        # 2024: 0 + 75 = 75 (item1 is None, treated as 0)
+        assert category_results.total(2024) == 75.0
+
+        # 2025: 200 + 0 = 200 (item2 is None, treated as 0)
+        assert category_results.total(2025) == 200.0
+
+    def test_total_invalid_year_raises_error(self, model_with_categories):
+        """Test that total method raises ValueError for invalid year."""
+        income_category = CategoryResults(model_with_categories, "income")
+
+        # Test with year not in model
+        with pytest.raises(ValueError) as exc_info:
+            income_category.total(2030)
+
+        assert "Year 2030 not found in model" in str(exc_info.value)
+        assert "Available years: [2023, 2024, 2025]" in str(exc_info.value)
+
+    def test_total_empty_category_invalid_year_raises_error(
+        self, model_with_categories
+    ):
+        """Test that total method raises ValueError for invalid year even with empty category."""
+        metrics_category = CategoryResults(model_with_categories, "metrics")
+
+        # Even with empty category, should validate year
+        with pytest.raises(ValueError) as exc_info:
+            metrics_category.total(2030)
+
+        assert "Year 2030 not found in model" in str(exc_info.value)
+
+    def test_total_returns_float(self, model_with_categories):
+        """Test that total method always returns a float."""
+        income_category = CategoryResults(model_with_categories, "income")
+
+        total = income_category.total(2023)
+        assert isinstance(total, float)
+        assert total == 150000.0
+
+        # Empty category should also return float
+        metrics_category = CategoryResults(model_with_categories, "metrics")
+        empty_total = metrics_category.total(2023)
+        assert isinstance(empty_total, float)
+        assert empty_total == 0.0
+
+    def test_total_uses_line_items_results_total(self, model_with_categories):
+        """Test that total method properly delegates to LineItemsResults.total()."""
+        income_category = CategoryResults(model_with_categories, "income")
+
+        # Get the category total
+        category_total = income_category.total(2023)
+
+        # Get the same result using LineItemsResults directly
+        line_items_results = model_with_categories.line_items(
+            ["product_sales", "service_revenue"]
+        )
+        direct_total = line_items_results.total(2023)
+
+        # Should be the same
+        assert category_total == direct_total
+        assert category_total == 150000.0
+
+    def test_total_with_single_item_category(self):
+        """Test total method with category containing single line item."""
+        from pyproforma import Category, LineItem, Model
+
+        line_items = [
+            LineItem(
+                name="single_item",
+                category="single_cat",
+                label="Single Item",
+                values={2023: 42.0, 2024: 84.0},
+            ),
+        ]
+
+        categories = [Category(name="single_cat", label="Single Category")]
+        model = Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+        category_results = CategoryResults(model, "single_cat")
+
+        # Should return the value of the single item
+        assert category_results.total(2023) == 42.0
+        assert category_results.total(2024) == 84.0

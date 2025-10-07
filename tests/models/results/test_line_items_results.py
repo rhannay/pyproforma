@@ -470,3 +470,407 @@ class TestLineItemsResultsEdgeCases:
         names2 = items.names
         assert len(names2) == 2
         assert "product_sales" in names2
+
+
+class TestLineItemsResultsTableMethod:
+    """Test the table method of LineItemsResults."""
+
+    def test_table_returns_table_object(self, model_with_line_items):
+        """Test that table method returns a Table object."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table()
+
+        # Should return a Table object
+        assert table is not None
+        assert hasattr(table, "rows")
+
+    def test_table_includes_only_specified_line_items(self, model_with_line_items):
+        """Test that table only includes the line items in this results set."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table()
+
+        # Check that only the specified items are in the table
+        # Get all row labels (excluding potential category headers)
+        row_labels = []
+        for row in table.rows:
+            if hasattr(row, "cells") and len(row.cells) > 0:
+                cell_value = row.cells[0].value
+                # Skip category headers and focus on line item labels
+                if cell_value not in ["Income", "Costs"]:  # Category names
+                    row_labels.append(cell_value)
+
+        # Should contain the labels for our line items
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        # Should not contain labels for items not in the results set
+        assert "Salaries" not in row_labels
+        assert "Office Rent" not in row_labels
+
+    def test_table_with_single_line_item(self, model_with_line_items):
+        """Test table method with a single line item."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        table = items.table()
+
+        assert table is not None
+        # Should have at least one row for the line item
+        assert len(table.rows) >= 1
+
+        # Check that the correct item is included
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        assert "Product Sales" in row_labels
+
+    def test_table_with_group_by_category_true(self, model_with_line_items):
+        """Test table method with group_by_category=True."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue", "salaries"]
+        )
+
+        table = items.table(group_by_category=True)
+
+        assert table is not None
+
+        # Should include category headers
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should have category headers
+        assert "Income" in row_labels  # Category for product_sales and service_revenue
+        assert "Costs" in row_labels  # Category for salaries
+        # And the line item labels
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Salaries" in row_labels
+
+    def test_table_with_include_percent_change_true(self, model_with_line_items):
+        """Test table method with include_percent_change=True."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(include_percent_change=True)
+
+        assert table is not None
+
+        # Should have more rows due to percent change rows
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should include both item labels and percent change labels
+        assert "Product Sales" in row_labels
+        assert "Product Sales % Change" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Service Revenue % Change" in row_labels
+
+    def test_table_with_included_cols(self, model_with_line_items):
+        """Test table method with custom included_cols."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(included_cols=["name", "label"])
+
+        assert table is not None
+        # Table should be created successfully with custom columns
+        assert len(table.rows) >= 2  # At least one row per line item
+
+    def test_table_with_hardcoded_color(self, model_with_line_items):
+        """Test table method with hardcoded_color parameter."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(hardcoded_color="blue")
+
+        assert table is not None
+        # Should create table successfully with color parameter
+        assert len(table.rows) >= 2
+
+    def test_table_with_multiple_kwargs(self, model_with_line_items):
+        """Test table method with multiple keyword arguments."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue", "salaries"]
+        )
+
+        table = items.table(
+            group_by_category=True,
+            include_percent_change=True,
+            included_cols=["label"],
+            hardcoded_color="red",
+        )
+
+        assert table is not None
+        # Should handle multiple parameters without error
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should have category grouping and percent changes
+        assert "Income" in row_labels
+        assert "Product Sales" in row_labels
+        assert "Product Sales % Change" in row_labels
+
+    def test_table_with_all_line_items(self, model_with_line_items):
+        """Test table method when results set includes all line items."""
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        table = items.table()
+
+        assert table is not None
+
+        # Should include all line item labels
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Salaries" in row_labels
+        assert "Office Rent" in row_labels
+
+    def test_table_filters_correctly_from_model_items(self, model_with_line_items):
+        """Test that table correctly filters from the full model."""
+        # Create results with subset of items
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "office_rent"]
+        )
+
+        table = items.table()
+
+        # Get the line item labels from the table
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells")
+            and len(row.cells) > 0
+            and row.cells[0].value not in ["Income", "Costs"]  # Skip category headers
+        ]
+
+        # Should only contain the specified items
+        assert "Product Sales" in row_labels
+        assert "Office Rent" in row_labels
+        # Should not contain the items not in the results set
+        assert "Service Revenue" not in row_labels
+        assert "Salaries" not in row_labels
+
+    def test_table_uses_model_tables_line_items(self, model_with_line_items):
+        """Test that table method properly delegates to model.tables.line_items."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Call table method
+        table = items.table(group_by_category=True)
+
+        # Verify it produces the same result as calling model.tables.line_items directly
+        direct_table = model_with_line_items.tables.line_items(
+            line_item_names=["product_sales", "service_revenue"], group_by_category=True
+        )
+
+        # Should have the same number of rows
+        assert len(table.rows) == len(direct_table.rows)
+
+        # Should have the same row labels
+        table_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        direct_labels = [
+            row.cells[0].value
+            for row in direct_table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        assert table_labels == direct_labels
+
+
+class TestLineItemsResultsTotalMethod:
+    """Test the total method of LineItemsResults."""
+
+    def test_total_sums_all_line_items(self, model_with_line_items):
+        """Test that total method sums all line items for a given year."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Total for 2023: product_sales=100000 + service_revenue=50000 = 150000
+        total_2023 = items.total(2023)
+        assert total_2023 == 150000.0
+
+        # Total for 2024: product_sales=120000 + service_revenue=60000 = 180000
+        total_2024 = items.total(2024)
+        assert total_2024 == 180000.0
+
+        # Total for 2025: product_sales=140000 + service_revenue=70000 = 210000
+        total_2025 = items.total(2025)
+        assert total_2025 == 210000.0
+
+    def test_total_with_single_item(self, model_with_line_items):
+        """Test total method with a single line item."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        # Should return the value of the single item
+        total_2023 = items.total(2023)
+        assert total_2023 == 100000.0
+
+        total_2024 = items.total(2024)
+        assert total_2024 == 120000.0
+
+    def test_total_with_all_items(self, model_with_line_items):
+        """Test total method with all line items in the model."""
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        # Total for 2023: 100000 + 50000 + 40000 + 24000 = 214000
+        total_2023 = items.total(2023)
+        assert total_2023 == 214000.0
+
+        # Total for 2024: 120000 + 60000 + 45000 + 24000 = 249000
+        total_2024 = items.total(2024)
+        assert total_2024 == 249000.0
+
+    def test_total_treats_none_as_zero(self):
+        """Test that total method treats None values as 0."""
+        from pyproforma import Category, LineItem, Model
+
+        # Create line items where some have None values
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test",
+                label="Item 1",
+                values={2023: 100.0, 2024: None, 2025: 200.0},  # None in 2024
+            ),
+            LineItem(
+                name="item2",
+                category="test",
+                label="Item 2",
+                values={2023: 50.0, 2024: 75.0, 2025: None},  # None in 2025
+            ),
+        ]
+
+        categories = [Category(name="test", label="Test")]
+        model = Model(
+            line_items=line_items, years=[2023, 2024, 2025], categories=categories
+        )
+
+        items = model.line_items(["item1", "item2"])
+
+        # 2023: 100 + 50 = 150 (no None values)
+        assert items.total(2023) == 150.0
+
+        # 2024: 0 + 75 = 75 (item1 is None, treated as 0)
+        assert items.total(2024) == 75.0
+
+        # 2025: 200 + 0 = 200 (item2 is None, treated as 0)
+        assert items.total(2025) == 200.0
+
+    def test_total_with_negative_values(self, model_with_line_items):
+        """Test total method with negative values (e.g., expenses)."""
+        items = LineItemsResults(model_with_line_items, ["salaries", "office_rent"])
+
+        # Both are expenses (negative impact), but stored as positive values
+        # Total for 2023: salaries=40000 + office_rent=24000 = 64000
+        total_2023 = items.total(2023)
+        assert total_2023 == 64000.0
+
+        # Total for 2024: salaries=45000 + office_rent=24000 = 69000
+        total_2024 = items.total(2024)
+        assert total_2024 == 69000.0
+
+    def test_total_mixed_revenue_and_expenses(self, model_with_line_items):
+        """Test total method with mixed revenue and expense items."""
+        items = LineItemsResults(model_with_line_items, ["product_sales", "salaries"])
+
+        # Mix of revenue and expense
+        # Total for 2023: product_sales=100000 + salaries=40000 = 140000
+        total_2023 = items.total(2023)
+        assert total_2023 == 140000.0
+
+        # Total for 2024: product_sales=120000 + salaries=45000 = 165000
+        total_2024 = items.total(2024)
+        assert total_2024 == 165000.0
+
+    def test_total_invalid_year_raises_error(self, model_with_line_items):
+        """Test that total method raises ValueError for invalid year."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Test with year not in model
+        with pytest.raises(ValueError) as exc_info:
+            items.total(2030)
+
+        assert "Year 2030 not found in model" in str(exc_info.value)
+        assert "Available years: [2023, 2024, 2025]" in str(exc_info.value)
+
+    def test_total_empty_items_list_returns_zero(self):
+        """Test total method with empty line items list."""
+        from pyproforma import Model
+
+        # Create model with no line items for this results set
+        model = Model(years=[2023, 2024], categories=[])
+
+        # This should raise an error during initialization since we require
+        # non-empty list
+        with pytest.raises(ValueError):
+            LineItemsResults(model, [])
+
+    def test_total_returns_float(self, model_with_line_items):
+        """Test that total method always returns a float."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        total = items.total(2023)
+        assert isinstance(total, float)
+        assert total == 100000.0
+
+    def test_total_with_zero_values(self):
+        """Test total method when some items have zero values."""
+        from pyproforma import Category, LineItem, Model
+
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test",
+                label="Item 1",
+                values={2023: 0.0, 2024: 100.0},
+            ),
+            LineItem(
+                name="item2",
+                category="test",
+                label="Item 2",
+                values={2023: 50.0, 2024: 0.0},
+            ),
+        ]
+
+        categories = [Category(name="test", label="Test")]
+        model = Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+        items = model.line_items(["item1", "item2"])
+
+        # 2023: 0 + 50 = 50
+        assert items.total(2023) == 50.0
+
+        # 2024: 100 + 0 = 100
+        assert items.total(2024) == 100.0

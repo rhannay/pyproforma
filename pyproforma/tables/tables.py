@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
+from ..constants import VALID_COLS, ColumnType
 from . import row_types as rt
 from .table_class import Table
 from .table_generator import generate_table_from_template
@@ -35,7 +36,9 @@ class Tables:
         """Initialize the main tables namespace with a Model."""
         self._model = model
 
-    def from_template(self, template: list[dict], include_name: bool = False) -> Table:
+    def from_template(
+        self, template: list[dict], col_labels: Union[str, list[str]] = "Years"
+    ) -> Table:
         """
         Generate a table from a template of row configurations.
 
@@ -43,8 +46,7 @@ class Tables:
             template (list[dict]): A list of row configuration dictionaries that define
                 the structure and content of the table. Each dictionary should specify
                 the row type and its parameters (e.g., ItemRow, LabelRow, etc.).
-            include_name (bool, optional): Whether to include a name column in the
-                generated table. Defaults to False.
+            col_labels: String or list of strings for label columns. Defaults to "Years".
 
         Returns:
             Table: A Table object containing the rows and data as specified by the template.
@@ -52,121 +54,163 @@ class Tables:
         Examples:
             >>> template = [
             ...     rt.LabelRow(label='Revenue', bold=True),
-            ...     rt.ItemRow(name='sales_revenue'),
-            ...     rt.ItemRow(name='other_revenue')
+            ...     rt.ItemRow(name='sales_revenue', included_cols=['label']),
+            ...     rt.ItemRow(name='other_revenue', included_cols=['label'])
             ... ]
-            >>> table = tables.from_template(template, include_name=True)
+            >>> table = tables.from_template(template, col_labels="Years")
         """  # noqa: E501
         table = generate_table_from_template(
-            self._model, template, include_name=include_name
+            self._model, template, col_labels=col_labels
         )
         return table
 
     def line_items(
         self,
         line_item_names: Optional[list[str]] = None,
-        include_name: bool = False,
+        included_cols: list[ColumnType] = ["label"],
+        col_labels: Optional[Union[str, list[str]]] = None,
+        group_by_category: bool = False,
+        include_percent_change: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table containing all line items organized by category.
+        Generate a table containing line items with optional category organization.
 
-        Creates a table that displays all line items from the model, organized
-        by their respective categories. Each category is shown with a bold header
-        followed by its line items, and includes category totals if configured.
+        Creates a table that displays line items from the model. If no specific
+        line items are provided, includes all line items from the model. When
+        group_by_category is True, groups items by category with category
+        headers.
 
         Args:
             line_item_names (Optional[list[str]]): List of line item names to include.
                                                   If None, includes all line items. Defaults to None.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
+            included_cols (list[ColumnType]): List of columns to include. Can contain 'label', 'name',
+                                             and/or 'category'. Defaults to ["label"].
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
+            group_by_category (bool, optional): Whether to group line items by category
+                                                     and include category header rows. Defaults to False.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
 
         Returns:
-            Table: A Table object containing all line items grouped by category.
+            Table: A Table object containing the specified line items.
 
         Examples:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.line_items(include_name=True, hardcoded_color='blue')
+            >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
+            >>> table = model.tables.line_items(group_by_category=True)
+            >>> table = model.tables.line_items(include_percent_change=True)
         """  # noqa: E501
-        rows = self._line_item_rows(
-            line_item_names=line_item_names, hardcoded_color=hardcoded_color
-        )
-        return self.from_template(rows, include_name=include_name)
+        # Validate included_cols
+        for col in included_cols:
+            if col not in VALID_COLS:
+                raise ValueError(
+                    f"Invalid column '{col}'. Must be one of: {VALID_COLS}"
+                )
 
-    def _line_item_rows(
-        self,
-        line_item_names: Optional[list[str]] = None,
-        hardcoded_color: Optional[str] = None,
-    ):
-        rows = []
-        for category_name in self._model.category_names:
-            rows.extend(
-                self._category_rows(
-                    category_name,
-                    line_item_names=line_item_names,
+        # Set default col_labels if not provided
+        if col_labels is None:
+            col_labels = included_cols
+
+        # Get line items to include
+        if line_item_names is None:
+            # Get all line items in their existing order using metadata
+            items_metadata = self._model.line_item_metadata.copy()
+        else:
+            # Filter metadata to only include specified items
+            items_metadata = [
+                item
+                for item in self._model.line_item_metadata
+                if item["name"] in line_item_names
+            ]
+
+        # Sort by category if we need category labels
+        if group_by_category:
+            items_metadata = sorted(items_metadata, key=lambda x: x["category"])
+
+        # Create template
+        template = []
+        current_category = None
+
+        for item in items_metadata:
+            # Add category label if needed and this is a new category
+            if group_by_category:
+                item_category = item["category"]
+                if item_category != current_category:
+                    # Get category label from model
+                    category_metadata = self._model._get_category_metadata(
+                        item_category
+                    )
+                    category_label = category_metadata["label"]
+
+                    template.append(rt.LabelRow(label=category_label, bold=True))
+                    current_category = item_category
+
+            # Add the item row
+            template.append(
+                rt.ItemRow(
+                    name=item["name"],
+                    included_cols=included_cols,
                     hardcoded_color=hardcoded_color,
                 )
             )
-        return rows
 
-    def _category_rows(
-        self,
-        category_name: str,
-        line_item_names: Optional[list[str]] = None,
-        hardcoded_color: Optional[str] = None,
-    ):
-        rows = []
-        category = self._model.category(category_name)
+            # Add percent change row if requested
+            if include_percent_change:
+                template.append(rt.PercentChangeRow(name=item["name"]))
 
-        # Get line item names for this category using metadata
-        category_line_items = self._model.line_item_names_by_category(category_name)
-
-        # Filter by line_item_names if provided
-        if line_item_names is not None:
-            category_line_items = [
-                name for name in category_line_items if name in line_item_names
-            ]
-
-        # Only add category label if there are items to show
-        if category_line_items:
-            rows.append(rt.LabelRow(label=category.label, bold=True))
-
-            for item_name in category_line_items:
-                rows.append(
-                    rt.ItemRow(
-                        name=item_name,
-                        hardcoded_color=hardcoded_color,
-                    )
-                )
-
-        return rows
+        return self.from_template(template, col_labels=col_labels)
 
     def category(
         self,
         category_name: str,
-        include_name: bool = False,
+        include_totals: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table for a specific category.
+        Generate a table for a specific category showing all line items in that category.
 
         Args:
             category_name (str): The name of the category to generate the table for.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
 
         Returns:
-            Table: A Table object containing the category items.
+            Table: A Table object containing all line items in the specified category.
         """  # noqa: E501
-        rows = self._category_rows(
-            category_name, hardcoded_color=hardcoded_color
-        )
-        return self.from_template(rows, include_name=include_name)
+        # Get all line item names for this category
+        line_item_names = self._model.line_item_names_by_category(category_name)
+
+        # Create template with line items
+        template = []
+        for name in line_item_names:
+            template.append(
+                rt.ItemRow(
+                    name=name,
+                    included_cols=["label"],
+                    hardcoded_color=hardcoded_color,
+                )
+            )
+
+        # Add category total row if requested
+        if include_totals:
+            template.append(
+                rt.CategoryTotalRow(
+                    category_name=category_name,
+                    bold=True,
+                    top_border="thin",
+                )
+            )
+
+        return self.from_template(template, col_labels=["label"])
 
     def line_item(
         self,
@@ -187,13 +231,16 @@ class Tables:
         Returns:
             Table: A Table object containing the line item's label and values across years.
         """  # noqa: E501
+        # Determine columns to include based on include_name parameter
+        cols = ["name", "label"] if include_name else ["label"]
+
         rows = [
-            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
+            rt.ItemRow(name=name, included_cols=cols, hardcoded_color=hardcoded_color),
             rt.PercentChangeRow(name=name, label="% Change"),
             rt.CumulativeChangeRow(name=name, label="Cumulative Change"),
             rt.CumulativePercentChangeRow(name=name, label="Cumulative % Change"),
         ]
-        return self.from_template(rows, include_name=include_name)
+        return self.from_template(rows)
 
     def constraint(self, constraint_name: str, color_code: bool = True) -> Table:
         """
@@ -209,7 +256,7 @@ class Tables:
         constraint_results = self._model.constraint(constraint_name)
         rows = [
             rt.LabelRow(label=constraint_results.label, bold=True),
-            rt.ItemRow(name=constraint_results.line_item_name),
+            rt.ItemRow(name=constraint_results.line_item_name, included_cols=["label"]),
             rt.ConstraintTargetRow(constraint_name=constraint_name, label="Target"),
             rt.ConstraintVarianceRow(constraint_name=constraint_name, label="Variance"),
             rt.ConstraintPassRow(
@@ -218,4 +265,4 @@ class Tables:
                 color_code=color_code,
             ),
         ]
-        return generate_table_from_template(self._model, rows, include_name=False)
+        return self.from_template(rows)

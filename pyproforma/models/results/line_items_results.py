@@ -152,6 +152,69 @@ class LineItemsResults:
 
         return LineItemResults(self.model, name)
 
+    def table(self, **kwargs):
+        """
+        Generate a table containing all line items in this results set.
+
+        This method uses the model's Tables.line_items() method to create a table
+        showing all line items included in this LineItemsResults object.
+
+        Args:
+            **kwargs: Additional keyword arguments to pass to Tables.line_items().
+                     Common options include:
+                     - included_cols: List of columns to include (default: ["label"])
+                     - group_by_category: Whether to group by category (default: False)
+                     - include_percent_change: Whether to include percent change rows
+                       (default: False)
+                     - hardcoded_color: CSS color for hardcoded values (default: None)
+
+        Returns:
+            Table: A Table object containing the line items in this results set
+
+        Examples:
+            >>> items = model.line_items(['revenue_sales', 'cost_of_goods'])
+            >>> table = items.table()  # Basic table with labels
+            >>> table = items.table(group_by_category=True)  # Group by category
+            >>> table = items.table(include_percent_change=True)  # With % change
+        """
+        return self.model.tables.line_items(line_item_names=self.names, **kwargs)
+
+    def total(self, year: int) -> float:
+        """
+        Calculate the sum of all line items in this results set for a given year.
+
+        This method sums the values of all line items included in this
+        LineItemsResults for the specified year. None values are treated as 0.
+
+        Args:
+            year (int): The year for which to calculate the total
+
+        Returns:
+            float: The sum of all line item values for the specified year
+
+        Raises:
+            ValueError: If the year is not in the model's years
+
+        Examples:
+            >>> items = model.line_items(['revenue_sales', 'service_revenue'])
+            >>> total_revenue = items.total(2024)  # Sum of both revenue items for 2024
+            >>> items = model.line_items(['cost_of_goods', 'operating_expenses'])
+            >>> total_costs = items.total(2024)  # Sum of both cost items for 2024
+        """
+        # Validate that the year exists in the model
+        if year not in self.model.years:
+            raise ValueError(
+                f"Year {year} not found in model. Available years: {self.model.years}"
+            )
+
+        total = 0.0
+        for name in self._line_item_names:
+            value = self.model.line_item(name)[year]
+            if value is not None:
+                total += value
+
+        return total
+
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
     # ============================================================================

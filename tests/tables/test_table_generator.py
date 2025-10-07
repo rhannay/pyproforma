@@ -43,7 +43,7 @@ class TestTableGenerationWithEmptyYears:
         # Should not raise an error
         table = generate_table_from_template(model, template)
         assert table is not None
-        assert len(table.columns) == 3  # Year + 2 years
+        assert len(table.columns) == 3  # 1 label column + 2 year columns
         assert len(table.rows) == 1
 
     def test_generate_multi_model_table_with_empty_models_raises_error(self):

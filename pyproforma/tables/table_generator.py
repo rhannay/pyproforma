@@ -14,14 +14,16 @@ class TableGenerationError(Exception):
 
 
 def generate_table_from_template(
-    model: "Model", template: list[Union[dict, BaseRow]], include_name: bool = False
+    model: "Model",
+    template: list[Union[dict, BaseRow]],
+    col_labels: Union[str, list[str]] = "Years",
 ) -> Table:
     """Generate a table from a model using a template specification.
 
     Args:
         model: The Model instance containing the data
         template: List of row configurations (dicts or dataclass instances)
-        include_name: Whether to include item names in output
+        col_labels: String or list of strings for label columns
 
     Returns:
         Table: A formatted table ready for display or export
@@ -37,12 +39,13 @@ def generate_table_from_template(
         )
 
     columns = []
-    if include_name:
-        # Add column to make space for name and label
-        columns.append(Column(label="Label", text_align="left"))
-        columns.append(Column(label="Name", text_align="left"))
+
+    # Add label columns
+    if isinstance(col_labels, str):
+        columns.append(Column(label=col_labels, text_align="left"))
     else:
-        columns = [Column(label="Year", text_align="left")]
+        for label in col_labels:
+            columns.append(Column(label=label, text_align="left"))
 
     # Add columns for each year in the model
     for year in model.years:
@@ -54,9 +57,6 @@ def generate_table_from_template(
         # Convert dict to dataclass if needed
         if isinstance(config, dict):
             config = dict_to_row_config(config)
-
-        # Set include_name on the config
-        config.include_name = include_name
 
         # Generate row(s)
         result = config.generate_row(model)
