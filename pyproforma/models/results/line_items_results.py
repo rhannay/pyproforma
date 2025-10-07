@@ -152,6 +152,33 @@ class LineItemsResults:
 
         return LineItemResults(self.model, name)
 
+    def table(self, **kwargs):
+        """
+        Generate a table containing all line items in this results set.
+
+        This method uses the model's Tables.line_items() method to create a table
+        showing all line items included in this LineItemsResults object.
+
+        Args:
+            **kwargs: Additional keyword arguments to pass to Tables.line_items().
+                     Common options include:
+                     - included_cols: List of columns to include (default: ["label"])
+                     - group_by_category: Whether to group by category (default: False)
+                     - include_percent_change: Whether to include percent change rows
+                       (default: False)
+                     - hardcoded_color: CSS color for hardcoded values (default: None)
+
+        Returns:
+            Table: A Table object containing the line items in this results set
+
+        Examples:
+            >>> items = model.line_items(['revenue_sales', 'cost_of_goods'])
+            >>> table = items.table()  # Basic table with labels
+            >>> table = items.table(group_by_category=True)  # Group by category
+            >>> table = items.table(include_percent_change=True)  # With % change
+        """
+        return self.model.tables.line_items(line_item_names=self.names, **kwargs)
+
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
     # ============================================================================

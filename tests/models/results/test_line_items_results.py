@@ -470,3 +470,236 @@ class TestLineItemsResultsEdgeCases:
         names2 = items.names
         assert len(names2) == 2
         assert "product_sales" in names2
+
+
+class TestLineItemsResultsTableMethod:
+    """Test the table method of LineItemsResults."""
+
+    def test_table_returns_table_object(self, model_with_line_items):
+        """Test that table method returns a Table object."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table()
+
+        # Should return a Table object
+        assert table is not None
+        assert hasattr(table, "rows")
+
+    def test_table_includes_only_specified_line_items(self, model_with_line_items):
+        """Test that table only includes the line items in this results set."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table()
+
+        # Check that only the specified items are in the table
+        # Get all row labels (excluding potential category headers)
+        row_labels = []
+        for row in table.rows:
+            if hasattr(row, "cells") and len(row.cells) > 0:
+                cell_value = row.cells[0].value
+                # Skip category headers and focus on line item labels
+                if cell_value not in ["Income", "Costs"]:  # Category names
+                    row_labels.append(cell_value)
+
+        # Should contain the labels for our line items
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        # Should not contain labels for items not in the results set
+        assert "Salaries" not in row_labels
+        assert "Office Rent" not in row_labels
+
+    def test_table_with_single_line_item(self, model_with_line_items):
+        """Test table method with a single line item."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        table = items.table()
+
+        assert table is not None
+        # Should have at least one row for the line item
+        assert len(table.rows) >= 1
+
+        # Check that the correct item is included
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        assert "Product Sales" in row_labels
+
+    def test_table_with_group_by_category_true(self, model_with_line_items):
+        """Test table method with group_by_category=True."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue", "salaries"]
+        )
+
+        table = items.table(group_by_category=True)
+
+        assert table is not None
+
+        # Should include category headers
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should have category headers
+        assert "Income" in row_labels  # Category for product_sales and service_revenue
+        assert "Costs" in row_labels  # Category for salaries
+        # And the line item labels
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Salaries" in row_labels
+
+    def test_table_with_include_percent_change_true(self, model_with_line_items):
+        """Test table method with include_percent_change=True."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(include_percent_change=True)
+
+        assert table is not None
+
+        # Should have more rows due to percent change rows
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should include both item labels and percent change labels
+        assert "Product Sales" in row_labels
+        assert "Product Sales % Change" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Service Revenue % Change" in row_labels
+
+    def test_table_with_included_cols(self, model_with_line_items):
+        """Test table method with custom included_cols."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(included_cols=["name", "label"])
+
+        assert table is not None
+        # Table should be created successfully with custom columns
+        assert len(table.rows) >= 2  # At least one row per line item
+
+    def test_table_with_hardcoded_color(self, model_with_line_items):
+        """Test table method with hardcoded_color parameter."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        table = items.table(hardcoded_color="blue")
+
+        assert table is not None
+        # Should create table successfully with color parameter
+        assert len(table.rows) >= 2
+
+    def test_table_with_multiple_kwargs(self, model_with_line_items):
+        """Test table method with multiple keyword arguments."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue", "salaries"]
+        )
+
+        table = items.table(
+            group_by_category=True,
+            include_percent_change=True,
+            included_cols=["label"],
+            hardcoded_color="red",
+        )
+
+        assert table is not None
+        # Should handle multiple parameters without error
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        # Should have category grouping and percent changes
+        assert "Income" in row_labels
+        assert "Product Sales" in row_labels
+        assert "Product Sales % Change" in row_labels
+
+    def test_table_with_all_line_items(self, model_with_line_items):
+        """Test table method when results set includes all line items."""
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        table = items.table()
+
+        assert table is not None
+
+        # Should include all line item labels
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+
+        assert "Product Sales" in row_labels
+        assert "Service Revenue" in row_labels
+        assert "Salaries" in row_labels
+        assert "Office Rent" in row_labels
+
+    def test_table_filters_correctly_from_model_items(self, model_with_line_items):
+        """Test that table correctly filters from the full model."""
+        # Create results with subset of items
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "office_rent"]
+        )
+
+        table = items.table()
+
+        # Get the line item labels from the table
+        row_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells")
+            and len(row.cells) > 0
+            and row.cells[0].value not in ["Income", "Costs"]  # Skip category headers
+        ]
+
+        # Should only contain the specified items
+        assert "Product Sales" in row_labels
+        assert "Office Rent" in row_labels
+        # Should not contain the items not in the results set
+        assert "Service Revenue" not in row_labels
+        assert "Salaries" not in row_labels
+
+    def test_table_uses_model_tables_line_items(self, model_with_line_items):
+        """Test that table method properly delegates to model.tables.line_items."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        # Call table method
+        table = items.table(group_by_category=True)
+
+        # Verify it produces the same result as calling model.tables.line_items directly
+        direct_table = model_with_line_items.tables.line_items(
+            line_item_names=["product_sales", "service_revenue"], group_by_category=True
+        )
+
+        # Should have the same number of rows
+        assert len(table.rows) == len(direct_table.rows)
+
+        # Should have the same row labels
+        table_labels = [
+            row.cells[0].value
+            for row in table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        direct_labels = [
+            row.cells[0].value
+            for row in direct_table.rows
+            if hasattr(row, "cells") and len(row.cells) > 0
+        ]
+        assert table_labels == direct_labels
