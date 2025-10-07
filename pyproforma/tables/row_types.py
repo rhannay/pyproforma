@@ -127,7 +127,6 @@ class ItemsByCategoryRow(BaseRow):
 
     category: str
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Row]:
@@ -135,9 +134,15 @@ class ItemsByCategoryRow(BaseRow):
         rows = []
         # Get all line items in the specified category
         for item_name in model.line_item_names_by_category(self.category):
+            # Determine included_cols based on label_col_count
+            if label_col_count >= 2:
+                included_cols = ["name", "label"]
+            else:
+                included_cols = ["label"]
+
             item_config = ItemRow(
                 name=item_name,
-                include_name=self.include_name,
+                included_cols=included_cols,
                 bold=self.bold,
                 value_format=self.value_format,
             )
@@ -193,7 +198,6 @@ class CumulativeChangeRow(BaseRow):
     name: str
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -210,9 +214,16 @@ class CumulativeChangeRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value=self.name, bold=self.bold, align="left"))
+
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Get the base year value (first year)
         base_year = model.years[0]
@@ -242,7 +253,6 @@ class CumulativePercentChangeRow(BaseRow):
     name: str
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -259,9 +269,16 @@ class CumulativePercentChangeRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value=self.name, bold=self.bold, align="left"))
+
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Get the base year value (first year)
         base_year = model.years[0]
@@ -297,7 +314,6 @@ class ConstraintPassRow(BaseRow):
     fail_msg: str = "Fail"
     label: Optional[str] = None
     color_code: bool = False
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -310,9 +326,16 @@ class ConstraintPassRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value=self.constraint_name, bold=self.bold, align="left"))
+
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Add cells for each year with constraint evaluation result
         for year in model.years:
@@ -349,7 +372,6 @@ class ConstraintVarianceRow(BaseRow):
     constraint_name: str
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -368,9 +390,16 @@ class ConstraintVarianceRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value=self.constraint_name, bold=self.bold, align="left"))
+
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Add cells for each year with constraint variance calculation
         for year in model.years:
@@ -395,7 +424,6 @@ class ConstraintTargetRow(BaseRow):
     constraint_name: str
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
@@ -414,9 +442,16 @@ class ConstraintTargetRow(BaseRow):
 
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value=self.constraint_name, bold=self.bold, align="left"))
+
         cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Add cells for each year with constraint target value
         for year in model.years:
@@ -486,16 +521,22 @@ class CustomRow(BaseRow):
     label: str
     values: dict  # dict of year: float
     value_format: Optional[ValueFormat] = None
-    include_name: bool = False
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row with custom label and values for specified years."""
         # Create cells for this row
         cells = []
-        if self.include_name:
+
+        # Add empty name cell if we have 2 or more label columns
+        if label_col_count >= 2:
             cells.append(Cell(value="", bold=self.bold, align="left"))
+
         cells.append(Cell(value=self.label, bold=self.bold, align="left"))
+
+        # Add blank cells for any additional label columns beyond the first two
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
 
         # Add a cell for each year with the custom value if available
         for year in model.years:

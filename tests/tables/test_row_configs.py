@@ -166,3 +166,59 @@ def test_blank_row_label_col_count(sample_line_item_set: Model):
     # All cells should be empty
     for cell in row_with_three_labels.cells:
         assert cell.value == ""
+
+
+def test_cumulative_change_row_label_col_count(sample_line_item_set: Model):
+    """Test that CumulativeChangeRow properly uses label_col_count parameter."""
+    from pyproforma.tables.row_types import CumulativeChangeRow
+
+    cumulative_row = CumulativeChangeRow(name="item1")
+
+    # Test with default label_col_count (1) - should only have label
+    row = cumulative_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Should have 1 label column + number of years
+    expected_cells = 1 + len(sample_line_item_set.years)
+    assert len(row.cells) == expected_cells
+
+    # First cell should be the label (not the name)
+    assert "Cumulative Change" in row.cells[0].value
+
+    # Test with label_col_count=2 - should have name and label
+    row_with_name = cumulative_row.generate_row(sample_line_item_set, label_col_count=2)
+
+    # Should have 2 label columns + number of years
+    expected_cells_two = 2 + len(sample_line_item_set.years)
+    assert len(row_with_name.cells) == expected_cells_two
+
+    # First cell should be the name, second should be the label
+    assert row_with_name.cells[0].value == "item1"
+    assert "Cumulative Change" in row_with_name.cells[1].value
+
+
+def test_custom_row_label_col_count(sample_line_item_set: Model):
+    """Test that CustomRow properly uses label_col_count parameter."""
+    from pyproforma.tables.row_types import CustomRow
+
+    custom_row = CustomRow(label="Custom Label", values={2023: 100, 2024: 200})
+
+    # Test with default label_col_count (1) - should only have label
+    row = custom_row.generate_row(sample_line_item_set, label_col_count=1)
+
+    # Should have 1 label column + number of years
+    expected_cells = 1 + len(sample_line_item_set.years)
+    assert len(row.cells) == expected_cells
+
+    # First cell should be the label
+    assert row.cells[0].value == "Custom Label"
+
+    # Test with label_col_count=2 - should have empty name cell and label
+    row_with_name = custom_row.generate_row(sample_line_item_set, label_col_count=2)
+
+    # Should have 2 label columns + number of years
+    expected_cells_two = 2 + len(sample_line_item_set.years)
+    assert len(row_with_name.cells) == expected_cells_two
+
+    # First cell should be empty (name placeholder), second should be the label
+    assert row_with_name.cells[0].value == ""
+    assert row_with_name.cells[1].value == "Custom Label"
