@@ -333,3 +333,233 @@ class TestFromDataFrame:
         assert model.value("gross_profit", 2023) == 100
         assert model.value("net_income", 2023) == 200
         assert model.value("cost_of_goods_sold", 2023) == 300
+
+    def test_dataframe_with_name_col(self):
+        """Test using name_col parameter to specify name column."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            2023: [1000, 600],
+            2024: [1200, 700],
+            2025: [1500, 900]
+        })
+
+        model = Model.from_dataframe(df, name_col='item_name')
+
+        assert 'revenue' in model.line_item_names
+        assert 'expenses' in model.line_item_names
+        assert model.value("revenue", 2023) == 1000
+        assert model.value("expenses", 2024) == 700
+        assert model.value("revenue", 2025) == 1500
+
+    def test_dataframe_with_name_and_label_col(self):
+        """Test using name_col and label_col parameters."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            'display_label': ['Total Revenue', 'Total Expenses'],
+            2023: [1000, 600],
+            2024: [1200, 700]
+        })
+
+        model = Model.from_dataframe(
+            df, name_col='item_name', label_col='display_label'
+        )
+
+        assert 'revenue' in model.line_item_names
+        assert 'expenses' in model.line_item_names
+
+        # Check that labels are set correctly
+        revenue_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'revenue'
+        ][0]
+        expenses_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'expenses'
+        ][0]
+        assert revenue_item.label == 'Total Revenue'
+        assert expenses_item.label == 'Total Expenses'
+
+    def test_dataframe_with_label_col_only(self):
+        """Test using label_col without name_col (names derived from labels)."""
+        df = pd.DataFrame({
+            'display_label': ['Total Revenue', 'Total Expenses', 'Net Profit'],
+            2023: [1000, 600, 400],
+            2024: [1200, 700, 500]
+        })
+
+        model = Model.from_dataframe(df, label_col='display_label')
+
+        # Names should be derived from labels using convert_to_name
+        assert 'total_revenue' in model.line_item_names
+        assert 'total_expenses' in model.line_item_names
+        assert 'net_profit' in model.line_item_names
+
+        # Labels should be preserved
+        revenue_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'total_revenue'
+        ][0]
+        assert revenue_item.label == 'Total Revenue'
+
+        assert model.value("total_revenue", 2023) == 1000
+        assert model.value("total_expenses", 2024) == 700
+
+    def test_dataframe_with_category_col(self):
+        """Test using category_col parameter."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            'category': ['income', 'costs'],
+            2023: [1000, 600],
+            2024: [1200, 700]
+        })
+
+        model = Model.from_dataframe(df, name_col='item_name', category_col='category')
+
+        assert 'revenue' in model.line_item_names
+        assert 'expenses' in model.line_item_names
+
+        # Check that categories are set correctly
+        revenue_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'revenue'
+        ][0]
+        expenses_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'expenses'
+        ][0]
+        assert revenue_item.category == 'income'
+        assert expenses_item.category == 'costs'
+
+    def test_dataframe_with_all_metadata_cols(self):
+        """Test using name_col, label_col, and category_col together."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            'display_label': ['Total Revenue', 'Total Expenses'],
+            'category': ['income', 'costs'],
+            2023: [1000, 600],
+            2024: [1200, 700]
+        })
+
+        model = Model.from_dataframe(
+            df,
+            name_col='item_name',
+            label_col='display_label',
+            category_col='category'
+        )
+
+        assert 'revenue' in model.line_item_names
+
+        # Check all attributes are set correctly
+        revenue_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'revenue'
+        ][0]
+        assert revenue_item.name == 'revenue'
+        assert revenue_item.label == 'Total Revenue'
+        assert revenue_item.category == 'income'
+        assert model.value("revenue", 2023) == 1000
+
+    def test_dataframe_with_label_and_category_col(self):
+        """Test using label_col and category_col without name_col."""
+        df = pd.DataFrame({
+            'display_label': ['Total Revenue', 'Total Expenses'],
+            'category': ['income', 'costs'],
+            2023: [1000, 600],
+            2024: [1200, 700]
+        })
+
+        model = Model.from_dataframe(
+            df,
+            label_col='display_label',
+            category_col='category'
+        )
+
+        # Names should be derived from labels
+        assert 'total_revenue' in model.line_item_names
+        assert 'total_expenses' in model.line_item_names
+
+        # Check categories are set
+        revenue_item = [
+            item for item in model._line_item_definitions
+            if item.name == 'total_revenue'
+        ][0]
+        assert revenue_item.category == 'income'
+        assert revenue_item.label == 'Total Revenue'
+
+    def test_dataframe_category_col_only_raises_error(self):
+        """Test that providing only category_col raises error."""
+        df = pd.DataFrame({
+            'category': ['income', 'costs'],
+            2023: [1000, 600],
+            2024: [1200, 700]
+        })
+
+        with pytest.raises(ValueError) as exc_info:
+            Model.from_dataframe(df, category_col='category')
+
+        error_msg = str(exc_info.value)
+        assert (
+            "category_col cannot be provided without name_col or label_col"
+            in error_msg
+        )
+        assert "LineItems require names" in error_msg
+
+    def test_dataframe_invalid_name_col_raises_error(self):
+        """Test that non-existent name_col raises error."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            2023: [1000, 600]
+        })
+
+        with pytest.raises(ValueError) as exc_info:
+            Model.from_dataframe(df, name_col='nonexistent')
+
+        error_msg = str(exc_info.value)
+        assert "name_col 'nonexistent' not found in DataFrame" in error_msg
+
+    def test_dataframe_invalid_label_col_raises_error(self):
+        """Test that non-existent label_col raises error."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            2023: [1000, 600]
+        })
+
+        with pytest.raises(ValueError) as exc_info:
+            Model.from_dataframe(df, name_col='item_name', label_col='nonexistent')
+
+        error_msg = str(exc_info.value)
+        assert "label_col 'nonexistent' not found in DataFrame" in error_msg
+
+    def test_dataframe_invalid_category_col_raises_error(self):
+        """Test that non-existent category_col raises error."""
+        df = pd.DataFrame({
+            'item_name': ['revenue', 'expenses'],
+            2023: [1000, 600]
+        })
+
+        with pytest.raises(ValueError) as exc_info:
+            Model.from_dataframe(df, name_col='item_name', category_col='nonexistent')
+
+        error_msg = str(exc_info.value)
+        assert "category_col 'nonexistent' not found in DataFrame" in error_msg
+
+    def test_dataframe_with_missing_labels(self):
+        """Test rows with missing labels when using label_col."""
+        df = pd.DataFrame({
+            'display_label': ['Revenue', None, 'Net Profit'],
+            2023: [1000, 600, 400],
+            2024: [1200, 700, 500]
+        })
+
+        model = Model.from_dataframe(df, label_col='display_label')
+
+        # Row with None label should be skipped (no name can be derived)
+        assert 'revenue' in model.line_item_names
+        assert 'net_profit' in model.line_item_names
+
+        # Should only have 2 defined items (excluding category totals)
+        defined_items = [
+            name for name in model.line_item_names
+            if not name.startswith('total_')
+        ]
+        assert len(defined_items) == 2
