@@ -72,6 +72,7 @@ class Tables:
         col_labels: Optional[Union[str, list[str]]] = None,
         group_by_category: bool = False,
         include_percent_change: bool = False,
+        include_totals: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
@@ -93,6 +94,8 @@ class Tables:
                                                      and include category header rows. Defaults to False.
             include_percent_change (bool, optional): Whether to include a percent change row
                                                     after each item row. Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to False.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -106,6 +109,7 @@ class Tables:
             >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
             >>> table = model.tables.line_items(group_by_category=True)
             >>> table = model.tables.line_items(include_percent_change=True)
+            >>> table = model.tables.line_items(include_totals=True)
         """  # noqa: E501
         # Validate included_cols
         for col in included_cols:
@@ -132,7 +136,15 @@ class Tables:
 
         # Sort by category if we need category labels
         if group_by_category:
-            items_metadata = sorted(items_metadata, key=lambda x: x["category"])
+            # Create a mapping of category names to their order in the model
+            category_order = {
+                name: i for i, name in enumerate(self._model.category_names)
+            }
+            # Sort by category order, then by original order within category
+            items_metadata = sorted(
+                items_metadata,
+                key=lambda x: category_order.get(x["category"], float("inf")),
+            )
 
         # Create template
         template = []
@@ -165,6 +177,18 @@ class Tables:
             if include_percent_change:
                 template.append(rt.PercentChangeRow(name=item["name"]))
 
+        # Add totals row if requested
+        if include_totals:
+            # Get the list of line item names for the total calculation
+            total_line_item_names = [item["name"] for item in items_metadata]
+            template.append(
+                rt.LineItemsTotalRow(
+                    line_item_names=total_line_item_names,
+                    bold=True,
+                    top_border="single",
+                )
+            )
+
         return self.from_template(template, col_labels=col_labels)
 
     def category(
@@ -190,28 +214,14 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        # Create template with line items
-        template = []
-        for name in line_item_names:
-            template.append(
-                rt.ItemRow(
-                    name=name,
-                    included_cols=["label"],
-                    hardcoded_color=hardcoded_color,
-                )
-            )
-
-        # Add category total row if requested
-        if include_totals:
-            template.append(
-                rt.CategoryTotalRow(
-                    category_name=category_name,
-                    bold=True,
-                    top_border="single",
-                )
-            )
-
-        return self.from_template(template, col_labels=["label"])
+        # Use the line_items method with the include_totals parameter
+        return self.line_items(
+            line_item_names=line_item_names,
+            included_cols=["label"],
+            group_by_category=True,
+            hardcoded_color=hardcoded_color,
+            include_totals=include_totals,
+        )
 
     def line_item(
         self,
@@ -270,8 +280,8 @@ class Tables:
 
     def compare_year(
         self,
-        names: list[str],
         year: int,
+        names: Optional[list[str]] = None,
         include_change: bool = True,
         include_percent_change: bool = True,
         sort_by: Optional[str] = None,
@@ -280,8 +290,9 @@ class Tables:
         Create a year-over-year comparison table.
 
         Args:
-            names (list[str]): List of line item names to include
             year (int): The year to compare (will compare year-1 to year)
+            names (Optional[list[str]]): List of line item names to include.
+                                       If None, includes all line items. Defaults to None.
             include_change (bool): Whether to include the Change column. Defaults to True.
             include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
             sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
@@ -294,13 +305,14 @@ class Tables:
             ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
 
         Examples:
-            >>> table = model.tables.compare_year(['revenue_sales', 'cost_of_goods'], 2024)
-            >>> table = model.tables.compare_year(['revenue_sales'], 2024, sort_by='change')
+            >>> table = model.tables.compare_year(2024, ['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.compare_year(2024, ['revenue_sales'], sort_by='change')
+            >>> table = model.tables.compare_year(2024)  # Uses all line items
         """  # noqa: E501
         return _compare_year(
             self._model,
-            names,
             year,
+            names,
             include_change=include_change,
             include_percent_change=include_percent_change,
             sort_by=sort_by,

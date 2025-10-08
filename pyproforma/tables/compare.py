@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 def compare_year(
     model: "Model",
-    names: list[str],
     year: int,
+    names: Optional[list[str]] = None,
     include_change: bool = True,
     include_percent_change: bool = True,
     sort_by: Optional[str] = None,
@@ -23,19 +23,28 @@ def compare_year(
 
     Args:
         model (Model): The model to generate the table from
-        names (list[str]): List of line item names to include
         year (int): The year to compare (will compare year-1 to year)
+        names (Optional[list[str]]): List of line item names to include.
+                                   If None, includes all line items. Defaults to None.
         include_change (bool): Whether to include the Change column. Defaults to True.
-        include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
-        sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
-                                 None keeps the original order. Defaults to None.
+        include_percent_change (bool): Whether to include the Percent Change column.
+                                     Defaults to True.
+        sort_by (Optional[str]): How to sort the items.
+                               Options: None, 'value', 'change', 'percent_change'.
+                               None keeps the original order. Defaults to None.
 
     Returns:
-        Table: A table with columns for previous year, current year, and optional change columns
+        Table: A table with columns for previous year, current year, and optional
+               change columns
 
     Raises:
-        ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
+        ValueError: If year or year-1 are not in the model's years, or if sort_by
+                   is invalid
     """
+    # If names is None, use all line items
+    if names is None:
+        names = [item["name"] for item in model.line_item_metadata]
+
     prev_year = year - 1
 
     # Validate years exist
@@ -108,10 +117,15 @@ def compare_year(
     if sort_by == "value":
         items_data.sort(key=lambda x: x["curr_value"] or 0, reverse=True)
     elif sort_by == "change":
-        items_data.sort(key=lambda x: abs(x["change"]) if x["change"] is not None else 0, reverse=True)
+        items_data.sort(
+            key=lambda x: abs(x["change"]) if x["change"] is not None else 0,
+            reverse=True,
+        )
     elif sort_by == "percent_change":
         items_data.sort(
-            key=lambda x: abs(x["percent_change"]) if x["percent_change"] is not None else 0,
+            key=lambda x: (
+                abs(x["percent_change"]) if x["percent_change"] is not None else 0
+            ),
             reverse=True,
         )
 
@@ -154,13 +168,28 @@ def compare_year(
     # Add total row
     total_cells = [
         Cell(value="Total", align="left", bold=True, top_border="single"),
-        Cell(value=total_prev, value_format="no_decimals", bold=True, top_border="single"),
-        Cell(value=total_curr, value_format="no_decimals", bold=True, top_border="single"),
+        Cell(
+            value=total_prev,
+            value_format="no_decimals",
+            bold=True,
+            top_border="single",
+        ),
+        Cell(
+            value=total_curr,
+            value_format="no_decimals",
+            bold=True,
+            top_border="single",
+        ),
     ]
 
     if include_change:
         total_cells.append(
-            Cell(value=total_change, value_format="no_decimals", bold=True, top_border="single")
+            Cell(
+                value=total_change,
+                value_format="no_decimals",
+                bold=True,
+                top_border="single",
+            )
         )
 
     if include_percent_change:
