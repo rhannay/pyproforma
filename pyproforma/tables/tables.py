@@ -177,7 +177,7 @@ class Tables:
                 rt.LineItemsTotalRow(
                     line_item_names=total_line_item_names,
                     bold=True,
-                    top_border="thin",
+                    top_border="single",
                 )
             )
 
@@ -234,7 +234,6 @@ class Tables:
                     top_border="single",
                 )
             )
-        )
 
         return self.from_template(template, col_labels=["label"])
 

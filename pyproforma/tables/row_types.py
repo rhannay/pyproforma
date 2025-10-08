@@ -612,8 +612,8 @@ class LineItemsTotalRow(BaseRow):
         else:
             label = self.label
 
-        # Default to currency format if not specified
-        value_format = self.value_format or "currency"
+        # Default to no_decimals format if not specified
+        value_format = self.value_format or "no_decimals"
 
         # Create cells for this row
         cells = []
