@@ -136,7 +136,15 @@ class Tables:
 
         # Sort by category if we need category labels
         if group_by_category:
-            items_metadata = sorted(items_metadata, key=lambda x: x["category"])
+            # Create a mapping of category names to their order in the model
+            category_order = {
+                name: i for i, name in enumerate(self._model.category_names)
+            }
+            # Sort by category order, then by original order within category
+            items_metadata = sorted(
+                items_metadata,
+                key=lambda x: category_order.get(x["category"], float("inf")),
+            )
 
         # Create template
         template = []
