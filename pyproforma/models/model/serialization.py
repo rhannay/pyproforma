@@ -259,9 +259,7 @@ class SerializationMixin:
         """
         # Validate input
         if not isinstance(df, pd.DataFrame):
-            raise TypeError(
-                f"Expected pandas DataFrame, got {type(df).__name__}"
-            )
+            raise TypeError(f"Expected pandas DataFrame, got {type(df).__name__}")
 
         if df.empty:
             raise ValueError("DataFrame cannot be empty")
@@ -314,9 +312,7 @@ class SerializationMixin:
         year_columns = [col for col in df.columns if col not in metadata_columns]
 
         # Validate and normalize the periods (year columns)
-        periods = validate_periods(
-            list(year_columns), fill_in_periods=fill_in_periods
-        )
+        periods = validate_periods(list(year_columns), fill_in_periods=fill_in_periods)
 
         # Create LineItem objects from the DataFrame
         line_items = []
@@ -328,22 +324,24 @@ class SerializationMixin:
 
             # Get name - either from name_column or derived from label
             if name_column is not None:
-                name = row[name_column]
+                name_value = row[name_column]
+                # Skip rows with missing or empty names
+                if pd.isna(name_value) or str(name_value).strip() == "":
+                    continue
+                # Convert name to string if it isn't already
+                name = str(name_value)
+                # Sanitize the name to ensure it meets validation requirements
+                name = convert_to_name(name)
             elif label_column is not None:
                 # Derive name from label using convert_to_name
                 label_value = row[label_column]
-                if not pd.isna(label_value):
-                    name = convert_to_name(str(label_value))
+                if pd.isna(label_value) or str(label_value).strip() == "":
+                    continue
+                name = convert_to_name(str(label_value))
 
-            # Skip rows with missing names
-            if name is None or (name_column is not None and pd.isna(name)):
+            # Skip rows with missing names (safety check)
+            if name is None:
                 continue
-
-            # Convert name to string if it isn't already
-            name = str(name)
-
-            # Sanitize the name to ensure it meets validation requirements
-            name = convert_to_name(name)
 
             # Get label if label_column is specified
             if label_column is not None:

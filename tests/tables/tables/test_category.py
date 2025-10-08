@@ -267,7 +267,7 @@ class TestCategoryIncludeTotals:
         assert last_row.cells[0].bold is True
 
         # Should have a top border
-        assert last_row.cells[0].top_border == "thin"
+        assert last_row.cells[0].top_border == "single"
 
     def test_category_totals_calculation(self, sample_model):
         """Test that the totals row shows correct calculated values."""

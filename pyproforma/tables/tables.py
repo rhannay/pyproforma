@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from ..constants import VALID_COLS, ColumnType
 from . import row_types as rt
+from .compare import compare_year as _compare_year
 from .table_class import Table
 from .table_generator import generate_table_from_template
 
@@ -225,11 +226,13 @@ class Tables:
             )
 
         # Add category total row if requested
-        template.append(
-            rt.CategoryTotalRow(
-                category_name=category_name,
-                bold=True,
-                top_border="thin",
+        if include_totals:
+            template.append(
+                rt.CategoryTotalRow(
+                    category_name=category_name,
+                    bold=True,
+                    top_border="single",
+                )
             )
         )
 
@@ -289,3 +292,41 @@ class Tables:
             ),
         ]
         return self.from_template(rows)
+
+    def compare_year(
+        self,
+        names: list[str],
+        year: int,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a year-over-year comparison table.
+
+        Args:
+            names (list[str]): List of line item names to include
+            year (int): The year to compare (will compare year-1 to year)
+            include_change (bool): Whether to include the Change column. Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
+                                     None keeps the original order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for previous year, current year, and optional change columns
+
+        Raises:
+            ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
+
+        Examples:
+            >>> table = model.tables.compare_year(['revenue_sales', 'cost_of_goods'], 2024)
+            >>> table = model.tables.compare_year(['revenue_sales'], 2024, sort_by='change')
+        """  # noqa: E501
+        return _compare_year(
+            self._model,
+            names,
+            year,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
