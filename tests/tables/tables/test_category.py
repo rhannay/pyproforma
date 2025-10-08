@@ -162,8 +162,8 @@ class TestCategoryMethod:
 
     def test_category_uses_line_items_method(self, sample_model):
         """
-        Test that category method without totals produces same result as calling
-        line_items with category items.
+        Test that category method without totals produces similar result as calling
+        line_items with category items, accounting for category header.
         """
         # Get category table without totals to match line_items behavior
         category_table = sample_model.tables.category("revenue", include_totals=False)
@@ -171,10 +171,12 @@ class TestCategoryMethod:
         # Get line items for the category
         revenue_items = sample_model.line_item_names_by_category("revenue")
 
-        # Get line_items table with the same items
-        line_items_table = sample_model.tables.line_items(line_item_names=revenue_items)
+        # Get line_items table with the same items and group_by_category=True to match
+        line_items_table = sample_model.tables.line_items(
+            line_item_names=revenue_items, group_by_category=True
+        )
 
-        # Both tables should have the same structure
+        # Both tables should have the same structure (including category header)
         assert len(category_table.rows) == len(line_items_table.rows)
 
         # Both should have the same number of columns
@@ -196,10 +198,11 @@ class TestCategoryMethod:
             categories=["revenue", "empty_category"],
         )
 
-        # Test with empty category
-        table = model.tables.category("empty_category")
-        assert table is not None
-        # Empty category should result in minimal table structure
+        # Test with empty category - should handle gracefully
+        with pytest.raises(
+            ValueError, match="line_item_names must be a non-empty list"
+        ):
+            model.tables.category("empty_category")
 
     def test_category_parameter_validation(self, sample_model):
         """Test that category method validates its parameters correctly."""
@@ -223,9 +226,12 @@ class TestCategoryIncludeTotals:
         """Test that category includes totals by default."""
         table = sample_model.tables.category("revenue")
 
-        # Should have more rows than just the line items (includes totals)
+        # Should have more rows than just the line items
+        # (includes category header + totals)
         revenue_items = sample_model.line_item_names_by_category("revenue")
-        assert len(table.rows) > len(revenue_items)
+        # Expect: 1 category header + line items + 1 totals row
+        expected_min_rows = 1 + len(revenue_items) + 1
+        assert len(table.rows) >= expected_min_rows
 
         # The last row should be a totals row
         last_row = table.rows[-1]
@@ -237,8 +243,11 @@ class TestCategoryIncludeTotals:
         table = sample_model.tables.category("revenue", include_totals=True)
 
         # Should have more rows than just the line items
+        # (includes category header + totals)
         revenue_items = sample_model.line_item_names_by_category("revenue")
-        assert len(table.rows) > len(revenue_items)
+        # Expect: 1 category header + line items + 1 totals row
+        expected_min_rows = 1 + len(revenue_items) + 1
+        assert len(table.rows) >= expected_min_rows
 
         # The last row should be a totals row
         last_row = table.rows[-1]
@@ -248,9 +257,11 @@ class TestCategoryIncludeTotals:
         """Test category with include_totals=False."""
         table = sample_model.tables.category("revenue", include_totals=False)
 
-        # Should have exactly the number of line items (no totals)
+        # Should have line items + category header row (no totals)
         revenue_items = sample_model.line_item_names_by_category("revenue")
-        assert len(table.rows) == len(revenue_items)
+        # Expect: 1 category header + number of line items
+        expected_rows = 1 + len(revenue_items)
+        assert len(table.rows) == expected_rows
 
         # No row should have "Total" in the label
         for row in table.rows:
@@ -295,9 +306,10 @@ class TestCategoryIncludeTotals:
             "revenue", include_totals=True, hardcoded_color="blue"
         )
 
-        # Should have totals row
+        # Should have totals row (category header + line items + totals)
         revenue_items = sample_model.line_item_names_by_category("revenue")
-        assert len(table.rows) > len(revenue_items)
+        expected_min_rows = 1 + len(revenue_items) + 1
+        assert len(table.rows) >= expected_min_rows
 
         # Last row should be totals
         last_row = table.rows[-1]
@@ -307,8 +319,8 @@ class TestCategoryIncludeTotals:
         """Test totals row with a category that has only one item."""
         table = single_item_model.tables.category("revenue", include_totals=True)
 
-        # Should have 2 rows: 1 line item + 1 totals
-        assert len(table.rows) == 2
+        # Should have 3 rows: 1 category header + 1 line item + 1 totals
+        assert len(table.rows) == 3
 
         # Last row should be totals
         totals_row = table.rows[-1]

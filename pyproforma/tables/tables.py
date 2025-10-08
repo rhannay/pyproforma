@@ -206,36 +206,14 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        # Use the line_items method if we don't need totals
-        if not include_totals:
-            return self.line_items(
-                line_item_names=line_item_names,
-                included_cols=["label"],
-                hardcoded_color=hardcoded_color,
-            )
-
-        # Create template with line items
-        template = []
-        for name in line_item_names:
-            template.append(
-                rt.ItemRow(
-                    name=name,
-                    included_cols=["label"],
-                    hardcoded_color=hardcoded_color,
-                )
-            )
-
-        # Add category total row if requested
-        if include_totals:
-            template.append(
-                rt.CategoryTotalRow(
-                    category_name=category_name,
-                    bold=True,
-                    top_border="single",
-                )
-            )
-
-        return self.from_template(template, col_labels=["label"])
+        # Use the line_items method with the include_totals parameter
+        return self.line_items(
+            line_item_names=line_item_names,
+            included_cols=["label"],
+            group_by_category=True,
+            hardcoded_color=hardcoded_color,
+            include_totals=include_totals,
+        )
 
     def line_item(
         self,
