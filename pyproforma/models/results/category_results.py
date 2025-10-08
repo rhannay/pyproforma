@@ -247,6 +247,104 @@ class CategoryResults:
         """  # noqa: E501
         return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
+    def compare_year_table(
+        self,
+        year: int,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a year-over-year comparison table for all line items in this category.
+
+        This method uses the line item names from this category and delegates to the
+        model's tables.compare_year() method.
+
+        Args:
+            year (int): The year to compare (will compare year-1 to year)
+            include_change (bool): Whether to include the Change column.
+                                 Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change
+                                         column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value',
+                                   'change', 'percent_change'. None keeps the original
+                                   order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for previous year, current year, and optional
+                   change columns for all line items in this category
+
+        Raises:
+            ValueError: If year or year-1 are not in the model's years, or if sort_by
+                       is invalid
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> table = revenue_category.compare_year_table(2024)
+            >>> table = revenue_category.compare_year_table(2024, sort_by='change')
+            >>> table = revenue_category.compare_year_table(2024, include_change=False)
+        """
+        return self.model.tables.compare_year(
+            year,
+            names=self.line_item_names,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
+
+    def line_items_chart(
+        self,
+        title: str = None,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+        value_format=None,
+    ):
+        """
+        Create a line chart showing the values of all line items in this category
+        over years.
+
+        This method uses the line item names from this category and delegates to the
+        model's charts.line_items() method.
+
+        Args:
+            title (str, optional): Custom chart title. If None, uses default title with
+                                 category name.
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+            value_format (ValueFormat, optional): Y-axis value format. If None, uses the
+                                                first item's format.
+
+        Returns:
+            Chart figure: The Plotly line chart figure showing all category line items
+
+        Raises:
+            ValueError: If no line items are found in the category or if the model
+                       has no years defined
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> chart = revenue_category.line_items_chart()
+            >>> chart = revenue_category.line_items_chart(title="Revenue Trends")
+            >>> chart = revenue_category.line_items_chart(width=1000, height=600)
+        """
+        if not self.line_item_names:
+            raise ValueError(f"No line items found in category '{self.name}'")
+
+        # Use category label as default title if none provided
+        if title is None:
+            title = f"{self.label} Line Items"
+
+        return self.model.charts.line_items(
+            self.line_item_names,
+            title=title,
+            width=width,
+            height=height,
+            template=template,
+            value_format=value_format,
+        )
+
     def pie_chart(
         self,
         year: int = None,
