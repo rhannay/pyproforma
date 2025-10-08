@@ -217,6 +217,92 @@ class LineItemsResults:
 
         return total
 
+    def line_items_chart(
+        self,
+        title: str = None,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+        value_format=None,
+    ):
+        """
+        Create a line chart showing the values of all line items in this results set
+        over years.
+
+        This method uses the line item names from this results set and delegates to the
+        model's charts.line_items() method.
+
+        Args:
+            title (str, optional): Custom chart title. If None, uses default title
+                                 "Line Items".
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+            value_format (ValueFormat, optional): Y-axis value format. If None, uses the
+                                                first item's format.
+
+        Returns:
+            Chart figure: The Plotly line chart figure showing all line items
+
+        Raises:
+            ValueError: If no line items are found in this results set or if the model
+                       has no years defined
+
+        Examples:
+            >>> items = model.line_items(['revenue', 'costs'])
+            >>> chart = items.line_items_chart()
+            >>> chart = items.line_items_chart(title="Revenue vs Costs")
+            >>> chart = items.line_items_chart(width=1000, height=600)
+        """
+        if not self._line_item_names:
+            raise ValueError("No line items found in this results set")
+
+        # Use default title if none provided
+        if title is None:
+            title = "Line Items"
+
+        return self.model.charts.line_items(
+            self._line_item_names,
+            title=title,
+            width=width,
+            height=height,
+            template=template,
+            value_format=value_format,
+        )
+
+    def pie_chart(
+        self,
+        year: int = None,
+        width: int = 800,
+        height: int = 600,
+        template: str = "plotly_white",
+    ):
+        """
+        Create a pie chart showing the distribution of line items within this results set for a specific year.
+
+        Args:
+            year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
+            width (int): Chart width in pixels (default: 800)
+            height (int): Chart height in pixels (default: 600)
+            template (str): Plotly template to use (default: 'plotly_white')
+
+        Returns:
+            Chart figure: The Plotly pie chart figure showing the distribution of line items
+
+        Raises:
+            ValueError: If no line items are found in this results set or if year is not in model years
+        """  # noqa: E501
+        if not self._line_item_names:
+            raise ValueError("No line items found in this results set")
+
+        return self.model.charts.line_items_pie(
+            self._line_item_names,
+            year,
+            width=width,
+            height=height,
+            template=template,
+        )
+
     # ============================================================================
     # DATA CONVERSION METHODS
     # ============================================================================

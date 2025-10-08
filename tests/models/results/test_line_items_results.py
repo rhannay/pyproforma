@@ -1037,3 +1037,226 @@ class TestLineItemsResultsToDataFrameMethod:
 
         # Should match the items DataFrame
         assert items_df.equals(combined_df)
+class TestLineItemsResultsLineItemsChartMethod:
+    """Test line_items_chart method of LineItemsResults."""
+
+    @pytest.fixture
+    def line_items_results(self, model_with_line_items):
+        """Create a LineItemsResults instance for testing."""
+        return LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+    def test_line_items_chart_method_returns_figure(self, line_items_results):
+        """Test line_items_chart method returns a plotly figure."""
+        from unittest.mock import Mock, patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            mock_figure = Mock()
+            mock_line_items.return_value = mock_figure
+
+            result = line_items_results.line_items_chart()
+
+            assert result is mock_figure
+
+    def test_line_items_chart_method_passes_parameters(self, line_items_results):
+        """Test line_items_chart method passes correct parameters."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            line_items_results.line_items_chart(
+                title="Custom Title",
+                width=1000,
+                height=700,
+                template="plotly_dark",
+                value_format="currency",
+            )
+
+            mock_line_items.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                title="Custom Title",
+                width=1000,
+                height=700,
+                template="plotly_dark",
+                value_format="currency",
+            )
+
+    def test_line_items_chart_method_uses_line_item_names(self, line_items_results):
+        """Test line_items_chart method uses line items from the results set."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            line_items_results.line_items_chart()
+
+            # Verify it passes the line item names from the results set
+            mock_line_items.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                title="Line Items",
+                width=800,
+                height=600,
+                template="plotly_white",
+                value_format=None,
+            )
+
+    def test_line_items_chart_method_with_default_title(self, line_items_results):
+        """Test line_items_chart method generates default title."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            # Default title should be "Line Items"
+            line_items_results.line_items_chart()
+
+            args, kwargs = mock_line_items.call_args
+            assert kwargs["title"] == "Line Items"
+
+    def test_line_items_chart_method_with_empty_results_set(
+        self, model_with_line_items
+    ):
+        """Test line_items_chart method raises error for empty results set."""
+        # Create an empty results set - should raise on initialization
+        with pytest.raises(ValueError, match="non-empty list"):
+            LineItemsResults(model_with_line_items, [])
+
+    def test_line_items_chart_method_with_single_item(self, model_with_line_items):
+        """Test line_items_chart method with single line item."""
+        from unittest.mock import patch
+
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            items.line_items_chart()
+
+            mock_line_items.assert_called_once_with(
+                ["product_sales"],
+                title="Line Items",
+                width=800,
+                height=600,
+                template="plotly_white",
+                value_format=None,
+            )
+
+    def test_line_items_chart_method_with_all_items(self, model_with_line_items):
+        """Test line_items_chart method with all line items."""
+        from unittest.mock import patch
+
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
+            items.line_items_chart(title="All Items Chart")
+
+            # Verify all line items are passed
+            call_args = mock_line_items.call_args
+            assert set(call_args[0][0]) == set(all_names)
+            assert call_args[1]["title"] == "All Items Chart"
+
+
+class TestLineItemsResultsPieChartMethod:
+    """Test pie_chart method of LineItemsResults."""
+
+    @pytest.fixture
+    def line_items_results(self, model_with_line_items):
+        """Create a LineItemsResults instance for testing."""
+        return LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+    def test_pie_chart_method_returns_figure(self, line_items_results):
+        """Test pie_chart method returns a plotly figure."""
+        from unittest.mock import Mock, patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            mock_figure = Mock()
+            mock_pie_chart.return_value = mock_figure
+
+            result = line_items_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2023,
+                width=800,
+                height=600,
+                template="plotly_white",
+            )
+            assert result is mock_figure
+
+    def test_pie_chart_method_passes_custom_parameters(self, line_items_results):
+        """Test pie_chart method passes custom parameters correctly."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            line_items_results.pie_chart(
+                year=2024, width=1000, height=800, template="plotly_dark"
+            )
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales", "service_revenue"],
+                2024,
+                width=1000,
+                height=800,
+                template="plotly_dark",
+            )
+
+    def test_pie_chart_method_with_empty_results_set(self, model_with_line_items):
+        """Test pie_chart method raises error for empty results set."""
+        # Create an empty results set - should raise on initialization
+        with pytest.raises(ValueError, match="non-empty list"):
+            LineItemsResults(model_with_line_items, [])
+
+    def test_pie_chart_method_uses_line_item_names(self, line_items_results):
+        """Test pie_chart uses the correct line item names from results set."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            # Verify that the method uses the line item names
+            expected_item_names = line_items_results.names
+
+            line_items_results.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once()
+            call_args = mock_pie_chart.call_args
+            assert call_args[0][0] == expected_item_names  # First positional argument
+
+    def test_pie_chart_method_with_none_year(self, line_items_results):
+        """Test pie_chart method with None year (should use latest year)."""
+        from unittest.mock import patch
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            line_items_results.pie_chart(year=None)
+
+            mock_pie_chart.assert_called_once()
+            call_args = mock_pie_chart.call_args
+            # None should be passed to the charts method
+            assert call_args[0][1] is None
+
+    def test_pie_chart_method_with_single_item(self, model_with_line_items):
+        """Test pie_chart method with single line item."""
+        from unittest.mock import patch
+
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            items.pie_chart(year=2023)
+
+            mock_pie_chart.assert_called_once_with(
+                ["product_sales"],
+                2023,
+                width=800,
+                height=600,
+                template="plotly_white",
+            )
+
+    def test_pie_chart_method_with_all_items(self, model_with_line_items):
+        """Test pie_chart method with all line items."""
+        from unittest.mock import patch
+
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        with patch("pyproforma.charts.charts.Charts.line_items_pie") as mock_pie_chart:
+            items.pie_chart(year=2024)
+
+            # Verify all line items are passed
+            call_args = mock_pie_chart.call_args
+            assert set(call_args[0][0]) == set(all_names)
+            assert call_args[0][1] == 2024
