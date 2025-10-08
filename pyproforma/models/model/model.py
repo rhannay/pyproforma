@@ -922,6 +922,63 @@ class Model(SerializationMixin):
 
         return Compare(self, other_model)
 
+    def reorder_line_items(
+        self,
+        ordered_names: list[str],
+        position: str = "top",
+        target: str = None,
+        index: int = None,
+    ) -> None:
+        """
+        Reorder LineItem definitions in the model by specifying a subset of their names.
+
+        This is a convenience method that delegates to update.reorder_line_items().
+        Line items not included in ordered_names will maintain their relative order.
+
+        Args:
+            ordered_names (list[str]): List of LineItem names to reorder. Can be a subset
+                of all line items. Items not listed will maintain their relative order.
+            position (str, optional): Where to place the ordered items. Options:
+                - "top": Place at the beginning (default)
+                - "bottom": Place at the end
+                - "after": Place after the specified target line item
+                - "before": Place before the specified target line item
+                - "index": Place at a specific index
+            target (str, optional): Required for "after" and "before" positions.
+                The name of the line item to position relative to.
+            index (int, optional): Required for "index" position.
+                The 0-based index where ordered items should be inserted.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the reordering is invalid (unknown items, invalid position, etc.)
+            TypeError: If ordered_names is not a list or contains non-strings
+
+        Examples:
+            >>> # Place items at the top
+            >>> model.reorder_line_items(["revenue", "expenses"])
+
+            >>> # Place items at the bottom
+            >>> model.reorder_line_items(
+            ...     ["notes", "disclaimers"], position="bottom"
+            ... )
+
+            >>> # Place items after a specific item
+            >>> model.reorder_line_items(
+            ...     ["tax_expense", "net_income"],
+            ...     position="after",
+            ...     target="gross_profit"
+            ... )
+        """  # noqa: E501
+        self.update.reorder_line_items(
+            ordered_names=ordered_names,
+            position=position,
+            target=target,
+            index=index,
+        )
+
     # ============================================================================
     # MODEL ELEMENTS
     # ============================================================================

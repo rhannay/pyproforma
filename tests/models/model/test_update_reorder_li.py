@@ -47,12 +47,12 @@ class TestReorderLineItems:
         return Model(line_items=[], years=[2023])
 
     def test_successful_reordering(self, sample_model):
-        """Test successful reordering of line items."""
+        """Test reordering of line items (all items, backwards compatibility)."""
         # Get initial order
         initial_order = [item.name for item in sample_model._line_item_definitions]
         assert initial_order == ["revenue", "expenses", "profit", "taxes"]
 
-        # Reorder line items
+        # Reorder line items - specifying all items (old behavior)
         new_order = ["profit", "revenue", "expenses", "taxes"]
         sample_model.update.reorder_line_items(new_order)
 
@@ -95,17 +95,23 @@ class TestReorderLineItems:
         final_order = [item.name for item in sample_model._line_item_definitions]
         assert final_order == initial_order
 
-    def test_missing_line_items_error(self, sample_model):
-        """Test error when some line items are missing from the reorder list."""
-        with pytest.raises(ValueError) as excinfo:
-            # Missing profit, taxes
-            sample_model.update.reorder_line_items(["revenue", "expenses"])
+    def test_subset_reordering_top(self, sample_model):
+        """Test reordering a subset of line items (new behavior with position='top')."""
+        # Get initial order
+        initial_order = [item.name for item in sample_model._line_item_definitions]
+        assert initial_order == ["revenue", "expenses", "profit", "taxes"]
 
-        error_msg = str(excinfo.value)
-        assert "Missing line items in reorder list" in error_msg
-        assert "profit" in error_msg
-        assert "taxes" in error_msg
-        assert "All existing line items must be included" in error_msg
+        # Reorder only some items - they should go to the top
+        sample_model.update.reorder_line_items(["profit", "taxes"])
+
+        # Verify new order: profit and taxes at top
+        # revenue and expenses maintain relative order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["profit", "taxes", "revenue", "expenses"]
+
+        # Verify model still calculates correctly
+        assert sample_model.value("revenue", 2023) == 100000
+        assert sample_model.value("profit", 2023) == 50000
 
     def test_unknown_line_items_error(self, sample_model):
         """Test error when unknown line items are included in the reorder list."""
@@ -151,12 +157,16 @@ class TestReorderLineItems:
         assert "All line item names must be strings" in str(excinfo.value)
 
     def test_empty_list_input(self, sample_model):
-        """Test behavior with empty list input."""
-        with pytest.raises(ValueError) as excinfo:
-            sample_model.update.reorder_line_items([])
+        """Test behavior with empty list input (should be a no-op)."""
+        # Get initial order
+        initial_order = [item.name for item in sample_model._line_item_definitions]
 
-        error_msg = str(excinfo.value)
-        assert "Missing line items in reorder list" in error_msg
+        # Empty list should be a no-op
+        sample_model.update.reorder_line_items([])
+
+        # Verify order is unchanged
+        final_order = [item.name for item in sample_model._line_item_definitions]
+        assert final_order == initial_order
 
     def test_reordering_empty_model(self, empty_model):
         """Test reordering on a model with no line items."""
@@ -233,3 +243,138 @@ class TestReorderLineItems:
         # Verify the physical order changed
         actual_order = [item.name for item in sample_model._line_item_definitions]
         assert actual_order == new_order
+
+    def test_subset_reordering_bottom(self, sample_model):
+        """Test reordering a subset to the bottom."""
+        # Reorder some items to the bottom
+        sample_model.update.reorder_line_items(
+            ["revenue", "expenses"], position="bottom"
+        )
+
+        # Verify new order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["profit", "taxes", "revenue", "expenses"]
+
+    def test_subset_reordering_after(self, sample_model):
+        """Test reordering a subset after a specific item."""
+        # Place profit and taxes after expenses
+        sample_model.update.reorder_line_items(
+            ["profit", "taxes"], position="after", target="expenses"
+        )
+
+        # Verify new order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["revenue", "expenses", "profit", "taxes"]
+
+    def test_subset_reordering_before(self, sample_model):
+        """Test reordering a subset before a specific item."""
+        # Place taxes before profit
+        sample_model.update.reorder_line_items(
+            ["taxes"], position="before", target="profit"
+        )
+
+        # Verify new order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["revenue", "expenses", "taxes", "profit"]
+
+    def test_subset_reordering_index(self, sample_model):
+        """Test reordering a subset at a specific index."""
+        # Place profit at index 1
+        sample_model.update.reorder_line_items(["profit"], position="index", index=1)
+
+        # Verify new order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["revenue", "profit", "expenses", "taxes"]
+
+    def test_position_after_target_not_specified_error(self, sample_model):
+        """Test error when target is not specified for 'after' position."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="after"
+            )
+        assert (
+            "'target' parameter is required for position 'after'"
+            in str(excinfo.value)
+        )
+
+    def test_position_before_target_not_specified_error(self, sample_model):
+        """Test error when target is not specified for 'before' position."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="before"
+            )
+        assert (
+            "'target' parameter is required for position 'before'"
+            in str(excinfo.value)
+        )
+
+    def test_position_index_not_specified_error(self, sample_model):
+        """Test error when index is not specified for 'index' position."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="index"
+            )
+        assert (
+            "'index' parameter is required for position 'index'"
+            in str(excinfo.value)
+        )
+
+    def test_invalid_position_error(self, sample_model):
+        """Test error when an invalid position is provided."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="invalid"
+            )
+        assert "Invalid position 'invalid'" in str(excinfo.value)
+
+    def test_target_not_found_error(self, sample_model):
+        """Test error when target line item is not found."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="after", target="nonexistent"
+            )
+        assert "Target line item 'nonexistent' not found" in str(excinfo.value)
+
+    def test_target_in_ordered_names_error(self, sample_model):
+        """Test error when target is included in ordered_names."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit", "expenses"], position="after", target="expenses"
+            )
+        assert (
+            "Target line item 'expenses' cannot be in the ordered_names list"
+            in str(excinfo.value)
+        )
+
+    def test_index_out_of_range_error(self, sample_model):
+        """Test error when index is out of range."""
+        with pytest.raises(ValueError) as excinfo:
+            sample_model.update.reorder_line_items(
+                ["profit"], position="index", index=10
+            )
+        assert "Index 10 out of range" in str(excinfo.value)
+
+    def test_direct_method_on_model(self, sample_model):
+        """Test that reorder_line_items can be called directly on model."""
+        # Call reorder_line_items directly on model (not through update namespace)
+        sample_model.reorder_line_items(["profit", "taxes"])
+
+        # Verify new order
+        actual_order = [item.name for item in sample_model._line_item_definitions]
+        assert actual_order == ["profit", "taxes", "revenue", "expenses"]
+
+    def test_multiple_reorderings(self, sample_model):
+        """Test that multiple reorderings work correctly."""
+        # First reordering
+        sample_model.update.reorder_line_items(["taxes"], position="top")
+        assert [item.name for item in sample_model._line_item_definitions] == [
+            "taxes", "revenue", "expenses", "profit"
+        ]
+
+        # Second reordering
+        sample_model.update.reorder_line_items(
+            ["profit"], position="after", target="taxes"
+        )
+        assert [item.name for item in sample_model._line_item_definitions] == [
+            "taxes", "profit", "revenue", "expenses"
+        ]
