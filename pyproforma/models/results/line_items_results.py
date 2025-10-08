@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from .line_item_results import LineItemResults
 
 if TYPE_CHECKING:
@@ -300,6 +302,29 @@ class LineItemsResults:
             height=height,
             template=template,
         )
+
+    # ============================================================================
+    # DATA CONVERSION METHODS
+    # ============================================================================
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """
+        Return a pandas DataFrame with line items as rows and years as columns.
+
+        Returns:
+            pd.DataFrame: DataFrame with line items and their values across years
+        """
+        # Create DataFrame with line items as index and years as columns
+        df_data = {}
+        for year in self.model.years:
+            df_data[year] = [
+                self.model.line_item(item_name)[year]
+                for item_name in self._line_item_names
+            ]
+
+        df = pd.DataFrame(df_data, index=self._line_item_names)
+
+        return df
 
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS
