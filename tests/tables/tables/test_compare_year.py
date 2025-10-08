@@ -60,8 +60,8 @@ class TestCompareYear:
     def test_compare_year_basic(self, sample_model: Model):
         """Test basic compare_year functionality."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services"],
-            year=2024,
         )
         assert table is not None
 
@@ -74,8 +74,8 @@ class TestCompareYear:
     def test_compare_year_without_change_columns(self, sample_model: Model):
         """Test compare_year without change columns."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services"],
-            year=2024,
             include_change=False,
             include_percent_change=False,
         )
@@ -89,8 +89,8 @@ class TestCompareYear:
     def test_compare_year_with_only_change(self, sample_model: Model):
         """Test compare_year with only change column."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales"],
-            year=2024,
             include_change=True,
             include_percent_change=False,
         )
@@ -101,8 +101,8 @@ class TestCompareYear:
     def test_compare_year_with_only_percent_change(self, sample_model: Model):
         """Test compare_year with only percent change column."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales"],
-            year=2024,
             include_change=False,
             include_percent_change=True,
         )
@@ -113,16 +113,16 @@ class TestCompareYear:
     def test_compare_year_sort_by_value(self, sample_model: Model):
         """Test compare_year sorted by current year value."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services", "cost_of_goods"],
-            year=2024,
             sort_by="value",
         )
 
         # Get the item labels from rows (excluding total row)
         item_labels = [row.cells[0].value for row in table.rows[:-1]]
 
-        # revenue_sales (1,100,000) should be first, followed by revenue_services (575,000),
-        # then cost_of_goods (440,000)
+        # revenue_sales (1,100,000) should be first, followed by revenue_services
+        # (575,000), then cost_of_goods (440,000)
         assert item_labels[0] == "Sales Revenue"
         assert item_labels[1] == "Service Revenue"
         assert item_labels[2] == "Cost of Goods Sold"
@@ -130,8 +130,8 @@ class TestCompareYear:
     def test_compare_year_sort_by_change(self, sample_model: Model):
         """Test compare_year sorted by absolute change."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services", "operating_expenses"],
-            year=2024,
             sort_by="change",
         )
 
@@ -149,8 +149,8 @@ class TestCompareYear:
     def test_compare_year_sort_by_percent_change(self, sample_model: Model):
         """Test compare_year sorted by absolute percent change."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services", "operating_expenses"],
-            year=2024,
             sort_by="percent_change",
         )
 
@@ -160,7 +160,8 @@ class TestCompareYear:
         # revenue_sales has 10% change
         # revenue_services has 15% change
         # operating_expenses has 5% change
-        # So order should be: revenue_services (15%), revenue_sales (10%), operating_expenses (5%)
+        # So order should be: revenue_services (15%), revenue_sales (10%),
+        # operating_expenses (5%)
         assert item_labels[0] == "Service Revenue"
         assert item_labels[1] == "Sales Revenue"
         assert item_labels[2] == "Operating Expenses"
@@ -168,8 +169,8 @@ class TestCompareYear:
     def test_compare_year_total_row(self, sample_model: Model):
         """Test that the total row is properly formatted."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales", "revenue_services"],
-            year=2024,
         )
 
         # Get the last row (total row)
@@ -188,32 +189,32 @@ class TestCompareYear:
         """Test that invalid year raises ValueError."""
         with pytest.raises(ValueError, match="not found in model years"):
             sample_model.tables.compare_year(
+                2030,  # Not in model years
                 names=["revenue_sales"],
-                year=2030,  # Not in model years
             )
 
     def test_compare_year_invalid_previous_year(self, sample_model: Model):
         """Test that year without previous year raises ValueError."""
         with pytest.raises(ValueError, match="Previous year .* not found"):
             sample_model.tables.compare_year(
+                2023,  # Previous year (2022) not in model
                 names=["revenue_sales"],
-                year=2023,  # Previous year (2022) not in model
             )
 
     def test_compare_year_invalid_sort_by(self, sample_model: Model):
         """Test that invalid sort_by raises ValueError."""
         with pytest.raises(ValueError, match="Invalid sort_by value"):
             sample_model.tables.compare_year(
+                2024,
                 names=["revenue_sales"],
-                year=2024,
                 sort_by="invalid_option",
             )
 
     def test_compare_year_percent_format(self, sample_model: Model):
         """Test that percent change uses correct format (one decimal)."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales"],
-            year=2024,
         )
 
         # Get the percent change cell (last cell in first row)
@@ -228,8 +229,8 @@ class TestCompareYear:
     def test_compare_year_column_labels(self, sample_model: Model):
         """Test that column labels are correct."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales"],
-            year=2024,
         )
 
         # Check column labels
@@ -246,8 +247,8 @@ class TestCompareYear:
     def test_compare_year_values_correctness(self, sample_model: Model):
         """Test that calculated values are correct."""
         table = sample_model.tables.compare_year(
+            2024,
             names=["revenue_sales"],
-            year=2024,
         )
 
         # First row should be revenue_sales
@@ -264,3 +265,32 @@ class TestCompareYear:
 
         # Percent change should be 0.10 (10%)
         assert row.cells[4].value == pytest.approx(0.10)
+
+    def test_compare_year_default_names_none(self, sample_model: Model):
+        """Test compare_year with names=None uses all line items."""
+        table = sample_model.tables.compare_year(2024)
+
+        # Should include all 4 line items in the model + 1 total row = 5 rows
+        assert len(table.rows) == 5
+
+        # Get the item labels from rows (excluding total row)
+        item_labels = [row.cells[0].value for row in table.rows[:-1]]
+
+        # Should contain all line items in their original order
+        expected_labels = [
+            "Sales Revenue",  # revenue_sales
+            "Service Revenue",  # revenue_services
+            "Cost of Goods Sold",  # cost_of_goods
+            "Operating Expenses",  # operating_expenses
+        ]
+        assert item_labels == expected_labels
+
+    def test_compare_year_names_none_explicit(self, sample_model: Model):
+        """Test compare_year with explicitly passed names=None."""
+        table = sample_model.tables.compare_year(2024, names=None)
+
+        # Should include all 4 line items in the model + 1 total row = 5 rows
+        assert len(table.rows) == 5
+
+        # Should have the standard 5 columns
+        assert len(table.columns) == 5

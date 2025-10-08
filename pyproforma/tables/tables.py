@@ -280,8 +280,8 @@ class Tables:
 
     def compare_year(
         self,
-        names: list[str],
         year: int,
+        names: Optional[list[str]] = None,
         include_change: bool = True,
         include_percent_change: bool = True,
         sort_by: Optional[str] = None,
@@ -290,8 +290,9 @@ class Tables:
         Create a year-over-year comparison table.
 
         Args:
-            names (list[str]): List of line item names to include
             year (int): The year to compare (will compare year-1 to year)
+            names (Optional[list[str]]): List of line item names to include.
+                                       If None, includes all line items. Defaults to None.
             include_change (bool): Whether to include the Change column. Defaults to True.
             include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
             sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
@@ -304,13 +305,14 @@ class Tables:
             ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
 
         Examples:
-            >>> table = model.tables.compare_year(['revenue_sales', 'cost_of_goods'], 2024)
-            >>> table = model.tables.compare_year(['revenue_sales'], 2024, sort_by='change')
+            >>> table = model.tables.compare_year(2024, ['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.compare_year(2024, ['revenue_sales'], sort_by='change')
+            >>> table = model.tables.compare_year(2024)  # Uses all line items
         """  # noqa: E501
         return _compare_year(
             self._model,
-            names,
             year,
+            names,
             include_change=include_change,
             include_percent_change=include_percent_change,
             sort_by=sort_by,
