@@ -804,6 +804,209 @@ class UpdateNamespace:
             # If validation fails, raise an informative error
             raise ValueError(f"Failed to reorder line items: {str(e)}") from e
 
+    def reorder_categories(
+        self,
+        ordered_names: list[str],
+        position: str = "top",
+        target: str = None,
+        index: int = None,
+    ) -> None:
+        """
+        Reorder Category definitions in the model by specifying a subset of their names.
+
+        This method reorders Category class instances (category definitions) based on
+        the provided list of names. It only affects the order of Category objects in the
+        model. Categories not included in ordered_names will maintain their relative
+        order in the positions not occupied by the specified items.
+
+        Args:
+            ordered_names (list[str]): List of Category names to reorder. Can be a subset
+                of all categories. Items not listed will maintain their relative order.
+            position (str, optional): Where to place the ordered items. Options:
+                - "top": Place at the beginning (default)
+                - "bottom": Place at the end
+                - "after": Place after the specified target category
+                - "before": Place before the specified target category
+                - "index": Place at a specific index
+            target (str, optional): Required for "after" and "before" positions.
+                The name of the category to position relative to.
+            index (int, optional): Required for "index" position.
+                The 0-based index where ordered items should be inserted.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the reordering is invalid (unknown items, invalid position, etc.)
+            TypeError: If ordered_names is not a list or contains non-strings
+
+        Examples:
+            >>> # Place items at the top
+            >>> model.update.reorder_categories(["revenue", "expenses"])
+
+            >>> # Place items at the bottom
+            >>> model.update.reorder_categories(
+            ...     ["notes", "disclaimers"], position="bottom"
+            ... )
+
+            >>> # Place items after a specific item
+            >>> model.update.reorder_categories(
+            ...     ["tax_category", "net_income_category"],
+            ...     position="after",
+            ...     target="gross_profit_category"
+            ... )
+
+            >>> # Place items at a specific index
+            >>> model.update.reorder_categories(
+            ...     ["new_category"], position="index", index=2
+            ... )
+        """  # noqa: E501
+        # Input validation
+        if not isinstance(ordered_names, list):
+            raise TypeError(f"Expected list, got {type(ordered_names).__name__}")
+
+        if not all(isinstance(name, str) for name in ordered_names):
+            raise TypeError("All category names must be strings")
+
+        # Validate position parameter
+        valid_positions = ["top", "bottom", "after", "before", "index"]
+        if position not in valid_positions:
+            raise ValueError(
+                f"Invalid position '{position}'. Must be one of: {valid_positions}"
+            )
+
+        # Validate position-specific requirements
+        if position in ["after", "before"] and target is None:
+            raise ValueError(
+                f"'target' parameter is required for position '{position}'"
+            )
+
+        if position == "index" and index is None:
+            raise ValueError("'index' parameter is required for position 'index'")
+
+        # Get current category names
+        current_names = [cat.name for cat in self._model._category_definitions]
+        current_names_set = set(current_names)
+        ordered_names_set = set(ordered_names)
+
+        # Check for extra/unknown items
+        unknown_items = ordered_names_set - current_names_set
+        if unknown_items:
+            available_items = sorted(current_names)
+            raise ValueError(
+                f"Unknown categories in reorder list: {sorted(unknown_items)}. "
+                f"Available categories: {available_items}"
+            )
+
+        # Check for duplicates
+        if len(ordered_names) != len(ordered_names_set):
+            duplicates = [
+                name for name in ordered_names if ordered_names.count(name) > 1
+            ]
+            raise ValueError(
+                f"Duplicate categories in reorder list: {sorted(set(duplicates))}"
+            )
+
+        # Validate target if specified
+        if position in ["after", "before"]:
+            if target not in current_names_set:
+                raise ValueError(
+                    f"Target category '{target}' not found. "
+                    f"Available categories: {sorted(current_names)}"
+                )
+            if target in ordered_names_set:
+                raise ValueError(
+                    f"Target category '{target}' cannot be in the ordered_names list"
+                )
+
+        # Validate index if specified
+        if position == "index":
+            if index < 0 or index > len(current_names):
+                raise ValueError(
+                    f"Index {index} out of range. "
+                    f"Must be between 0 and {len(current_names)}"
+                )
+
+        # If ordered_names is empty, nothing to do
+        if not ordered_names:
+            return
+
+        # Calculate the new order
+        def calculate_new_order() -> list[str]:
+            # Separate items being reordered and those maintaining position
+            items_to_keep = [
+                name for name in current_names if name not in ordered_names_set
+            ]
+
+            if position == "top":
+                return ordered_names + items_to_keep
+            elif position == "bottom":
+                return items_to_keep + ordered_names
+            elif position == "after":
+                # Find the actual position of target in items_to_keep
+                result = []
+                inserted = False
+                for name in items_to_keep:
+                    result.append(name)
+                    if name == target and not inserted:
+                        result.extend(ordered_names)
+                        inserted = True
+                if not inserted:
+                    # Target was in ordered_names (shouldn't happen)
+                    result.extend(ordered_names)
+                return result
+            elif position == "before":
+                result = []
+                inserted = False
+                for name in items_to_keep:
+                    if name == target and not inserted:
+                        result.extend(ordered_names)
+                        inserted = True
+                    result.append(name)
+                if not inserted:
+                    # Target was in ordered_names (shouldn't happen due to validation)
+                    result.extend(ordered_names)
+                return result
+            elif position == "index":
+                result = items_to_keep[:index]
+                result.extend(ordered_names)
+                result.extend(items_to_keep[index:])
+                return result
+
+        new_order = calculate_new_order()
+
+        # If the order is already correct, no need to do anything
+        if new_order == current_names:
+            return
+
+        # Test on a copy of the model first
+        try:
+            model_copy = self._model.copy()
+
+            # Create a mapping from name to category for efficient lookup
+            name_to_category = {
+                cat.name: cat for cat in model_copy._category_definitions
+            }
+
+            # Reorder the categories according to the specified order
+            reordered_categories = [name_to_category[name] for name in new_order]
+            model_copy._category_definitions = reordered_categories
+
+            model_copy._build_and_calculate()
+
+            # If we get here, the reordering was successful on the copy
+            # Now apply it to the actual model
+            name_to_category = {
+                cat.name: cat for cat in self._model._category_definitions
+            }
+            reordered_categories = [name_to_category[name] for name in new_order]
+            self._model._category_definitions = reordered_categories
+            self._model._build_and_calculate()
+
+        except Exception as e:
+            # If validation fails, raise an informative error
+            raise ValueError(f"Failed to reorder categories: {str(e)}") from e
+
     # ============================================================================
     # DELETE METHODS (formerly DeleteNamespace methods)
     # ============================================================================
