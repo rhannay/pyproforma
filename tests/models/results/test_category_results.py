@@ -420,6 +420,67 @@ class TestCategoryResultsTableMethod:
             mock_category.assert_called_once_with("income", hardcoded_color=None)
 
 
+class TestCategoryResultsCompareYearTableMethod:
+    """Test compare_year_table method of CategoryResults."""
+
+    @pytest.fixture
+    def category_results(self, model_with_categories):
+        """Create a CategoryResults instance for testing."""
+        return CategoryResults(model_with_categories, "income")
+
+    def test_compare_year_table_method_returns_table(self, category_results):
+        """Test compare_year_table method returns a Table object."""
+        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
+            mock_table = Mock()
+            mock_compare_year.return_value = mock_table
+
+            result = category_results.compare_year_table(2024)
+
+            assert result is mock_table
+
+    def test_compare_year_table_method_passes_parameters(self, category_results):
+        """Test compare_year_table method passes correct parameters."""
+        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
+            category_results.compare_year_table(
+                2024, include_change=False, include_percent_change=True, sort_by="value"
+            )
+
+            mock_compare_year.assert_called_once_with(
+                2024,
+                names=["product_sales", "service_revenue"],
+                include_change=False,
+                include_percent_change=True,
+                sort_by="value",
+            )
+
+    def test_compare_year_table_method_uses_category_line_items(self, category_results):
+        """Test compare_year_table method uses line items from the category."""
+        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
+            category_results.compare_year_table(2025)
+
+            # Verify it passes the line item names from the category
+            mock_compare_year.assert_called_once_with(
+                2025,
+                names=["product_sales", "service_revenue"],
+                include_change=True,
+                include_percent_change=True,
+                sort_by=None,
+            )
+
+    def test_compare_year_table_method_with_default_parameters(self, category_results):
+        """Test compare_year_table method with default parameters."""
+        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
+            category_results.compare_year_table(2023)
+
+            mock_compare_year.assert_called_once_with(
+                2023,
+                names=["product_sales", "service_revenue"],
+                include_change=True,
+                include_percent_change=True,
+                sort_by=None,
+            )
+
+
 class TestCategoryResultsPieChartMethod:
     """Test pie_chart method of CategoryResults."""
 

@@ -247,6 +247,51 @@ class CategoryResults:
         """  # noqa: E501
         return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
+    def compare_year_table(
+        self,
+        year: int,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a year-over-year comparison table for all line items in this category.
+
+        This method uses the line item names from this category and delegates to the
+        model's tables.compare_year() method.
+
+        Args:
+            year (int): The year to compare (will compare year-1 to year)
+            include_change (bool): Whether to include the Change column.
+                                 Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change
+                                         column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value',
+                                   'change', 'percent_change'. None keeps the original
+                                   order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for previous year, current year, and optional
+                   change columns for all line items in this category
+
+        Raises:
+            ValueError: If year or year-1 are not in the model's years, or if sort_by
+                       is invalid
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> table = revenue_category.compare_year_table(2024)
+            >>> table = revenue_category.compare_year_table(2024, sort_by='change')
+            >>> table = revenue_category.compare_year_table(2024, include_change=False)
+        """
+        return self.model.tables.compare_year(
+            year,
+            names=self.line_item_names,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
+
     def pie_chart(
         self,
         year: int = None,
