@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 from pyproforma import Category, LineItem, Model
@@ -874,3 +875,165 @@ class TestLineItemsResultsTotalMethod:
 
         # 2024: 100 + 0 = 100
         assert items.total(2024) == 100.0
+
+
+class TestLineItemsResultsToDataFrameMethod:
+    """Test to_dataframe method of LineItemsResults."""
+
+    def test_to_dataframe_returns_pandas_dataframe(self, model_with_line_items):
+        """Test to_dataframe method returns pandas DataFrame with correct structure."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        df = items.to_dataframe()
+
+        assert isinstance(df, pd.DataFrame)
+        assert df.columns.tolist() == [2023, 2024, 2025]
+        assert "product_sales" in df.index
+        assert "service_revenue" in df.index
+
+    def test_to_dataframe_returns_correct_values(self, model_with_line_items):
+        """Test to_dataframe method returns correct values."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+
+        df = items.to_dataframe()
+
+        assert df.loc["product_sales", 2023] == 100000
+        assert df.loc["product_sales", 2024] == 120000
+        assert df.loc["product_sales", 2025] == 140000
+        assert df.loc["service_revenue", 2023] == 50000
+        assert df.loc["service_revenue", 2024] == 60000
+        assert df.loc["service_revenue", 2025] == 70000
+
+    def test_to_dataframe_with_single_item(self, model_with_line_items):
+        """Test to_dataframe method with a single line item."""
+        items = LineItemsResults(model_with_line_items, ["product_sales"])
+
+        df = items.to_dataframe()
+
+        assert isinstance(df, pd.DataFrame)
+        assert df.columns.tolist() == [2023, 2024, 2025]
+        assert df.index.tolist() == ["product_sales"]
+        assert df.loc["product_sales", 2023] == 100000
+        assert df.loc["product_sales", 2024] == 120000
+        assert df.loc["product_sales", 2025] == 140000
+
+    def test_to_dataframe_with_all_items(self, model_with_line_items):
+        """Test to_dataframe method with all line items in the model."""
+        all_names = model_with_line_items.line_item_names
+        items = LineItemsResults(model_with_line_items, all_names)
+
+        df = items.to_dataframe()
+
+        assert isinstance(df, pd.DataFrame)
+        assert len(df.index) == 4  # All 4 line items
+        assert set(df.index) == set(all_names)
+        assert df.columns.tolist() == [2023, 2024, 2025]
+
+        # Verify some values
+        assert df.loc["product_sales", 2023] == 100000
+        assert df.loc["salaries", 2024] == 45000
+        assert df.loc["office_rent", 2025] == 24000
+
+    def test_to_dataframe_preserves_item_order(self, model_with_line_items):
+        """Test that to_dataframe preserves the order of line items."""
+        items = LineItemsResults(
+            model_with_line_items, ["salaries", "product_sales", "office_rent"]
+        )
+
+        df = items.to_dataframe()
+
+        assert df.index.tolist() == ["salaries", "product_sales", "office_rent"]
+
+    def test_to_dataframe_with_different_items(self, model_with_line_items):
+        """Test to_dataframe method with different line items."""
+        items = LineItemsResults(model_with_line_items, ["salaries", "office_rent"])
+
+        df = items.to_dataframe()
+
+        assert isinstance(df, pd.DataFrame)
+        assert df.columns.tolist() == [2023, 2024, 2025]
+        assert "salaries" in df.index
+        assert "office_rent" in df.index
+        assert df.loc["salaries", 2023] == 40000
+        assert df.loc["office_rent", 2024] == 24000
+
+    def test_to_dataframe_with_none_values(self):
+        """Test to_dataframe method when some items have None values."""
+        from pyproforma import Category, LineItem, Model
+
+        line_items = [
+            LineItem(
+                name="item1",
+                category="test",
+                label="Item 1",
+                values={2023: 100.0, 2024: None, 2025: 200.0},
+            ),
+            LineItem(
+                name="item2",
+                category="test",
+                label="Item 2",
+                values={2023: 50.0, 2024: 75.0, 2025: None},
+            ),
+        ]
+
+        categories = [Category(name="test", label="Test")]
+        model = Model(
+            line_items=line_items, years=[2023, 2024, 2025], categories=categories
+        )
+
+        items = model.line_items(["item1", "item2"])
+        df = items.to_dataframe()
+
+        assert isinstance(df, pd.DataFrame)
+        assert df.loc["item1", 2023] == 100.0
+        assert pd.isna(df.loc["item1", 2024])  # None becomes NaN in pandas
+        assert df.loc["item1", 2025] == 200.0
+        assert df.loc["item2", 2023] == 50.0
+        assert df.loc["item2", 2024] == 75.0
+        assert pd.isna(df.loc["item2", 2025])  # None becomes NaN in pandas
+
+    def test_to_dataframe_matches_category_pattern(self, model_with_line_items):
+        """Test that to_dataframe follows the same pattern as CategoryResults."""
+        # Get DataFrame from LineItemsResults
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+        items_df = items.to_dataframe()
+
+        # Get DataFrame from CategoryResults (which contains the same items)
+        from pyproforma.models.results import CategoryResults
+
+        category = CategoryResults(model_with_line_items, "income")
+        category_df = category.to_dataframe()
+
+        # Both should have the same structure and values
+        assert items_df.columns.tolist() == category_df.columns.tolist()
+        assert items_df.index.tolist() == category_df.index.tolist()
+        assert items_df.equals(category_df)
+
+    def test_to_dataframe_consistency_with_line_item_results(
+        self, model_with_line_items
+    ):
+        """Test that to_dataframe is consistent with individual LineItemResults."""
+        items = LineItemsResults(
+            model_with_line_items, ["product_sales", "service_revenue"]
+        )
+        items_df = items.to_dataframe()
+
+        # Get individual line item DataFrames
+        product_sales_df = model_with_line_items.line_item(
+            "product_sales"
+        ).to_dataframe()
+        service_revenue_df = model_with_line_items.line_item(
+            "service_revenue"
+        ).to_dataframe()
+
+        # Combine them manually
+        combined_df = pd.concat([product_sales_df, service_revenue_df])
+
+        # Should match the items DataFrame
+        assert items_df.equals(combined_df)
