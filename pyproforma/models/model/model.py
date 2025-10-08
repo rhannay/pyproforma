@@ -979,6 +979,63 @@ class Model(SerializationMixin):
             index=index,
         )
 
+    def reorder_categories(
+        self,
+        ordered_names: list[str],
+        position: str = "top",
+        target: str = None,
+        index: int = None,
+    ) -> None:
+        """
+        Reorder Category definitions in the model by specifying a subset of their names.
+
+        This is a convenience method that delegates to update.reorder_categories().
+        Categories not included in ordered_names will maintain their relative order.
+
+        Args:
+            ordered_names (list[str]): List of Category names to reorder. Can be a subset
+                of all categories. Items not listed will maintain their relative order.
+            position (str, optional): Where to place the ordered items. Options:
+                - "top": Place at the beginning (default)
+                - "bottom": Place at the end
+                - "after": Place after the specified target category
+                - "before": Place before the specified target category
+                - "index": Place at a specific index
+            target (str, optional): Required for "after" and "before" positions.
+                The name of the category to position relative to.
+            index (int, optional): Required for "index" position.
+                The 0-based index where ordered items should be inserted.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the reordering is invalid (unknown items, invalid position, etc.)
+            TypeError: If ordered_names is not a list or contains non-strings
+
+        Examples:
+            >>> # Place items at the top
+            >>> model.reorder_categories(["revenue", "expenses"])
+
+            >>> # Place items at the bottom
+            >>> model.reorder_categories(
+            ...     ["notes", "disclaimers"], position="bottom"
+            ... )
+
+            >>> # Place items after a specific item
+            >>> model.reorder_categories(
+            ...     ["tax_category", "net_income_category"],
+            ...     position="after",
+            ...     target="gross_profit_category"
+            ... )
+        """  # noqa: E501
+        self.update.reorder_categories(
+            ordered_names=ordered_names,
+            position=position,
+            target=target,
+            index=index,
+        )
+
     # ============================================================================
     # MODEL ELEMENTS
     # ============================================================================
