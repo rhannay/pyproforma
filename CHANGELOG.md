@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] - 2025-10-14
+
 ### Changed
 - Renamed `MultiLineItem` class to `Generator` (breaking change - no backward compatibility)
 - Removed tuple access pattern `model['name', year]` for getting values
