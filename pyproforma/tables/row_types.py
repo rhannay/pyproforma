@@ -474,16 +474,22 @@ class LabelRow(BaseRow):
     """Configuration for label row generation."""
 
     label: str
+    included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
         """Create a row with just a label in the leftmost column and empty cells for all years."""  # noqa: E501
-        # Create cells for this row
-        cells = [Cell(value=self.label, bold=self.bold, align="left")]
+        # Create cells for this row based on included_cols
+        cells = []
 
-        # Add blank cells for each additional label column (if label_col_count > 1)
-        for _ in range(label_col_count - 1):
-            cells.append(Cell(value=""))
+        # Add cells based on included_cols - put label in first column, empty in others
+        for i, col in enumerate(self.included_cols):
+            if i == 0:
+                # First column gets the label
+                cells.append(Cell(value=self.label, bold=self.bold, align="left"))
+            else:
+                # Other columns are empty
+                cells.append(Cell(value="", bold=self.bold, align="left"))
 
         # Add empty cells for each year
         for year in model.years:
@@ -595,6 +601,7 @@ class LineItemsTotalRow(BaseRow):
     """Configuration for line items total row generation."""
 
     line_item_names: list[str]
+    included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     label: Optional[str] = None
     value_format: Optional[ValueFormat] = None
     bold: bool = False
@@ -615,40 +622,41 @@ class LineItemsTotalRow(BaseRow):
         # Default to no_decimals format if not specified
         value_format = self.value_format or "no_decimals"
 
-        # Create cells for this row
+        # Create cells for this row based on included_cols (same logic as ItemRow)
         cells = []
 
-        # Add empty name cell if we have 2 or more label columns
-        if label_col_count >= 2:
-            cells.append(
-                Cell(
-                    value="",
-                    bold=self.bold,
-                    align="left",
-                    bottom_border=self.bottom_border,
-                    top_border=self.top_border,
+        # Add cells based on included_cols
+        for col in self.included_cols:
+            if col == "name":
+                cells.append(
+                    Cell(
+                        value="",  # Empty for totals row
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
                 )
-            )
-
-        cells.append(
-            Cell(
-                value=label,
-                bold=self.bold,
-                align="left",
-                bottom_border=self.bottom_border,
-                top_border=self.top_border,
-            )
-        )
-
-        # Add blank cells for any additional label columns beyond the first two
-        for _ in range(label_col_count - len(cells)):
-            cells.append(
-                Cell(
-                    value="",
-                    bottom_border=self.bottom_border,
-                    top_border=self.top_border,
+            elif col == "label":
+                cells.append(
+                    Cell(
+                        value=label,
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
                 )
-            )
+            elif col == "category":
+                cells.append(
+                    Cell(
+                        value="",  # Empty for totals row
+                        bold=self.bold,
+                        align="left",
+                        bottom_border=self.bottom_border,
+                        top_border=self.top_border,
+                    )
+                )
 
         # Add cells for each year with line items total for that year
         for year in model.years:

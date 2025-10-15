@@ -226,3 +226,109 @@ class TestTableCreation:
             f"Row labels should only be item labels. "
             f"Expected {expected_labels}, got {row_labels}"
         )
+
+
+class TestTableLineItemsWithTotals:
+    """Test Tables.line_items() with include_totals=True and multiple columns."""
+
+    @pytest.fixture
+    def totals_model(self):
+        """Create a model for testing totals functionality."""
+        line_items = [
+            LineItem(
+                name="a", label="Item A", category="cat1", values={2023: 100, 2024: 110}
+            ),
+            LineItem(
+                name="b", label="Item B", category="cat1", values={2023: 200, 2024: 220}
+            ),
+            LineItem(
+                name="c", label="Item C", category="cat2", values={2023: 300, 2024: 330}
+            ),
+        ]
+        categories = [
+            Category(name="cat1", label="Category 1"),
+            Category(name="cat2", label="Category 2"),
+        ]
+        return Model(line_items=line_items, years=[2023, 2024], categories=categories)
+
+    def test_totals_with_single_column(self, totals_model):
+        """Test include_totals=True with single column."""
+        table = totals_model.tables.line_items(
+            included_cols=["label"], include_totals=True
+        )
+
+        # Should have 4 rows: 3 items + 1 total
+        assert len(table.rows) == 4
+        # Should have 3 columns: 1 label + 2 years
+        assert len(table.columns) == 3
+
+        # All rows should have same number of cells
+        for row in table.rows:
+            assert len(row.cells) == 3
+
+        # Check totals row
+        totals_row = table.rows[-1]
+        assert totals_row.cells[0].value == "Total"
+        assert totals_row.cells[1].value == 600  # 100+200+300
+        assert totals_row.cells[2].value == 660  # 110+220+330
+
+    def test_totals_with_two_columns(self, totals_model):
+        """Test include_totals=True with two columns."""
+        table = totals_model.tables.line_items(
+            included_cols=["name", "label"], include_totals=True
+        )
+
+        # Should have 4 rows: 3 items + 1 total
+        assert len(table.rows) == 4
+        # Should have 4 columns: 2 labels + 2 years
+        assert len(table.columns) == 4
+
+        # All rows should have same number of cells
+        for row in table.rows:
+            assert len(row.cells) == 4
+
+        # Check totals row
+        totals_row = table.rows[-1]
+        assert totals_row.cells[0].value == ""  # empty name
+        assert totals_row.cells[1].value == "Total"  # total label
+        assert totals_row.cells[2].value == 600
+        assert totals_row.cells[3].value == 660
+
+    def test_totals_with_three_columns(self, totals_model):
+        """Test include_totals=True with three columns."""
+        table = totals_model.tables.line_items(
+            included_cols=["name", "label", "category"], include_totals=True
+        )
+
+        # Should have 4 rows: 3 items + 1 total
+        assert len(table.rows) == 4
+        # Should have 5 columns: 3 labels + 2 years
+        assert len(table.columns) == 5
+
+        # All rows should have same number of cells
+        for row in table.rows:
+            assert len(row.cells) == 5
+
+        # Check totals row
+        totals_row = table.rows[-1]
+        assert totals_row.cells[0].value == ""  # empty name
+        assert totals_row.cells[1].value == "Total"  # total label
+        assert totals_row.cells[2].value == ""  # empty category
+        assert totals_row.cells[3].value == 600
+        assert totals_row.cells[4].value == 660
+
+    def test_totals_with_filtered_items(self, totals_model):
+        """Test include_totals=True with filtered items."""
+        table = totals_model.tables.line_items(
+            line_item_names=["a", "c"],
+            included_cols=["name", "label"],
+            include_totals=True,
+        )
+
+        # Should have 3 rows: 2 filtered items + 1 total
+        assert len(table.rows) == 3
+
+        # Check totals are only for filtered items
+        totals_row = table.rows[-1]
+        assert totals_row.cells[2].value == 400  # 100+300
+        assert totals_row.cells[3].value == 440  # 110+330

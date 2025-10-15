@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LineItemResults.move()` method for repositioning single line items using `Model.reorder_line_items()` arguments
 - `LineItemsResults.move()` method for repositioning multiple line items as a group while preserving their relative order
 
+### Fixed
+- `Tables.line_items()` now properly handles multiple `included_cols` with `include_totals=True` and `group_by_category=True`
+- Fixed column count inconsistencies in `LineItemsTotalRow` and `LabelRow` when using multiple included columns
+
 ## [0.1.15] - 2025-10-14
 
 ### Changed

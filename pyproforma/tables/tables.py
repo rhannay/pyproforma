@@ -161,7 +161,11 @@ class Tables:
                     )
                     category_label = category_metadata["label"]
 
-                    template.append(rt.LabelRow(label=category_label, bold=True))
+                    template.append(
+                        rt.LabelRow(
+                            label=category_label, bold=True, included_cols=included_cols
+                        )
+                    )
                     current_category = item_category
 
             # Add the item row
@@ -184,6 +188,7 @@ class Tables:
             template.append(
                 rt.LineItemsTotalRow(
                     line_item_names=total_line_item_names,
+                    included_cols=included_cols,
                     bold=True,
                     top_border="single",
                 )
