@@ -609,7 +609,11 @@ class LineItemsTotalRow(BaseRow):
     top_border: Optional[str] = None
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
-        """Create a row showing totals for a list of line items across all years."""
+        """Create a row showing totals for a list of line items across all years.
+
+        The label always appears in the first cell regardless of included_cols
+        configuration. All other label columns are empty.
+        """
         # Get the line items results to access the total method
         line_items_results = model.line_items(self.line_item_names)
 
@@ -622,22 +626,13 @@ class LineItemsTotalRow(BaseRow):
         # Default to no_decimals format if not specified
         value_format = self.value_format or "no_decimals"
 
-        # Create cells for this row based on included_cols (same logic as ItemRow)
+        # Create cells for this row - label always goes in first cell
         cells = []
 
         # Add cells based on included_cols
-        for col in self.included_cols:
-            if col == "name":
-                cells.append(
-                    Cell(
-                        value="",  # Empty for totals row
-                        bold=self.bold,
-                        align="left",
-                        bottom_border=self.bottom_border,
-                        top_border=self.top_border,
-                    )
-                )
-            elif col == "label":
+        for i, col in enumerate(self.included_cols):
+            if i == 0:
+                # First column always gets the label, regardless of column type
                 cells.append(
                     Cell(
                         value=label,
@@ -647,7 +642,8 @@ class LineItemsTotalRow(BaseRow):
                         top_border=self.top_border,
                     )
                 )
-            elif col == "category":
+            else:
+                # All other columns are empty for totals row
                 cells.append(
                     Cell(
                         value="",  # Empty for totals row

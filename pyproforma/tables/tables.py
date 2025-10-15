@@ -189,6 +189,7 @@ class Tables:
                 rt.LineItemsTotalRow(
                     line_item_names=total_line_item_names,
                     included_cols=included_cols,
+                    label="Total",
                     bold=True,
                     top_border="single",
                 )

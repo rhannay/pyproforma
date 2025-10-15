@@ -289,8 +289,8 @@ class TestTableLineItemsWithTotals:
 
         # Check totals row
         totals_row = table.rows[-1]
-        assert totals_row.cells[0].value == ""  # empty name
-        assert totals_row.cells[1].value == "Total"  # total label
+        assert totals_row.cells[0].value == "Total"
+        assert totals_row.cells[1].value == ""
         assert totals_row.cells[2].value == 600
         assert totals_row.cells[3].value == 660
 
@@ -311,8 +311,8 @@ class TestTableLineItemsWithTotals:
 
         # Check totals row
         totals_row = table.rows[-1]
-        assert totals_row.cells[0].value == ""  # empty name
-        assert totals_row.cells[1].value == "Total"  # total label
+        assert totals_row.cells[0].value == "Total"  # total name
+        assert totals_row.cells[1].value == ""  # empty label
         assert totals_row.cells[2].value == ""  # empty category
         assert totals_row.cells[3].value == 600
         assert totals_row.cells[4].value == 660
