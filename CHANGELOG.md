@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `LineItemResults.move()` method for repositioning single line items using `Model.reorder_line_items()` arguments
+- `LineItemsResults.move()` method for repositioning multiple line items as a group while preserving their relative order
+
 ## [0.1.15] - 2025-10-14
 
 ### Changed

@@ -1339,9 +1339,7 @@ class TestLineItemResultsCategoryProperty:
         assert "Cannot set category on category item 'income'" in error_msg
         assert "Only line_item types support category modification" in error_msg
 
-    def test_category_setter_raises_error_for_generator(
-        self, category_testing_model
-    ):
+    def test_category_setter_raises_error_for_generator(self, category_testing_model):
         """Test that category setter raises ValueError for multi-line item types."""
         # Mock metadata to simulate a multi-line item
         mock_metadata = {
@@ -1422,3 +1420,132 @@ class TestLineItemResultsCategoryProperty:
         updated_html_summary = revenue_item.summary(html=True)
         assert "Category: profit" in updated_html_summary
         assert "Category: income" not in updated_html_summary
+
+
+class TestLineItemResultsMove:
+    """Test move method of LineItemResults."""
+
+    @pytest.fixture
+    def move_testing_model(self):
+        """Create a model with multiple line items for testing move functionality."""
+        line_items = [
+            LineItem(name="item_a", category="general", values={2023: 100}),
+            LineItem(name="item_b", category="general", values={2023: 200}),
+            LineItem(name="item_c", category="general", values={2023: 300}),
+            LineItem(name="item_d", category="general", values={2023: 400}),
+        ]
+        return Model(line_items=line_items, years=[2023])
+
+    def test_move_to_top(self, move_testing_model):
+        """Test moving a line item to the top position."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_c to top
+        item_c = move_testing_model.line_item("item_c")
+        item_c.move(position="top")
+
+        # Verify new order
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_c", "item_a", "item_b", "item_d"]
+
+    def test_move_to_bottom(self, move_testing_model):
+        """Test moving a line item to the bottom position."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_b to bottom
+        item_b = move_testing_model.line_item("item_b")
+        item_b.move(position="bottom")
+
+        # Verify new order
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_a", "item_c", "item_d", "item_b"]
+
+    def test_move_after_target(self, move_testing_model):
+        """Test moving a line item after a target item."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_a after item_c
+        item_a = move_testing_model.line_item("item_a")
+        item_a.move(position="after", target="item_c")
+
+        # Verify new order
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_b", "item_c", "item_a", "item_d"]
+
+    def test_move_before_target(self, move_testing_model):
+        """Test moving a line item before a target item."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_d before item_b
+        item_d = move_testing_model.line_item("item_d")
+        item_d.move(position="before", target="item_b")
+
+        # Verify new order
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_a", "item_d", "item_b", "item_c"]
+
+    def test_move_to_index(self, move_testing_model):
+        """Test moving a line item to a specific index."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_d to index 1
+        item_d = move_testing_model.line_item("item_d")
+        item_d.move(position="index", index=1)
+
+        # Verify new order
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_a", "item_d", "item_b", "item_c"]
+
+    def test_move_non_line_item_raises_error(self, move_testing_model):
+        """Test that move raises error for non-line_item types."""
+        # Mock the source_type property of the LineItemResults class
+        item_a = move_testing_model.line_item("item_a")
+
+        # Use patch to mock the source_type property as it's accessed via the class
+        with patch.object(
+            type(item_a),
+            "source_type",
+            new_callable=lambda: property(lambda self: "category"),
+        ):
+            with pytest.raises(ValueError, match="Cannot move category item"):
+                item_a.move()
+
+    def test_move_with_invalid_target(self, move_testing_model):
+        """Test that move raises error with invalid target."""
+        item_a = move_testing_model.line_item("item_a")
+
+        with pytest.raises(
+            ValueError, match="Target line item 'nonexistent' not found"
+        ):
+            item_a.move(position="after", target="nonexistent")
+
+    def test_move_with_invalid_position(self, move_testing_model):
+        """Test that move raises error with invalid position."""
+        item_a = move_testing_model.line_item("item_a")
+
+        with pytest.raises(ValueError, match="Invalid position 'invalid'"):
+            item_a.move(position="invalid")
+
+    def test_move_default_position_is_top(self, move_testing_model):
+        """Test that move defaults to top position."""
+        # Get initial order
+        initial_order = move_testing_model.line_item_names
+        assert initial_order == ["item_a", "item_b", "item_c", "item_d"]
+
+        # Move item_d with default position (should be top)
+        item_d = move_testing_model.line_item("item_d")
+        item_d.move()
+
+        # Verify new order (item_d should be at top)
+        new_order = move_testing_model.line_item_names
+        assert new_order == ["item_d", "item_a", "item_b", "item_c"]

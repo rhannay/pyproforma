@@ -216,6 +216,61 @@ class LineItemResults:
         # Delete the line item from the model
         self.model.update.delete_line_item(self.name)
 
+    def move(
+        self,
+        position: str = "top",
+        target: str = None,
+        index: int = None,
+    ) -> None:
+        """
+        Move this line item to a new position in the model.
+
+        This method repositions the line item within the model's line item order by
+        calling the model's reorder_line_items function with this item's name.
+
+        Args:
+            position (str, optional): Where to move the item. Options:
+                - "top": Move to the beginning (default)
+                - "bottom": Move to the end
+                - "after": Move after the specified target line item
+                - "before": Move before the specified target line item
+                - "index": Move to a specific index
+            target (str, optional): Required for "after" and "before" positions.
+                The name of the line item to position relative to.
+            index (int, optional): Required for "index" position.
+                The 0-based index where the item should be placed.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the move is invalid (invalid position, target not found,
+                       etc.) or if this is not a line_item type (only line_item
+                       types can be moved)
+            TypeError: If arguments have invalid types
+
+        Examples:
+            >>> revenue_item = model.line_item('revenue')
+            >>> revenue_item.move()  # Move to top
+            >>> revenue_item.move(position="bottom")  # Move to bottom
+            >>> revenue_item.move(position="after", target="expenses")
+            >>> revenue_item.move(position="before", target="profit")
+            >>> revenue_item.move(position="index", index=3)  # Move to index 3
+        """
+        if self.source_type != "line_item":
+            raise ValueError(
+                f"Cannot move {self.source_type} item '{self.name}'. "
+                f"Only line_item types support repositioning."
+            )
+
+        # Use the model's reorder_line_items function with this item's name
+        self.model.reorder_line_items(
+            ordered_names=[self.name],
+            position=position,
+            target=target,
+            index=index,
+        )
+
     # ============================================================================
     # VALUE ACCESS METHODS
     # ============================================================================

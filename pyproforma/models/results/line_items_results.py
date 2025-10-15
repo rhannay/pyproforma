@@ -121,6 +121,65 @@ class LineItemsResults:
         # Apply all updates together using the model's batch update method
         self.model.update.update_multiple_line_items(item_updates)
 
+    def move(
+        self,
+        position: str = "top",
+        target: str = None,
+        index: int = None,
+    ) -> None:
+        """
+        Move all line items in this results set to a new position in the model.
+
+        This method repositions all line items within the model's line item order by
+        calling the model's reorder_line_items function with this results set's
+        line item names. The relative order of the line items within the group
+        is preserved.
+
+        Args:
+            position (str, optional): Where to move the items. Options:
+                - "top": Move to the beginning (default)
+                - "bottom": Move to the end
+                - "after": Move after the specified target line item
+                - "before": Move before the specified target line item
+                - "index": Move to a specific index
+            target (str, optional): Required for "after" and "before" positions.
+                The name of the line item to position relative to.
+            index (int, optional): Required for "index" position.
+                The 0-based index where the items should be placed.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the move is invalid (invalid position, target not found,
+                       etc.) or if any line item is not a line_item type
+            TypeError: If arguments have invalid types
+
+        Examples:
+            >>> items = model.line_items(['revenue', 'costs', 'profit'])
+            >>> items.move()  # Move all items to top
+            >>> items.move(position="bottom")  # Move all items to bottom
+            >>> items.move(position="after", target="expenses")
+            >>> items.move(position="before", target="totals")
+            >>> items.move(position="index", index=5)  # Move all items to index 5
+        """
+        # Verify all items are line_item types by checking their source_type
+        for name in self._line_item_names:
+            item_result = self.model.line_item(name)
+            if item_result.source_type != "line_item":
+                raise ValueError(
+                    f"Cannot move {item_result.source_type} item '{name}'. "
+                    f"Only line_item types support repositioning."
+                )
+
+        # Use the model's reorder_line_items function with all line item names
+        self.model.reorder_line_items(
+            ordered_names=self._line_item_names,
+            position=position,
+            target=target,
+            index=index,
+        )
+
     # ============================================================================
     # ITEM ACCESS METHODS
     # ============================================================================
