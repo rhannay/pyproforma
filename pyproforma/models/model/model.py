@@ -1367,20 +1367,25 @@ class Model(SerializationMixin):
             data["name"] = line_item_names
 
         # Add label column if requested
+        # Use lookup dictionary for O(n) complexity instead of O(n²)
         if include_labels:
-            data["label"] = [
-                self._line_item_definition(name).label for name in line_item_names
-            ]
+            label_lookup = {
+                item.name: item.label for item in self._line_item_definitions
+            }
+            data["label"] = [label_lookup[name] for name in line_item_names]
 
         # Add category column if requested
+        # Use lookup dictionary for O(n) complexity instead of O(n²)
         if include_categories:
-            data["category"] = [
-                self._line_item_definition(name).category for name in line_item_names
-            ]
+            category_lookup = {
+                item.name: item.category for item in self._line_item_definitions
+            }
+            data["category"] = [category_lookup[name] for name in line_item_names]
 
         # Add year columns
+        # Access value matrix directly for better performance
         for year in self._years:
-            data[year] = [self.value(name, year) for name in line_item_names]
+            data[year] = [self._value_matrix[year][name] for name in line_item_names]
 
         # Create DataFrame
         if line_item_as_index:
