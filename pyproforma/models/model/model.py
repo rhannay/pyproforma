@@ -1356,7 +1356,7 @@ class Model(SerializationMixin):
             >>> # columns: ['category', 2023, 2024, 2025]
             >>> # index: ['revenue', 'expenses', 'profit']
         """
-        # Get all line item names (not category totals or generators)
+        # Get all line item names from the line item definitions
         line_item_names = [item.name for item in self._line_item_definitions]
 
         # Build data for DataFrame
@@ -1367,7 +1367,7 @@ class Model(SerializationMixin):
             data["name"] = line_item_names
 
         # Add label column if requested
-        # Use lookup dictionary for O(n) complexity instead of O(n²)
+        # Create label lookup dictionary for O(n) complexity
         if include_labels:
             label_lookup = {
                 item.name: item.label for item in self._line_item_definitions
@@ -1375,7 +1375,7 @@ class Model(SerializationMixin):
             data["label"] = [label_lookup[name] for name in line_item_names]
 
         # Add category column if requested
-        # Use lookup dictionary for O(n) complexity instead of O(n²)
+        # Create category lookup dictionary for O(n) complexity
         if include_categories:
             category_lookup = {
                 item.name: item.category for item in self._line_item_definitions
