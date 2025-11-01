@@ -379,19 +379,71 @@ class TestCategoryResultsToDataFrameMethod:
         assert "salaries" in df.index
         assert "office_rent" in df.index
 
-    def test_to_dataframe_uses_values_method(self, category_results_with_total):
-        """Test that to_dataframe method uses values method."""
-        with patch.object(category_results_with_total, "values") as mock_values:
-            mock_values.return_value = {
-                "product_sales": {2023: 100000, 2024: 120000, 2025: 140000},
-                "service_revenue": {2023: 50000, 2024: 60000, 2025: 70000},
-            }
+    def test_to_dataframe_delegates_to_model_to_dataframe(
+        self, category_results_with_total
+    ):
+        """Test that to_dataframe delegates to model.to_dataframe with line_items."""
+        with patch.object(
+            category_results_with_total.model, "to_dataframe"
+        ) as mock_to_dataframe:
+            # Mock return value
+            mock_df = pd.DataFrame(
+                {2023: [100000, 50000], 2024: [120000, 60000], 2025: [140000, 70000]},
+                index=["product_sales", "service_revenue"],
+            )
+            mock_to_dataframe.return_value = mock_df
 
+            # Call the method with default parameters
             df = category_results_with_total.to_dataframe()
 
-            mock_values.assert_called_once()
+            # Verify delegation with correct parameters
+            mock_to_dataframe.assert_called_once_with(
+                line_items=category_results_with_total.line_item_names,
+                line_item_as_index=True,
+                include_labels=False,
+                include_categories=False,
+            )
             assert df.loc["product_sales", 2023] == 100000
-            assert "income_total" not in df.index
+
+    def test_to_dataframe_with_custom_parameters(self, category_results_with_total):
+        """Test that to_dataframe passes custom parameters to model.to_dataframe."""
+        with patch.object(
+            category_results_with_total.model, "to_dataframe"
+        ) as mock_to_dataframe:
+            # Mock return value
+            mock_df = pd.DataFrame(
+                {"name": ["product_sales", "service_revenue"], 2023: [100000, 50000]}
+            )
+            mock_to_dataframe.return_value = mock_df
+
+            # Call with custom parameters
+            df = category_results_with_total.to_dataframe(
+                line_item_as_index=False,
+                include_labels=True,
+                include_categories=True,
+            )
+
+            # Verify delegation with custom parameters
+            mock_to_dataframe.assert_called_once_with(
+                line_items=category_results_with_total.line_item_names,
+                line_item_as_index=False,
+                include_labels=True,
+                include_categories=True,
+            )
+            # Verify the mocked result is returned
+            assert df.loc[0, "name"] == "product_sales"
+
+    def test_to_dataframe_backward_compatibility(self, category_results_with_total):
+        """Test that to_dataframe maintains backward compatibility."""
+        # Test that calling without parameters still works as before
+        df = category_results_with_total.to_dataframe()
+
+        # Should return DataFrame with line items as index and years as columns
+        assert isinstance(df, pd.DataFrame)
+        assert df.index.tolist() == category_results_with_total.line_item_names
+        assert df.columns.tolist() == [2023, 2024, 2025]
+        assert df.loc["product_sales", 2023] == 100000
+        assert df.loc["service_revenue", 2023] == 50000
 
 
 class TestCategoryResultsTableMethod:
