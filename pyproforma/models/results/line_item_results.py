@@ -583,15 +583,24 @@ class LineItemResults:
         values_dict = self.values
         return pd.Series(values_dict, name=self.name)
 
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self, **kwargs) -> pd.DataFrame:
         """
         Return a pandas DataFrame with a single row for this item.
+
+        This method delegates to Model.to_dataframe() with the line_items parameter
+        set to this specific line item.
+
+        Args:
+            **kwargs: Additional keyword arguments to pass to Model.to_dataframe().
+                     Common options include:
+                     - transpose: If True, returns years as rows and line items as
+                       columns
+                     - include_metadata: If True, includes additional metadata columns
 
         Returns:
             pd.DataFrame: DataFrame with one row containing the item values across years
         """
-        values_dict = self.values
-        return pd.DataFrame([values_dict], index=[self.name])
+        return self.model.to_dataframe(line_items=[self.name], **kwargs)
 
     def table(self, hardcoded_color: Optional[str] = None) -> Table:
         """
