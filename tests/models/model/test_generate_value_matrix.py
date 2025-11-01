@@ -511,6 +511,38 @@ class TestGenerateValueMatrix:
         assert "revenue_total" in error_msg
         assert "not found" in error_msg or "not allowed" in error_msg
 
+    def test_category_total_circular_reference_error(self, basic_categories):
+        """Test that using category_total formula for own category raises clear error."""  # noqa: E501
+        # Create line items where one tries to use category_total for its own category
+        revenue1 = LineItem(name="revenue1", category="revenue", values={2023: 1000})
+        revenue2 = LineItem(name="revenue2", category="revenue", values={2023: 500})
+        
+        # This line item is in "revenue" category and tries to total that same category
+        # This creates a circular reference
+        total_revenue = LineItem(
+            name="total_revenue",
+            category="revenue",  # Same as the category being totaled
+            formula="category_total:revenue"
+        )
+        
+        line_items = [revenue1, revenue2, total_revenue]
+        
+        # This should raise a ValueError with a clear message about circular reference
+        with pytest.raises(ValueError) as exc_info:
+            Model(
+                line_items=line_items,
+                years=[2023],
+                categories=basic_categories
+            )
+        
+        error_msg = str(exc_info.value)
+        # Check for specific error message components
+        assert "Circular reference detected" in error_msg
+        assert "total_revenue" in error_msg
+        assert "category_total:revenue" in error_msg
+        assert "revenue" in error_msg
+        assert "circular dependency" in error_msg.lower()
+
     def test_order_with_category_total_dependencies(self, basic_categories):
         """Test that order of line items does not affect calculation when using category totals."""  # noqa: E501
         # Add two revenue and two expense line items
