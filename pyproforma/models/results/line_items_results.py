@@ -366,24 +366,24 @@ class LineItemsResults:
     # DATA CONVERSION METHODS
     # ============================================================================
 
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self, **kwargs) -> pd.DataFrame:
         """
         Return a pandas DataFrame with line items as rows and years as columns.
+
+        This method delegates to Model.to_dataframe() with the line_items parameter
+        set to the line items in this results set.
+
+        Args:
+            **kwargs: Additional keyword arguments to pass to Model.to_dataframe().
+                     Common options include:
+                     - transpose: If True, returns years as rows and line items as
+                       columns
+                     - include_metadata: If True, includes additional metadata columns
 
         Returns:
             pd.DataFrame: DataFrame with line items and their values across years
         """
-        # Create DataFrame with line items as index and years as columns
-        df_data = {}
-        for year in self.model.years:
-            df_data[year] = [
-                self.model.line_item(item_name)[year]
-                for item_name in self._line_item_names
-            ]
-
-        df = pd.DataFrame(df_data, index=self._line_item_names)
-
-        return df
+        return self.model.to_dataframe(line_items=self._line_item_names, **kwargs)
 
     # ============================================================================
     # DISPLAY AND SUMMARY METHODS

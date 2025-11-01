@@ -1300,6 +1300,124 @@ class Model(SerializationMixin):
             ],
         }
 
+    def to_dataframe(
+        self,
+        line_items: list[str] = None,
+        line_item_as_index: bool = True,
+        include_labels: bool = False,
+        include_categories: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Convert the model's line items and their values to a pandas DataFrame.
+
+        This method creates a DataFrame representation of specified line items in the
+        model, with years as columns and line items as rows (or as a column if
+        line_item_as_index=False).
+
+        Args:
+            line_items (list[str], optional): List of line item names to include.
+                If None, includes all line items. Defaults to None.
+            line_item_as_index (bool, optional): If True, use line item names as
+                the DataFrame index. If False, include line item names as the
+                first column with header 'name'. Defaults to True.
+            include_labels (bool, optional): If True, add a 'label' column
+                containing the display labels for each line item.
+                Defaults to False.
+            include_categories (bool, optional): If True, add a 'category' column
+                before the year columns. Defaults to False.
+
+        Returns:
+            pd.DataFrame: DataFrame with line items and their values across years.
+                Columns depend on parameters:
+                - If line_item_as_index=True: Years as columns, line items as
+                  index
+                - If line_item_as_index=False: 'name' column, then optional
+                  label/category columns, then year columns
+                - If include_labels=True: Adds 'label' column
+                - If include_categories=True: Adds 'category' column
+
+        Examples:
+            >>> # Basic usage - all line items as index
+            >>> df = model.to_dataframe()
+            >>> # columns: [2023, 2024, 2025]
+            >>> # index: ['revenue', 'expenses', 'profit']
+            >>>
+            >>> # Specific line items only
+            >>> df = model.to_dataframe(line_items=['revenue', 'expenses'])
+            >>> # columns: [2023, 2024, 2025]
+            >>> # index: ['revenue', 'expenses']
+            >>>
+            >>> # Line items as column
+            >>> df = model.to_dataframe(line_item_as_index=False)
+            >>> # columns: ['name', 2023, 2024, 2025]
+            >>>
+            >>> # Include labels and categories
+            >>> df = model.to_dataframe(
+            ...     line_items=['revenue', 'expenses'],
+            ...     line_item_as_index=False,
+            ...     include_labels=True,
+            ...     include_categories=True
+            ... )
+            >>> # columns: ['name', 'label', 'category', 2023, 2024, 2025]
+            >>>
+            >>> # With index but including category
+            >>> df = model.to_dataframe(include_categories=True)
+            >>> # columns: ['category', 2023, 2024, 2025]
+            >>> # index: ['revenue', 'expenses', 'profit']
+        """
+        # Get line item names to include
+        if line_items is None:
+            # Get all line item names from the line item definitions
+            line_item_names = [item.name for item in self._line_item_definitions]
+        else:
+            # Validate that all specified line items exist
+            all_line_item_names = [item.name for item in self._line_item_definitions]
+            invalid_names = [
+                name for name in line_items if name not in all_line_item_names
+            ]
+            if invalid_names:
+                raise ValueError(
+                    f"Invalid line item names: {invalid_names}. "
+                    f"Available line items: {all_line_item_names}"
+                )
+            line_item_names = line_items
+
+        # Build data for DataFrame
+        data = {}
+
+        # Add name column if not using as index
+        if not line_item_as_index:
+            data["name"] = line_item_names
+
+        # Add label column if requested
+        # Create label lookup dictionary for O(n) complexity
+        if include_labels:
+            label_lookup = {
+                item.name: item.label for item in self._line_item_definitions
+            }
+            data["label"] = [label_lookup[name] for name in line_item_names]
+
+        # Add category column if requested
+        # Create category lookup dictionary for O(n) complexity
+        if include_categories:
+            category_lookup = {
+                item.name: item.category for item in self._line_item_definitions
+            }
+            data["category"] = [category_lookup[name] for name in line_item_names]
+
+        # Add year columns
+        # Access value matrix directly for better performance
+        for year in self._years:
+            data[year] = [self._value_matrix[year][name] for name in line_item_names]
+
+        # Create DataFrame
+        if line_item_as_index:
+            df = pd.DataFrame(data, index=line_item_names)
+        else:
+            df = pd.DataFrame(data)
+
+        return df
+
     def _repr_html_(self) -> str:
         """
         HTML representation for Jupyter notebooks.
