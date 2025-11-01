@@ -1302,6 +1302,7 @@ class Model(SerializationMixin):
 
     def to_dataframe(
         self,
+        line_items: list[str] = None,
         line_item_as_index: bool = True,
         include_labels: bool = False,
         include_categories: bool = False,
@@ -1309,11 +1310,13 @@ class Model(SerializationMixin):
         """
         Convert the model's line items and their values to a pandas DataFrame.
 
-        This method creates a DataFrame representation of all line items in the
+        This method creates a DataFrame representation of specified line items in the
         model, with years as columns and line items as rows (or as a column if
         line_item_as_index=False).
 
         Args:
+            line_items (list[str], optional): List of line item names to include.
+                If None, includes all line items. Defaults to None.
             line_item_as_index (bool, optional): If True, use line item names as
                 the DataFrame index. If False, include line item names as the
                 first column with header 'name'. Defaults to True.
@@ -1334,10 +1337,15 @@ class Model(SerializationMixin):
                 - If include_categories=True: Adds 'category' column
 
         Examples:
-            >>> # Basic usage - line items as index
+            >>> # Basic usage - all line items as index
             >>> df = model.to_dataframe()
             >>> # columns: [2023, 2024, 2025]
             >>> # index: ['revenue', 'expenses', 'profit']
+            >>>
+            >>> # Specific line items only
+            >>> df = model.to_dataframe(line_items=['revenue', 'expenses'])
+            >>> # columns: [2023, 2024, 2025]
+            >>> # index: ['revenue', 'expenses']
             >>>
             >>> # Line items as column
             >>> df = model.to_dataframe(line_item_as_index=False)
@@ -1345,6 +1353,7 @@ class Model(SerializationMixin):
             >>>
             >>> # Include labels and categories
             >>> df = model.to_dataframe(
+            ...     line_items=['revenue', 'expenses'],
             ...     line_item_as_index=False,
             ...     include_labels=True,
             ...     include_categories=True
@@ -1356,8 +1365,22 @@ class Model(SerializationMixin):
             >>> # columns: ['category', 2023, 2024, 2025]
             >>> # index: ['revenue', 'expenses', 'profit']
         """
-        # Get all line item names from the line item definitions
-        line_item_names = [item.name for item in self._line_item_definitions]
+        # Get line item names to include
+        if line_items is None:
+            # Get all line item names from the line item definitions
+            line_item_names = [item.name for item in self._line_item_definitions]
+        else:
+            # Validate that all specified line items exist
+            all_line_item_names = [item.name for item in self._line_item_definitions]
+            invalid_names = [
+                name for name in line_items if name not in all_line_item_names
+            ]
+            if invalid_names:
+                raise ValueError(
+                    f"Invalid line item names: {invalid_names}. "
+                    f"Available line items: {all_line_item_names}"
+                )
+            line_item_names = line_items
 
         # Build data for DataFrame
         data = {}

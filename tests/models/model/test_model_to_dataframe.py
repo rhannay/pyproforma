@@ -362,3 +362,272 @@ class TestModelToDataFrameWithComplexModel:
         assert product_row["label"] == "Product Sales"
         assert product_row["category"] == "revenue"
         assert product_row[2023] == 5000
+
+
+class TestModelToDataFrameLineItemsFilter:
+    """Test to_dataframe with line_items parameter for filtering."""
+
+    def test_to_dataframe_line_items_none_includes_all(self, basic_model):
+        """Test that line_items=None includes all line items (default behavior)."""
+        df_all = basic_model.to_dataframe()
+        df_none = basic_model.to_dataframe(line_items=None)
+
+        # Should be identical
+        pd.testing.assert_frame_equal(df_all, df_none)
+        assert df_none.index.tolist() == ["revenue", "expenses", "profit"]
+
+    def test_to_dataframe_line_items_subset_with_index(self, basic_model):
+        """Test filtering to a subset of line items with line_item_as_index=True."""
+        df = basic_model.to_dataframe(line_items=["revenue", "expenses"])
+
+        # Check that only specified line items are included
+        assert df.index.tolist() == ["revenue", "expenses"]
+        assert df.columns.tolist() == [2023, 2024, 2025]
+
+        # Check values
+        assert df.loc["revenue", 2023] == 1000
+        assert df.loc["expenses", 2023] == 600
+
+        # Check that profit is not included
+        assert "profit" not in df.index
+
+    def test_to_dataframe_line_items_subset_with_column(self, basic_model):
+        """Test filtering to a subset of line items with line_item_as_index=False."""
+        df = basic_model.to_dataframe(
+            line_items=["revenue", "profit"], line_item_as_index=False
+        )
+
+        # Check columns and row count
+        assert df.columns.tolist() == ["name", 2023, 2024, 2025]
+        assert len(df) == 2
+
+        # Check that only specified line items are included
+        assert df["name"].tolist() == ["revenue", "profit"]
+
+        # Check values
+        assert df.loc[0, "name"] == "revenue"
+        assert df.loc[0, 2023] == 1000
+        assert df.loc[1, "name"] == "profit"
+        assert df.loc[1, 2023] == 400
+
+    def test_to_dataframe_line_items_single_item(self, basic_model):
+        """Test filtering to a single line item."""
+        df = basic_model.to_dataframe(line_items=["revenue"])
+
+        assert df.index.tolist() == ["revenue"]
+        assert df.columns.tolist() == [2023, 2024, 2025]
+        assert df.loc["revenue", 2023] == 1000
+        assert df.loc["revenue", 2024] == 1200
+        assert df.loc["revenue", 2025] == 1400
+
+    def test_to_dataframe_line_items_preserve_order(self, basic_model):
+        """Test that line_items parameter preserves the specified order."""
+        # Specify in different order than model definition
+        df = basic_model.to_dataframe(line_items=["profit", "revenue", "expenses"])
+
+        # Should preserve the order from line_items parameter
+        assert df.index.tolist() == ["profit", "revenue", "expenses"]
+
+        # Check values are correct
+        assert df.loc["profit", 2023] == 400
+        assert df.loc["revenue", 2023] == 1000
+        assert df.loc["expenses", 2023] == 600
+
+    def test_to_dataframe_line_items_with_labels_and_categories(self, basic_model):
+        """Test line_items filtering with include_labels and include_categories."""
+        df = basic_model.to_dataframe(
+            line_items=["revenue", "profit"],
+            line_item_as_index=False,
+            include_labels=True,
+            include_categories=True,
+        )
+
+        # Check structure
+        assert df.columns.tolist() == ["name", "label", "category", 2023, 2024, 2025]
+        assert len(df) == 2
+
+        # Check first row (revenue)
+        assert df.loc[0, "name"] == "revenue"
+        assert df.loc[0, "label"] == "Revenue"
+        assert df.loc[0, "category"] == "income"
+        assert df.loc[0, 2023] == 1000
+
+        # Check second row (profit)
+        assert df.loc[1, "name"] == "profit"
+        assert df.loc[1, "label"] == "Profit"
+        assert df.loc[1, "category"] == "income"
+        assert df.loc[1, 2023] == 400
+
+    def test_to_dataframe_line_items_empty_list(self, basic_model):
+        """Test with empty line_items list."""
+        df = basic_model.to_dataframe(line_items=[])
+
+        # Should result in empty DataFrame with year columns
+        assert len(df) == 0
+        assert df.columns.tolist() == [2023, 2024, 2025]
+
+    def test_to_dataframe_line_items_invalid_name_raises_error(self, basic_model):
+        """Test that invalid line item name raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid line item names"):
+            basic_model.to_dataframe(line_items=["revenue", "invalid_name"])
+
+        # Check error message contains helpful information
+        with pytest.raises(ValueError) as exc_info:
+            basic_model.to_dataframe(line_items=["nonexistent"])
+
+        error_msg = str(exc_info.value)
+        assert "Invalid line item names: ['nonexistent']" in error_msg
+        assert "Available line items:" in error_msg
+        assert "revenue" in error_msg
+        assert "expenses" in error_msg
+        assert "profit" in error_msg
+
+    def test_to_dataframe_line_items_mixed_valid_invalid_raises_error(
+        self, basic_model
+    ):
+        """Test that mix of valid and invalid names raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            basic_model.to_dataframe(line_items=["revenue", "bad1", "expenses", "bad2"])
+
+        error_msg = str(exc_info.value)
+        assert "Invalid line item names: ['bad1', 'bad2']" in error_msg
+
+    def test_to_dataframe_line_items_duplicate_names(self, basic_model):
+        """Test behavior with duplicate line item names."""
+        # Should handle duplicates gracefully by including each occurrence
+        df = basic_model.to_dataframe(line_items=["revenue", "revenue", "expenses"])
+
+        # Should include revenue twice
+        assert df.index.tolist() == ["revenue", "revenue", "expenses"]
+        assert len(df) == 3
+
+        # Values should be correct for both revenue rows
+        revenue_values = df.loc["revenue", 2023]
+        if hasattr(revenue_values, "__iter__"):
+            # Multiple rows with same index return Series
+            assert all(revenue_values == 1000)
+        else:
+            # Single row returns scalar
+            assert revenue_values == 1000
+
+        # Check by position to be sure
+        assert df.iloc[0, df.columns.get_loc(2023)] == 1000  # First revenue
+        assert df.iloc[1, df.columns.get_loc(2023)] == 1000  # Second revenue
+        assert df.iloc[2, df.columns.get_loc(2023)] == 600  # expenses
+
+
+class TestModelToDataFrameLineItemsComplexModel:
+    """Test line_items filtering with complex model."""
+
+    @pytest.fixture
+    def complex_model(self):
+        """Create a more complex model for line_items testing."""
+        line_items = [
+            LineItem(
+                name="product_sales",
+                category="revenue",
+                label="Product Sales",
+                values={2023: 5000, 2024: 5500, 2025: 6000},
+            ),
+            LineItem(
+                name="service_revenue",
+                category="revenue",
+                label="Service Revenue",
+                values={2023: 3000, 2024: 3500, 2025: 4000},
+            ),
+            LineItem(
+                name="salaries",
+                category="expenses",
+                label="Salaries",
+                values={2023: 2000, 2024: 2200, 2025: 2400},
+            ),
+            LineItem(
+                name="rent",
+                category="expenses",
+                label="Rent",
+                values={2023: 1000, 2024: 1000, 2025: 1000},
+            ),
+            LineItem(
+                name="marketing",
+                category="expenses",
+                label="Marketing",
+                values={2023: 500, 2024: 600, 2025: 700},
+            ),
+            LineItem(
+                name="net_income",
+                category="results",
+                label="Net Income",
+                formula="product_sales + service_revenue - salaries - rent - marketing",
+            ),
+        ]
+        return Model(line_items=line_items, years=[2023, 2024, 2025])
+
+    def test_to_dataframe_line_items_revenue_only(self, complex_model):
+        """Test filtering to only revenue line items."""
+        df = complex_model.to_dataframe(line_items=["product_sales", "service_revenue"])
+
+        assert df.index.tolist() == ["product_sales", "service_revenue"]
+        assert df.columns.tolist() == [2023, 2024, 2025]
+
+        # Check values
+        assert df.loc["product_sales", 2023] == 5000
+        assert df.loc["service_revenue", 2023] == 3000
+
+        # Ensure other items are not included
+        assert "salaries" not in df.index
+        assert "net_income" not in df.index
+
+    def test_to_dataframe_line_items_expenses_only(self, complex_model):
+        """Test filtering to only expense line items."""
+        df = complex_model.to_dataframe(
+            line_items=["salaries", "rent", "marketing"],
+            line_item_as_index=False,
+            include_categories=True,
+        )
+
+        assert len(df) == 3
+        assert df.columns.tolist() == ["name", "category", 2023, 2024, 2025]
+
+        # Check that all rows are expenses
+        assert all(df["category"] == "expenses")
+
+        # Check specific values
+        salaries_row = df[df["name"] == "salaries"].iloc[0]
+        assert salaries_row[2023] == 2000
+
+        rent_row = df[df["name"] == "rent"].iloc[0]
+        assert rent_row[2023] == 1000
+
+    def test_to_dataframe_line_items_mixed_categories(self, complex_model):
+        """Test filtering to line items from different categories."""
+        df = complex_model.to_dataframe(
+            line_items=["product_sales", "salaries", "net_income"],
+            line_item_as_index=False,
+            include_categories=True,
+        )
+
+        assert len(df) == 3
+        assert df["name"].tolist() == ["product_sales", "salaries", "net_income"]
+
+        # Check categories are preserved correctly
+        assert df.loc[0, "category"] == "revenue"  # product_sales
+        assert df.loc[1, "category"] == "expenses"  # salaries
+        assert df.loc[2, "category"] == "results"  # net_income
+
+        # Check calculated value is correct
+        assert df.loc[2, 2023] == 4500  # net_income calculated value
+
+    def test_to_dataframe_line_items_preserve_complex_order(self, complex_model):
+        """Test that complex reordering is preserved."""
+        # Specify a custom order mixing categories
+        custom_order = ["net_income", "rent", "product_sales", "marketing"]
+        df = complex_model.to_dataframe(line_items=custom_order)
+
+        # Order should be preserved exactly
+        assert df.index.tolist() == custom_order
+
+        # Values should be correct
+        assert df.loc["net_income", 2023] == 4500
+        assert df.loc["rent", 2023] == 1000
+        assert df.loc["product_sales", 2023] == 5000
+        assert df.loc["marketing", 2023] == 500
