@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.models.generator.debt import Debt
 from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_line_item_metadata,
@@ -9,7 +10,6 @@ from pyproforma.models.model.value_matrix import (
     _calculate_category_total,
     generate_value_matrix,
 )
-from pyproforma.models.generator.debt import Debt
 
 
 class TestGenerateValueMatrix:
@@ -516,7 +516,7 @@ class TestGenerateValueMatrix:
         # Create line items where one tries to use category_total for its own category
         revenue1 = LineItem(name="revenue1", category="revenue", values={2023: 1000})
         revenue2 = LineItem(name="revenue2", category="revenue", values={2023: 500})
-        
+
         # This line item is in "revenue" category and tries to total that same category
         # This creates a circular reference
         total_revenue = LineItem(
@@ -524,9 +524,9 @@ class TestGenerateValueMatrix:
             category="revenue",  # Same as the category being totaled
             formula="category_total:revenue"
         )
-        
+
         line_items = [revenue1, revenue2, total_revenue]
-        
+
         # This should raise a ValueError with a clear message about circular reference
         with pytest.raises(ValueError) as exc_info:
             Model(
@@ -534,7 +534,7 @@ class TestGenerateValueMatrix:
                 years=[2023],
                 categories=basic_categories
             )
-        
+
         error_msg = str(exc_info.value)
         # Check for specific error message components
         assert "Circular reference detected" in error_msg
