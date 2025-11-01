@@ -89,3 +89,6 @@ settings.py
 
 # Temporary files
 .temp/
+
+# Examples folder - ignore hidden files (files starting with .)
+examples/.*
