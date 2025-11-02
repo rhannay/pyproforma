@@ -80,11 +80,11 @@ class TestModelToDataFrameBasic:
 
 
 class TestModelToDataFrameWithLabels:
-    """Test to_dataframe with include_labels parameter."""
+    """Test to_dataframe with include_label parameter."""
 
-    def test_to_dataframe_include_labels_with_index(self, basic_model):
-        """Test include_labels=True with line_item_as_index=True."""
-        df = basic_model.to_dataframe(include_labels=True)
+    def test_to_dataframe_include_label_with_index(self, basic_model):
+        """Test include_label=True with line_item_as_index=True."""
+        df = basic_model.to_dataframe(include_label=True)
 
         # Check columns - should have 'label' and years
         assert df.columns.tolist() == ["label", 2023, 2024, 2025]
@@ -100,9 +100,9 @@ class TestModelToDataFrameWithLabels:
         # Check numeric values still work
         assert df.loc["revenue", 2023] == 1000
 
-    def test_to_dataframe_include_labels_with_column(self, basic_model):
-        """Test include_labels=True with line_item_as_index=False."""
-        df = basic_model.to_dataframe(line_item_as_index=False, include_labels=True)
+    def test_to_dataframe_include_label_with_column(self, basic_model):
+        """Test include_label=True with line_item_as_index=False."""
+        df = basic_model.to_dataframe(line_item_as_index=False, include_label=True)
 
         # Check columns - should have 'name', 'label', and years
         assert df.columns.tolist() == ["name", "label", 2023, 2024, 2025]
@@ -117,11 +117,11 @@ class TestModelToDataFrameWithLabels:
 
 
 class TestModelToDataFrameWithCategories:
-    """Test to_dataframe with include_categories parameter."""
+    """Test to_dataframe with include_category parameter."""
 
-    def test_to_dataframe_include_categories_with_index(self, basic_model):
-        """Test include_categories=True with line_item_as_index=True."""
-        df = basic_model.to_dataframe(include_categories=True)
+    def test_to_dataframe_include_category_with_index(self, basic_model):
+        """Test include_category=True with line_item_as_index=True."""
+        df = basic_model.to_dataframe(include_category=True)
 
         # Check columns - should have 'category' and years
         assert df.columns.tolist() == ["category", 2023, 2024, 2025]
@@ -137,9 +137,9 @@ class TestModelToDataFrameWithCategories:
         # Check numeric values still work
         assert df.loc["revenue", 2023] == 1000
 
-    def test_to_dataframe_include_categories_with_column(self, basic_model):
-        """Test include_categories=True with line_item_as_index=False."""
-        df = basic_model.to_dataframe(line_item_as_index=False, include_categories=True)
+    def test_to_dataframe_include_category_with_column(self, basic_model):
+        """Test include_category=True with line_item_as_index=False."""
+        df = basic_model.to_dataframe(line_item_as_index=False, include_category=True)
 
         # Check columns - should have 'name', 'category', and years
         assert df.columns.tolist() == ["name", "category", 2023, 2024, 2025]
@@ -158,7 +158,7 @@ class TestModelToDataFrameWithAllOptions:
 
     def test_to_dataframe_all_options_with_index(self, basic_model):
         """Test all options enabled with line_item_as_index=True."""
-        df = basic_model.to_dataframe(include_labels=True, include_categories=True)
+        df = basic_model.to_dataframe(include_label=True, include_category=True)
 
         # Check columns - should have 'label', 'category', and years
         assert df.columns.tolist() == ["label", "category", 2023, 2024, 2025]
@@ -179,8 +179,8 @@ class TestModelToDataFrameWithAllOptions:
         """Test all options enabled with line_item_as_index=False."""
         df = basic_model.to_dataframe(
             line_item_as_index=False,
-            include_labels=True,
-            include_categories=True,
+            include_label=True,
+            include_category=True,
         )
 
         # Check columns - should have 'name', 'label', 'category', and years
@@ -264,8 +264,8 @@ class TestModelToDataFrameEdgeCases:
         """Test that to_dataframe preserves data types correctly."""
         df = basic_model.to_dataframe(
             line_item_as_index=False,
-            include_labels=True,
-            include_categories=True,
+            include_label=True,
+            include_category=True,
         )
 
         # Check that name, label, and category are strings
@@ -347,8 +347,8 @@ class TestModelToDataFrameWithComplexModel:
         """Test to_dataframe on complex model with all options."""
         df = complex_model.to_dataframe(
             line_item_as_index=False,
-            include_labels=True,
-            include_categories=True,
+            include_label=True,
+            include_category=True,
         )
 
         assert len(df) == 6
@@ -434,12 +434,12 @@ class TestModelToDataFrameLineItemsFilter:
         assert df.loc["expenses", 2023] == 600
 
     def test_to_dataframe_line_items_with_labels_and_categories(self, basic_model):
-        """Test line_items filtering with include_labels and include_categories."""
+        """Test line_items filtering with include_label and include_category."""
         df = basic_model.to_dataframe(
             line_items=["revenue", "profit"],
             line_item_as_index=False,
-            include_labels=True,
-            include_categories=True,
+            include_label=True,
+            include_category=True,
         )
 
         # Check structure
@@ -582,7 +582,7 @@ class TestModelToDataFrameLineItemsComplexModel:
         df = complex_model.to_dataframe(
             line_items=["salaries", "rent", "marketing"],
             line_item_as_index=False,
-            include_categories=True,
+            include_category=True,
         )
 
         assert len(df) == 3
@@ -603,7 +603,7 @@ class TestModelToDataFrameLineItemsComplexModel:
         df = complex_model.to_dataframe(
             line_items=["product_sales", "salaries", "net_income"],
             line_item_as_index=False,
-            include_categories=True,
+            include_category=True,
         )
 
         assert len(df) == 3
