@@ -216,8 +216,8 @@ class CategoryResults:
     def to_dataframe(
         self,
         line_item_as_index: bool = True,
-        include_labels: bool = False,
-        include_categories: bool = False,
+        include_label: bool = False,
+        include_category: bool = False,
     ) -> pd.DataFrame:
         """
         Return a pandas DataFrame with line items as rows and years as columns.
@@ -229,10 +229,10 @@ class CategoryResults:
             line_item_as_index (bool, optional): If True, use line item names as
                 the DataFrame index. If False, include line item names as the
                 first column with header 'name'. Defaults to True.
-            include_labels (bool, optional): If True, add a 'label' column
+            include_label (bool, optional): If True, add a 'label' column
                 containing the display labels for each line item.
                 Defaults to False.
-            include_categories (bool, optional): If True, add a 'category' column
+            include_category (bool, optional): If True, add a 'category' column
                 before the year columns. Defaults to False.
 
         Returns:
@@ -242,8 +242,8 @@ class CategoryResults:
                   index
                 - If line_item_as_index=False: 'name' column, then optional
                   label/category columns, then year columns
-                - If include_labels=True: Adds 'label' column
-                - If include_categories=True: Adds 'category' column
+                - If include_label=True: Adds 'label' column
+                - If include_category=True: Adds 'category' column
 
         Examples:
             >>> revenue_category = model.category('revenue')
@@ -256,16 +256,16 @@ class CategoryResults:
             >>> # Line items as column with labels and categories
             >>> df = revenue_category.to_dataframe(
             ...     line_item_as_index=False,
-            ...     include_labels=True,
-            ...     include_categories=True
+            ...     include_label=True,
+            ...     include_category=True
             ... )
             >>> # columns: ['name', 'label', 'category', 2023, 2024, 2025]
         """
         return self.model.to_dataframe(
             line_items=self.line_item_names,
             line_item_as_index=line_item_as_index,
-            include_labels=include_labels,
-            include_categories=include_categories,
+            include_label=include_label,
+            include_category=include_category,
         )
 
     def table(self, hardcoded_color: Optional[str] = None) -> Table:

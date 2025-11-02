@@ -1365,8 +1365,8 @@ class Model(SerializationMixin):
         self,
         line_items: list[str] = None,
         line_item_as_index: bool = True,
-        include_labels: bool = False,
-        include_categories: bool = False,
+        include_label: bool = False,
+        include_category: bool = False,
     ) -> pd.DataFrame:
         """
         Convert the model's line items and their values to a pandas DataFrame.
@@ -1381,10 +1381,10 @@ class Model(SerializationMixin):
             line_item_as_index (bool, optional): If True, use line item names as
                 the DataFrame index. If False, include line item names as the
                 first column with header 'name'. Defaults to True.
-            include_labels (bool, optional): If True, add a 'label' column
+            include_label (bool, optional): If True, add a 'label' column
                 containing the display labels for each line item.
                 Defaults to False.
-            include_categories (bool, optional): If True, add a 'category' column
+            include_category (bool, optional): If True, add a 'category' column
                 before the year columns. Defaults to False.
 
         Returns:
@@ -1394,8 +1394,8 @@ class Model(SerializationMixin):
                   index
                 - If line_item_as_index=False: 'name' column, then optional
                   label/category columns, then year columns
-                - If include_labels=True: Adds 'label' column
-                - If include_categories=True: Adds 'category' column
+                - If include_label=True: Adds 'label' column
+                - If include_category=True: Adds 'category' column
 
         Examples:
             >>> # Basic usage - all line items as index
@@ -1416,13 +1416,13 @@ class Model(SerializationMixin):
             >>> df = model.to_dataframe(
             ...     line_items=['revenue', 'expenses'],
             ...     line_item_as_index=False,
-            ...     include_labels=True,
-            ...     include_categories=True
+            ...     include_label=True,
+            ...     include_category=True
             ... )
             >>> # columns: ['name', 'label', 'category', 2023, 2024, 2025]
             >>>
             >>> # With index but including category
-            >>> df = model.to_dataframe(include_categories=True)
+            >>> df = model.to_dataframe(include_category=True)
             >>> # columns: ['category', 2023, 2024, 2025]
             >>> # index: ['revenue', 'expenses', 'profit']
         """
@@ -1452,7 +1452,7 @@ class Model(SerializationMixin):
 
         # Add label column if requested
         # Create label lookup dictionary for O(n) complexity
-        if include_labels:
+        if include_label:
             label_lookup = {
                 item.name: item.label for item in self._line_item_definitions
             }
@@ -1460,7 +1460,7 @@ class Model(SerializationMixin):
 
         # Add category column if requested
         # Create category lookup dictionary for O(n) complexity
-        if include_categories:
+        if include_category:
             category_lookup = {
                 item.name: item.category for item in self._line_item_definitions
             }

@@ -400,8 +400,8 @@ class TestCategoryResultsToDataFrameMethod:
             mock_to_dataframe.assert_called_once_with(
                 line_items=category_results_with_total.line_item_names,
                 line_item_as_index=True,
-                include_labels=False,
-                include_categories=False,
+                include_label=False,
+                include_category=False,
             )
             assert df.loc["product_sales", 2023] == 100000
 
@@ -419,16 +419,16 @@ class TestCategoryResultsToDataFrameMethod:
             # Call with custom parameters
             df = category_results_with_total.to_dataframe(
                 line_item_as_index=False,
-                include_labels=True,
-                include_categories=True,
+                include_label=True,
+                include_category=True,
             )
 
             # Verify delegation with custom parameters
             mock_to_dataframe.assert_called_once_with(
                 line_items=category_results_with_total.line_item_names,
                 line_item_as_index=False,
-                include_labels=True,
-                include_categories=True,
+                include_label=True,
+                include_category=True,
             )
             # Verify the mocked result is returned
             assert df.loc[0, "name"] == "product_sales"
