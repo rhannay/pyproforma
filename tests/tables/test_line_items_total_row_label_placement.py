@@ -37,7 +37,7 @@ class TestLineItemsTotalRowLabelPlacement:
     def test_label_in_first_cell_with_single_column(self, sample_model):
         """Test that label appears in first cell with single included column."""
         result = sample_model.tables.line_items(
-            included_cols=["label"], include_totals=True, group_by_category=False
+            col_order=["label"], include_totals=True, group_by_category=False
         )
 
         totals_row = result.rows[-1]
@@ -48,7 +48,7 @@ class TestLineItemsTotalRowLabelPlacement:
     def test_label_in_first_cell_with_name_first(self, sample_model):
         """Test label in first cell when 'name' is first in included_cols."""
         result = sample_model.tables.line_items(
-            included_cols=["name", "label"],
+            col_order=["name", "label"],
             include_totals=True,
             group_by_category=False,
         )
@@ -62,7 +62,7 @@ class TestLineItemsTotalRowLabelPlacement:
     def test_label_in_first_cell_with_category_first(self, sample_model):
         """Test label in first cell when 'category' is first in included_cols."""
         result = sample_model.tables.line_items(
-            included_cols=["category", "name", "label"],
+            col_order=["category", "name", "label"],
             include_totals=True,
             group_by_category=False,
         )
@@ -77,7 +77,7 @@ class TestLineItemsTotalRowLabelPlacement:
     def test_label_in_first_cell_with_grouping(self, sample_model):
         """Test label in first cell with category grouping enabled."""
         result = sample_model.tables.line_items(
-            included_cols=["name", "label", "category"],
+            col_order=["name", "label", "category"],
             include_totals=True,
             group_by_category=True,
         )
@@ -114,9 +114,9 @@ class TestLineItemsTotalRowLabelPlacement:
             ["category", "name", "label"],
         ]
 
-        for included_cols in test_configs:
+        for col_order in test_configs:
             result = sample_model.tables.line_items(
-                included_cols=included_cols,
+                col_order=col_order,
                 include_totals=True,
                 group_by_category=False,
             )
@@ -127,9 +127,9 @@ class TestLineItemsTotalRowLabelPlacement:
             assert totals_row.cells[0].value == "Total"
 
             # All other label column cells should be empty
-            num_label_cols = len(included_cols)
+            num_label_cols = len(col_order)
             for i in range(1, num_label_cols):
                 assert totals_row.cells[i].value == "", (
-                    f"Cell {i} should be empty for config {included_cols}, "
+                    f"Cell {i} should be empty for config {col_order}, "
                     f"but got: '{totals_row.cells[i].value}'"
                 )

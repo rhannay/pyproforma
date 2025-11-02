@@ -37,7 +37,7 @@ class TestLabelRowIncludedCols:
     def test_label_row_with_multiple_included_cols_and_totals(self, sample_model):
         """Test that LabelRow works with multiple included_cols and totals."""
         result = sample_model.tables.line_items(
-            included_cols=["label", "name"], include_totals=True, group_by_category=True
+            col_order=["label", "name"], include_totals=True, group_by_category=True
         )
 
         # Should have: 2 category labels + 4 items + 1 total = 7 rows
@@ -88,7 +88,7 @@ class TestLabelRowIncludedCols:
     def test_label_row_with_single_included_col_and_totals(self, sample_model):
         """Test that LabelRow works with single included_col and totals."""
         result = sample_model.tables.line_items(
-            included_cols=["label"], include_totals=True, group_by_category=True
+            include_name=False, include_label=True, include_totals=True, group_by_category=True
         )
 
         # Should have: 2 category labels + 4 items + 1 total = 7 rows
@@ -104,7 +104,7 @@ class TestLabelRowIncludedCols:
     def test_label_row_with_multiple_included_cols_no_totals(self, sample_model):
         """Test that LabelRow works with multiple included_cols and no totals."""
         result = sample_model.tables.line_items(
-            included_cols=["label", "name"],
+            col_order=["label", "name"],
             include_totals=False,
             group_by_category=True,
         )
@@ -122,7 +122,7 @@ class TestLabelRowIncludedCols:
     def test_label_row_with_three_included_cols(self, sample_model):
         """Test that LabelRow works with three included_cols."""
         result = sample_model.tables.line_items(
-            included_cols=["label", "name", "category"],
+            col_order=["label", "name", "category"],
             include_totals=True,
             group_by_category=True,
         )
@@ -161,19 +161,19 @@ class TestLabelRowIncludedCols:
             (["name"], True, True),
         ]
 
-        for included_cols, include_totals, group_by_category in scenarios:
+        for col_order, include_totals, group_by_category in scenarios:
             result = sample_model.tables.line_items(
-                included_cols=included_cols,
+                col_order=col_order,
                 include_totals=include_totals,
                 group_by_category=group_by_category,
             )
 
             # All rows should have the same number of cells
-            expected_cells = len(included_cols) + len(sample_model.years)
+            expected_cells = len(col_order) + len(sample_model.years)
 
             for i, row in enumerate(result.rows):
                 assert len(row.cells) == expected_cells, (
-                    f"Scenario {included_cols}, totals={include_totals}, "
+                    f"Scenario {col_order}, totals={include_totals}, "
                     f"grouping={group_by_category}: "
                     f"Row {i} has {len(row.cells)} cells, "
                     f"expected {expected_cells}"
@@ -182,7 +182,7 @@ class TestLabelRowIncludedCols:
     def test_label_row_placement_in_grouped_table(self, sample_model):
         """Test that LabelRow appears in correct positions when grouping."""
         result = sample_model.tables.line_items(
-            included_cols=["label", "name"], include_totals=True, group_by_category=True
+            col_order=["label", "name"], include_totals=True, group_by_category=True
         )
 
         # Should have 7 rows total
