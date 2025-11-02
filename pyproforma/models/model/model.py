@@ -787,20 +787,25 @@ class Model(SerializationMixin):
         This is a shortcut to `Model.tables.line_items()` for easier access.
 
         Args:
-            line_items (Optional[list[str]]): List of line item names to include.
-                                             If None, includes all line items. Defaults to None.
-            include_name (bool): Whether to include the name column. Defaults to True.
-            include_label (bool): Whether to include the label column. Defaults to False.
-            include_category (bool): Whether to include the category column. Defaults to False.
-            col_order (Optional[list[str]]): Order of columns (name, label, category).
-                                            If provided, only columns in this list are included.
-                                            Defaults to None.
-            col_labels (Optional[str | list[str]]): Label columns specification. Defaults to None.
-            group_by_category (bool, optional): Whether to group by category. Defaults to False.
-            include_percent_change (bool, optional): Whether to include percent change rows.
-                                                    Defaults to False.
-            include_totals (bool, optional): Whether to include a totals row. Defaults to False.
-            hardcoded_color (Optional[str]): CSS color for hardcoded values. Defaults to None.
+            line_items (Optional[list[str]]): List of line item names.
+                If None, includes all line items. Defaults to None.
+            include_name (bool): Include name column. Defaults to True.
+            include_label (bool): Include label column. Defaults to False.
+            include_category (bool): Include category column.
+                Defaults to False.
+            col_order (Optional[list[str]]): Order of columns.
+                If provided, only columns in this list are included.
+                Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns
+                specification. Defaults to None.
+            group_by_category (bool, optional): Group by category.
+                Defaults to False.
+            include_percent_change (bool, optional): Include percent
+                change rows. Defaults to False.
+            include_totals (bool, optional): Include totals row.
+                Defaults to False.
+            hardcoded_color (Optional[str]): CSS color for hardcoded
+                values. Defaults to None.
 
         Returns:
             Table: A Table object containing the specified line items.

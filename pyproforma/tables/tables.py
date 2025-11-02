@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..constants import VALID_COLS, ColumnType
+from ..constants import VALID_COLS
 from . import row_types as rt
 from .compare import compare_year as _compare_year
 from .table_class import Table
@@ -127,7 +127,8 @@ class Tables:
             for col in col_order:
                 if col not in VALID_COLS:
                     raise ValueError(
-                        f"Invalid column '{col}' in col_order. Must be one of: {VALID_COLS}"
+                        f"Invalid column '{col}' in col_order. "
+                        f"Must be one of: {VALID_COLS}"
                     )
             included_cols = col_order
         else:
@@ -139,7 +140,7 @@ class Tables:
                 included_cols.append("label")
             if include_category:
                 included_cols.append("category")
-            
+
             # If no columns specified, default to just name
             if not included_cols:
                 included_cols = ["name"]
