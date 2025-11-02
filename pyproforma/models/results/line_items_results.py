@@ -223,10 +223,14 @@ class LineItemsResults:
         Args:
             **kwargs: Additional keyword arguments to pass to Tables.line_items().
                      Common options include:
-                     - included_cols: List of columns to include (default: ["label"])
-                     - group_by_category: Whether to group by category (default: False)
-                     - include_percent_change: Whether to include percent change rows
+                     - include_name: Include name column (default: True)
+                     - include_label: Include label column (default: False)
+                     - include_category: Include category column (default: False)
+                     - col_order: Custom column order (default: None)
+                     - group_by_category: Group by category (default: False)
+                     - include_percent_change: Include percent change rows
                        (default: False)
+                     - include_totals: Include totals row (default: False)
                      - hardcoded_color: CSS color for hardcoded values (default: None)
 
         Returns:
@@ -238,7 +242,7 @@ class LineItemsResults:
             >>> table = items.table(group_by_category=True)  # Group by category
             >>> table = items.table(include_percent_change=True)  # With % change
         """
-        return self.model.tables.line_items(line_item_names=self.names, **kwargs)
+        return self.model.tables.line_items(line_items=self.names, **kwargs)
 
     def total(self, year: int) -> float:
         """
