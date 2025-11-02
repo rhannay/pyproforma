@@ -53,7 +53,7 @@ model = Model(years=[2024, 2025, 2026])
 # Add line items incrementally using different approaches
 model['revenue'] = [100000, 115000, 132250]  # List of values
 model['expenses'] = 75000  # Constant value for all years
-model['growth_rate'] = 'revenue / revenue[-1] - 1'  # Formula
+model['revenue_growth'] = [0.0, 0.15, 0.15]  # Hardcoded growth rates
 model['profit'] = 'revenue - expenses'  # Formula referencing other items
 ```
 
@@ -101,7 +101,7 @@ Mathematical expressions that reference other line items:
 model['revenue'] = [100000, 115000, 132250]
 model['cost_of_goods'] = 'revenue * 0.6'  # 60% of revenue
 model['gross_profit'] = 'revenue - cost_of_goods'
-model['growth_rate'] = 'revenue / revenue[-1] - 1'  # Year-over-year growth
+model['revenue_multiple'] = 'revenue * 2'  # Simple formula example
 ```
 
 ### Mixed Approaches
