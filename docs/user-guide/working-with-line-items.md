@@ -172,12 +172,14 @@ You can quickly create formatted tables for individual line items:
 # Create a table for a single line item
 revenue_table = model['revenue'].table()
 revenue_table  # Displays formatted table in notebook
+```
 
+![Revenue and Expenses Chart](../assets/images/line-items-1.png){ width="500" }
+
+```python
 # Customize table appearance
 revenue_table = model['revenue'].table(hardcoded_color='lightblue')
 ```
-
-The table will show the line item values across all years with proper formatting.
 
 ## Creating Charts for Line Items
 
