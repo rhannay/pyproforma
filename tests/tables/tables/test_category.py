@@ -173,7 +173,7 @@ class TestCategoryMethod:
 
         # Get line_items table with the same items and group_by_category=True to match
         line_items_table = sample_model.tables.line_items(
-            line_item_names=revenue_items, group_by_category=True
+            line_items=revenue_items, group_by_category=True, include_name=False, include_label=True
         )
 
         # Both tables should have the same structure (including category header)

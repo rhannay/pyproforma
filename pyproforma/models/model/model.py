@@ -1,5 +1,5 @@
 import copy
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -767,6 +767,62 @@ class Model(SerializationMixin):
     def update(self):
         """Update namespace for adding, updating, and deleting model components"""
         return UpdateNamespace(self)
+
+    def table(
+        self,
+        line_items: Optional[list[str]] = None,
+        include_name: bool = True,
+        include_label: bool = False,
+        include_category: bool = False,
+        col_order: Optional[list[str]] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
+        group_by_category: bool = False,
+        include_percent_change: bool = False,
+        include_totals: bool = False,
+        hardcoded_color: Optional[str] = None,
+    ):
+        """
+        Convenience method to generate a table of line items.
+
+        This is a shortcut to `Model.tables.line_items()` for easier access.
+
+        Args:
+            line_items (Optional[list[str]]): List of line item names to include.
+                                             If None, includes all line items. Defaults to None.
+            include_name (bool): Whether to include the name column. Defaults to True.
+            include_label (bool): Whether to include the label column. Defaults to False.
+            include_category (bool): Whether to include the category column. Defaults to False.
+            col_order (Optional[list[str]]): Order of columns (name, label, category).
+                                            If provided, only columns in this list are included.
+                                            Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Defaults to None.
+            group_by_category (bool, optional): Whether to group by category. Defaults to False.
+            include_percent_change (bool, optional): Whether to include percent change rows.
+                                                    Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row. Defaults to False.
+            hardcoded_color (Optional[str]): CSS color for hardcoded values. Defaults to None.
+
+        Returns:
+            Table: A Table object containing the specified line items.
+
+        Examples:
+            >>> table = model.table()
+            >>> table = model.table(line_items=['revenue', 'expenses'])
+            >>> table = model.table(include_name=False, include_label=True)
+            >>> table = model.table(col_order=['label', 'category'])
+        """
+        return self.tables.line_items(
+            line_items=line_items,
+            include_name=include_name,
+            include_label=include_label,
+            include_category=include_category,
+            col_order=col_order,
+            col_labels=col_labels,
+            group_by_category=group_by_category,
+            include_percent_change=include_percent_change,
+            include_totals=include_totals,
+            hardcoded_color=hardcoded_color,
+        )
 
     # ============================================================================
     # MODEL OPERATIONS

@@ -238,7 +238,7 @@ class LineItemsResults:
             >>> table = items.table(group_by_category=True)  # Group by category
             >>> table = items.table(include_percent_change=True)  # With % change
         """
-        return self.model.tables.line_items(line_item_names=self.names, **kwargs)
+        return self.model.tables.line_items(line_items=self.names, **kwargs)
 
     def total(self, year: int) -> float:
         """

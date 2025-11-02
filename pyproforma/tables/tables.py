@@ -67,8 +67,11 @@ class Tables:
 
     def line_items(
         self,
-        line_item_names: Optional[list[str]] = None,
-        included_cols: list[ColumnType] = ["label"],
+        line_items: Optional[list[str]] = None,
+        include_name: bool = True,
+        include_label: bool = False,
+        include_category: bool = False,
+        col_order: Optional[list[str]] = None,
         col_labels: Optional[Union[str, list[str]]] = None,
         group_by_category: bool = False,
         include_percent_change: bool = False,
@@ -84,10 +87,16 @@ class Tables:
         headers.
 
         Args:
-            line_item_names (Optional[list[str]]): List of line item names to include.
-                                                  If None, includes all line items. Defaults to None.
-            included_cols (list[ColumnType]): List of columns to include. Can contain 'label', 'name',
-                                             and/or 'category'. Defaults to ["label"].
+            line_items (Optional[list[str]]): List of line item names to include.
+                                             If None, includes all line items. Defaults to None.
+            include_name (bool): Whether to include the name column. Defaults to True.
+            include_label (bool): Whether to include the label column. Defaults to False.
+            include_category (bool): Whether to include the category column. Defaults to False.
+            col_order (Optional[list[str]]): Order of columns (name, label, category).
+                                            If provided, only columns in this list are included,
+                                            overriding include_name, include_label, and include_category.
+                                            Must only contain valid column names: 'name', 'label', 'category'.
+                                            Defaults to None.
             col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
                                                    or list of strings. Defaults to None.
             group_by_category (bool, optional): Whether to group line items by category
@@ -105,25 +114,42 @@ class Tables:
 
         Examples:
             >>> table = model.tables.line_items()
-            >>> table = model.tables.line_items(line_item_names=['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.line_items(included_cols=['name', 'label'], hardcoded_color='blue')
+            >>> table = model.tables.line_items(line_items=['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.line_items(include_name=False, include_label=True)
+            >>> table = model.tables.line_items(col_order=['label', 'category'])
             >>> table = model.tables.line_items(group_by_category=True)
             >>> table = model.tables.line_items(include_percent_change=True)
             >>> table = model.tables.line_items(include_totals=True)
         """  # noqa: E501
-        # Validate included_cols
-        for col in included_cols:
-            if col not in VALID_COLS:
-                raise ValueError(
-                    f"Invalid column '{col}'. Must be one of: {VALID_COLS}"
-                )
+        # Determine which columns to include
+        if col_order is not None:
+            # Validate col_order entries
+            for col in col_order:
+                if col not in VALID_COLS:
+                    raise ValueError(
+                        f"Invalid column '{col}' in col_order. Must be one of: {VALID_COLS}"
+                    )
+            included_cols = col_order
+        else:
+            # Build included_cols from individual flags
+            included_cols = []
+            if include_name:
+                included_cols.append("name")
+            if include_label:
+                included_cols.append("label")
+            if include_category:
+                included_cols.append("category")
+            
+            # If no columns specified, default to just name
+            if not included_cols:
+                included_cols = ["name"]
 
         # Set default col_labels if not provided
         if col_labels is None:
             col_labels = included_cols
 
         # Get line items to include
-        if line_item_names is None:
+        if line_items is None:
             # Get all line items in their existing order using metadata
             items_metadata = self._model.line_item_metadata.copy()
         else:
@@ -131,7 +157,7 @@ class Tables:
             items_metadata = [
                 item
                 for item in self._model.line_item_metadata
-                if item["name"] in line_item_names
+                if item["name"] in line_items
             ]
 
         # Sort by category if we need category labels
@@ -222,8 +248,9 @@ class Tables:
 
         # Use the line_items method with the include_totals parameter
         return self.line_items(
-            line_item_names=line_item_names,
-            included_cols=["label"],
+            line_items=line_item_names,
+            include_name=False,
+            include_label=True,
             group_by_category=True,
             hardcoded_color=hardcoded_color,
             include_totals=include_totals,

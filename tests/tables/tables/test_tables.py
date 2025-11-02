@@ -88,44 +88,45 @@ class TestTableCreation:
         assert table is not None, "Line items table creation failed"
 
     def test_line_items_with_filter(self, sample_model: Model):
-        """Test that line_items() can filter by line_item_names."""
+        """Test that line_items() can filter by line_items."""
         # Test with specific line items from different categories
         table = sample_model.tables.line_items(
-            line_item_names=["revenue_sales", "cost_of_goods"]
+            line_items=["revenue_sales", "cost_of_goods"]
         )
         assert table is not None, "Filtered line items table creation failed"
 
         # Count the actual item rows (excluding label rows)
+        # Note: With new API defaults (include_name=True), we now get names instead of labels
         item_row_count = sum(
             1
             for row in table.rows
             if hasattr(row, "cells")
             and len(row.cells) > 0
-            and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
+            and row.cells[0].value in ["revenue_sales", "cost_of_goods"]
         )
         assert item_row_count == 2, f"Should have 2 item rows, got {item_row_count}"
 
         # Verify the right items are in the table
-        labels_in_table = [
+        names_in_table = [
             row.cells[0].value
             for row in table.rows
             if hasattr(row, "cells")
             and len(row.cells) > 0
-            and row.cells[0].value in ["Sales Revenue", "Cost of Goods Sold"]
+            and row.cells[0].value in ["revenue_sales", "cost_of_goods"]
         ]
-        assert "Sales Revenue" in labels_in_table
-        assert "Cost of Goods Sold" in labels_in_table
+        assert "revenue_sales" in names_in_table
+        assert "cost_of_goods" in names_in_table
 
     def test_line_items_with_empty_filter(self, sample_model: Model):
-        """Test that empty line_item_names list returns empty table."""
-        table = sample_model.tables.line_items(line_item_names=[])
+        """Test that empty line_items list returns empty table."""
+        table = sample_model.tables.line_items(line_items=[])
         assert table is not None
         # Should have no rows (no categories shown because no items)
         assert len(table.rows) == 0, "Empty filter should result in empty table"
 
     def test_line_items_with_none_filter(self, sample_model: Model):
-        """Test that None line_item_names includes all items (default behavior)."""
-        table_with_none = sample_model.tables.line_items(line_item_names=None)
+        """Test that None line_items includes all items (default behavior)."""
+        table_with_none = sample_model.tables.line_items(line_items=None)
         table_without_arg = sample_model.tables.line_items()
 
         # Both should have the same number of rows
@@ -137,7 +138,7 @@ class TestTableCreation:
         """Test filtering with non-existent line item names."""
         # Filter with items that don't exist - should return empty table
         table = sample_model.tables.line_items(
-            line_item_names=["nonexistent_item_1", "nonexistent_item_2"]
+            line_items=["nonexistent_item_1", "nonexistent_item_2"]
         )
         assert table is not None
         assert len(table.rows) == 0, "Non-existent items should result in empty table"
@@ -146,7 +147,7 @@ class TestTableCreation:
         """Test that filtered items maintain category order."""
         # Get items from multiple categories in model order
         table = sample_model.tables.line_items(
-            line_item_names=["revenue_sales", "operating_expenses", "net_profit"]
+            line_items=["revenue_sales", "operating_expenses", "net_profit"]
         )
         assert table is not None
 
@@ -173,7 +174,7 @@ class TestTableCreation:
         # Test with include_percent_change=True
         table = sample_model.tables.line_items(
             include_percent_change=True,
-            line_item_names=["revenue_sales", "cost_of_goods"],
+            line_items=["revenue_sales", "cost_of_goods"],
         )
         assert table is not None, "Line items table with percent change creation failed"
 
@@ -189,11 +190,12 @@ class TestTableCreation:
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
 
-        # Should have alternating pattern of item labels and percent change labels
+        # Should have alternating pattern of item names and percent change labels
+        # Note: With new API defaults (include_name=True), we now get names instead of labels
         expected_pattern = [
-            "Sales Revenue",
+            "revenue_sales",
             "Sales Revenue % Change",
-            "Cost of Goods Sold",
+            "cost_of_goods",
             "Cost of Goods Sold % Change",
         ]
         assert row_labels == expected_pattern, (
@@ -205,7 +207,7 @@ class TestTableCreation:
         """Test that line_items() does not include percent change rows by default."""
         # Test with include_percent_change=False (default)
         table = sample_model.tables.line_items(
-            line_item_names=["revenue_sales", "cost_of_goods"]
+            line_items=["revenue_sales", "cost_of_goods"]
         )
         assert table is not None, "Line items table creation failed"
 
@@ -214,16 +216,16 @@ class TestTableCreation:
             f"Should have 2 rows (items only), got {len(table.rows)}"
         )
 
-        # Check that we only have item labels
+        # Check that we only have item names (new default is include_name=True)
         row_labels = [
             row.cells[0].value
             for row in table.rows
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
 
-        expected_labels = ["Sales Revenue", "Cost of Goods Sold"]
+        expected_labels = ["revenue_sales", "cost_of_goods"]
         assert row_labels == expected_labels, (
-            f"Row labels should only be item labels. "
+            f"Row labels should only be item names. "
             f"Expected {expected_labels}, got {row_labels}"
         )
 
@@ -254,7 +256,7 @@ class TestTableLineItemsWithTotals:
     def test_totals_with_single_column(self, totals_model):
         """Test include_totals=True with single column."""
         table = totals_model.tables.line_items(
-            included_cols=["label"], include_totals=True
+            include_name=False, include_label=True, include_totals=True
         )
 
         # Should have 4 rows: 3 items + 1 total
@@ -275,7 +277,7 @@ class TestTableLineItemsWithTotals:
     def test_totals_with_two_columns(self, totals_model):
         """Test include_totals=True with two columns."""
         table = totals_model.tables.line_items(
-            included_cols=["name", "label"], include_totals=True
+            include_name=True, include_label=True, include_totals=True
         )
 
         # Should have 4 rows: 3 items + 1 total
@@ -297,7 +299,7 @@ class TestTableLineItemsWithTotals:
     def test_totals_with_three_columns(self, totals_model):
         """Test include_totals=True with three columns."""
         table = totals_model.tables.line_items(
-            included_cols=["name", "label", "category"], include_totals=True
+            include_name=True, include_label=True, include_category=True, include_totals=True
         )
 
         # Should have 4 rows: 3 items + 1 total
@@ -320,8 +322,9 @@ class TestTableLineItemsWithTotals:
     def test_totals_with_filtered_items(self, totals_model):
         """Test include_totals=True with filtered items."""
         table = totals_model.tables.line_items(
-            line_item_names=["a", "c"],
-            included_cols=["name", "label"],
+            line_items=["a", "c"],
+            include_name=True,
+            include_label=True,
             include_totals=True,
         )
 

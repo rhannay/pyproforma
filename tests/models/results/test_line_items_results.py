@@ -506,12 +506,12 @@ class TestLineItemsResultsTableMethod:
                 if cell_value not in ["Income", "Costs"]:  # Category names
                     row_labels.append(cell_value)
 
-        # Should contain the labels for our line items
-        assert "Product Sales" in row_labels
-        assert "Service Revenue" in row_labels
-        # Should not contain labels for items not in the results set
-        assert "Salaries" not in row_labels
-        assert "Office Rent" not in row_labels
+        # Should contain the names for our line items (new default is include_name=True)
+        assert "product_sales" in row_labels
+        assert "service_revenue" in row_labels
+        # Should not contain names for items not in the results set
+        assert "salaries" not in row_labels
+        assert "office_rent" not in row_labels
 
     def test_table_with_single_line_item(self, model_with_line_items):
         """Test table method with a single line item."""
@@ -523,13 +523,13 @@ class TestLineItemsResultsTableMethod:
         # Should have at least one row for the line item
         assert len(table.rows) >= 1
 
-        # Check that the correct item is included
+        # Check that the correct item is included (new default is include_name=True)
         row_labels = [
             row.cells[0].value
             for row in table.rows
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
-        assert "Product Sales" in row_labels
+        assert "product_sales" in row_labels
 
     def test_table_with_group_by_category_true(self, model_with_line_items):
         """Test table method with group_by_category=True."""
@@ -551,10 +551,10 @@ class TestLineItemsResultsTableMethod:
         # Should have category headers
         assert "Income" in row_labels  # Category for product_sales and service_revenue
         assert "Costs" in row_labels  # Category for salaries
-        # And the line item labels
-        assert "Product Sales" in row_labels
-        assert "Service Revenue" in row_labels
-        assert "Salaries" in row_labels
+        # And the line item names (new default is include_name=True)
+        assert "product_sales" in row_labels
+        assert "service_revenue" in row_labels
+        assert "salaries" in row_labels
 
     def test_table_with_include_percent_change_true(self, model_with_line_items):
         """Test table method with include_percent_change=True."""
@@ -573,19 +573,19 @@ class TestLineItemsResultsTableMethod:
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
 
-        # Should include both item labels and percent change labels
-        assert "Product Sales" in row_labels
+        # Should include both item names and percent change labels (new default is include_name=True)
+        assert "product_sales" in row_labels
         assert "Product Sales % Change" in row_labels
-        assert "Service Revenue" in row_labels
+        assert "service_revenue" in row_labels
         assert "Service Revenue % Change" in row_labels
 
     def test_table_with_included_cols(self, model_with_line_items):
-        """Test table method with custom included_cols."""
+        """Test table method with custom col_order."""
         items = LineItemsResults(
             model_with_line_items, ["product_sales", "service_revenue"]
         )
 
-        table = items.table(included_cols=["name", "label"])
+        table = items.table(col_order=["name", "label"])
 
         assert table is not None
         # Table should be created successfully with custom columns
@@ -612,7 +612,8 @@ class TestLineItemsResultsTableMethod:
         table = items.table(
             group_by_category=True,
             include_percent_change=True,
-            included_cols=["label"],
+            include_name=False,
+            include_label=True,
             hardcoded_color="red",
         )
 
@@ -638,17 +639,17 @@ class TestLineItemsResultsTableMethod:
 
         assert table is not None
 
-        # Should include all line item labels
+        # Should include all line item names (new default is include_name=True)
         row_labels = [
             row.cells[0].value
             for row in table.rows
             if hasattr(row, "cells") and len(row.cells) > 0
         ]
 
-        assert "Product Sales" in row_labels
-        assert "Service Revenue" in row_labels
-        assert "Salaries" in row_labels
-        assert "Office Rent" in row_labels
+        assert "product_sales" in row_labels
+        assert "service_revenue" in row_labels
+        assert "salaries" in row_labels
+        assert "office_rent" in row_labels
 
     def test_table_filters_correctly_from_model_items(self, model_with_line_items):
         """Test that table correctly filters from the full model."""
@@ -659,7 +660,7 @@ class TestLineItemsResultsTableMethod:
 
         table = items.table()
 
-        # Get the line item labels from the table
+        # Get the line item names from the table (new default is include_name=True)
         row_labels = [
             row.cells[0].value
             for row in table.rows
@@ -668,12 +669,12 @@ class TestLineItemsResultsTableMethod:
             and row.cells[0].value not in ["Income", "Costs"]  # Skip category headers
         ]
 
-        # Should only contain the specified items
-        assert "Product Sales" in row_labels
-        assert "Office Rent" in row_labels
+        # Should only contain the specified items (as names, not labels)
+        assert "product_sales" in row_labels
+        assert "office_rent" in row_labels
         # Should not contain the items not in the results set
-        assert "Service Revenue" not in row_labels
-        assert "Salaries" not in row_labels
+        assert "service_revenue" not in row_labels
+        assert "salaries" not in row_labels
 
     def test_table_uses_model_tables_line_items(self, model_with_line_items):
         """Test that table method properly delegates to model.tables.line_items."""
@@ -686,7 +687,7 @@ class TestLineItemsResultsTableMethod:
 
         # Verify it produces the same result as calling model.tables.line_items directly
         direct_table = model_with_line_items.tables.line_items(
-            line_item_names=["product_sales", "service_revenue"], group_by_category=True
+            line_items=["product_sales", "service_revenue"], group_by_category=True
         )
 
         # Should have the same number of rows

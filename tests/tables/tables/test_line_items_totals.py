@@ -99,7 +99,7 @@ class TestLineItemsIncludeTotals:
         """Test line_items with specific items and totals."""
         revenue_items = sample_model.line_item_names_by_category("revenue")
         table = sample_model.tables.line_items(
-            line_item_names=revenue_items, include_totals=True
+            line_items=revenue_items, include_totals=True
         )
 
         # Should have revenue items + 1 totals row
@@ -126,7 +126,7 @@ class TestLineItemsIncludeTotals:
         """Test that the totals row shows correct calculated values."""
         revenue_items = sample_model.line_item_names_by_category("revenue")
         table = sample_model.tables.line_items(
-            line_item_names=revenue_items, include_totals=True
+            line_items=revenue_items, include_totals=True
         )
 
         # Get the totals row (last row)
@@ -204,7 +204,7 @@ class TestLineItemsIncludeTotals:
         expense_item = "cost_of_goods"
 
         table = sample_model.tables.line_items(
-            line_item_names=[revenue_item, expense_item], include_totals=True
+            line_items=[revenue_item, expense_item], include_totals=True
         )
 
         # Get the totals row (last row)
