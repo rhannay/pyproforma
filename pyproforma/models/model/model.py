@@ -749,25 +749,6 @@ class Model(SerializationMixin):
 
         return ConstraintResults(self, constraint_name)
 
-    # ============================================================================
-    # NAMESPACE PROPERTIES
-    # ============================================================================
-
-    @property
-    def tables(self):
-        """Tables namespace"""
-        return Tables(self)
-
-    @property
-    def charts(self):
-        """Charts namespace"""
-        return Charts(self)
-
-    @property
-    def update(self):
-        """Update namespace for adding, updating, and deleting model components"""
-        return UpdateNamespace(self)
-
     def table(
         self,
         line_items: Optional[list[str]] = None,
@@ -828,6 +809,25 @@ class Model(SerializationMixin):
             include_totals=include_totals,
             hardcoded_color=hardcoded_color,
         )
+
+    # ============================================================================
+    # NAMESPACE PROPERTIES
+    # ============================================================================
+
+    @property
+    def tables(self):
+        """Tables namespace"""
+        return Tables(self)
+
+    @property
+    def charts(self):
+        """Charts namespace"""
+        return Charts(self)
+
+    @property
+    def update(self):
+        """Update namespace for adding, updating, and deleting model components"""
+        return UpdateNamespace(self)
 
     # ============================================================================
     # MODEL OPERATIONS
