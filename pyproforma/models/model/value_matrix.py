@@ -191,6 +191,26 @@ def calculate_line_item_value(
                     f"line_item_metadata is required when using "
                     f"category_total formula for '{name}'"
                 )
+
+            # Check if the line item is in the same category it's trying to total
+            # This would create a circular reference
+            current_item_metadata = next(
+                (item for item in line_item_metadata if item["name"] == name),
+                None
+            )
+            if (
+                current_item_metadata
+                and current_item_metadata.get("category") == category_name
+            ):
+                raise ValueError(
+                    f"Circular reference detected: Line item '{name}' has "
+                    f"formula 'category_total:{category_name}' but is itself "
+                    f"in category '{category_name}'. A line item cannot use "
+                    f"category_total for its own category as this creates a "
+                    f"circular dependency. Consider placing '{name}' in a "
+                    f"different category."
+                )
+
             # Get values for the current year
             values_by_name = interim_values_by_year.get(year, {})
             return _calculate_category_total(
@@ -349,6 +369,13 @@ def generate_value_matrix(
                         isinstance(e, ValueError)
                         and "has None value" in str(e)
                         and "Cannot use None values in formulas" in str(e)
+                    ):
+                        raise e
+
+                    # Check if this is a circular reference error for category_total - should be raised immediately  # noqa: E501
+                    if (
+                        isinstance(e, ValueError)
+                        and "Circular reference detected" in str(e)
                     ):
                         raise e
 
