@@ -403,6 +403,68 @@ class TestValidateValuesKeys:
         error_msg = str(excinfo.value)
         assert "must be an integer (year)" in error_msg
 
+    def test_validate_values_keys_rejects_list(self):
+        """Test that list values are rejected with helpful error."""
+        with pytest.raises(TypeError) as excinfo:
+            _validate_values_keys([100, 200, 300])
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got list" in error_msg
+
+    def test_validate_values_keys_rejects_string(self):
+        """Test that string values are rejected with helpful error."""
+        with pytest.raises(TypeError) as excinfo:
+            _validate_values_keys("100,200,300")
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got str" in error_msg
+
+    def test_validate_values_keys_rejects_int(self):
+        """Test that int values are rejected with helpful error."""
+        with pytest.raises(TypeError) as excinfo:
+            _validate_values_keys(100)
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got int" in error_msg
+
+    def test_validate_values_keys_rejects_tuple(self):
+        """Test that tuple values are rejected with helpful error."""
+        with pytest.raises(TypeError) as excinfo:
+            _validate_values_keys((100, 200))
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got tuple" in error_msg
+
+    def test_validate_values_keys_integration_with_line_item_non_dict(self):
+        """Test LineItem creation rejects non-dictionary values with helpful error."""
+        # Test with list
+        with pytest.raises(TypeError) as excinfo:
+            LineItem(name="test_list", category="revenue", values=[100, 200, 300])
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got list" in error_msg
+
+        # Test with string
+        with pytest.raises(TypeError) as excinfo:
+            LineItem(name="test_string", category="revenue", values="100,200,300")
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got str" in error_msg
+
+        # Test with int
+        with pytest.raises(TypeError) as excinfo:
+            LineItem(name="test_int", category="revenue", values=100)
+
+        error_msg = str(excinfo.value)
+        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "got int" in error_msg
+
 
 class TestLineItemCategoryValidation:
     """Test validation of LineItem category parameter."""

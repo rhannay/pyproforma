@@ -7,6 +7,11 @@ from ._utils import validate_name
 def _validate_values_keys(values: dict[int, float | None] | None):
     """Validate that all keys in the values dictionary are integers."""
     if values is not None:
+        if not isinstance(values, dict):
+            raise TypeError(
+                f"LineItem values must be a dictionary or None, "
+                f"got {type(values).__name__}"
+            )
         for key in values.keys():
             if not isinstance(key, int):
                 raise ValueError(
