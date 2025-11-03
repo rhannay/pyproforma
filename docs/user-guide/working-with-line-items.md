@@ -174,12 +174,16 @@ revenue_table = model['revenue'].table()
 revenue_table  # Displays formatted table in notebook
 ```
 
-![Revenue and Expenses Chart](../assets/images/line-items-1.png){ width="500" }
+![Revenue and Expenses Chart](../assets/images/line-items-1.png){ width="400" }
 
 ```python
 # Customize table appearance
-revenue_table = model['revenue'].table(hardcoded_color='lightblue')
+revenue_table = model['revenue'].table(hardcoded_color='blue')
+revenue_table  # Display formatted table
 ```
+
+![Revenue and Expenses Chart](../assets/images/line-items-2.png){ width="400" }
+
 
 ## Creating Charts for Line Items
 
