@@ -109,12 +109,21 @@ model['revenue_multiple'] = 'revenue * 2'  # Simple formula example
 You can combine hardcoded values and formulas:
 
 ```python
-# Set initial values
-model['marketing_budget'] = [25000, 30000, 35000]
+# Create model with hardcoded revenue
+model = Model(years=[2024, 2025, 2026])
+model['revenue'] = [100000, 115000, 132250]
 
-# Override specific years with formulas
-model['marketing_budget'][2026] = 'revenue * 0.25'  # 25% of revenue in 2026
+# Set marketing budget for first year only
+model['marketing_budget'] = {2024: 15000}
+
+# Set formula for remaining years (40% of revenue)
+model['marketing_budget'].formula = 'revenue * 0.4'
+
+# Display the results in a notebook
+model.table(hardcoded_color="blue")
 ```
+![Revenue and Expenses Chart](../assets/images/line-items/mixed-table.png){ width="400" }
+
 
 ## Accessing Line Items
 
@@ -154,7 +163,6 @@ print(revenue_item.name)           # Line item name
 print(revenue_item.label)          # Display label
 print(revenue_item.category)       # Category
 print(revenue_item.formula)        # Formula (if any)
-print(revenue_item.source_type)    # 'line_item'
 print(revenue_item.values)         # All values as dict
 
 # Check if a year is hardcoded vs calculated
@@ -274,4 +282,3 @@ model['net_profit'].chart(title="Net Profit Trend").show()
 model['base_revenue'].table()
 ```
 
-This flexible approach allows you to build complex financial models incrementally while maintaining clear access to individual line items for analysis and visualization.
