@@ -280,7 +280,7 @@ class LineItemsResults:
 
         return total
 
-    def line_items_chart(
+    def chart(
         self,
         title: str = None,
         width: int = 800,
@@ -313,9 +313,9 @@ class LineItemsResults:
 
         Examples:
             >>> items = model.line_items(['revenue', 'costs'])
-            >>> chart = items.line_items_chart()
-            >>> chart = items.line_items_chart(title="Revenue vs Costs")
-            >>> chart = items.line_items_chart(width=1000, height=600)
+            >>> chart = items.chart()
+            >>> chart = items.chart(title="Revenue vs Costs")
+            >>> chart = items.chart(width=1000, height=600)
         """
         if not self._line_item_names:
             raise ValueError("No line items found in this results set")

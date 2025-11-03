@@ -327,7 +327,7 @@ class CategoryResults:
             sort_by=sort_by,
         )
 
-    def line_items_chart(
+    def chart(
         self,
         title: str = None,
         width: int = 800,
@@ -360,9 +360,9 @@ class CategoryResults:
 
         Examples:
             >>> revenue_category = model.category('revenue')
-            >>> chart = revenue_category.line_items_chart()
-            >>> chart = revenue_category.line_items_chart(title="Revenue Trends")
-            >>> chart = revenue_category.line_items_chart(width=1000, height=600)
+            >>> chart = revenue_category.chart()
+            >>> chart = revenue_category.chart(title="Revenue Trends")
+            >>> chart = revenue_category.chart(width=1000, height=600)
         """
         if not self.line_item_names:
             raise ValueError(f"No line items found in category '{self.name}'")
