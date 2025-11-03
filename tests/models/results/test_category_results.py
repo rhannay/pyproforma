@@ -533,28 +533,28 @@ class TestCategoryResultsCompareYearTableMethod:
             )
 
 
-class TestCategoryResultsLineItemsChartMethod:
-    """Test line_items_chart method of CategoryResults."""
+class TestCategoryResultsChartMethod:
+    """Test chart method of CategoryResults."""
 
     @pytest.fixture
     def category_results(self, model_with_categories):
         """Create a CategoryResults instance for testing."""
         return CategoryResults(model_with_categories, "income")
 
-    def test_line_items_chart_method_returns_figure(self, category_results):
-        """Test line_items_chart method returns a plotly figure."""
+    def test_chart_method_returns_figure(self, category_results):
+        """Test chart method returns a plotly figure."""
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
             mock_figure = Mock()
             mock_line_items.return_value = mock_figure
 
-            result = category_results.line_items_chart()
+            result = category_results.chart()
 
             assert result is mock_figure
 
-    def test_line_items_chart_method_passes_parameters(self, category_results):
-        """Test line_items_chart method passes correct parameters."""
+    def test_chart_method_passes_parameters(self, category_results):
+        """Test chart method passes correct parameters."""
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            category_results.line_items_chart(
+            category_results.chart(
                 title="Custom Title",
                 width=1000,
                 height=700,
@@ -571,10 +571,10 @@ class TestCategoryResultsLineItemsChartMethod:
                 value_format="currency",
             )
 
-    def test_line_items_chart_method_uses_category_line_items(self, category_results):
-        """Test line_items_chart method uses line items from the category."""
+    def test_chart_method_uses_category_line_items(self, category_results):
+        """Test chart method uses line items from the category."""
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            category_results.line_items_chart()
+            category_results.chart()
 
             # Verify it passes the line item names from the category
             mock_line_items.assert_called_once_with(
@@ -586,23 +586,23 @@ class TestCategoryResultsLineItemsChartMethod:
                 value_format=None,
             )
 
-    def test_line_items_chart_method_with_default_title(self, category_results):
-        """Test line_items_chart method generates default title from category label."""
+    def test_chart_method_with_default_title(self, category_results):
+        """Test chart method generates default title from category label."""
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
             # Default title should be "{category.label} Line Items"
-            category_results.line_items_chart()
+            category_results.chart()
 
             args, kwargs = mock_line_items.call_args
             assert kwargs["title"] == "Income Line Items"
 
-    def test_line_items_chart_method_with_empty_category(self, model_with_categories):
-        """Test line_items_chart method raises error for empty category."""
+    def test_chart_method_with_empty_category(self, model_with_categories):
+        """Test chart method raises error for empty category."""
         # Create an empty category
         model_with_categories.update.add_category(name="empty", label="Empty Category")
         category_results = CategoryResults(model_with_categories, "empty")
 
         with pytest.raises(ValueError, match="No line items found in category 'empty'"):
-            category_results.line_items_chart()
+            category_results.chart()
 
 
 class TestCategoryResultsPieChartMethod:

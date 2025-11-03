@@ -1040,8 +1040,8 @@ class TestLineItemsResultsToDataFrameMethod:
         assert items_df.equals(combined_df)
 
 
-class TestLineItemsResultsLineItemsChartMethod:
-    """Test line_items_chart method of LineItemsResults."""
+class TestLineItemsResultsChartMethod:
+    """Test chart method of LineItemsResults."""
 
     @pytest.fixture
     def line_items_results(self, model_with_line_items):
@@ -1050,24 +1050,24 @@ class TestLineItemsResultsLineItemsChartMethod:
             model_with_line_items, ["product_sales", "service_revenue"]
         )
 
-    def test_line_items_chart_method_returns_figure(self, line_items_results):
-        """Test line_items_chart method returns a plotly figure."""
+    def test_chart_method_returns_figure(self, line_items_results):
+        """Test chart method returns a plotly figure."""
         from unittest.mock import Mock, patch
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
             mock_figure = Mock()
             mock_line_items.return_value = mock_figure
 
-            result = line_items_results.line_items_chart()
+            result = line_items_results.chart()
 
             assert result is mock_figure
 
-    def test_line_items_chart_method_passes_parameters(self, line_items_results):
-        """Test line_items_chart method passes correct parameters."""
+    def test_chart_method_passes_parameters(self, line_items_results):
+        """Test chart method passes correct parameters."""
         from unittest.mock import patch
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            line_items_results.line_items_chart(
+            line_items_results.chart(
                 title="Custom Title",
                 width=1000,
                 height=700,
@@ -1084,12 +1084,12 @@ class TestLineItemsResultsLineItemsChartMethod:
                 value_format="currency",
             )
 
-    def test_line_items_chart_method_uses_line_item_names(self, line_items_results):
-        """Test line_items_chart method uses line items from the results set."""
+    def test_chart_method_uses_line_item_names(self, line_items_results):
+        """Test chart method uses line items from the results set."""
         from unittest.mock import patch
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            line_items_results.line_items_chart()
+            line_items_results.chart()
 
             # Verify it passes the line item names from the results set
             mock_line_items.assert_called_once_with(
@@ -1101,33 +1101,33 @@ class TestLineItemsResultsLineItemsChartMethod:
                 value_format=None,
             )
 
-    def test_line_items_chart_method_with_default_title(self, line_items_results):
-        """Test line_items_chart method generates default title."""
+    def test_chart_method_with_default_title(self, line_items_results):
+        """Test chart method generates default title."""
         from unittest.mock import patch
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
             # Default title should be "Line Items"
-            line_items_results.line_items_chart()
+            line_items_results.chart()
 
             args, kwargs = mock_line_items.call_args
             assert kwargs["title"] == "Line Items"
 
-    def test_line_items_chart_method_with_empty_results_set(
+    def test_chart_method_with_empty_results_set(
         self, model_with_line_items
     ):
-        """Test line_items_chart method raises error for empty results set."""
+        """Test chart method raises error for empty results set."""
         # Create an empty results set - should raise on initialization
         with pytest.raises(ValueError, match="non-empty list"):
             LineItemsResults(model_with_line_items, [])
 
-    def test_line_items_chart_method_with_single_item(self, model_with_line_items):
-        """Test line_items_chart method with single line item."""
+    def test_chart_method_with_single_item(self, model_with_line_items):
+        """Test chart method with single line item."""
         from unittest.mock import patch
 
         items = LineItemsResults(model_with_line_items, ["product_sales"])
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            items.line_items_chart()
+            items.chart()
 
             mock_line_items.assert_called_once_with(
                 ["product_sales"],
@@ -1138,15 +1138,15 @@ class TestLineItemsResultsLineItemsChartMethod:
                 value_format=None,
             )
 
-    def test_line_items_chart_method_with_all_items(self, model_with_line_items):
-        """Test line_items_chart method with all line items."""
+    def test_chart_method_with_all_items(self, model_with_line_items):
+        """Test chart method with all line items."""
         from unittest.mock import patch
 
         all_names = model_with_line_items.line_item_names
         items = LineItemsResults(model_with_line_items, all_names)
 
         with patch("pyproforma.charts.charts.Charts.line_items") as mock_line_items:
-            items.line_items_chart(title="All Items Chart")
+            items.chart(title="All Items Chart")
 
             # Verify all line items are passed
             call_args = mock_line_items.call_args
