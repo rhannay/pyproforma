@@ -6,7 +6,7 @@ Line items are at the core of PyProforma financial models. They represent indivi
 
 There are several ways to add line items to your model:
 
-### 1. During Model Initialization
+### Creating Line Items During Model Initialization
 
 You can add line items when creating your model using the `LineItem` helper class:
 
@@ -42,7 +42,7 @@ model = Model(
 )
 ```
 
-### 2. Adding Line Items Incrementally
+### Adding Line Items Incrementally
 
 You can add line items to an existing model using dictionary-style syntax:
 
@@ -57,7 +57,7 @@ model['revenue_growth'] = [0.0, 0.15, 0.15]  # Hardcoded growth rates
 model['profit'] = 'revenue - expenses'  # Formula referencing other items
 ```
 
-### 3. Using the LineItem Class (Optional)
+### Using the LineItem Class
 
 While you can use the `LineItem` helper class, it's not required. 
 
