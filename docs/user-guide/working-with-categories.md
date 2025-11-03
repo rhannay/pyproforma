@@ -162,7 +162,7 @@ revenue_table = model.category('revenue').table()
 revenue_table  # Displays formatted table in notebook
 ```
 
-![Category Table Example](../assets/images/categories/category-table-1.png){ width="500" }
+![Category Table Example](../assets/images/categories/category-table-1.png){ width="300" }
 
 ```python
 # Customize table appearance
@@ -170,7 +170,7 @@ revenue_table = model.category('revenue').table(hardcoded_color='blue')
 revenue_table  # Display formatted table with colored hardcoded values
 ```
 
-![Category Table with Colors](../assets/images/categories/category-table-2.png){ width="500" }
+![Category Table with Colors](../assets/images/categories/category-table-2.png){ width="300" }
 
 ## Creating Charts for Categories
 
