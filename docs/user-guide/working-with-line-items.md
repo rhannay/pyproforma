@@ -182,7 +182,7 @@ revenue_table = model['revenue'].table()
 revenue_table  # Displays formatted table in notebook
 ```
 
-![Revenue and Expenses Chart](../assets/images/line-items-1.png){ width="400" }
+![Revenue and Expenses Chart](../assets/images/line-items/line-items-1.png){ width="400" }
 
 ```python
 # Customize table appearance
@@ -190,7 +190,7 @@ revenue_table = model['revenue'].table(hardcoded_color='blue')
 revenue_table  # Display formatted table
 ```
 
-![Revenue and Expenses Chart](../assets/images/line-items-2.png){ width="400" }
+![Revenue and Expenses Chart](../assets/images/line-items/line-items-2.png){ width="400" }
 
 
 ## Creating Charts for Line Items
@@ -210,10 +210,10 @@ revenue_chart = model['revenue'].chart(
     template='plotly_dark'
 )
 
-# Display chart in a Notebook
+# Display chart in a notebook
 revenue_chart
 ```
-![Revenue and Expenses Chart](../assets/images/chart-1.png){ width="700" }
+![Revenue and Expenses Chart](../assets/images/line-items/chart-1.png){ width="700" }
 
 
 ## Modifying Line Items
