@@ -202,9 +202,11 @@ revenue_chart = model['revenue'].chart(
     template='plotly_dark'
 )
 
-# Save chart as image
-revenue_chart.write_image('revenue_trend.png')
+# Display chart in a Notebook
+revenue_chart
 ```
+![Revenue and Expenses Chart](../assets/images/chart-1.png){ width="700" }
+
 
 ## Modifying Line Items
 
