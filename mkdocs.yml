@@ -86,6 +86,7 @@ nav:
     - Installation: user-guide/installation.md
     - Basic Usage: user-guide/basic-usage.md
     - Working with Line Items: user-guide/working-with-line-items.md
+    - Working with Categories: user-guide/working-with-categories.md
   - Examples:
     - Basic Usage: examples/basic-usage.ipynb
   - API Reference:
