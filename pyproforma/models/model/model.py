@@ -338,15 +338,15 @@ class Model(SerializationMixin):
         self, key: str, value: Union[int, float, str, list, LineItem, dict]
     ) -> None:
         """
-        Add a new line item with values using dictionary-style access.
+        Add or update a line item using dictionary-style access.
 
-        Creates a new line item with the given name and sets its values. The line item
-        will be added to the "general" category by default. LineItem objects and
-        dictionaries with LineItem parameters can replace existing line items, but
-        primitive values and values dictionaries cannot.
+        Creates a new line item with the given name and sets its values, or replaces
+        an existing line item's values or formula while preserving other attributes
+        (label, category, value_format). When replacing an existing line item with values,
+        the formula is cleared. When replacing with a formula, the values are cleared.
 
         Args:
-            key (str): The name of the new line item to create
+            key (str): The name of the line item to create or update
             value (Union[int, float, str, list, LineItem, dict, pd.Series]): Either a
                 constant value to set for all years, a formula string for calculations,
                 a list of values corresponding to each year in the model, a LineItem
@@ -359,9 +359,8 @@ class Model(SerializationMixin):
                 LineItem, dict, or pandas Series
             ValueError: If the model has no years defined, if list length doesn't
                 match number of years, if list contains non-numeric values, if
-                dictionary is malformed, if pandas Series index contains non-integer
-                values, or if a line item with the given key already exists (for
-                primitive values, formulas, values dictionaries, and pandas Series)
+                dictionary is malformed, or if pandas Series index contains non-integer
+                values
 
         Examples:
             >>> model['new_revenue'] = 1000  # Creates line item with 1000 for all years
@@ -377,8 +376,9 @@ class Model(SerializationMixin):
             >>> series = pd.Series({2023: 50000, 2024: 55000})
             >>> model['operating_costs'] = series  # Creates line item from Series
             >>>
-            >>> # To update existing line items, use the update namespace:
-            >>> model.update.update_line_item('revenue', values={2023: 1200})
+            >>> # Replace existing line item values (preserves label, category, etc.)
+            >>> model['revenue'] = 2000  # Replaces values, clears formula
+            >>> model['profit'] = "revenue * 0.2"  # Replaces formula, clears values
         """
         # Validate that key is a string
         if not isinstance(key, str):
@@ -411,14 +411,6 @@ class Model(SerializationMixin):
 
         elif isinstance(value, pd.Series):
             # Handle pandas Series - convert to values dictionary
-            if key in self.line_item_names:
-                raise ValueError(
-                    f"Line item '{key}' already exists. "
-                    "Cannot replace with pandas Series. Use LineItem or dict "
-                    "with LineItem parameters to replace, or update attributes "
-                    "directly."
-                )
-
             # Convert pandas Series to dictionary
             values_dict = value.to_dict()
 
@@ -429,39 +421,62 @@ class Model(SerializationMixin):
                     "values, got invalid Series structure"
                 )
 
-            # Create line item with values dictionary
-            self.add_line_item(name=key, values=values_dict)
+            # Check if line item already exists
+            if key in self.line_item_names:
+                # Preserve existing attributes but replace values and clear formula
+                existing_item = self._line_item_definition(key)
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=existing_item.category,
+                    label=existing_item.label,
+                    values=values_dict,
+                    formula=None,  # Clear formula when setting values
+                    value_format=existing_item.value_format,
+                )
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+            else:
+                # Create new line item with values dictionary
+                self.add_line_item(name=key, values=values_dict)
             return
 
         elif isinstance(value, dict):
-            # Special case: empty dictionary creates line item with just name
+            # Special case: empty dictionary creates/updates line item with no values or formula
             if len(value) == 0:
-                # Check if line item already exists - throw error if it does
                 if key in self.line_item_names:
-                    raise ValueError(
-                        f"Line item '{key}' already exists. "
-                        "Cannot set existing line item to empty dictionary. "
-                        "Use LineItem or dict with LineItem parameters to replace, "
-                        "or update attributes directly."
+                    # Preserve existing attributes but clear values and formula
+                    existing_item = self._line_item_definition(key)
+                    line_item_to_add = LineItem(
+                        name=key,
+                        category=existing_item.category,
+                        label=existing_item.label,
+                        values=None,
+                        formula=None,
+                        value_format=existing_item.value_format,
                     )
+                    self.add_line_item(line_item=line_item_to_add, replace=True)
                 else:
                     # Create line item with just the name, no values or other properties
                     self.add_line_item(name=key)
-                    return
+                return
 
             # Check if this is a values dictionary (year:value pairs) or parameters
             if _is_values_dict(value):
-                # Handle values dictionary - cannot replace existing items
+                # Handle values dictionary
                 if key in self.line_item_names:
-                    raise ValueError(
-                        f"Line item '{key}' already exists. "
-                        "Cannot replace with values dictionary. Use LineItem or "
-                        "dict with LineItem parameters to replace, or update "
-                        "attributes directly."
+                    # Preserve existing attributes but replace values and clear formula
+                    existing_item = self._line_item_definition(key)
+                    line_item_to_add = LineItem(
+                        name=key,
+                        category=existing_item.category,
+                        label=existing_item.label,
+                        values=value,
+                        formula=None,  # Clear formula when setting values
+                        value_format=existing_item.value_format,
                     )
-
-                # Create line item with values dictionary
-                self.add_line_item(name=key, values=value)
+                    self.add_line_item(line_item=line_item_to_add, replace=True)
+                else:
+                    # Create new line item with values dictionary
+                    self.add_line_item(name=key, values=value)
                 return
             else:
                 # Handle dictionary with LineItem parameters - can replace items
@@ -477,14 +492,6 @@ class Model(SerializationMixin):
                 return
 
         elif isinstance(value, list):
-            # Check if line item already exists - primitive types cannot replace items
-            if key in self.line_item_names:
-                raise ValueError(
-                    f"Line item '{key}' already exists. "
-                    "Cannot replace with primitive values. Use LineItem or dict "
-                    "to replace, or update attributes directly."
-                )
-
             # Validate list length matches number of years
             if len(value) != len(self._years):
                 raise ValueError(
@@ -502,32 +509,59 @@ class Model(SerializationMixin):
 
             # Create values dictionary mapping years to list values
             values = {year: float(val) for year, val in zip(self._years, value)}
+            
+            # Check if line item already exists
+            if key in self.line_item_names:
+                # Preserve existing attributes but replace values and clear formula
+                existing_item = self._line_item_definition(key)
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=existing_item.category,
+                    label=existing_item.label,
+                    values=values,
+                    formula=None,  # Clear formula when setting values
+                    value_format=existing_item.value_format,
+                )
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+                return
 
         elif isinstance(value, str):
-            # Handle string as formula - cannot replace existing items
+            # Handle string as formula
             if key in self.line_item_names:
-                raise ValueError(
-                    f"Line item '{key}' already exists. "
-                    "Cannot replace with formula string. Use LineItem or dict "
-                    "with LineItem parameters to replace, or update attributes "
-                    "directly."
+                # Preserve existing attributes but replace formula and clear values
+                existing_item = self._line_item_definition(key)
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=existing_item.category,
+                    label=existing_item.label,
+                    values=None,  # Clear values when setting formula
+                    formula=value,
+                    value_format=existing_item.value_format,
                 )
-
-            # Create line item with formula
-            self.add_line_item(name=key, formula=value)
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+            else:
+                # Create line item with formula
+                self.add_line_item(name=key, formula=value)
             return
 
         elif isinstance(value, (int, float)):
-            # Check if line item already exists - primitive types cannot replace items
-            if key in self.line_item_names:
-                raise ValueError(
-                    f"Line item '{key}' already exists. "
-                    "Cannot replace with primitive values. Use LineItem or dict "
-                    "to replace, or update attributes directly."
-                )
-
             # Create values dictionary with the constant value for all years
             values = {year: float(value) for year in self._years}
+            
+            # Check if line item already exists
+            if key in self.line_item_names:
+                # Preserve existing attributes but replace values and clear formula
+                existing_item = self._line_item_definition(key)
+                line_item_to_add = LineItem(
+                    name=key,
+                    category=existing_item.category,
+                    label=existing_item.label,
+                    values=values,
+                    formula=None,  # Clear formula when setting values
+                    value_format=existing_item.value_format,
+                )
+                self.add_line_item(line_item=line_item_to_add, replace=True)
+                return
 
         else:
             raise TypeError(

@@ -130,24 +130,34 @@ class TestConstantPassed:
         ):
             model_with_years["test_item"] = None
 
-    def test_setter_with_existing_line_item_name_error(self, model_with_years):
-        """Test setting existing line item name raises ValueError for primitives."""
-        # First, create a line item
-        model_with_years["existing_item"] = 100
+    def test_setter_with_existing_line_item_name_replaces(self, model_with_years):
+        """Test setting existing line item replaces values while preserving attributes."""
+        # First, create a line item with label and category
+        model_with_years["existing_item"] = LineItem(
+            name="existing_item",
+            category="test_category",
+            label="Test Item",
+            values={2023: 100, 2024: 100, 2025: 100}
+        )
 
         # Verify it exists
         assert model_with_years.value("existing_item", 2023) == 100.0
+        item = model_with_years._line_item_definition("existing_item")
+        assert item.category == "test_category"
+        assert item.label == "Test Item"
 
-        # Now try to set it again with a primitive value
-        # This should raise ValueError since primitive replacements are not allowed
-        with pytest.raises(
-            ValueError,
-            match=(
-                "Cannot replace with primitive values. Use LineItem or dict "
-                "to replace, or update attributes directly."
-            ),
-        ):
-            model_with_years["existing_item"] = 200
+        # Now set it again with a primitive value - should replace values
+        model_with_years["existing_item"] = 200
+
+        # Verify replacement worked
+        assert model_with_years.value("existing_item", 2023) == 200.0
+        assert model_with_years.value("existing_item", 2024) == 200.0
+        
+        # Verify attributes preserved
+        updated_item = model_with_years._line_item_definition("existing_item")
+        assert updated_item.category == "test_category"  # Preserved
+        assert updated_item.label == "Test Item"  # Preserved
+        assert updated_item.formula is None  # Cleared
 
     def test_setter_integration_with_model_operations(self, model_with_years):
         """Test that items created via setter work with other model operations."""
@@ -260,21 +270,19 @@ class TestConstantPassed:
         ):
             empty_model["test_item"] = [100, 200, 300]
 
-    def test_setter_update_existing_with_list_error(self, model_with_years):
-        """Test that updating existing line item with list values raises ValueError."""
+    def test_setter_update_existing_with_list_replaces(self, model_with_years):
+        """Test that updating existing line item with list values replaces them."""
         # Create initial item with constant value
         model_with_years["update_test"] = 500
         assert model_with_years.value("update_test", 2023) == 500.0
 
-        # Try to update with list values - should raise ValueError
-        with pytest.raises(
-            ValueError,
-            match=(
-                "Cannot replace with primitive values. Use LineItem or dict "
-                "to replace, or update attributes directly."
-            ),
-        ):
-            model_with_years["update_test"] = [600, 700, 800]
+        # Update with list values - should replace
+        model_with_years["update_test"] = [600, 700, 800]
+        
+        # Verify replacement
+        assert model_with_years.value("update_test", 2023) == 600.0
+        assert model_with_years.value("update_test", 2024) == 700.0
+        assert model_with_years.value("update_test", 2025) == 800.0
 
     def test_setter_list_integration_with_model_operations(self, model_with_years):
         """Test that items created via list setter work with other model operations."""
@@ -566,14 +574,23 @@ class TestSetterStringFormula:
         expected = 1000 * (1.05**3)
         assert abs(model_with_years.value("compound_growth", 2023) - expected) < 0.01
 
-    def test_setter_string_formula_overwrite_prevention(self, model_with_base_data):
-        """Test that string formulas cannot overwrite existing line items."""
-        # Try to overwrite existing line item with string formula
-        with pytest.raises(
-            ValueError,
-            match=".*already exists.*Cannot replace with formula string.*",
-        ):
-            model_with_base_data["revenue"] = "2000"
+    def test_setter_string_formula_overwrites_existing(self, model_with_base_data):
+        """Test that string formulas can overwrite existing line items."""
+        # Verify initial state
+        assert model_with_base_data.value("revenue", 2023) == 1000
+        
+        # Overwrite existing line item with string formula
+        model_with_base_data["revenue"] = "2000"
+        
+        # Verify replacement
+        assert model_with_base_data.value("revenue", 2023) == 2000
+        assert model_with_base_data.value("revenue", 2024) == 2000
+        assert model_with_base_data.value("revenue", 2025) == 2000
+        
+        # Verify formula is set
+        item = model_with_base_data._line_item_definition("revenue")
+        assert item.formula == "2000"
+        assert item.values is None
 
     def test_setter_string_formula_error_no_years(self):
         """Test that string formula raises ValueError when model has no years."""
@@ -773,19 +790,23 @@ class TestPandasSeriesSetter:
             model_with_years["invalid_series"] = series
 
     def test_setter_with_pandas_series_existing_line_item(self, model_with_years):
-        """Test that pandas Series cannot replace existing line items."""
+        """Test that pandas Series can replace existing line items."""
         pd = pytest.importorskip("pandas")
 
         # First create a line item
         model_with_years["existing_item"] = 100
 
-        # Try to replace with pandas Series (should fail)
-        series = pd.Series({2023: 200.0, 2024: 220.0})
+        # Verify initial state
+        assert model_with_years.value("existing_item", 2023) == 100.0
 
-        with pytest.raises(
-            ValueError, match="Line item 'existing_item' already exists"
-        ):
-            model_with_years["existing_item"] = series
+        # Replace with pandas Series
+        series = pd.Series({2023: 200.0, 2024: 220.0, 2025: 240.0})
+        model_with_years["existing_item"] = series
+
+        # Verify replacement
+        assert model_with_years.value("existing_item", 2023) == 200.0
+        assert model_with_years.value("existing_item", 2024) == 220.0
+        assert model_with_years.value("existing_item", 2025) == 240.0
 
     def test_setter_pandas_series_compared_to_dict(self, model_with_years):
         """Test that pandas Series produces same results as equivalent dict."""
@@ -843,22 +864,26 @@ class TestEmptyDictSetItem:
         assert line_item_def.formula is None  # No formula set
         assert line_item_def.category == "general"  # Default category
 
-    def test_empty_dict_on_existing_line_item_raises_error(self, model_with_years):
-        """Test that setting an empty dict for an existing line item raises error."""
+    def test_empty_dict_on_existing_line_item_clears_values(self, model_with_years):
+        """Test that setting an empty dict for an existing line item clears values."""
         # First create a line item with some values
-        model_with_years["existing_item"] = {2023: 100, 2024: 200}
+        model_with_years["existing_item"] = {2023: 100, 2024: 200, 2025: 300}
 
         # Verify it has the expected values
         assert model_with_years.value("existing_item", 2023) == 100
         assert model_with_years.value("existing_item", 2024) == 200
 
-        # Setting it to an empty dict should raise an error
-        with pytest.raises(
-            ValueError,
-            match="Line item 'existing_item' already exists. "
-            "Cannot set existing line item to empty dictionary.",
-        ):
-            model_with_years["existing_item"] = {}
+        # Setting it to an empty dict should clear both values and formula
+        model_with_years["existing_item"] = {}
+        
+        # Verify values are cleared
+        assert model_with_years.value("existing_item", 2023) is None
+        assert model_with_years.value("existing_item", 2024) is None
+        
+        # Verify both values and formula are None
+        item = model_with_years._line_item_definition("existing_item")
+        assert item.values is None
+        assert item.formula is None
 
     def test_empty_dict_no_years_raises_error(self):
         """Test that empty dict with no years defined raises ValueError."""
