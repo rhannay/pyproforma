@@ -323,9 +323,7 @@ class TestReplaceWithLineItemOrDict:
         )
         return model
 
-    def test_replace_with_line_item_replaces_all_attributes(
-        self, model_with_line_item
-    ):
+    def test_replace_with_line_item_replaces_all_attributes(self, model_with_line_item):
         """Test that replacing with a LineItem object replaces all attributes."""
         # Replace with a new LineItem
         new_item = LineItem(
@@ -372,7 +370,7 @@ class TestMultipleReplacements:
     def test_replace_multiple_times(self):
         """Test that line items can be replaced multiple times."""
         model = Model(years=[2023, 2024])
-        
+
         # Initial creation with formula
         model["revenue"] = LineItem(
             name="revenue",
@@ -381,14 +379,14 @@ class TestMultipleReplacements:
             formula="1000",
         )
         assert model.value("revenue", 2023) == 1000
-        
+
         # First replacement: change to constant
         model["revenue"] = 2000
         assert model.value("revenue", 2023) == 2000.0
         item = model._line_item_definition("revenue")
         assert item.formula is None
         assert item.category == "income"
-        
+
         # Second replacement: change to formula
         model["base"] = 500
         model["revenue"] = "base * 4"
@@ -397,7 +395,7 @@ class TestMultipleReplacements:
         assert item.formula == "base * 4"
         assert item.values is None
         assert item.category == "income"
-        
+
         # Third replacement: change to list
         model["revenue"] = [3000, 3300]
         assert model.value("revenue", 2023) == 3000.0

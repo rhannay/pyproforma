@@ -131,13 +131,13 @@ class TestConstantPassed:
             model_with_years["test_item"] = None
 
     def test_setter_with_existing_line_item_name_replaces(self, model_with_years):
-        """Test setting existing line item replaces values while preserving attributes."""
+        """Test setting existing line item replaces values, preserves attrs."""
         # First, create a line item with label and category
         model_with_years["existing_item"] = LineItem(
             name="existing_item",
             category="test_category",
             label="Test Item",
-            values={2023: 100, 2024: 100, 2025: 100}
+            values={2023: 100, 2024: 100, 2025: 100},
         )
 
         # Verify it exists
@@ -152,7 +152,7 @@ class TestConstantPassed:
         # Verify replacement worked
         assert model_with_years.value("existing_item", 2023) == 200.0
         assert model_with_years.value("existing_item", 2024) == 200.0
-        
+
         # Verify attributes preserved
         updated_item = model_with_years._line_item_definition("existing_item")
         assert updated_item.category == "test_category"  # Preserved
@@ -278,7 +278,7 @@ class TestConstantPassed:
 
         # Update with list values - should replace
         model_with_years["update_test"] = [600, 700, 800]
-        
+
         # Verify replacement
         assert model_with_years.value("update_test", 2023) == 600.0
         assert model_with_years.value("update_test", 2024) == 700.0
@@ -578,15 +578,15 @@ class TestSetterStringFormula:
         """Test that string formulas can overwrite existing line items."""
         # Verify initial state
         assert model_with_base_data.value("revenue", 2023) == 1000
-        
+
         # Overwrite existing line item with string formula
         model_with_base_data["revenue"] = "2000"
-        
+
         # Verify replacement
         assert model_with_base_data.value("revenue", 2023) == 2000
         assert model_with_base_data.value("revenue", 2024) == 2000
         assert model_with_base_data.value("revenue", 2025) == 2000
-        
+
         # Verify formula is set
         item = model_with_base_data._line_item_definition("revenue")
         assert item.formula == "2000"
@@ -836,7 +836,7 @@ class TestEmptyDictSetItem:
         return Model(years=[2023, 2024, 2025])
 
     def test_empty_dict_creates_line_item_with_name_only(self, model_with_years):
-        """Test that setting a line item to an empty dict creates it with just the name."""
+        """Test setting a line item to empty dict creates it with just name."""
         # Initially no line items
         initial_line_items = [
             name
@@ -875,11 +875,11 @@ class TestEmptyDictSetItem:
 
         # Setting it to an empty dict should clear both values and formula
         model_with_years["existing_item"] = {}
-        
+
         # Verify values are cleared
         assert model_with_years.value("existing_item", 2023) is None
         assert model_with_years.value("existing_item", 2024) is None
-        
+
         # Verify both values and formula are None
         item = model_with_years._line_item_definition("existing_item")
         assert item.values is None

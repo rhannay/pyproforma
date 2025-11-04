@@ -342,8 +342,8 @@ class Model(SerializationMixin):
 
         Creates a new line item with the given name and sets its values, or replaces
         an existing line item's values or formula while preserving other attributes
-        (label, category, value_format). When replacing an existing line item with values,
-        the formula is cleared. When replacing with a formula, the values are cleared.
+        (label, category, value_format). When replacing an existing line item with
+        values, the formula is cleared. When replacing with a formula, values cleared.
 
         Args:
             key (str): The name of the line item to create or update
@@ -440,7 +440,7 @@ class Model(SerializationMixin):
             return
 
         elif isinstance(value, dict):
-            # Special case: empty dictionary creates/updates line item with no values or formula
+            # Special case: empty dict creates/updates item with no values/formula
             if len(value) == 0:
                 if key in self.line_item_names:
                     # Preserve existing attributes but clear values and formula
@@ -509,7 +509,7 @@ class Model(SerializationMixin):
 
             # Create values dictionary mapping years to list values
             values = {year: float(val) for year, val in zip(self._years, value)}
-            
+
             # Check if line item already exists
             if key in self.line_item_names:
                 # Preserve existing attributes but replace values and clear formula
@@ -547,7 +547,7 @@ class Model(SerializationMixin):
         elif isinstance(value, (int, float)):
             # Create values dictionary with the constant value for all years
             values = {year: float(value) for year in self._years}
-            
+
             # Check if line item already exists
             if key in self.line_item_names:
                 # Preserve existing attributes but replace values and clear formula
