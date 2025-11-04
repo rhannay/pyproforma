@@ -163,7 +163,8 @@ class TestReplaceWithFormula:
 
     def test_replace_formula_with_new_formula(self, model_with_line_item):
         """Test replacing a formula with another formula."""
-        # Set up with initial formula
+        # Set up with initial formula that references revenue (which has values)
+        # Note: formulas can reference line items with values, not just other formulas
         model_with_line_item["profit"] = LineItem(
             name="profit",
             category="income",
@@ -172,8 +173,8 @@ class TestReplaceWithFormula:
             value_format="currency",
         )
 
-        # Verify initial state
-        assert model_with_line_item.value("profit", 2023) == 100.0  # 1000 * 0.1
+        # Verify initial state (revenue=1000 * 0.1)
+        assert model_with_line_item.value("profit", 2023) == 100.0
 
         # Replace with new formula
         model_with_line_item["profit"] = "revenue * 0.2"

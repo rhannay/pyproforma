@@ -1164,15 +1164,26 @@ class Model(SerializationMixin):
     # ============================================================================
 
     def _replace_line_item_preserving_attributes(
-        self, key: str, values: dict[int, float] = None, formula: str = None
+        self,
+        key: str,
+        values: dict[int, float] | None = None,
+        formula: str | None = None,
     ) -> None:
         """
-        Replace an existing line item's values or formula while preserving attributes.
+        Replace existing line item values/formula while preserving attributes.
+
+        This method assumes the line item already exists and does not perform
+        validation. It preserves the existing category, label, and value_format
+        while replacing the values and/or formula. When both values and formula
+        are None, the line item will have no values or formula (useful for
+        clearing both).
 
         Args:
-            key (str): Name of the line item to replace
-            values (dict[int, float], optional): New values to set. Defaults to None.
-            formula (str, optional): New formula to set. Defaults to None.
+            key (str): Name of the line item to replace (must already exist)
+            values (dict[int, float] | None, optional): New values to set. When None,
+                values are cleared. Defaults to None.
+            formula (str | None, optional): New formula to set. When None, formula is
+                cleared. Defaults to None.
         """
         existing_item = self._line_item_definition(key)
         line_item_to_add = LineItem(
