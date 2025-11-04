@@ -423,17 +423,9 @@ class Model(SerializationMixin):
 
             # Check if line item already exists
             if key in self.line_item_names:
-                # Preserve existing attributes but replace values and clear formula
-                existing_item = self._line_item_definition(key)
-                line_item_to_add = LineItem(
-                    name=key,
-                    category=existing_item.category,
-                    label=existing_item.label,
-                    values=values_dict,
-                    formula=None,  # Clear formula when setting values
-                    value_format=existing_item.value_format,
+                self._replace_line_item_preserving_attributes(
+                    key, values=values_dict, formula=None
                 )
-                self.add_line_item(line_item=line_item_to_add, replace=True)
             else:
                 # Create new line item with values dictionary
                 self.add_line_item(name=key, values=values_dict)
@@ -443,17 +435,9 @@ class Model(SerializationMixin):
             # Special case: empty dict creates/updates item with no values/formula
             if len(value) == 0:
                 if key in self.line_item_names:
-                    # Preserve existing attributes but clear values and formula
-                    existing_item = self._line_item_definition(key)
-                    line_item_to_add = LineItem(
-                        name=key,
-                        category=existing_item.category,
-                        label=existing_item.label,
-                        values=None,
-                        formula=None,
-                        value_format=existing_item.value_format,
+                    self._replace_line_item_preserving_attributes(
+                        key, values=None, formula=None
                     )
-                    self.add_line_item(line_item=line_item_to_add, replace=True)
                 else:
                     # Create line item with just the name, no values or other properties
                     self.add_line_item(name=key)
@@ -463,17 +447,9 @@ class Model(SerializationMixin):
             if _is_values_dict(value):
                 # Handle values dictionary
                 if key in self.line_item_names:
-                    # Preserve existing attributes but replace values and clear formula
-                    existing_item = self._line_item_definition(key)
-                    line_item_to_add = LineItem(
-                        name=key,
-                        category=existing_item.category,
-                        label=existing_item.label,
-                        values=value,
-                        formula=None,  # Clear formula when setting values
-                        value_format=existing_item.value_format,
+                    self._replace_line_item_preserving_attributes(
+                        key, values=value, formula=None
                     )
-                    self.add_line_item(line_item=line_item_to_add, replace=True)
                 else:
                     # Create new line item with values dictionary
                     self.add_line_item(name=key, values=value)
@@ -512,33 +488,20 @@ class Model(SerializationMixin):
 
             # Check if line item already exists
             if key in self.line_item_names:
-                # Preserve existing attributes but replace values and clear formula
-                existing_item = self._line_item_definition(key)
-                line_item_to_add = LineItem(
-                    name=key,
-                    category=existing_item.category,
-                    label=existing_item.label,
-                    values=values,
-                    formula=None,  # Clear formula when setting values
-                    value_format=existing_item.value_format,
+                self._replace_line_item_preserving_attributes(
+                    key, values=values, formula=None
                 )
-                self.add_line_item(line_item=line_item_to_add, replace=True)
-                return
+            else:
+                # Create new line item with list values
+                self.add_line_item(name=key, values=values)
+            return
 
         elif isinstance(value, str):
             # Handle string as formula
             if key in self.line_item_names:
-                # Preserve existing attributes but replace formula and clear values
-                existing_item = self._line_item_definition(key)
-                line_item_to_add = LineItem(
-                    name=key,
-                    category=existing_item.category,
-                    label=existing_item.label,
-                    values=None,  # Clear values when setting formula
-                    formula=value,
-                    value_format=existing_item.value_format,
+                self._replace_line_item_preserving_attributes(
+                    key, values=None, formula=value
                 )
-                self.add_line_item(line_item=line_item_to_add, replace=True)
             else:
                 # Create line item with formula
                 self.add_line_item(name=key, formula=value)
@@ -550,27 +513,19 @@ class Model(SerializationMixin):
 
             # Check if line item already exists
             if key in self.line_item_names:
-                # Preserve existing attributes but replace values and clear formula
-                existing_item = self._line_item_definition(key)
-                line_item_to_add = LineItem(
-                    name=key,
-                    category=existing_item.category,
-                    label=existing_item.label,
-                    values=values,
-                    formula=None,  # Clear formula when setting values
-                    value_format=existing_item.value_format,
+                self._replace_line_item_preserving_attributes(
+                    key, values=values, formula=None
                 )
-                self.add_line_item(line_item=line_item_to_add, replace=True)
-                return
+            else:
+                # Create new line item with constant values
+                self.add_line_item(name=key, values=values)
+            return
 
         else:
             raise TypeError(
                 f"Value must be an int, float, str, list, LineItem, dict, "
                 f"pandas Series, got {type(value).__name__}"
             )
-
-        # Add new line item (we already checked that it doesn't exist)
-        self.add_line_item(name=key, values=values)
 
     def value(self, name: str, year: int) -> float:
         """
@@ -1207,6 +1162,28 @@ class Model(SerializationMixin):
     # ============================================================================
     # METADATA & INTERNAL LOOKUPS
     # ============================================================================
+
+    def _replace_line_item_preserving_attributes(
+        self, key: str, values: dict[int, float] = None, formula: str = None
+    ) -> None:
+        """
+        Replace an existing line item's values or formula while preserving attributes.
+
+        Args:
+            key (str): Name of the line item to replace
+            values (dict[int, float], optional): New values to set. Defaults to None.
+            formula (str, optional): New formula to set. Defaults to None.
+        """
+        existing_item = self._line_item_definition(key)
+        line_item_to_add = LineItem(
+            name=key,
+            category=existing_item.category,
+            label=existing_item.label,
+            values=values,
+            formula=formula,
+            value_format=existing_item.value_format,
+        )
+        self.add_line_item(line_item=line_item_to_add, replace=True)
 
     def _line_item_definition(self, name: str) -> LineItem:
         """
