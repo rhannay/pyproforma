@@ -318,8 +318,12 @@ class CategoryResults:
         Examples:
             >>> revenue_category = model.category('revenue')
             >>> table = revenue_category.compare_years_table(2023, 2024)
-            >>> table = revenue_category.compare_years_table(2023, 2024, sort_by='change')
-            >>> table = revenue_category.compare_years_table(2023, 2024, include_change=False)
+            >>> table = revenue_category.compare_years_table(
+            ...     2023, 2024, sort_by='change'
+            ... )
+            >>> table = revenue_category.compare_years_table(
+            ...     2023, 2024, include_change=False
+            ... )
         """
         return self.model.tables.compare_years(
             year1,
@@ -364,8 +368,12 @@ class CategoryResults:
         Examples:
             >>> revenue_category = model.category('revenue')
             >>> table = revenue_category.year_over_year_table(2024)
-            >>> table = revenue_category.year_over_year_table(2024, sort_by='change')
-            >>> table = revenue_category.year_over_year_table(2024, include_change=False)
+            >>> table = revenue_category.year_over_year_table(
+            ...     2024, sort_by='change'
+            ... )
+            >>> table = revenue_category.year_over_year_table(
+            ...     2024, include_change=False
+            ... )
         """
         return self.model.tables.year_over_year(
             year,
