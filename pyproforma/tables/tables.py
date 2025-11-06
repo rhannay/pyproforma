@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from ..constants import VALID_COLS
 from . import row_types as rt
-from .compare import compare_year as _compare_year
+from .compare import compare_years as _compare_years
 from .table_class import Table
 from .table_generator import generate_table_from_template
 
@@ -227,6 +227,11 @@ class Tables:
     def category(
         self,
         category_name: str,
+        include_name: bool = False,
+        include_label: bool = True,
+        col_order: Optional[list[str]] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
+        include_percent_change: bool = False,
         include_totals: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
@@ -235,6 +240,18 @@ class Tables:
 
         Args:
             category_name (str): The name of the category to generate the table for.
+            include_name (bool): Whether to include the name column. Defaults to False.
+            include_label (bool): Whether to include the label column. Defaults to True.
+            col_order (Optional[list[str]]): Order of columns (name, label).
+                                            If provided, only columns in this list are included,
+                                            overriding include_name and include_label.
+                                            Must only contain valid column names: 'name', 'label'.
+                                            Note: 'category' is not valid for category tables.
+                                            Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
             include_totals (bool, optional): Whether to include a totals row at the end
                                            of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
@@ -247,12 +264,15 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        # Use the line_items method with the include_totals parameter
+        # Use the line_items method with the parameters
         return self.line_items(
             line_items=line_item_names,
-            include_name=False,
-            include_label=True,
+            include_name=include_name,
+            include_label=include_label,
+            col_order=col_order,
+            col_labels=col_labels,
             group_by_category=True,
+            include_percent_change=include_percent_change,
             hardcoded_color=hardcoded_color,
             include_totals=include_totals,
         )
@@ -312,7 +332,50 @@ class Tables:
         ]
         return self.from_template(rows)
 
-    def compare_year(
+    def compare_years(
+        self,
+        year1: int,
+        year2: int,
+        names: Optional[list[str]] = None,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a comparison table between two years.
+
+        Args:
+            year1 (int): The first year to compare
+            year2 (int): The second year to compare
+            names (Optional[list[str]]): List of line item names to include.
+                                       If None, includes all line items. Defaults to None.
+            include_change (bool): Whether to include the Change column. Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
+                                     None keeps the original order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for year1, year2, and optional change columns
+
+        Raises:
+            ValueError: If year1 or year2 are not in the model's years, or if sort_by is invalid
+
+        Examples:
+            >>> table = model.tables.compare_years(2023, 2024, ['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.compare_years(2023, 2024, ['revenue_sales'], sort_by='change')
+            >>> table = model.tables.compare_years(2023, 2024)  # Uses all line items
+        """  # noqa: E501
+        return _compare_years(
+            self._model,
+            year1,
+            year2,
+            names,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
+
+    def year_over_year(
         self,
         year: int,
         names: Optional[list[str]] = None,
@@ -339,12 +402,13 @@ class Tables:
             ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
 
         Examples:
-            >>> table = model.tables.compare_year(2024, ['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.compare_year(2024, ['revenue_sales'], sort_by='change')
-            >>> table = model.tables.compare_year(2024)  # Uses all line items
+            >>> table = model.tables.year_over_year(2024, ['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.year_over_year(2024, ['revenue_sales'], sort_by='change')
+            >>> table = model.tables.year_over_year(2024)  # Uses all line items
         """  # noqa: E501
-        return _compare_year(
+        return _compare_years(
             self._model,
+            year - 1,
             year,
             names,
             include_change=include_change,

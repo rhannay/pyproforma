@@ -10,20 +10,22 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 
-def compare_year(
+def compare_years(
     model: "Model",
-    year: int,
+    year1: int,
+    year2: int,
     names: Optional[list[str]] = None,
     include_change: bool = True,
     include_percent_change: bool = True,
     sort_by: Optional[str] = None,
 ) -> Table:
     """
-    Create a year-over-year comparison table.
+    Create a comparison table between two years.
 
     Args:
         model (Model): The model to generate the table from
-        year (int): The year to compare (will compare year-1 to year)
+        year1 (int): The first year to compare
+        year2 (int): The second year to compare
         names (Optional[list[str]]): List of line item names to include.
                                    If None, includes all line items. Defaults to None.
         include_change (bool): Whether to include the Change column. Defaults to True.
@@ -34,23 +36,23 @@ def compare_year(
                                None keeps the original order. Defaults to None.
 
     Returns:
-        Table: A table with columns for previous year, current year, and optional
-               change columns
+        Table: A table with columns for year1, year2, and optional change columns
 
     Raises:
-        ValueError: If year or year-1 are not in the model's years, or if sort_by
+        ValueError: If year1 or year2 are not in the model's years, or if sort_by
                    is invalid
     """
     # If names is None, use all line items
     if names is None:
         names = [item["name"] for item in model.line_item_metadata]
 
-    prev_year = year - 1
+    prev_year = year1
+    year = year2
 
     # Validate years exist
     if prev_year not in model.years:
         raise ValueError(
-            f"Previous year {prev_year} not found in model years: {model.years}"
+            f"Year {prev_year} not found in model years: {model.years}"
         )
     if year not in model.years:
         raise ValueError(f"Year {year} not found in model years: {model.years}")

@@ -462,42 +462,188 @@ class TestCategoryResultsTableMethod:
 
             result = category_results.table()
 
-            mock_category.assert_called_once_with("income", hardcoded_color=None)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
             assert result is mock_table
 
     def test_table_method_passes_category_name(self, category_results):
         """Test table method passes correct category name."""
         with patch("pyproforma.tables.tables.Tables.category") as mock_category:
             category_results.table()
-            mock_category.assert_called_once_with("income", hardcoded_color=None)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_name(self, category_results):
+        """Test table method with include_name parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_name=True)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=True,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_label_false(self, category_results):
+        """Test table method with include_label=False parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_label=False)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=False,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_col_order(self, category_results):
+        """Test table method with col_order parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(col_order=["name", "label"])
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=["name", "label"],
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_col_labels(self, category_results):
+        """Test table method with col_labels parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(col_labels=["Name", "Label"])
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=["Name", "Label"],
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_percent_change(self, category_results):
+        """Test table method with include_percent_change parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_percent_change=True)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=True,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_totals_false(self, category_results):
+        """Test table method with include_totals=False parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_totals=False)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=False,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_hardcoded_color(self, category_results):
+        """Test table method with hardcoded_color parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(hardcoded_color="red")
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color="red",
+            )
+
+    def test_table_method_with_multiple_parameters(self, category_results):
+        """Test table method with multiple parameters combined."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(
+                include_name=True,
+                include_label=False,
+                include_percent_change=True,
+                include_totals=False,
+                hardcoded_color="blue",
+            )
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=True,
+                include_label=False,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=True,
+                include_totals=False,
+                hardcoded_color="blue",
+            )
 
 
-class TestCategoryResultsCompareYearTableMethod:
-    """Test compare_year_table method of CategoryResults."""
+
+class TestCategoryResultsCompareYearsTableMethod:
+    """Test compare_years_table method of CategoryResults."""
 
     @pytest.fixture
     def category_results(self, model_with_categories):
         """Create a CategoryResults instance for testing."""
         return CategoryResults(model_with_categories, "income")
 
-    def test_compare_year_table_method_returns_table(self, category_results):
-        """Test compare_year_table method returns a Table object."""
-        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
+    def test_compare_years_table_method_returns_table(self, category_results):
+        """Test compare_years_table method returns a Table object."""
+        with patch("pyproforma.tables.tables.Tables.compare_years") as mock_compare_years:
             mock_table = Mock()
-            mock_compare_year.return_value = mock_table
+            mock_compare_years.return_value = mock_table
 
-            result = category_results.compare_year_table(2024)
+            result = category_results.compare_years_table(2023, 2024)
 
             assert result is mock_table
 
-    def test_compare_year_table_method_passes_parameters(self, category_results):
-        """Test compare_year_table method passes correct parameters."""
-        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
-            category_results.compare_year_table(
-                2024, include_change=False, include_percent_change=True, sort_by="value"
+    def test_compare_years_table_method_passes_parameters(self, category_results):
+        """Test compare_years_table method passes correct parameters."""
+        with patch("pyproforma.tables.tables.Tables.compare_years") as mock_compare_years:
+            category_results.compare_years_table(
+                2023, 2024, include_change=False, include_percent_change=True, sort_by="value"
             )
 
-            mock_compare_year.assert_called_once_with(
+            mock_compare_years.assert_called_once_with(
+                2023,
                 2024,
                 names=["product_sales", "service_revenue"],
                 include_change=False,
@@ -505,13 +651,14 @@ class TestCategoryResultsCompareYearTableMethod:
                 sort_by="value",
             )
 
-    def test_compare_year_table_method_uses_category_line_items(self, category_results):
-        """Test compare_year_table method uses line items from the category."""
-        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
-            category_results.compare_year_table(2025)
+    def test_compare_years_table_method_uses_category_line_items(self, category_results):
+        """Test compare_years_table method uses line items from the category."""
+        with patch("pyproforma.tables.tables.Tables.compare_years") as mock_compare_years:
+            category_results.compare_years_table(2024, 2025)
 
             # Verify it passes the line item names from the category
-            mock_compare_year.assert_called_once_with(
+            mock_compare_years.assert_called_once_with(
+                2024,
                 2025,
                 names=["product_sales", "service_revenue"],
                 include_change=True,
@@ -519,12 +666,74 @@ class TestCategoryResultsCompareYearTableMethod:
                 sort_by=None,
             )
 
-    def test_compare_year_table_method_with_default_parameters(self, category_results):
-        """Test compare_year_table method with default parameters."""
-        with patch("pyproforma.tables.tables.Tables.compare_year") as mock_compare_year:
-            category_results.compare_year_table(2023)
+    def test_compare_years_table_method_with_default_parameters(self, category_results):
+        """Test compare_years_table method with default parameters."""
+        with patch("pyproforma.tables.tables.Tables.compare_years") as mock_compare_years:
+            category_results.compare_years_table(2023, 2024)
 
-            mock_compare_year.assert_called_once_with(
+            mock_compare_years.assert_called_once_with(
+                2023,
+                2024,
+                names=["product_sales", "service_revenue"],
+                include_change=True,
+                include_percent_change=True,
+                sort_by=None,
+            )
+
+
+class TestCategoryResultsYearOverYearTableMethod:
+    """Test year_over_year_table method of CategoryResults."""
+
+    @pytest.fixture
+    def category_results(self, model_with_categories):
+        """Create a CategoryResults instance for testing."""
+        return CategoryResults(model_with_categories, "income")
+
+    def test_year_over_year_table_method_returns_table(self, category_results):
+        """Test year_over_year_table method returns a Table object."""
+        with patch("pyproforma.tables.tables.Tables.year_over_year") as mock_year_over_year:
+            mock_table = Mock()
+            mock_year_over_year.return_value = mock_table
+
+            result = category_results.year_over_year_table(2024)
+
+            assert result is mock_table
+
+    def test_year_over_year_table_method_passes_parameters(self, category_results):
+        """Test year_over_year_table method passes correct parameters."""
+        with patch("pyproforma.tables.tables.Tables.year_over_year") as mock_year_over_year:
+            category_results.year_over_year_table(
+                2024, include_change=False, include_percent_change=True, sort_by="value"
+            )
+
+            mock_year_over_year.assert_called_once_with(
+                2024,
+                names=["product_sales", "service_revenue"],
+                include_change=False,
+                include_percent_change=True,
+                sort_by="value",
+            )
+
+    def test_year_over_year_table_method_uses_category_line_items(self, category_results):
+        """Test year_over_year_table method uses line items from the category."""
+        with patch("pyproforma.tables.tables.Tables.year_over_year") as mock_year_over_year:
+            category_results.year_over_year_table(2025)
+
+            # Verify it passes the line item names from the category
+            mock_year_over_year.assert_called_once_with(
+                2025,
+                names=["product_sales", "service_revenue"],
+                include_change=True,
+                include_percent_change=True,
+                sort_by=None,
+            )
+
+    def test_year_over_year_table_method_with_default_parameters(self, category_results):
+        """Test year_over_year_table method with default parameters."""
+        with patch("pyproforma.tables.tables.Tables.year_over_year") as mock_year_over_year:
+            category_results.year_over_year_table(2023)
+
+            mock_year_over_year.assert_called_once_with(
                 2023,
                 names=["product_sales", "service_revenue"],
                 include_change=True,

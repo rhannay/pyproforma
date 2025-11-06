@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import pandas as pd
 
@@ -268,11 +268,34 @@ class CategoryResults:
             include_category=include_category,
         )
 
-    def table(self, hardcoded_color: Optional[str] = None) -> Table:
+    def table(
+        self,
+        include_name: bool = False,
+        include_label: bool = True,
+        col_order: Optional[list[str]] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
+        include_percent_change: bool = False,
+        include_totals: bool = True,
+        hardcoded_color: Optional[str] = None,
+    ) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
 
         Args:
+            include_name (bool): Whether to include the name column. Defaults to False.
+            include_label (bool): Whether to include the label column. Defaults to True.
+            col_order (Optional[list[str]]): Order of columns (name, label).
+                                            If provided, only columns in this list are included,
+                                            overriding include_name and include_label.
+                                            Must only contain valid column names: 'name', 'label'.
+                                            Note: 'category' is not valid for category tables.
+                                            Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -280,9 +303,70 @@ class CategoryResults:
         Returns:
             Table: A Table object containing the category items formatted for display
         """  # noqa: E501
-        return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
+        return self.model.tables.category(
+            self.name,
+            include_name=include_name,
+            include_label=include_label,
+            col_order=col_order,
+            col_labels=col_labels,
+            include_percent_change=include_percent_change,
+            include_totals=include_totals,
+            hardcoded_color=hardcoded_color,
+        )
 
-    def compare_year_table(
+    def compare_years_table(
+        self,
+        year1: int,
+        year2: int,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a comparison table between two years for all line items in this category.
+
+        This method uses the line item names from this category and delegates to the
+        model's tables.compare_years() method.
+
+        Args:
+            year1 (int): The first year to compare
+            year2 (int): The second year to compare
+            include_change (bool): Whether to include the Change column.
+                                 Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change
+                                         column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value',
+                                   'change', 'percent_change'. None keeps the original
+                                   order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for year1, year2, and optional change columns
+                   for all line items in this category
+
+        Raises:
+            ValueError: If year1 or year2 are not in the model's years, or if sort_by
+                       is invalid
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> table = revenue_category.compare_years_table(2023, 2024)
+            >>> table = revenue_category.compare_years_table(
+            ...     2023, 2024, sort_by='change'
+            ... )
+            >>> table = revenue_category.compare_years_table(
+            ...     2023, 2024, include_change=False
+            ... )
+        """
+        return self.model.tables.compare_years(
+            year1,
+            year2,
+            names=self.line_item_names,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
+
+    def year_over_year_table(
         self,
         year: int,
         include_change: bool = True,
@@ -293,7 +377,7 @@ class CategoryResults:
         Create a year-over-year comparison table for all line items in this category.
 
         This method uses the line item names from this category and delegates to the
-        model's tables.compare_year() method.
+        model's tables.year_over_year() method.
 
         Args:
             year (int): The year to compare (will compare year-1 to year)
@@ -315,11 +399,15 @@ class CategoryResults:
 
         Examples:
             >>> revenue_category = model.category('revenue')
-            >>> table = revenue_category.compare_year_table(2024)
-            >>> table = revenue_category.compare_year_table(2024, sort_by='change')
-            >>> table = revenue_category.compare_year_table(2024, include_change=False)
+            >>> table = revenue_category.year_over_year_table(2024)
+            >>> table = revenue_category.year_over_year_table(
+            ...     2024, sort_by='change'
+            ... )
+            >>> table = revenue_category.year_over_year_table(
+            ...     2024, include_change=False
+            ... )
         """
-        return self.model.tables.compare_year(
+        return self.model.tables.year_over_year(
             year,
             names=self.line_item_names,
             include_change=include_change,
