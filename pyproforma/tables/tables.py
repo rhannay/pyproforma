@@ -227,6 +227,11 @@ class Tables:
     def category(
         self,
         category_name: str,
+        include_name: bool = False,
+        include_label: bool = True,
+        col_order: Optional[list[str]] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
+        include_percent_change: bool = False,
         include_totals: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
@@ -235,6 +240,18 @@ class Tables:
 
         Args:
             category_name (str): The name of the category to generate the table for.
+            include_name (bool): Whether to include the name column. Defaults to False.
+            include_label (bool): Whether to include the label column. Defaults to True.
+            col_order (Optional[list[str]]): Order of columns (name, label).
+                                            If provided, only columns in this list are included,
+                                            overriding include_name and include_label.
+                                            Must only contain valid column names: 'name', 'label'.
+                                            Note: 'category' is not valid for category tables.
+                                            Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
             include_totals (bool, optional): Whether to include a totals row at the end
                                            of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
@@ -247,12 +264,15 @@ class Tables:
         # Get all line item names for this category
         line_item_names = self._model.line_item_names_by_category(category_name)
 
-        # Use the line_items method with the include_totals parameter
+        # Use the line_items method with the parameters
         return self.line_items(
             line_items=line_item_names,
-            include_name=False,
-            include_label=True,
+            include_name=include_name,
+            include_label=include_label,
+            col_order=col_order,
+            col_labels=col_labels,
             group_by_category=True,
+            include_percent_change=include_percent_change,
             hardcoded_color=hardcoded_color,
             include_totals=include_totals,
         )
