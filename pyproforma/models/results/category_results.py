@@ -282,7 +282,55 @@ class CategoryResults:
         """  # noqa: E501
         return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
 
-    def compare_year_table(
+    def compare_years_table(
+        self,
+        year1: int,
+        year2: int,
+        include_change: bool = True,
+        include_percent_change: bool = True,
+        sort_by: Optional[str] = None,
+    ) -> Table:
+        """
+        Create a comparison table between two years for all line items in this category.
+
+        This method uses the line item names from this category and delegates to the
+        model's tables.compare_years() method.
+
+        Args:
+            year1 (int): The first year to compare
+            year2 (int): The second year to compare
+            include_change (bool): Whether to include the Change column.
+                                 Defaults to True.
+            include_percent_change (bool): Whether to include the Percent Change
+                                         column. Defaults to True.
+            sort_by (Optional[str]): How to sort the items. Options: None, 'value',
+                                   'change', 'percent_change'. None keeps the original
+                                   order. Defaults to None.
+
+        Returns:
+            Table: A table with columns for year1, year2, and optional change columns
+                   for all line items in this category
+
+        Raises:
+            ValueError: If year1 or year2 are not in the model's years, or if sort_by
+                       is invalid
+
+        Examples:
+            >>> revenue_category = model.category('revenue')
+            >>> table = revenue_category.compare_years_table(2023, 2024)
+            >>> table = revenue_category.compare_years_table(2023, 2024, sort_by='change')
+            >>> table = revenue_category.compare_years_table(2023, 2024, include_change=False)
+        """
+        return self.model.tables.compare_years(
+            year1,
+            year2,
+            names=self.line_item_names,
+            include_change=include_change,
+            include_percent_change=include_percent_change,
+            sort_by=sort_by,
+        )
+
+    def year_over_year_table(
         self,
         year: int,
         include_change: bool = True,
@@ -293,7 +341,7 @@ class CategoryResults:
         Create a year-over-year comparison table for all line items in this category.
 
         This method uses the line item names from this category and delegates to the
-        model's tables.compare_year() method.
+        model's tables.year_over_year() method.
 
         Args:
             year (int): The year to compare (will compare year-1 to year)
@@ -315,11 +363,11 @@ class CategoryResults:
 
         Examples:
             >>> revenue_category = model.category('revenue')
-            >>> table = revenue_category.compare_year_table(2024)
-            >>> table = revenue_category.compare_year_table(2024, sort_by='change')
-            >>> table = revenue_category.compare_year_table(2024, include_change=False)
+            >>> table = revenue_category.year_over_year_table(2024)
+            >>> table = revenue_category.year_over_year_table(2024, sort_by='change')
+            >>> table = revenue_category.year_over_year_table(2024, include_change=False)
         """
-        return self.model.tables.compare_year(
+        return self.model.tables.year_over_year(
             year,
             names=self.line_item_names,
             include_change=include_change,
