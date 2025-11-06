@@ -462,14 +462,159 @@ class TestCategoryResultsTableMethod:
 
             result = category_results.table()
 
-            mock_category.assert_called_once_with("income", hardcoded_color=None)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
             assert result is mock_table
 
     def test_table_method_passes_category_name(self, category_results):
         """Test table method passes correct category name."""
         with patch("pyproforma.tables.tables.Tables.category") as mock_category:
             category_results.table()
-            mock_category.assert_called_once_with("income", hardcoded_color=None)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_name(self, category_results):
+        """Test table method with include_name parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_name=True)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=True,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_label_false(self, category_results):
+        """Test table method with include_label=False parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_label=False)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=False,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_col_order(self, category_results):
+        """Test table method with col_order parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(col_order=["name", "label"])
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=["name", "label"],
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_col_labels(self, category_results):
+        """Test table method with col_labels parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(col_labels=["Name", "Label"])
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=["Name", "Label"],
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_percent_change(self, category_results):
+        """Test table method with include_percent_change parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_percent_change=True)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=True,
+                include_totals=True,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_include_totals_false(self, category_results):
+        """Test table method with include_totals=False parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(include_totals=False)
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=False,
+                hardcoded_color=None,
+            )
+
+    def test_table_method_with_hardcoded_color(self, category_results):
+        """Test table method with hardcoded_color parameter."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(hardcoded_color="red")
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=False,
+                include_label=True,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=False,
+                include_totals=True,
+                hardcoded_color="red",
+            )
+
+    def test_table_method_with_multiple_parameters(self, category_results):
+        """Test table method with multiple parameters combined."""
+        with patch("pyproforma.tables.tables.Tables.category") as mock_category:
+            category_results.table(
+                include_name=True,
+                include_label=False,
+                include_percent_change=True,
+                include_totals=False,
+                hardcoded_color="blue",
+            )
+            mock_category.assert_called_once_with(
+                "income",
+                include_name=True,
+                include_label=False,
+                col_order=None,
+                col_labels=None,
+                include_percent_change=True,
+                include_totals=False,
+                hardcoded_color="blue",
+            )
+
 
 
 class TestCategoryResultsCompareYearTableMethod:

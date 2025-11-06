@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import pandas as pd
 
@@ -268,11 +268,34 @@ class CategoryResults:
             include_category=include_category,
         )
 
-    def table(self, hardcoded_color: Optional[str] = None) -> Table:
+    def table(
+        self,
+        include_name: bool = False,
+        include_label: bool = True,
+        col_order: Optional[list[str]] = None,
+        col_labels: Optional[Union[str, list[str]]] = None,
+        include_percent_change: bool = False,
+        include_totals: bool = True,
+        hardcoded_color: Optional[str] = None,
+    ) -> Table:
         """
         Return a Table object for this category using the tables.category() function.
 
         Args:
+            include_name (bool): Whether to include the name column. Defaults to False.
+            include_label (bool): Whether to include the label column. Defaults to True.
+            col_order (Optional[list[str]]): Order of columns (name, label).
+                                            If provided, only columns in this list are included,
+                                            overriding include_name and include_label.
+                                            Must only contain valid column names: 'name', 'label'.
+                                            Note: 'category' is not valid for category tables.
+                                            Defaults to None.
+            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
+                                                   or list of strings. Defaults to None.
+            include_percent_change (bool, optional): Whether to include a percent change row
+                                                    after each item row. Defaults to False.
+            include_totals (bool, optional): Whether to include a totals row at the end
+                                           of the table. Defaults to True.
             hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
                                            If provided, cells with hardcoded values will be
                                            displayed in this color. Defaults to None.
@@ -280,7 +303,16 @@ class CategoryResults:
         Returns:
             Table: A Table object containing the category items formatted for display
         """  # noqa: E501
-        return self.model.tables.category(self.name, hardcoded_color=hardcoded_color)
+        return self.model.tables.category(
+            self.name,
+            include_name=include_name,
+            include_label=include_label,
+            col_order=col_order,
+            col_labels=col_labels,
+            include_percent_change=include_percent_change,
+            include_totals=include_totals,
+            hardcoded_color=hardcoded_color,
+        )
 
     def compare_year_table(
         self,
