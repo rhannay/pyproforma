@@ -4,8 +4,7 @@ Unit tests for MultiModelCompare class and compare_models function.
 
 import pytest
 
-from pyproforma import LineItem, Model, compare_models
-from pyproforma.models.multi_model_compare import MultiModelCompare
+from pyproforma import LineItem, Model, MultiModelCompare, compare_models
 
 
 class TestMultiModelCompareInit:
@@ -746,8 +745,10 @@ class TestMultiModelCompareTable:
 class TestCompareModelsFunction:
     """Test the compare_models function."""
 
-    def test_compare_models_returns_multi_model_compare(self):
-        """Test that compare_models returns a MultiModelCompare instance."""
+    def test_compare_models_returns_two_model_compare_for_two_models(self):
+        """Test that compare_models returns a TwoModelCompare for exactly 2 models."""
+        from pyproforma import TwoModelCompare
+
         model1 = Model(
             [
                 LineItem(
@@ -773,11 +774,12 @@ class TestCompareModelsFunction:
 
         comparison = compare_models([model1, model2])
 
-        assert isinstance(comparison, MultiModelCompare)
-        assert len(comparison.models) == 2
+        assert isinstance(comparison, TwoModelCompare)
+        assert comparison.base_model == model1
+        assert comparison.compare_model == model2
 
-    def test_compare_models_with_labels(self):
-        """Test compare_models function with custom labels."""
+    def test_compare_models_returns_multi_model_compare_for_three_models(self):
+        """Test that compare_models returns a MultiModelCompare for 3+ models."""
         model1 = Model(
             [
                 LineItem(
@@ -800,10 +802,65 @@ class TestCompareModelsFunction:
             ],
             years=[2020],
         )
+        model3 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 110},
+                )
+            ],
+            years=[2020],
+        )
 
-        comparison = compare_models([model1, model2], labels=["Base", "Optimistic"])
+        comparison = compare_models([model1, model2, model3])
 
-        assert comparison.labels == ["Base", "Optimistic"]
+        assert isinstance(comparison, MultiModelCompare)
+        assert len(comparison.models) == 3
+
+    def test_compare_models_with_labels_for_three_models(self):
+        """Test compare_models function with custom labels for 3 models."""
+        model1 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 100},
+                )
+            ],
+            years=[2020],
+        )
+        model2 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 120},
+                )
+            ],
+            years=[2020],
+        )
+        model3 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 110},
+                )
+            ],
+            years=[2020],
+        )
+
+        comparison = compare_models(
+            [model1, model2, model3],
+            labels=["Base", "Optimistic", "Pessimistic"]
+        )
+
+        assert comparison.labels == ["Base", "Optimistic", "Pessimistic"]
 
     def test_compare_models_accessible_from_main_package(self):
         """Test that compare_models is accessible from main pyproforma package."""

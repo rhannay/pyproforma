@@ -1,5 +1,5 @@
 import copy
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -11,7 +11,7 @@ from pyproforma.models.generator import Generator
 from pyproforma.tables import Tables
 
 from ..category import Category
-from ..compare import Compare
+from ..compare import MultiModelCompare, TwoModelCompare
 from ..constraint import Constraint
 from ..line_item import LineItem, _is_values_dict
 from ..metadata import (
@@ -850,26 +850,30 @@ class Model(SerializationMixin):
 
         return copied_model
 
-    def compare(self, other_model) -> Compare:
+    def compare(
+        self, other_models: Union["Model", List["Model"]]
+    ) -> Union[TwoModelCompare, MultiModelCompare]:
         """
-        Create a comparison analysis between this model and another model.
+        Create a comparison analysis between this model and other model(s).
 
-        This method returns a Compare instance that provides comprehensive methods
-        for analyzing differences between two models. The comparison includes value
-        differences, structural changes, and analytical tools for understanding
-        the impact of changes.
+        This method returns either a TwoModelCompare instance (for a single other model)
+        or a MultiModelCompare instance (for a list of other models). Both provide
+        methods for analyzing differences between models, including value differences,
+        structural changes, and analytical tools.
 
         Args:
-            other_model (Model): The model to compare against this one
+            other_models (Model or List[Model]): Either a single model to compare
+                against this one, or a list of models for multi-model comparison
 
         Returns:
-            Compare: A Compare instance with methods for analyzing differences
+            TwoModelCompare: When comparing with a single other model (2 models total)
+            MultiModelCompare: When comparing with a list of models (3+ models total)
 
         Raises:
             ValueError: If models have no overlapping years for comparison
 
         Examples:
-            >>> # Compare base model with a copy
+            >>> # Compare with a single model - returns TwoModelCompare
             >>> base_model = Model(line_items, years=[2023, 2024])
             >>> modified_model = base_model.copy()
             >>> modified_model.update.update_line_item("revenue", formula="1200")
@@ -880,6 +884,13 @@ class Model(SerializationMixin):
             >>> comparison.percent_difference("revenue", 2023)  # Percentage difference
             >>> comparison.largest_changes(5)  # Top 5 changes
             >>>
+            >>> # Compare with multiple models - returns MultiModelCompare
+            >>> model2 = base_model.copy()
+            >>> model3 = base_model.copy()
+            >>> comparison = base_model.compare([model2, model3])
+            >>> # Multi-model comparison table
+            >>> comparison.table(["revenue", "expenses"])
+            >>>
             >>> # Structural analysis
             >>> comparison.structural_changes()  # What changed structurally
             >>> comparison.summary_stats()  # Overall comparison statistics
@@ -887,12 +898,8 @@ class Model(SerializationMixin):
             >>> # Export and reporting
             >>> comparison.to_dataframe()  # DataFrame of all differences
             >>> comparison.report()  # Text summary
-            >>>
-            >>> # Financial impact analysis
-            >>> comparison.net_impact(2023)  # Total impact in 2023
-            >>> comparison.category_difference("revenue")  # Category-level changes
 
-        Available Compare Methods:
+        Available TwoModelCompare Methods:
             - difference(item, year): Absolute difference for specific item/year
             - percent_difference(item, year): Percentage difference
             - ratio(item, year): Ratio between models
@@ -901,13 +908,24 @@ class Model(SerializationMixin):
             - largest_changes(n): Top N items with biggest changes
             - category_difference(category): Category-level differences
             - summary_stats(): Overall comparison statistics
-            - net_impact(year): Total financial impact for a year
             - to_dataframe(): Export to structured DataFrame
             - report(): Formatted text summary
-        """
-        from ..compare import Compare
+            - difference_table(item): Generate comparison table for item(s)
 
-        return Compare(self, other_model)
+        Available MultiModelCompare Methods:
+            - difference(item, year): Differences from first model (baseline)
+            - table(items): Generate multi-model comparison table
+        """
+        from ..compare import MultiModelCompare, TwoModelCompare
+
+        # Check if other_models is a list or a single model
+        if isinstance(other_models, list):
+            # Multi-model comparison: this model + list of other models
+            all_models = [self] + other_models
+            return MultiModelCompare(all_models)
+        else:
+            # Two-model comparison
+            return TwoModelCompare(self, other_models)
 
     def reorder_line_items(
         self,

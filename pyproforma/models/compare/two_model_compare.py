@@ -11,7 +11,7 @@ from pyproforma.tables.table_class import Table
 from pyproforma.tables.table_generator import generate_multi_model_table
 
 
-class Compare:
+class TwoModelCompare:
     """
     Comparison analysis between two Model instances.
 
@@ -562,6 +562,6 @@ Top Changes:
     def __repr__(self) -> str:
         """String representation of the comparison."""
         return (
-            f"Compare({len(self.common_items)} common items, "
+            f"TwoModelCompare({len(self.common_items)} common items, "
             f"{len(self.common_years)} common years)"
         )

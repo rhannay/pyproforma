@@ -12,6 +12,8 @@ from pyproforma.tables.table_generator import generate_multi_model_table
 if TYPE_CHECKING:
     from pyproforma import Model
 
+    from .two_model_compare import TwoModelCompare
+
 
 class MultiModelCompare:
     """
@@ -234,17 +236,22 @@ class MultiModelCompare:
 
 def compare_models(
     models: List["Model"], labels: Optional[List[str]] = None
-) -> MultiModelCompare:
+) -> Union["MultiModelCompare", "TwoModelCompare"]:
     """
-    Create a multi-model comparison object for analyzing differences across models.
+    Create a comparison object for analyzing differences across models.
+
+    Returns TwoModelCompare for exactly 2 models, or MultiModelCompare for 3+ models.
 
     Args:
         models (List[Model]): List of models to compare (at least 2 required)
         labels (List[str], optional): List of labels for each model.
-            If None, uses "Model 1", "Model 2", etc.
+            If None, uses "Model 1", "Model 2", etc. for MultiModelCompare,
+            or "Base Model" and "Compare Model" for TwoModelCompare.
 
     Returns:
-        MultiModelCompare: A comparison object with methods for analyzing differences
+        TwoModelCompare: For exactly 2 models, a comparison object optimized for
+            two-model comparisons
+        MultiModelCompare: For 3+ models, a comparison object for multi-model analysis
 
     Raises:
         ValueError: If fewer than 2 models are provided
@@ -253,10 +260,30 @@ def compare_models(
     Example:
         >>> model1 = Model([...], years=[2020, 2021])
         >>> model2 = Model([...], years=[2020, 2021])
+        >>> # Returns TwoModelCompare
         >>> comparison = compare_models([model1, model2], labels=["Base", "Scenario"])
         >>> diff = comparison.difference("revenue", 2020)
+        >>>
+        >>> # Returns MultiModelCompare
+        >>> model3 = Model([...], years=[2020, 2021])
+        >>> comparison = compare_models([model1, model2, model3])
         >>> table = comparison.table(["revenue", "expenses"])
-        >>> # Or get all common items:
-        >>> table = comparison.table()
     """
-    return MultiModelCompare(models, labels)
+    from .two_model_compare import TwoModelCompare
+
+    if len(models) == 2:
+        # For exactly 2 models, use TwoModelCompare
+        if labels is None:
+            return TwoModelCompare(models[0], models[1])
+        elif len(labels) != 2:
+            raise ValueError(
+                f"Number of labels ({len(labels)}) must match number of "
+                f"models ({len(models)})"
+            )
+        else:
+            # TwoModelCompare doesn't use labels in the same way, but we could
+            # extend it to accept them in the future. For now, just ignore.
+            return TwoModelCompare(models[0], models[1])
+    else:
+        # For 3+ models, use MultiModelCompare
+        return MultiModelCompare(models, labels)
