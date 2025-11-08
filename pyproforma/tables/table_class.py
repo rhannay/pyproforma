@@ -261,63 +261,69 @@ class Table:
 
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
-        
+
         Creates a new Table where:
         - Column labels become the first cell in each new row
         - The first cell from each original row becomes new column labels
         - All other cells are repositioned accordingly
-        
+
         Args:
-            remove_borders (bool): If True, removes all borders from cells in the 
+            remove_borders (bool): If True, removes all borders from cells in the
                                  transposed table. Defaults to False.
-        
+
         Returns:
             Table: A new Table instance with transposed data. The original table
                    is not modified.
-        
+
         Examples:
             >>> columns = [Column("Metric"), Column("Q1")]
-            >>> rows = [Row([Cell("Revenue"), Cell(1000), Cell(1200)]), 
+            >>> rows = [Row([Cell("Revenue"), Cell(1000), Cell(1200)]),
             ...         Row([Cell("Expenses"), Cell(800), Cell(900)])]
             >>> table = Table(columns=columns, rows=rows)
             >>> transposed = table.transpose()
             # Original:     Transposed:
             #  Metric  Q1      Metric Revenue Expenses
-            # Revenue 1000      Q1    1000     800  
+            # Revenue 1000      Q1    1000     800
             # Expenses 800
-            
+
             >>> # Remove borders from transposed table
             >>> transposed_no_borders = table.transpose(remove_borders=True)
-        
+
         Note:
             - Empty tables return empty tables
             - Cell formatting and properties are preserved where possible
             - The first column of the transposed table preserves the original first column label
             - When remove_borders=True, all top_border and bottom_border properties are set to None
-        """
+        """  # noqa: E501
         # Handle empty table case
         if not self.columns or not self.rows:
             return Table(columns=[], rows=[])
-        
-        # Create new column labels: preserve first column label + first cell value from each original row
-        new_column_labels = [self.columns[0].label]  # Preserve the original first column label
+
+        # Create new column labels: preserve first column label + first cell value from
+        # each original row
+        new_column_labels = [
+            self.columns[0].label
+        ]  # Preserve the original first column label
         for row in self.rows:
             if row.cells:
                 # Use the value from the first cell as the new column label
                 new_column_labels.append(row.cells[0].value)
             else:
                 new_column_labels.append("")
-        
+
         # Create new columns
         new_columns = [Column(label=label) for label in new_column_labels]
-        
-        # Create new rows: one row for each original column (excluding the first column since its label is preserved as column header)
+
+        # Create new rows: one row for each original column (excluding the first
+        # column since its label is preserved as column header)
         new_rows = []
-        for col_idx, original_column in enumerate(self.columns[1:], 1):  # Skip first column, start index at 1
-            # First cell in the new row is the original column label  
+        for col_idx, original_column in enumerate(
+            self.columns[1:], 1
+        ):  # Skip first column, start index at 1
+            # First cell in the new row is the original column label
             first_cell = Cell(value=original_column.label, align="left")
             new_row_cells = [first_cell]
-            
+
             # Add cells from each original row at the corresponding column position
             # Note: col_idx because we're now using the actual column index
             for row in self.rows:
@@ -331,16 +337,20 @@ class Table:
                         value_format=original_cell.value_format,
                         background_color=original_cell.background_color,
                         font_color=original_cell.font_color,
-                        bottom_border=None if remove_borders else original_cell.bottom_border,
-                        top_border=None if remove_borders else original_cell.top_border
+                        bottom_border=(
+                            None if remove_borders else original_cell.bottom_border
+                        ),
+                        top_border=(
+                            None if remove_borders else original_cell.top_border
+                        )
                     )
                     new_row_cells.append(new_cell)
                 else:
                     # If original row doesn't have enough cells, add empty cell
                     new_row_cells.append(Cell(value=None))
-            
+
             new_rows.append(Row(cells=new_row_cells))
-        
+
         return Table(columns=new_columns, rows=new_rows)
 
     # Display methods
