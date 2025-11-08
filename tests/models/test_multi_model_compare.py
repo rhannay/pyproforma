@@ -486,10 +486,10 @@ class TestMultiModelCompareDifference:
         assert diff["Scenario"] == 20.0
 
 
-class TestMultiModelCompareDifferenceTable:
-    """Test difference_table method of MultiModelCompare."""
+class TestMultiModelCompareTable:
+    """Test table method of MultiModelCompare."""
 
-    def test_difference_table_single_item(self):
+    def test_table_single_item(self):
         """Test generating a difference table for a single item."""
         model1 = Model(
             [
@@ -515,14 +515,14 @@ class TestMultiModelCompareDifferenceTable:
         )
 
         comparison = MultiModelCompare([model1, model2])
-        table = comparison.difference_table("revenue")
+        table = comparison.table("revenue")
 
         # Table should have columns and rows
         assert table.columns is not None
         assert table.rows is not None
         assert len(table.rows) > 0
 
-    def test_difference_table_multiple_items(self):
+    def test_table_multiple_items(self):
         """Test generating a difference table for multiple items."""
         model1 = Model(
             [
@@ -560,13 +560,13 @@ class TestMultiModelCompareDifferenceTable:
         )
 
         comparison = MultiModelCompare([model1, model2])
-        table = comparison.difference_table(["revenue", "expenses"])
+        table = comparison.table(["revenue", "expenses"])
 
         # Table should have rows for both items plus labels and blank rows
         # At least: label1, model1, model2, blank, label2, model1, model2
         assert len(table.rows) > 4
 
-    def test_difference_table_with_nonexistent_item_raises_error(self):
+    def test_table_with_nonexistent_item_raises_error(self):
         """Test that requesting table for nonexistent item raises KeyError."""
         model1 = Model(
             [
@@ -594,9 +594,9 @@ class TestMultiModelCompareDifferenceTable:
         comparison = MultiModelCompare([model1, model2])
 
         with pytest.raises(KeyError, match="not found in all models"):
-            comparison.difference_table("nonexistent")
+            comparison.table("nonexistent")
 
-    def test_difference_table_with_three_models(self):
+    def test_table_with_three_models(self):
         """Test generating a table with three models."""
         model1 = Model(
             [
@@ -633,10 +633,184 @@ class TestMultiModelCompareDifferenceTable:
         )
 
         comparison = MultiModelCompare([model1, model2, model3])
-        table = comparison.difference_table("revenue")
+        table = comparison.table("revenue")
 
         # Should have rows for label + 3 models
         assert len(table.rows) >= 4
+
+    def test_table_with_no_items_returns_all_common_items(self):
+        """Test that table() with no arguments includes all common items."""
+        model1 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 100, 2021: 150},
+                ),
+                LineItem(
+                    name="expenses",
+                    label="Expenses",
+                    category="costs",
+                    values={2020: 50, 2021: 60},
+                ),
+            ],
+            years=[2020, 2021],
+        )
+        model2 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 120, 2021: 160},
+                ),
+                LineItem(
+                    name="expenses",
+                    label="Expenses",
+                    category="costs",
+                    values={2020: 55, 2021: 65},
+                ),
+            ],
+            years=[2020, 2021],
+        )
+
+        comparison = MultiModelCompare([model1, model2])
+        table = comparison.table()  # No item_names specified
+
+        # Should include both common items (revenue and expenses)
+        # Expected: label1, model1, model2, blank, label2, model1, model2
+        assert len(table.rows) >= 7
+
+    def test_table_with_partial_common_items(self):
+        """Test that table() only includes common items when none specified."""
+        model1 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 100},
+                ),
+                LineItem(
+                    name="expenses",
+                    label="Expenses",
+                    category="costs",
+                    values={2020: 50},
+                ),
+                LineItem(
+                    name="profit",
+                    label="Profit",
+                    category="income",
+                    values={2020: 50},
+                ),
+            ],
+            years=[2020],
+        )
+        model2 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 120},
+                ),
+                LineItem(
+                    name="expenses",
+                    label="Expenses",
+                    category="costs",
+                    values={2020: 55},
+                ),
+                LineItem(
+                    name="tax",
+                    label="Tax",
+                    category="costs",
+                    values={2020: 10},
+                ),
+            ],
+            years=[2020],
+        )
+
+        comparison = MultiModelCompare([model1, model2])
+
+        # Only "revenue" and "expenses" are common items
+        assert comparison.common_items == ["expenses", "revenue"]
+
+        table = comparison.table()  # No item_names specified
+
+        # Should only include common items (revenue and expenses)
+        # Expected: label1, model1, model2, blank, label2, model1, model2
+        assert len(table.rows) >= 7
+
+
+class TestMultiModelCompareDifferenceTableBackwardCompatibility:
+    """Test backward compatibility of difference_table method."""
+
+    def test_difference_table_still_works(self):
+        """Test that the deprecated difference_table method still works."""
+        model1 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 100, 2021: 150},
+                )
+            ],
+            years=[2020, 2021],
+        )
+        model2 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 120, 2021: 160},
+                )
+            ],
+            years=[2020, 2021],
+        )
+
+        comparison = MultiModelCompare([model1, model2])
+        table = comparison.difference_table("revenue")
+
+        # Table should have columns and rows
+        assert table.columns is not None
+        assert table.rows is not None
+        assert len(table.rows) > 0
+
+    def test_difference_table_matches_table_method(self):
+        """Test that difference_table produces same result as table method."""
+        model1 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 100, 2021: 150},
+                )
+            ],
+            years=[2020, 2021],
+        )
+        model2 = Model(
+            [
+                LineItem(
+                    name="revenue",
+                    label="Revenue",
+                    category="income",
+                    values={2020: 120, 2021: 160},
+                )
+            ],
+            years=[2020, 2021],
+        )
+
+        comparison = MultiModelCompare([model1, model2])
+        table_old = comparison.difference_table("revenue")
+        table_new = comparison.table("revenue")
+
+        # Both methods should produce equivalent tables
+        assert len(table_old.rows) == len(table_new.rows)
+        assert table_old.columns == table_new.columns
 
 
 class TestCompareModelsFunction:

@@ -20,9 +20,7 @@ class MultiModelCompare:
     Provides methods for analyzing differences in values across multiple models.
     """
 
-    def __init__(
-        self, models: List["Model"], labels: Optional[List[str]] = None
-    ):
+    def __init__(self, models: List["Model"], labels: Optional[List[str]] = None):
         """
         Initialize comparison across multiple models.
 
@@ -42,7 +40,7 @@ class MultiModelCompare:
 
         # Generate labels if not provided
         if labels is None:
-            self.labels = [f"Model {i+1}" for i in range(len(models))]
+            self.labels = [f"Model {i + 1}" for i in range(len(models))]
         else:
             if len(labels) != len(models):
                 raise ValueError(
@@ -166,9 +164,7 @@ class MultiModelCompare:
                         result[label] = compare_value - base_value
             return result
 
-    def difference_table(
-        self, item_names: Union[str, List[str]]
-    ) -> Table:
+    def table(self, item_names: Optional[Union[str, List[str]]] = None) -> Table:
         """
         Generate a table comparing values across all models for specific item(s).
 
@@ -176,7 +172,8 @@ class MultiModelCompare:
         values across all common years, separated by blank rows between items.
 
         Args:
-            item_names (str or list): Name of the item to compare, or list of item names
+            item_names (str, list, or None): Name of the item to compare, or list
+                of item names. If None, all common items are included.
 
         Returns:
             Table: A formatted table with rows for each model showing values
@@ -184,8 +181,11 @@ class MultiModelCompare:
         Raises:
             KeyError: If any item not found in all models
         """
+        # Use all common items if none specified
+        if item_names is None:
+            item_names = self.common_items.copy()
         # Handle both single item and list of items
-        if isinstance(item_names, str):
+        elif isinstance(item_names, str):
             item_names = [item_names]
 
         # Validate all items exist in all models
@@ -210,17 +210,30 @@ class MultiModelCompare:
 
             # Add a row for each model with its label and values
             for model, label in zip(self.models, self.labels):
-                model_row = rt.ItemRow(
-                    name=item_name,
-                    label=label,
-                    bold=False
-                )
+                model_row = rt.ItemRow(name=item_name, label=label, bold=False)
                 model_row_pairs.append((model, model_row))
 
         # Generate the table using the multi-model table generator
         table = generate_multi_model_table(model_row_pairs)
 
         return table
+
+    def difference_table(self, item_names: Union[str, List[str]]) -> Table:
+        """
+        Generate a table comparing values across all models for specific item(s).
+
+        This method is deprecated. Use table() instead.
+
+        Args:
+            item_names (str or list): Name of the item to compare, or list of item names
+
+        Returns:
+            Table: A formatted table with rows for each model showing values
+
+        Raises:
+            KeyError: If any item not found in all models
+        """
+        return self.table(item_names)
 
     def __repr__(self) -> str:
         """String representation of the comparison."""
@@ -254,6 +267,8 @@ def compare_models(
         >>> model2 = Model([...], years=[2020, 2021])
         >>> comparison = compare_models([model1, model2], labels=["Base", "Scenario"])
         >>> diff = comparison.difference("revenue", 2020)
-        >>> table = comparison.difference_table(["revenue", "expenses"])
+        >>> table = comparison.table(["revenue", "expenses"])
+        >>> # Or get all common items:
+        >>> table = comparison.table()
     """
     return MultiModelCompare(models, labels)
