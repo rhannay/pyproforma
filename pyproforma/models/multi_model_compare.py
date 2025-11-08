@@ -223,23 +223,6 @@ class MultiModelCompare:
 
         return table
 
-    def difference_table(self, item_names: Union[str, List[str]]) -> Table:
-        """
-        Generate a table comparing values across all models for specific item(s).
-
-        This method is deprecated. Use table() instead.
-
-        Args:
-            item_names (str or list): Name of the item to compare, or list of item names
-
-        Returns:
-            Table: A formatted table with rows for each model showing values
-
-        Raises:
-            KeyError: If any item not found in all models
-        """
-        return self.table(item_names)
-
     def __repr__(self) -> str:
         """String representation of the comparison."""
         return (
