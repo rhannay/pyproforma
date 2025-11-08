@@ -97,15 +97,10 @@ class Model(SerializationMixin):
         >>> model.tables.financial_statement()  # Formatted tables
         >>> model.charts.line_chart(["revenue", "expenses"])  # Charts
         >>>
-        >>> # Scenario analysis
-        >>> scenario = model.scenario([("revenue", {"updated_values": {2023: 1200}})])
-        >>> scenario.value("revenue", 2023)  # 1200 in scenario, original unchanged
-
     Key Methods:
         - value(name, year): Get value for any item/year
         - category(name)/line_item(name): Get analysis objects
         - line_item(name).percent_change(), .index_to_year(): Calculate metrics
-        - scenario(item_updates): Create what-if scenarios
         - copy(): Create independent model copies
         - summary(): Model structure overview
         - tables/charts: Rich output generation
@@ -855,65 +850,6 @@ class Model(SerializationMixin):
 
         return copied_model
 
-    def scenario(self, item_updates: list[tuple[str, dict]]) -> "Model":
-        """
-        Create a new Model instance with the specified changes applied as a scenario.
-
-        This method creates a deep copy of the current model and applies the provided
-        updates to create a scenario for analysis. The original model remains unchanged.
-        This is useful for what-if analysis, sensitivity testing, and comparing different
-        scenarios without modifying the base model.
-
-        The API matches the update_multiple_line_items method, accepting a list of tuples
-        where each tuple contains a line item name and a dictionary of update parameters.
-
-        Args:
-            item_updates (list[tuple[str, dict]]): List of (name, update_params) tuples.
-                Each tuple's first element is the line item name to update.
-                Each tuple's second element is a dictionary of parameters to update,
-                which can include: new_name, category, label, values, updated_values,
-                formula, value_format.
-
-        Returns:
-            Model: A new Model instance with the specified changes applied
-
-        Raises:
-            ValueError: If any of the updates would result in an invalid model
-            KeyError: If any line item name is not found in model
-
-        Examples:
-            >>> # Create a scenario with updated revenue and cost assumptions
-            >>> scenario_model = model.scenario([
-            ...     ("revenue", {"updated_values": {2023: 150000, 2024: 165000}}),
-            ...     ("costs", {"formula": "revenue * 0.6"})
-            ... ])
-            >>>
-            >>> # Compare scenarios
-            >>> base_profit = model.value("profit", 2023)
-            >>> scenario_profit = scenario_model.value("profit", 2023)
-            >>> print(f"Base: {base_profit}, Scenario: {scenario_profit}")
-            >>>
-            >>> # Chain scenarios for complex analysis
-            >>> optimistic = model.scenario([
-            ...     ("revenue", {"updated_values": {2023: 200000}})
-            ... ])
-            >>> pessimistic = model.scenario([
-            ...     ("revenue", {"updated_values": {2023: 80000}})
-            ... ])
-
-        Note:
-            The scenario method preserves all model structure including categories,
-            constraints, and line item generators. Only the specified line items
-            are modified according to the provided parameters.
-        """  # noqa: E501
-        # Create a copy of the current model
-        scenario_model = self.copy()
-
-        # Apply updates to the copied model using the existing update functionality
-        scenario_model.update.update_multiple_line_items(item_updates)
-
-        return scenario_model
-
     def compare(self, other_model) -> Compare:
         """
         Create a comparison analysis between this model and another model.
@@ -933,10 +869,11 @@ class Model(SerializationMixin):
             ValueError: If models have no overlapping years for comparison
 
         Examples:
-            >>> # Compare base model with scenario
+            >>> # Compare base model with a copy
             >>> base_model = Model(line_items, years=[2023, 2024])
-            >>> scenario_model = base_model.scenario([("revenue", {"formula": "1200"})])
-            >>> comparison = base_model.compare(scenario_model)
+            >>> modified_model = base_model.copy()
+            >>> modified_model.update.update_line_item("revenue", formula="1200")
+            >>> comparison = base_model.compare(modified_model)
             >>>
             >>> # Analyze differences
             >>> comparison.difference("revenue", 2023)  # Absolute difference

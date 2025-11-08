@@ -36,12 +36,6 @@
       show_root_full_path: false
       heading_level: 3
 
-::: pyproforma.models.model.model.Model.scenario
-    options:
-      show_root_heading: true
-      show_root_full_path: false
-      heading_level: 3
-
 ::: pyproforma.models.model.model.Model.compare
     options:
       show_root_heading: true
