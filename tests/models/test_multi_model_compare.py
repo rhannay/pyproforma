@@ -733,8 +733,8 @@ class TestMultiModelCompareTable:
 
         comparison = MultiModelCompare([model1, model2])
 
-        # Only "revenue" and "expenses" are common items
-        assert comparison.common_items == ["expenses", "revenue"]
+        # Only "revenue" and "expenses" are common items, in first model's order
+        assert comparison.common_items == ["revenue", "expenses"]
 
         table = comparison.table()  # No item_names specified
 

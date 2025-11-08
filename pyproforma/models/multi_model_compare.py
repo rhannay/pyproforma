@@ -81,7 +81,12 @@ class MultiModelCompare:
             model_items = set([item["name"] for item in model.line_item_metadata])
             common_items_set = common_items_set.intersection(model_items)
 
-        self.common_items = sorted(list(common_items_set))
+        # Preserve order from first model
+        self.common_items = [
+            item["name"]
+            for item in self.models[0].line_item_metadata
+            if item["name"] in common_items_set
+        ]
 
         # Track items unique to each model
         self.unique_items = []
