@@ -59,19 +59,22 @@ class TestGenerateValueMatrix:
         # All models should produce the same value matrix
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.generators,
+            model1._line_item_definitions,
+            model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.generators,
+            model2._line_item_definitions,
+            model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
         matrix3 = generate_value_matrix(
             model3.years,
-            model3._line_item_definitions + model3.generators,
+            model3._line_item_definitions,
+            model3.generators,
             model3.category_metadata,
             model3.line_item_metadata,
         )
@@ -113,13 +116,15 @@ class TestGenerateValueMatrix:
 
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.generators,
+            model1._line_item_definitions,
+            model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.generators,
+            model2._line_item_definitions,
+            model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
@@ -160,7 +165,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_definitions,
                 line_item_metadata,
             )
@@ -194,7 +200,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_metadata,
                 line_item_metadata,
             )
@@ -236,7 +243,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_metadata,
                 line_item_metadata,
             )
@@ -277,7 +285,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_metadata,
                 line_item_metadata,
             )
@@ -318,7 +327,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_metadata,
                 line_item_metadata,
             )
@@ -366,13 +376,15 @@ class TestGenerateValueMatrix:
 
         matrix1 = generate_value_matrix(
             model1.years,
-            model1._line_item_definitions + model1.generators,
+            model1._line_item_definitions,
+            model1.generators,
             model1.category_metadata,
             model1.line_item_metadata,
         )
         matrix2 = generate_value_matrix(
             model2.years,
-            model2._line_item_definitions + model2.generators,
+            model2._line_item_definitions,
+            model2.generators,
             model2.category_metadata,
             model2.line_item_metadata,
         )
@@ -418,7 +430,8 @@ class TestGenerateValueMatrix:
 
         matrix = generate_value_matrix(
             model.years,
-            model._line_item_definitions + model.generators,
+            model._line_item_definitions,
+            model.generators,
             model.category_metadata,
             model.line_item_metadata,
         )
@@ -463,7 +476,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_definitions,
                 line_item_metadata,
             )
@@ -501,7 +515,8 @@ class TestGenerateValueMatrix:
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
                 years,
-                line_item_definitions + multi_line_items,
+                line_item_definitions,
+                multi_line_items,
                 category_definitions,
                 line_item_metadata,
             )
@@ -522,18 +537,14 @@ class TestGenerateValueMatrix:
         total_revenue = LineItem(
             name="total_revenue",
             category="revenue",  # Same as the category being totaled
-            formula="category_total:revenue"
+            formula="category_total:revenue",
         )
 
         line_items = [revenue1, revenue2, total_revenue]
 
         # This should raise a ValueError with a clear message about circular reference
         with pytest.raises(ValueError) as exc_info:
-            Model(
-                line_items=line_items,
-                years=[2023],
-                categories=basic_categories
-            )
+            Model(line_items=line_items, years=[2023], categories=basic_categories)
 
         error_msg = str(exc_info.value)
         # Check for specific error message components
@@ -566,7 +577,8 @@ class TestGenerateValueMatrix:
 
         matrix = generate_value_matrix(
             model.years,
-            model._line_item_definitions + model.generators,
+            model._line_item_definitions,
+            model.generators,
             model.category_metadata,
             model.line_item_metadata,
         )
