@@ -404,7 +404,7 @@ class ConstraintVarianceRow(BaseRow):
         # Add cells for each year with constraint variance calculation
         for year in model.years:
             try:
-                variance = constraint_results.variance(model._value_matrix, year)
+                variance = constraint_results.variance(year)
                 cells.append(
                     Cell(value=variance, bold=self.bold, value_format=value_format)
                 )
