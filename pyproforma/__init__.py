@@ -4,7 +4,9 @@ from .models import Category as Category
 from .models import Constraint as Constraint
 from .models import LineItem as LineItem
 from .models import Model as Model
-from .models.multi_model_compare import compare_models as compare_models
+from .models.compare import MultiModelCompare as MultiModelCompare
+from .models.compare import TwoModelCompare as TwoModelCompare
+from .models.compare import compare_models as compare_models
 from .tables import TableGenerationError as TableGenerationError
 
 # Bringing in row types for easy table generation

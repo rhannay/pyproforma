@@ -11,7 +11,7 @@ from pyproforma.tables.table_class import Table
 from pyproforma.tables.table_generator import generate_multi_model_table
 
 
-class Compare:
+class TwoModelCompare:
     """
     Comparison analysis between two Model instances.
 
@@ -462,14 +462,17 @@ Top Changes:
 
         return report
 
-    def difference_table(
-        self, item_name: Union[str, List[str]], include_cumulative: bool = False
+    def table(
+        self,
+        item_names: Union[str, List[str], None] = None,
+        include_cumulative: bool = False,
     ) -> Table:
         """
         Generate a table comparing base and compare model values for specific item(s).
 
         Args:
-            item_name (str or list): Name of the item to compare, or list of item names
+            item_names (str, list, or None): Name of the item to compare, list of item names,
+                                           or None to include all common items
             include_cumulative (bool): If True, includes a row showing cumulative differences
 
         Returns:
@@ -479,20 +482,22 @@ Top Changes:
         Raises:
             KeyError: If any item not found in both models
         """  # noqa: E501
-        # Handle both single item and list of items
-        if isinstance(item_name, str):
-            item_names = [item_name]
+        # Handle different input types for item_names
+        if item_names is None:
+            item_names_list = self.common_items
+        elif isinstance(item_names, str):
+            item_names_list = [item_names]
         else:
-            item_names = item_name
+            item_names_list = item_names
 
         # Validate all items exist in both models
-        for name in item_names:
+        for name in item_names_list:
             if name not in self.common_items:
                 raise KeyError(f"Item '{name}' not found in both models")
 
         model_row_pairs = []
 
-        for i, name in enumerate(item_names):
+        for i, name in enumerate(item_names_list):
             # Add blank row between items (except before the first item)
             if i > 0:
                 blank_row = rt.BlankRow()
@@ -562,6 +567,6 @@ Top Changes:
     def __repr__(self) -> str:
         """String representation of the comparison."""
         return (
-            f"Compare({len(self.common_items)} common items, "
+            f"TwoModelCompare({len(self.common_items)} common items, "
             f"{len(self.common_years)} common years)"
         )
