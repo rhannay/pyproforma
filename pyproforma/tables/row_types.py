@@ -340,7 +340,7 @@ class ConstraintPassRow(BaseRow):
         # Add cells for each year with constraint evaluation result
         for year in model.years:
             try:
-                is_satisfied = constraint_results.evaluate(model._value_matrix, year)
+                is_satisfied = constraint_results.evaluate(year)
                 result_msg = self.pass_msg if is_satisfied else self.fail_msg
 
                 # Apply background color if color_code is True
