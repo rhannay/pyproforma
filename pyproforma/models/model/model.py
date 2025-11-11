@@ -910,7 +910,7 @@ class Model(SerializationMixin):
             - summary_stats(): Overall comparison statistics
             - to_dataframe(): Export to structured DataFrame
             - report(): Formatted text summary
-            - difference_table(item): Generate comparison table for item(s)
+            - table(item): Generate comparison table for item(s)
 
         Available MultiModelCompare Methods:
             - difference(item, year): Differences from first model (baseline)
