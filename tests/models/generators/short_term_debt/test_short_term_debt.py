@@ -439,10 +439,10 @@ class TestShortTermDebtDefaults:
         interim_values = {2024: {}}
 
         values = debt.get_values(interim_values, 2024)
-        assert values["minimal_debt.debt_outstanding"] == 0.0
-        assert values["minimal_debt.draw"] == 0.0
-        assert values["minimal_debt.principal"] == 0.0
-        assert values["minimal_debt.interest"] == 0.0
+        assert values["debt_outstanding"] == 0.0
+        assert values["draw"] == 0.0
+        assert values["principal"] == 0.0
+        assert values["interest"] == 0.0
 
     def test_none_draws_and_paydown(self):
         """Test debt with explicit None for draws and paydown."""
@@ -457,7 +457,7 @@ class TestShortTermDebtDefaults:
         interim_values = {2019: {}, 2020: {}}
 
         values = debt.get_values(interim_values, 2020)
-        assert values["none_debt.debt_outstanding"] == 100000
-        assert values["none_debt.draw"] == 0.0
-        assert values["none_debt.principal"] == 0.0
-        assert _is_close(values["none_debt.interest"], 5000)  # 100k * 0.05
+        assert values["debt_outstanding"] == 100000
+        assert values["draw"] == 0.0
+        assert values["principal"] == 0.0
+        assert _is_close(values["interest"], 5000)  # 100k * 0.05

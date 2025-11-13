@@ -13,21 +13,21 @@ class TestDebtParAmountsDefined:
         interim_values = {2019: {}, 2020: {}, 2021: {}}
         value_dict = debt.get_values(interim_values, 2020)
         p, i = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test.principal"], p)
-        assert _is_close(value_dict["test.interest"], i)
+        assert _is_close(value_dict["principal"], p)
+        assert _is_close(value_dict["interest"], i)
 
         # Test second year
         interim_values = {2019: {}, 2020: {}, 2021: {}}
         value_dict = debt.get_values(interim_values, 2021)
         p, i = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
-        assert _is_close(value_dict["test.principal"], p)
-        assert _is_close(value_dict["test.interest"], i)
+        assert _is_close(value_dict["principal"], p)
+        assert _is_close(value_dict["interest"], i)
 
         # Test previous year
         interim_values = {2019: {}, 2020: {}, 2021: {}}
         value_dict = debt.get_values(interim_values, 2019)
-        assert value_dict["test.principal"] == 0.0
-        assert value_dict["test.interest"] == 0.0
+        assert value_dict["principal"] == 0.0
+        assert value_dict["interest"] == 0.0
 
     def test_debt_two_issues(self):
         """Test debt with two issues in consecutive years."""
@@ -42,9 +42,9 @@ class TestDebtParAmountsDefined:
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_multi.principal"], p1)
-        assert _is_close(value_dict["test_multi.interest"], i1)
-        assert value_dict["test_multi.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # Test second year (2021) - both issuances exist
         # Start with a fresh interim_values to avoid circular references
@@ -55,25 +55,25 @@ class TestDebtParAmountsDefined:
         # Values from second issuance
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(value_dict["test_multi.principal"], p1 + p2)
-        assert _is_close(value_dict["test_multi.interest"], i1 + i2)
-        assert value_dict["test_multi.bond_proceeds"] == 1_500_000
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 1_500_000
 
         # Test a year before any issuance (2019)
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
         value_dict = debt.get_values(interim_values, 2019)
-        assert value_dict["test_multi.principal"] == 0.0
-        assert value_dict["test_multi.interest"] == 0.0
-        assert value_dict["test_multi.bond_proceeds"] == 0.0
+        assert value_dict["principal"] == 0.0
+        assert value_dict["interest"] == 0.0
+        assert value_dict["bond_proceeds"] == 0.0
 
         # Test a future year (2022) - both issuances exist but no new bond proceeds
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
         value_dict = debt.get_values(interim_values, 2022)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
-        assert _is_close(value_dict["test_multi.principal"], p1 + p2)
-        assert _is_close(value_dict["test_multi.interest"], i1 + i2)
-        assert value_dict["test_multi.bond_proceeds"] == 0.0
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 0.0
 
         # Test 2021 again to make sure it recalculates from the ground up
         interim_values = {2019: {}, 2020: {}, 2021: {}, 2022: {}}
@@ -83,9 +83,9 @@ class TestDebtParAmountsDefined:
         # Values from second issuance
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(value_dict["test_multi.principal"], p1 + p2)
-        assert _is_close(value_dict["test_multi.interest"], i1 + i2)
-        assert value_dict["test_multi.bond_proceeds"] == 1_500_000
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 1_500_000
 
     def test_debt_with_existing_schedule(self):
         """Test debt with two new issues plus an existing debt service schedule."""
@@ -110,9 +110,9 @@ class TestDebtParAmountsDefined:
 
         # Test year before any activity (2019) - should be zero
         value_dict = debt.get_values(interim_values, 2019)
-        assert value_dict["test_with_existing.principal"] == 0.0
-        assert value_dict["test_with_existing.interest"] == 0.0
-        assert value_dict["test_with_existing.bond_proceeds"] == 0.0
+        assert value_dict["principal"] == 0.0
+        assert value_dict["interest"] == 0.0
+        assert value_dict["bond_proceeds"] == 0.0
 
         # interim_values[2019] = {
         #     'test_with_existing_principal': 0.0,
@@ -125,9 +125,9 @@ class TestDebtParAmountsDefined:
         interim_values[2020] = {}
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_with_existing.principal"], p1 + 50_000)
-        assert _is_close(value_dict["test_with_existing.interest"], i1 + 25_000)
-        assert value_dict["test_with_existing.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1 + 50_000)
+        assert _is_close(value_dict["interest"], i1 + 25_000)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # interim_values[2020] = {
         #     'test_with_existing_principal': value_dict['test_with_existing_principal'],  # noqa: E501
@@ -141,9 +141,9 @@ class TestDebtParAmountsDefined:
         value_dict = debt.get_values(interim_values, 2021)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
-        assert _is_close(value_dict["test_with_existing.principal"], p1 + p2 + 52_500)
-        assert _is_close(value_dict["test_with_existing.interest"], i1 + i2 + 22_500)
-        assert value_dict["test_with_existing.bond_proceeds"] == 1_500_000
+        assert _is_close(value_dict["principal"], p1 + p2 + 52_500)
+        assert _is_close(value_dict["interest"], i1 + i2 + 22_500)
+        assert value_dict["bond_proceeds"] == 1_500_000
 
         # interim_values[2021] = {
         #     'test_with_existing_principal': value_dict['test_with_existing_principal'],  # noqa: E501
@@ -157,9 +157,9 @@ class TestDebtParAmountsDefined:
         value_dict = debt.get_values(interim_values, 2022)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
-        assert _is_close(value_dict["test_with_existing.principal"], p1 + p2 + 55_125)
-        assert _is_close(value_dict["test_with_existing.interest"], i1 + i2 + 19_875)
-        assert value_dict["test_with_existing.bond_proceeds"] == 0.0
+        assert _is_close(value_dict["principal"], p1 + p2 + 55_125)
+        assert _is_close(value_dict["interest"], i1 + i2 + 19_875)
+        assert value_dict["bond_proceeds"] == 0.0
 
         # interim_values[2022] = {
         #     'test_with_existing_principal': value_dict['test_with_existing_principal'],  # noqa: E501
@@ -173,9 +173,9 @@ class TestDebtParAmountsDefined:
         value_dict = debt.get_values(interim_values, 2023)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2023)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2023)
-        assert _is_close(value_dict["test_with_existing.principal"], p1 + p2 + 57_881)
-        assert _is_close(value_dict["test_with_existing.interest"], i1 + i2 + 17_119)
-        assert value_dict["test_with_existing.bond_proceeds"] == 0.0
+        assert _is_close(value_dict["principal"], p1 + p2 + 57_881)
+        assert _is_close(value_dict["interest"], i1 + i2 + 17_119)
+        assert value_dict["bond_proceeds"] == 0.0
 
 
 class TestDebtParamsFromValueMatrix:
@@ -199,9 +199,9 @@ class TestDebtParamsFromValueMatrix:
         # Test first year (2020)
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_from_matrix.principal"], p1)
-        assert _is_close(value_dict["test_from_matrix.interest"], i1)
-        assert value_dict["test_from_matrix.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # Test second year (2021) - both issuances exist
         interim_values[2020].update(value_dict)
@@ -212,9 +212,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(value_dict["test_from_matrix.principal"], p1 + p2)
-        assert _is_close(value_dict["test_from_matrix.interest"], i1 + i2)
-        assert value_dict["test_from_matrix.bond_proceeds"] == 1_500_000
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 1_500_000
 
         # Test third year (2022) - both previous issuances exist but no new bond proceeds  # noqa: E501
         interim_values[2021].update(value_dict)
@@ -225,9 +225,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.05, p=1_500_000, t=30, sy=2021, y=2022)
         # Total values should be sum of both issuances, with no new bond proceeds
-        assert _is_close(value_dict["test_from_matrix.principal"], p1 + p2)
-        assert _is_close(value_dict["test_from_matrix.interest"], i1 + i2)
-        assert value_dict["test_from_matrix.bond_proceeds"] == 0
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 0
 
     def test_all_debt_params_from_value_matrix(self):
         """Test debt where all parameters (par_amount, interest_rate, term) are string references."""  # noqa: E501
@@ -257,9 +257,9 @@ class TestDebtParamsFromValueMatrix:
         # Test first year (2020) - only first issuance exists
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_all_params.principal"], p1)
-        assert _is_close(value_dict["test_all_params.interest"], i1)
-        assert value_dict["test_all_params.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # Test second year (2021) - both issuances exist
         interim_values[2020].update(value_dict)
@@ -274,9 +274,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021) - note the different rate and term
         p2, i2 = _get_p_i(i=0.06, p=1_500_000, t=25, sy=2021, y=2021)
         # Total values should be sum of both issuances
-        assert _is_close(value_dict["test_all_params.principal"], p1 + p2)
-        assert _is_close(value_dict["test_all_params.interest"], i1 + i2)
-        assert value_dict["test_all_params.bond_proceeds"] == 1_500_000
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 1_500_000
 
         # Test third year (2022) - both previous issuances exist but no new bond proceeds  # noqa: E501
         interim_values[2021].update(value_dict)
@@ -291,9 +291,9 @@ class TestDebtParamsFromValueMatrix:
         # Values from second issuance (2021)
         p2, i2 = _get_p_i(i=0.06, p=1_500_000, t=25, sy=2021, y=2022)
         # Total values should be sum of both issuances, with no new bond proceeds
-        assert _is_close(value_dict["test_all_params.principal"], p1 + p2)
-        assert _is_close(value_dict["test_all_params.interest"], i1 + i2)
-        assert value_dict["test_all_params.bond_proceeds"] == 0
+        assert _is_close(value_dict["principal"], p1 + p2)
+        assert _is_close(value_dict["interest"], i1 + i2)
+        assert value_dict["bond_proceeds"] == 0
 
     def test_interest_rate_missing(self):
         """Test debt where one of the parameters is missing in interim_values_by_year."""  # noqa: E501
@@ -315,9 +315,9 @@ class TestDebtParamsFromValueMatrix:
         # Test first year (2020)
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_missing_param.principal"], p1)
-        assert _is_close(value_dict["test_missing_param.interest"], i1)
-        assert value_dict["test_missing_param.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # Test second year (2021) - should raise an error due to missing interest_rate
         interim_values[2020].update(value_dict)
@@ -349,9 +349,9 @@ class TestDebtParamsFromValueMatrix:
         # Test first year (2020)
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test_missing_par.principal"], p1)
-        assert _is_close(value_dict["test_missing_par.interest"], i1)
-        assert value_dict["test_missing_par.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         # Test second year (2021) - should raise an error due to missing par_amount
         with pytest.raises(ValueError) as excinfo:
@@ -381,14 +381,14 @@ class TestDebtParAmountNone:
         # Test first year (2020) - only first issuance should exist
         value_dict = debt.get_values(interim_values, 2020)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2020)
-        assert _is_close(value_dict["test.principal"], p1)
-        assert _is_close(value_dict["test.interest"], i1)
-        assert value_dict["test.bond_proceeds"] == 1_000_000
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 1_000_000
 
         interim_values[2020] = {
-            "test.principal": value_dict["test.principal"],
-            "test.interest": value_dict["test.interest"],
-            "test.bond_proceeds": value_dict["test.bond_proceeds"],
+            "principal": value_dict["principal"],
+            "interest": value_dict["interest"],
+            "bond_proceeds": value_dict["bond_proceeds"],
         }
 
         # Test second year (2021) - should still only have the first issuance
@@ -397,21 +397,21 @@ class TestDebtParAmountNone:
         value_dict = debt.get_values(interim_values, 2021)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2021)
         # Only the first issuance should contribute to principal and interest
-        assert _is_close(value_dict["test.principal"], p1)
-        assert _is_close(value_dict["test.interest"], i1)
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
         # No bond proceeds since par_amount is None for this year
-        assert value_dict["test.bond_proceeds"] == 0.0
+        assert value_dict["bond_proceeds"] == 0.0
 
         interim_values[2021] = {
-            "test.principal": value_dict["test.principal"],
-            "test.interest": value_dict["test.interest"],
-            "test.bond_proceeds": value_dict["test.bond_proceeds"],
+            "principal": value_dict["principal"],
+            "interest": value_dict["interest"],
+            "bond_proceeds": value_dict["bond_proceeds"],
         }
 
         # Test future year (2022) - should still only have the first issuance
         interim_values[2021].update(value_dict)
         value_dict = debt.get_values(interim_values, 2022)
         p1, i1 = _get_p_i(i=0.05, p=1_000_000, t=30, sy=2020, y=2022)
-        assert _is_close(value_dict["test.principal"], p1)
-        assert _is_close(value_dict["test.interest"], i1)
-        assert value_dict["test.bond_proceeds"] == 0.0
+        assert _is_close(value_dict["principal"], p1)
+        assert _is_close(value_dict["interest"], i1)
+        assert value_dict["bond_proceeds"] == 0.0

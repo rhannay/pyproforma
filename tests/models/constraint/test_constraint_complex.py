@@ -13,9 +13,19 @@ class TestConstraintsWithComplexModels:
                 name="revenue", category="income", values={2023: 100000, 2024: 120000}
             ),
             LineItem(
+                name="principal_payment",
+                category="expenses",
+                formula="debt: principal",
+            ),
+            LineItem(
+                name="interest_payment",
+                category="expenses",
+                formula="debt: interest",
+            ),
+            LineItem(
                 name="debt_service",
                 category="expenses",
-                formula="debt_principal + debt_interest",
+                formula="principal_payment + interest_payment",
             ),
         ]
 
@@ -54,12 +64,15 @@ class TestConstraintsWithComplexModels:
         # Test that model functions correctly
         assert len(model.constraints) == 2
         assert len(model.generators) == 1
-        assert len(model._line_item_definitions) == 2
+        assert len(model._line_item_definitions) == 4
 
         # Test that values can be accessed
         assert model.value("revenue", 2023) == 100000
-        assert model.value("debt_principal", 2023) > 0
+        assert model.value("principal_payment", 2023) > 0
         assert model.value("debt_service", 2023) > 0
+        
+        # Test that generator fields can be accessed via dotted notation
+        assert model.value("debt.principal", 2023) > 0
 
         # Test that constraints are preserved
         constraint_names = [c.name for c in model.constraints]

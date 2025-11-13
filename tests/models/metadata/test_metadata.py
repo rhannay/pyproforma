@@ -409,14 +409,16 @@ class TestGenerateLineItemMetadata:
         )
 
         # Should include all defined names from the debt multi-line item
-        debt_names = debt.defined_names
-        assert len(result) == len(debt_names)
+        # with "generator_name.field" format
+        debt_field_names = debt.defined_names
+        assert len(result) == len(debt_field_names)
 
-        for debt_name in debt_names:
-            matching_item = next(item for item in result if item["name"] == debt_name)
+        for field_name in debt_field_names:
+            full_name = f"debt.{field_name}"
+            matching_item = next(item for item in result if item["name"] == full_name)
             assert matching_item == {
-                "name": debt_name,
-                "label": debt_name,
+                "name": full_name,
+                "label": full_name,
                 "value_format": "no_decimals",
                 "source_type": "generator",
                 "source_name": "debt",
