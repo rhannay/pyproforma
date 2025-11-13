@@ -274,7 +274,8 @@ class Model(SerializationMixin):
 
         self._value_matrix = generate_value_matrix(
             self._years,
-            self._line_item_definitions + self.generators,
+            self._line_item_definitions,
+            self.generators,
             self.category_metadata,
             self.line_item_metadata,
         )

@@ -7,7 +7,7 @@ across all years in a financial model.
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict
 
 from ..formula import evaluate
 
@@ -195,8 +195,7 @@ def calculate_line_item_value(
             # Check if the line item is in the same category it's trying to total
             # This would create a circular reference
             current_item_metadata = next(
-                (item for item in line_item_metadata if item["name"] == name),
-                None
+                (item for item in line_item_metadata if item["name"] == name), None
             )
             if (
                 current_item_metadata
@@ -285,7 +284,8 @@ def _calculate_category_total(
 
 def generate_value_matrix(
     years: list[int],
-    line_item_definitions: list[Union["LineItem", "Generator"]],
+    line_item_definitions: list["LineItem"],
+    generator_definitions: list["Generator"],
     category_metadata: list[dict],
     line_item_metadata: list[dict],
 ) -> dict[int, dict[str, float]]:
@@ -298,7 +298,8 @@ def generate_value_matrix(
 
     Args:
         years (list[int]): List of years in the model
-        line_item_definitions (list[Union[LineItem, Generator]]): List of line item definitions and generators
+        line_item_definitions (list[LineItem]): List of line item definitions
+        generator_definitions (list[Generator]): List of generator definitions
         category_metadata (list[dict]): Metadata for all defined categories
         line_item_metadata (list[dict]): Metadata for all defined names
 
@@ -314,54 +315,42 @@ def generate_value_matrix(
     for year in years:
         value_matrix[year] = {}
 
-        # Calculate line items in dependency order
+        # Calculate line items and generators in dependency order
         calculated_items = set()
-        remaining_items = line_item_definitions.copy()
-        max_iterations = len(line_item_definitions) + 1  # Safety valve
+        remaining_line_items = line_item_definitions.copy()
+        remaining_generators = generator_definitions.copy()
+        max_iterations = (
+            len(line_item_definitions) + len(generator_definitions) + 1
+        )  # Safety valve
         iteration = 0
 
-        while remaining_items and iteration < max_iterations:
+        while (
+            remaining_line_items or remaining_generators
+        ) and iteration < max_iterations:
             iteration += 1
             items_calculated_this_round = []
 
-            for item in remaining_items:
+            # Try to calculate remaining line items
+            for item in remaining_line_items[:]:  # Use slice to avoid modification
                 try:
-                    # Check if this is a Generator or LineItem
-                    # Generators have get_values() and defined_names, LineItems have name attribute  # noqa: E501
-
-                    if hasattr(item, "get_values") and hasattr(item, "defined_names"):
-                        # Handle Generator - get multiple values
-                        generated_values = item.get_values(value_matrix, year)
-
-                        # Update value matrix with the generated values
-                        value_matrix[year].update(generated_values)
-
-                        # Add all generated names to calculated_items
-                        calculated_items.update(generated_values.keys())
-
-                        # Mark this generator as calculated
-                        items_calculated_this_round.append(item)
-                    elif hasattr(item, "name"):
-                        li_metadata = next(
-                            metadata
-                            for metadata in line_item_metadata
-                            if metadata["name"] == item.name
-                        )
-                        # Handle LineItem - get single value
-                        value_matrix[year][item.name] = calculate_line_item_value(
-                            li_metadata["hardcoded_values"],
-                            item.formula,
-                            value_matrix,
-                            year,
-                            item.name,
-                            line_item_metadata,
-                            category_metadata,
-                        )
-                        calculated_items.add(item.name)
-                        items_calculated_this_round.append(item)
-                    else:
-                        # Unknown object type, skip
-                        raise ValueError(f"Unknown item type: {type(item)}")
+                    li_metadata = next(
+                        metadata
+                        for metadata in line_item_metadata
+                        if metadata["name"] == item.name
+                    )
+                    # Handle LineItem - get single value
+                    value_matrix[year][item.name] = calculate_line_item_value(
+                        li_metadata["hardcoded_values"],
+                        item.formula,
+                        value_matrix,
+                        year,
+                        item.name,
+                        line_item_metadata,
+                        category_metadata,
+                    )
+                    calculated_items.add(item.name)
+                    items_calculated_this_round.append(item)
+                    remaining_line_items.remove(item)
 
                 except (KeyError, ValueError) as e:
                     # Check if this is a None value error - these should be raised immediately  # noqa: E501
@@ -373,10 +362,9 @@ def generate_value_matrix(
                         raise e
 
                     # Check if this is a circular reference error for category_total - should be raised immediately  # noqa: E501
-                    if (
-                        isinstance(e, ValueError)
-                        and "Circular reference detected" in str(e)
-                    ):
+                    if isinstance(
+                        e, ValueError
+                    ) and "Circular reference detected" in str(e):
                         raise e
 
                     # Check if this is a category not found error - should be raised immediately  # noqa: E501
@@ -409,29 +397,76 @@ def generate_value_matrix(
                     # Item depends on something not yet calculated, skip for now
                     continue
 
-            # Remove successfully calculated items from remaining list
-            for item in items_calculated_this_round:
-                remaining_items.remove(item)
+            # Try to calculate remaining generators
+            for item in remaining_generators[:]:  # Use slice to avoid modification
+                try:
+                    # Handle Generator - get multiple values
+                    generated_values = item.get_values(value_matrix, year)
+
+                    # Update value matrix with the generated values
+                    value_matrix[year].update(generated_values)
+
+                    # Add all generated names to calculated_items
+                    calculated_items.update(generated_values.keys())
+
+                    # Mark this generator as calculated
+                    items_calculated_this_round.append(item)
+                    remaining_generators.remove(item)
+
+                except (KeyError, ValueError) as e:
+                    # Same error handling as for line items
+                    if (
+                        isinstance(e, ValueError)
+                        and "has None value" in str(e)
+                        and "Cannot use None values in formulas" in str(e)
+                    ):
+                        raise e
+
+                    if isinstance(
+                        e, ValueError
+                    ) and "Circular reference detected" in str(e):
+                        raise e
+
+                    if isinstance(
+                        e, KeyError
+                    ) and "not found in category definitions" in str(e):
+                        raise e
+
+                    if isinstance(e, ValueError) and "not found for year" in str(e):
+                        # Extract variable name from error message
+                        import re as error_re
+
+                        match = error_re.search(
+                            r"Variable '(\w+)' not found for year", str(e)
+                        )
+                        if match:
+                            var_name = match.group(1)
+                            # Check if this variable exists in our defined names
+                            all_defined_names = [
+                                name["name"] for name in line_item_metadata
+                            ]
+                            if var_name not in all_defined_names:
+                                # Variable truly doesn't exist, create enhanced error message  # noqa: E501
+                                generator_name = getattr(item, "name", str(item))
+                                raise ValueError(
+                                    f"Error calculating generator '{generator_name}' for year {year}. Line item '{var_name}' not found in model."  # noqa: E501
+                                ) from e
+                    # Item depends on something not yet calculated, skip for now
+                    continue
 
             # If no progress was made this round, we have circular dependencies
             if not items_calculated_this_round:
                 break
 
         # Check if all items were calculated
-        if remaining_items:
+        if remaining_line_items or remaining_generators:
             failed_items = []
-            for item in remaining_items:
-                if hasattr(item, "get_values") and hasattr(item, "defined_names"):
-                    # Generator
-                    failed_items.extend(
-                        item.defined_names
-                    )  # Add all names from the generator
-                elif hasattr(item, "name") and not hasattr(item, "defined_names"):
-                    # LineItem
-                    failed_items.append(item.name)  # Add the single line item name
-                else:
-                    # Unknown type
-                    failed_items.append(str(item))
+            for item in remaining_line_items:
+                failed_items.append(item.name)  # Add the single line item name
+            for item in remaining_generators:
+                failed_items.extend(
+                    item.defined_names
+                )  # Add all names from the generator
 
             raise ValueError(
                 f"Could not calculate line items due to missing dependencies or circular references: {failed_items}"  # noqa: E501
