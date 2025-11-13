@@ -41,29 +41,29 @@ class TestShortTermDebtInModel:
         )
 
         # Test year 2020 values (draw only)
-        assert model.value("credit_line_debt_outstanding", 2020) == 1500000  # 1M + 500k
+        assert model.value("credit_line.debt_outstanding", 2020) == 1500000  # 1M + 500k
         assert model.value("credit_line.draw", 2020) == 500000
-        assert model.value("credit_line_principal", 2020) == 0.0
-        assert _is_close(model.value("credit_line_interest", 2020), 50000)  # 1M * 0.05
+        assert model.value("credit_line.principal", 2020) == 0.0
+        assert _is_close(model.value("credit_line.interest", 2020), 50000)  # 1M * 0.05
 
         # Test year 2021 values (draw and paydown)
         assert (
-            model.value("credit_line_debt_outstanding", 2021) == 1600000
+            model.value("credit_line.debt_outstanding", 2021) == 1600000
         )  # 1.5M + 300k - 200k
         assert model.value("credit_line.draw", 2021) == 300000
-        assert model.value("credit_line_principal", 2021) == 200000
+        assert model.value("credit_line.principal", 2021) == 200000
         assert _is_close(
-            model.value("credit_line_interest", 2021), 75000
+            model.value("credit_line.interest", 2021), 75000
         )  # 1.5M * 0.05
 
         # Test year 2022 values (paydown only)
         assert (
-            model.value("credit_line_debt_outstanding", 2022) == 1000000
+            model.value("credit_line.debt_outstanding", 2022) == 1000000
         )  # 1.6M - 600k
         assert model.value("credit_line.draw", 2022) == 0.0
-        assert model.value("credit_line_principal", 2022) == 600000
+        assert model.value("credit_line.principal", 2022) == 600000
         assert _is_close(
-            model.value("credit_line_interest", 2022), 80000
+            model.value("credit_line.interest", 2022), 80000
         )  # 1.6M * 0.05
 
     def test_short_term_debt_dynamic_interest_rate_in_model(self):
@@ -105,28 +105,28 @@ class TestShortTermDebtInModel:
         )
 
         # Test debt outstanding remains constant (no draws/paydowns)
-        assert model.value("variable_debt_debt_outstanding", 2020) == 1000000
-        assert model.value("variable_debt_debt_outstanding", 2021) == 1000000
-        assert model.value("variable_debt_debt_outstanding", 2022) == 1000000
+        assert model.value("variable_debt.debt_outstanding", 2020) == 1000000
+        assert model.value("variable_debt.debt_outstanding", 2021) == 1000000
+        assert model.value("variable_debt.debt_outstanding", 2022) == 1000000
 
         # Test interest calculations with varying rates
         assert _is_close(
-            model.value("variable_debt_interest", 2020), 30000
+            model.value("variable_debt.interest", 2020), 30000
         )  # 1M * 0.03
         assert _is_close(
-            model.value("variable_debt_interest", 2021), 45000
+            model.value("variable_debt.interest", 2021), 45000
         )  # 1M * 0.045
         assert _is_close(
-            model.value("variable_debt_interest", 2022), 20000
+            model.value("variable_debt.interest", 2022), 20000
         )  # 1M * 0.02
 
         # Test no draws or paydowns
         assert model.value("variable_debt.draw", 2020) == 0.0
         assert model.value("variable_debt.draw", 2021) == 0.0
         assert model.value("variable_debt.draw", 2022) == 0.0
-        assert model.value("variable_debt_principal", 2020) == 0.0
-        assert model.value("variable_debt_principal", 2021) == 0.0
-        assert model.value("variable_debt_principal", 2022) == 0.0
+        assert model.value("variable_debt.principal", 2020) == 0.0
+        assert model.value("variable_debt.principal", 2021) == 0.0
+        assert model.value("variable_debt.principal", 2022) == 0.0
 
     def test_short_term_debt_dynamic_draws_and_paydown_in_model(self):
         """
@@ -185,13 +185,13 @@ class TestShortTermDebtInModel:
 
         # Test debt outstanding calculations
         assert (
-            model.value("flexible_debt_debt_outstanding", 2020) == 1000000
+            model.value("flexible_debt.debt_outstanding", 2020) == 1000000
         )  # 750k + 250k
         assert (
-            model.value("flexible_debt_debt_outstanding", 2021) == 950000
+            model.value("flexible_debt.debt_outstanding", 2021) == 950000
         )  # 1M + 100k - 150k
         assert (
-            model.value("flexible_debt_debt_outstanding", 2022) == 150000
+            model.value("flexible_debt.debt_outstanding", 2022) == 150000
         )  # 950k + 0 - 800k
 
         # Test draw values match the line items
@@ -200,19 +200,19 @@ class TestShortTermDebtInModel:
         assert model.value("flexible_debt.draw", 2022) == 0
 
         # Test principal (paydown) values match the line items
-        assert model.value("flexible_debt_principal", 2020) == 0
-        assert model.value("flexible_debt_principal", 2021) == 150000
-        assert model.value("flexible_debt_principal", 2022) == 800000
+        assert model.value("flexible_debt.principal", 2020) == 0
+        assert model.value("flexible_debt.principal", 2021) == 150000
+        assert model.value("flexible_debt.principal", 2022) == 800000
 
         # Test interest calculations (4% rate on beginning balance)
         assert _is_close(
-            model.value("flexible_debt_interest", 2020), 30000
+            model.value("flexible_debt.interest", 2020), 30000
         )  # 750k * 0.04
         assert _is_close(
-            model.value("flexible_debt_interest", 2021), 40000
+            model.value("flexible_debt.interest", 2021), 40000
         )  # 1M * 0.04
         assert _is_close(
-            model.value("flexible_debt_interest", 2022), 38000
+            model.value("flexible_debt.interest", 2022), 38000
         )  # 950k * 0.04
 
     def test_short_term_debt_defined_names_in_model(self):
@@ -233,10 +233,10 @@ class TestShortTermDebtInModel:
 
         # Test that all defined names are in the model and accessible
         expected_names = [
-            "test_debt_debt_outstanding",
+            "test_debt.debt_outstanding",
             "test_debt.draw",
-            "test_debt_principal",
-            "test_debt_interest",
+            "test_debt.principal",
+            "test_debt.interest",
         ]
 
         for name in expected_names:

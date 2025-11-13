@@ -57,6 +57,42 @@ def _parse_category_total_formula(formula: str) -> str | None:
     return None
 
 
+def _parse_generator_field_formula(formula: str) -> tuple[str, str] | None:
+    """
+    Parse a generator field formula and extract the generator name and field name.
+
+    Checks if the formula follows the pattern "generator_name: field_name"
+    where there may or may not be a space after the colon.
+
+    Args:
+        formula (str): The formula string to parse
+
+    Returns:
+        tuple[str, str] | None: (generator_name, field_name) if the formula matches 
+                                the pattern, None otherwise
+
+    Examples:
+        >>> _parse_generator_field_formula("debt: principal")
+        ('debt', 'principal')
+        >>> _parse_generator_field_formula("debt:interest")
+        ('debt', 'interest')
+        >>> _parse_generator_field_formula("revenue * 2")
+        None
+    """
+    if not formula:
+        return None
+
+    # Check if formula matches the generator field pattern
+    # Pattern: generator_name followed by ":" and field_name
+    # Both names must be valid identifiers (letters, numbers, underscores)
+    pattern = r"^([\w]+):\s*([\w]+)$"
+    match = re.match(pattern, formula.strip())
+
+    if match:
+        return (match.group(1), match.group(2))
+    return None
+
+
 def validate_value_matrix(
     values_by_year: Dict[int, Dict[str, Any]],
 ) -> None:
@@ -215,6 +251,21 @@ def calculate_line_item_value(
             return _calculate_category_total(
                 values_by_name, line_item_metadata, category_name, category_metadata
             )
+
+        # Check if formula uses generator field pattern
+        generator_field = _parse_generator_field_formula(formula)
+        if generator_field is not None:
+            # This is a generator field formula
+            generator_name, field_name = generator_field
+            full_name = f"{generator_name}.{field_name}"
+            
+            # Look up the value in the value matrix
+            values_by_name = interim_values_by_year.get(year, {})
+            if full_name not in values_by_name:
+                raise ValueError(
+                    f"Generator field '{full_name}' not found in value matrix for year {year}"
+                )
+            return values_by_name[full_name]
 
     # If no explicit value (missing key or None value), use formula
     if formula:
@@ -403,11 +454,15 @@ def generate_value_matrix(
                     # Handle Generator - get multiple values
                     generated_values = item.get_values(value_matrix, year)
 
-                    # Update value matrix with the generated values
-                    value_matrix[year].update(generated_values)
+                    # Prepend generator name to field names and update value matrix
+                    for field_name, value in generated_values.items():
+                        full_name = f"{item.name}.{field_name}"
+                        value_matrix[year][full_name] = value
 
-                    # Add all generated names to calculated_items
-                    calculated_items.update(generated_values.keys())
+                    # Add all generated full names to calculated_items
+                    calculated_items.update(
+                        f"{item.name}.{field_name}" for field_name in generated_values.keys()
+                    )
 
                     # Mark this generator as calculated
                     items_calculated_this_round.append(item)

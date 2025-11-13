@@ -57,6 +57,14 @@ def validate_formula(formula: str, name: str, valid_names: List[str]) -> None:
         # The category name will be validated during calculation
         return
 
+    # Check if this is a generator field formula - if so, skip regular validation
+    # Pattern: "generator_name:" followed by optional space and field name
+    generator_field_pattern = r'^[\w]+:\s*[\w]+$'
+    if re.match(generator_field_pattern, formula):
+        # This is a generator field formula, skip regular validation
+        # The generator name and field will be validated during calculation
+        return
+
     # Extract variables from time-offset patterns like revenue[-1], cost[-2], etc.
     offset_vars = re.findall(r"([\w.]+)\[(-?\d+)\]", formula)
     offset_var_names = [var for var, offset in offset_vars]

@@ -106,11 +106,11 @@ class ShortTermDebt(Generator):
                         f"Paydown amount for year {year} cannot be negative"
                     )
 
-        # Define the line item names
-        self._debt_outstanding_name = f"{self.name}_debt_outstanding"
-        self._draw_name = f"{self.name}.draw"
-        self._principal_name = f"{self.name}_principal"
-        self._interest_name = f"{self.name}_interest"
+        # Define the field names (without generator name prefix)
+        self._debt_outstanding_name = "debt_outstanding"
+        self._draw_name = "draw"
+        self._principal_name = "principal"
+        self._interest_name = "interest"
 
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "ShortTermDebt":
@@ -155,10 +155,13 @@ class ShortTermDebt(Generator):
     @property
     def defined_names(self) -> List[str]:
         """
-        Returns a list of all line item names defined by this component.
+        Returns a list of all field names defined by this generator.
+
+        These are the field names without the generator name prefix.
+        They will be stored in the value matrix with "generator_name.field" keys.
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.  # noqa: E501
+            List[str]: The field names this generator can generate values for.  # noqa: E501
         """  # noqa: E501
         return [
             self._debt_outstanding_name,

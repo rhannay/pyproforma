@@ -138,11 +138,13 @@ def generate_line_item_metadata(
 
     # Add generators
     for generator in generators:
-        for gen_name in generator.defined_names:
+        for field_name in generator.defined_names:
+            # Store with "generator_name.field" pattern
+            full_name = f"{generator.name}.{field_name}"
             defined_names.append(
                 {
-                    "name": gen_name,
-                    "label": gen_name,
+                    "name": full_name,
+                    "label": full_name,
                     "value_format": "no_decimals",
                     "source_type": "generator",
                     "source_name": generator.name,
