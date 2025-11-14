@@ -1158,6 +1158,16 @@ class Model(SerializationMixin):
         """
         return [category["name"] for category in self.category_metadata]
 
+    @property
+    def generator_names(self) -> list[str]:
+        """
+        Get list of all generator names.
+
+        Returns:
+            list[str]: List of generator names
+        """
+        return [gen.name for gen in self.generators]
+
     # ============================================================================
     # METADATA & INTERNAL LOOKUPS
     # ============================================================================

@@ -675,3 +675,49 @@ class TestModelInitWithStringCategories:
         # Test category access works
         income_category = model.category("income")
         assert income_category.name == "income"
+
+
+class TestModelGeneratorNamesProperty:
+    """Test the Model.generator_names property."""
+
+    def test_generator_names_returns_list_of_names(self):
+        """Test that generator_names property returns list of generator names."""
+        # Create generators
+        debt1 = Debt(
+            name="company_debt", par_amount={2023: 100000}, interest_rate=0.05, term=10
+        )
+        debt2 = Debt(
+            name="equipment_debt", par_amount={2023: 50000}, interest_rate=0.04, term=5
+        )
+
+        # Create model with generators
+        model = Model(
+            line_items=[],
+            years=[2023, 2024],
+            generators=[debt1, debt2],
+        )
+
+        # Test generator_names property
+        assert hasattr(model, "generator_names")
+        assert model.generator_names == ["company_debt", "equipment_debt"]
+        assert len(model.generator_names) == 2
+
+    def test_generator_names_empty_when_no_generators(self):
+        """Test that generator_names returns empty list when no generators."""
+        model = Model(years=[2023])
+
+        assert model.generator_names == []
+        assert len(model.generator_names) == 0
+
+    def test_generator_names_with_single_generator(self):
+        """Test generator_names with a single generator."""
+        debt = Debt(name="loan", par_amount={2023: 100000}, interest_rate=0.05, term=10)
+
+        model = Model(
+            line_items=[],
+            years=[2023, 2024],
+            generators=[debt],
+        )
+
+        assert model.generator_names == ["loan"]
+        assert len(model.generator_names) == 1
