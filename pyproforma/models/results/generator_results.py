@@ -13,6 +13,8 @@ class GeneratorResults:
     This class is instantiated through the Model.generator() method and provides
     an interface for accessing generator field values across years.
 
+    The class is subscriptable, allowing field access via bracket notation.
+
     Args:
         model: The parent Model instance
         generator_name: The name of the generator
@@ -20,6 +22,7 @@ class GeneratorResults:
     Examples:
         >>> debt_gen = model.generator('debt')
         >>> debt_gen.field('principal')  # Returns dict of year: value for principal field
+        >>> debt_gen['principal']  # Same as above using bracket notation
         >>> debt_gen.field('principal', 2024)  # Get principal value for 2024
         >>> debt_gen.to_dataframe()  # Returns DataFrame with all fields
     """
@@ -99,6 +102,25 @@ class GeneratorResults:
             ]
 
         return pd.DataFrame(data, index=self.field_names)
+
+    def __getitem__(self, field_name: str) -> Dict[int, float]:
+        """
+        Access field values using bracket notation.
+
+        Args:
+            field_name: The name of the field to retrieve
+
+        Returns:
+            Dictionary mapping years to values for the specified field
+
+        Raises:
+            KeyError: If field_name is not defined by this generator
+
+        Examples:
+            >>> debt_gen = model.generator('debt')
+            >>> debt_gen['principal']  # Returns dict of year: value for principal
+        """
+        return self.field(field_name)
 
     def __repr__(self) -> str:
         return f"GeneratorResults(name='{self.name}', fields={self.field_names})"

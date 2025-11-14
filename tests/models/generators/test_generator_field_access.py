@@ -185,3 +185,59 @@ class TestGeneratorResults:
         # Verify values
         assert df.loc["interest", 2020] > 0
         assert df.loc["principal", 2020] > 0
+
+    def test_generator_results_subscriptable(self):
+        """Test that GeneratorResults supports bracket notation."""
+        years = [2020, 2021]
+        
+        debt = Debt(
+            name="test_debt",
+            par_amount={2020: 1_000_000},
+            interest_rate=0.05,
+            term=30,
+        )
+        
+        model = Model(
+            line_items=[],
+            years=years,
+            generators=[debt],
+        )
+        
+        gen_results = model.generator("test_debt")
+        
+        # Test subscriptable access
+        principal_values = gen_results['principal']
+        assert isinstance(principal_values, dict)
+        assert 2020 in principal_values
+        assert 2021 in principal_values
+        
+        # Test that it returns the same result as .field()
+        assert gen_results['principal'] == gen_results.field('principal')
+        assert gen_results['interest'] == gen_results.field('interest')
+        
+        # Test with all fields
+        for field in gen_results.field_names:
+            assert gen_results[field] == gen_results.field(field)
+
+    def test_generator_results_subscriptable_invalid_field(self):
+        """Test that subscriptable access raises error for invalid field."""
+        years = [2020, 2021]
+        
+        debt = Debt(
+            name="test_debt",
+            par_amount={2020: 1_000_000},
+            interest_rate=0.05,
+            term=30,
+        )
+        
+        model = Model(
+            line_items=[],
+            years=years,
+            generators=[debt],
+        )
+        
+        gen_results = model.generator("test_debt")
+        
+        # Accessing non-existent field with bracket notation should raise error
+        with pytest.raises(KeyError):
+            gen_results['nonexistent_field']
