@@ -69,21 +69,15 @@ def generate_category_metadata(
 
 def generate_line_item_metadata(
     line_item_definitions: List[LineItem],
-    category_metadata: List[Dict],
-    generators: List[Generator],
 ) -> List[Dict]:
     """
-    Collects all defined names across the model to create a comprehensive
-    namespace.
+    Collects all defined names from line items to create metadata.
 
-    This function aggregates identifiers from all model components including
-    line items and generators to build a unified namespace for
-    value lookups and validation.
+    This function aggregates identifiers from line item definitions
+    for value lookups and validation.
 
     Args:
         line_item_definitions (List[LineItem]): List of line item definitions
-        category_metadata (List[Dict]): List of category metadata dictionaries
-        generators (List[Generator]): List of generator objects
 
     Returns:
         List[Dict]: A list of dictionaries, each containing:
@@ -93,16 +87,15 @@ def generate_line_item_metadata(
               (None, 'str', 'no_decimals', 'two_decimals', 'percent',
               'percent_one_decimal', 'percent_two_decimals')
             - 'source_type' (str): The component type that defines this name
-              ('line_item', 'generator')
+              ('line_item')
             - 'source_name' (str): The original source object's name
             - 'category' (str): The category name
             - 'formula' (str or None): The formula string for line items
-              (None for other types)
             - 'hardcoded_values' (dict or None): Dictionary of year->value
-              mappings for line items (None for other types)
+              mappings for line items
 
     Raises:
-        ValueError: If duplicate names are found across different components
+        ValueError: If duplicate names are found
 
     Example:
         For a model with revenue line item:
@@ -135,24 +128,6 @@ def generate_line_item_metadata(
                 "hardcoded_values": hardcoded_values,
             }
         )
-
-    # Add generators
-    for generator in generators:
-        for field_name in generator.defined_names:
-            # Store with "generator_name.field" pattern
-            full_name = f"{generator.name}.{field_name}"
-            defined_names.append(
-                {
-                    "name": full_name,
-                    "label": full_name,
-                    "value_format": "no_decimals",
-                    "source_type": "generator",
-                    "source_name": generator.name,
-                    "category": generator.name,
-                    "formula": None,
-                    "hardcoded_values": None,
-                }
-            )
 
     # Check for duplicate names in defined_names
     # and raise ValueError if any duplicates are found.

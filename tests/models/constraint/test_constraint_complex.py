@@ -70,9 +70,6 @@ class TestConstraintsWithComplexModels:
         assert model.value("revenue", 2023) == 100000
         assert model.value("principal_payment", 2023) > 0
         assert model.value("debt_service", 2023) > 0
-        
-        # Test that generator fields can be accessed via dotted notation
-        assert model.value("debt.principal", 2023) > 0
 
         # Test that constraints are preserved
         constraint_names = [c.name for c in model.constraints]

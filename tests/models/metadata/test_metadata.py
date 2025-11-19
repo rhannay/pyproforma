@@ -163,7 +163,7 @@ class TestGenerateLineItemMetadata:
 
     def test_empty_inputs(self):
         """Test with empty input lists."""
-        result = generate_line_item_metadata([], [], [])
+        result = generate_line_item_metadata([])
         assert result == []
 
     def test_single_line_item(self):
@@ -180,9 +180,7 @@ class TestGenerateLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         expected = [
             {
@@ -226,9 +224,7 @@ class TestGenerateLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         expected = [
             {
@@ -279,9 +275,7 @@ class TestGenerateLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         expected = [
             {
@@ -311,9 +305,7 @@ class TestGenerateLineItemMetadata:
         category_metadata = []
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         expected = [
             {
@@ -356,9 +348,7 @@ class TestGenerateLineItemMetadata:
         ]
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         # Should only include line items, no category totals
         assert len(result) == 3  # 3 line items only
@@ -388,44 +378,12 @@ class TestGenerateLineItemMetadata:
         ]
         multi_line_items = []
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
         # Should include only the line item
         assert len(result) == 1
         names = [item["name"] for item in result]
         assert "rev1" in names
-
-    def test_multi_line_items_included(self):
-        """Test that multi-line items are included in metadata."""
-        line_items = []
-        category_metadata = []
-        debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
-        multi_line_items = [debt]
-
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
-
-        # Should include all defined names from the debt multi-line item
-        # with "generator_name.field" format
-        debt_field_names = debt.defined_names
-        assert len(result) == len(debt_field_names)
-
-        for field_name in debt_field_names:
-            full_name = f"debt.{field_name}"
-            matching_item = next(item for item in result if item["name"] == full_name)
-            assert matching_item == {
-                "name": full_name,
-                "label": full_name,
-                "value_format": "no_decimals",
-                "source_type": "generator",
-                "source_name": "debt",
-                "category": "debt",
-                "formula": None,
-                "hardcoded_values": None,
-            }
 
     def test_duplicate_names_raise_error(self):
         """Test that duplicate names raise a ValueError."""
@@ -447,7 +405,7 @@ class TestGenerateLineItemMetadata:
         multi_line_items = []
 
         with pytest.raises(ValueError) as exc_info:
-            generate_line_item_metadata(line_items, category_metadata, multi_line_items)
+            generate_line_item_metadata(line_items)
 
         assert "Duplicate defined names found in Model: revenue" in str(exc_info.value)
 
@@ -482,7 +440,7 @@ class TestGenerateLineItemMetadata:
         multi_line_items = []
 
         with pytest.raises(ValueError) as exc_info:
-            generate_line_item_metadata(line_items, category_metadata, multi_line_items)
+            generate_line_item_metadata(line_items)
 
         error_msg = str(exc_info.value)
         assert "Duplicate defined names found in Model:" in error_msg
@@ -519,23 +477,15 @@ class TestGenerateLineItemMetadata:
         debt = Debt(name="debt", par_amount={2020: 1000}, interest_rate=0.05, term=30)
         multi_line_items = [debt]
 
-        result = generate_line_item_metadata(
-            line_items, category_metadata, multi_line_items
-        )
+        result = generate_line_item_metadata(line_items)
 
-        # Should include: 2 line items + debt defined names
-        expected_count = 2 + len(debt.defined_names)
+        # Should include: 2 line items only (generators no longer included)
+        expected_count = 2
         assert len(result) == expected_count
 
         # Check line items are included
         rev1_item = next(item for item in result if item["name"] == "rev1")
         assert rev1_item["source_type"] == "line_item"
-
-        # Check generators are included
-        debt_items = [
-            item for item in result if item["source_type"] == "generator"
-        ]
-        assert len(debt_items) == len(debt.defined_names)
 
         # Verify no duplicates
         names = [item["name"] for item in result]

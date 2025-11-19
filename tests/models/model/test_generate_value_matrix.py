@@ -156,11 +156,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -191,11 +187,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -234,11 +226,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -276,11 +264,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -318,11 +302,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -472,11 +452,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -511,11 +487,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(

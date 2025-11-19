@@ -268,7 +268,7 @@ class Model(SerializationMixin):
             self._category_definitions, self.generators
         )
         self.line_item_metadata = generate_line_item_metadata(
-            self._line_item_definitions, self.category_metadata, self.generators
+            self._line_item_definitions
         )
         self.constraint_metadata = generate_constraint_metadata(self.constraints)
         validate_formulas(self._line_item_definitions, self.line_item_metadata)

@@ -259,15 +259,15 @@ class TestModelWithGenerators:
         ds_schedule = Debt.generate_debt_service_schedule(1000.0, 0.05, 2021, 30)
 
         assert isinstance(lis, Model)
-        assert lis.value("debt.principal", 2020) == 0
-        assert lis.value("debt.principal", 2021) == ds_schedule[0]["principal"]
-        assert lis.value("debt.principal", 2022) == ds_schedule[1]["principal"]
+        assert lis.generator("debt").field("principal", 2020) == 0
+        assert lis.generator("debt").field("principal", 2021) == ds_schedule[0]["principal"]
+        assert lis.generator("debt").field("principal", 2022) == ds_schedule[1]["principal"]
         assert lis.value("principal", 2020) == 300.0
         assert lis.value("principal", 2021) == ds_schedule[0]["principal"]
         assert lis.value("principal", 2022) == ds_schedule[1]["principal"]
-        assert lis.value("debt.interest", 2020) == 0
-        assert lis.value("debt.interest", 2021) == ds_schedule[0]["interest"]
-        assert lis.value("debt.interest", 2022) == ds_schedule[1]["interest"]
+        assert lis.generator("debt").field("interest", 2020) == 0
+        assert lis.generator("debt").field("interest", 2021) == ds_schedule[0]["interest"]
+        assert lis.generator("debt").field("interest", 2022) == ds_schedule[1]["interest"]
         assert lis.value("interest", 2020) == 100.0
         assert lis.value("interest", 2021) == ds_schedule[0]["interest"]
         assert lis.value("interest", 2022) == ds_schedule[1]["interest"]

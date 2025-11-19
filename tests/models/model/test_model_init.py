@@ -91,12 +91,18 @@ class TestModelInitWithDuplicateGenerators:
         assert len(model.generators) == 1
         assert model.generators[0].name == "revenue"
 
-        # Verify defined names include both line item and generator variables
+        # Verify defined names include line items only (not generator fields)
         defined_names = [item["name"] for item in model.line_item_metadata]
         assert "revenue" in defined_names  # line item
-        assert "revenue.principal" in defined_names  # generator field
-        assert "revenue.interest" in defined_names  # generator field
-        assert "revenue.bond_proceeds" in defined_names  # generator field
+        assert "expenses" in defined_names  # line item
+        
+        # Generator fields should not be in line_item_metadata
+        assert "revenue.principal" not in defined_names
+        assert "revenue.interest" not in defined_names
+        
+        # But they should be accessible via generator() method
+        assert model.generator("revenue").field("principal", 2023) is not None
+        assert model.generator("revenue").field("interest", 2023) is not None
 
     def test_unique_generator_names_work_correctly(
         self, basic_line_items, basic_categories
@@ -126,12 +132,18 @@ class TestModelInitWithDuplicateGenerators:
         assert model.generators[0].name == "company_debt"
         assert model.generators[1].name == "equipment_debt"
 
-        # Verify defined names include both generators' variables
+        # Verify line_item_metadata only includes line items (not generator fields)
         defined_names = [item["name"] for item in model.line_item_metadata]
-        assert "company_debt.principal" in defined_names
-        assert "company_debt.interest" in defined_names
-        assert "equipment_debt.principal" in defined_names
-        assert "equipment_debt.interest" in defined_names
+        assert "revenue" in defined_names
+        assert "expenses" in defined_names
+        
+        # Generator fields should not be in line_item_metadata
+        assert "company_debt.principal" not in defined_names
+        assert "equipment_debt.principal" not in defined_names
+        
+        # But they should be accessible via generator() method
+        assert model.generator("company_debt").field("principal", 2023) is not None
+        assert model.generator("equipment_debt").field("principal", 2023) is not None
 
     def test_different_generator_types_same_name_should_raise_error(
         self, basic_line_items, basic_categories

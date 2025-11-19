@@ -80,22 +80,23 @@ class TestGetItemMetadata:
     def test_get_item_metadata_generator_output(
         self, model_with_multi_line_items
     ):
-        """Test getting metadata for generator generated items."""
-        # Generators generate multiple items in the metadata
+        """Test that generator fields are not in line_item_metadata."""
+        # Generators no longer add items to line_item_metadata
         debt_items = [
             item
             for item in model_with_multi_line_items.line_item_metadata
             if item["source_type"] == "generator"
         ]
 
-        assert len(debt_items) > 0
-
-        # Test getting metadata for one of the generated items
-        debt_item = debt_items[0]
-        metadata = model_with_multi_line_items._get_item_metadata(debt_item["name"])
-
-        assert metadata["source_type"] == "generator"
-        assert metadata["source_name"] == "debt_schedule"
+        # Should be empty since generators don't add to line_item_metadata anymore
+        assert len(debt_items) == 0
+        
+        # Instead, generator fields should be accessible via generator() method
+        # Verify the generator exists
+        assert len(model_with_multi_line_items.generators) > 0
+        generator_name = model_with_multi_line_items.generators[0].name
+        gen_results = model_with_multi_line_items.generator(generator_name)
+        assert len(gen_results.field_names) > 0
 
     def test_get_item_metadata_invalid_name_raises_error(self, basic_model):
         """Test that getting metadata for invalid item raises KeyError."""

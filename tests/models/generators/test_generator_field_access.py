@@ -67,8 +67,12 @@ class TestGeneratorFieldAccessPattern:
         with pytest.raises(KeyError):
             model.value("interest", 2020)
             
-        # But the full dotted name should work
-        assert model.value("my_debt.interest", 2020) > 0
+        # The dotted name should also not work with model.value() anymore
+        with pytest.raises(KeyError):
+            model.value("my_debt.interest", 2020)
+        
+        # Instead, use the generator() method
+        assert model.generator("my_debt").field("interest", 2020) > 0
 
 
 class TestGeneratorResults:
