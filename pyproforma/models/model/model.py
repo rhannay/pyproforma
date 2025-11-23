@@ -22,6 +22,7 @@ from ..metadata import (
 from ..results import (
     CategoryResults,
     ConstraintResults,
+    GeneratorResults,
     LineItemResults,
     LineItemsResults,
 )
@@ -267,7 +268,7 @@ class Model(SerializationMixin):
             self._category_definitions, self.generators
         )
         self.line_item_metadata = generate_line_item_metadata(
-            self._line_item_definitions, self.category_metadata, self.generators
+            self._line_item_definitions
         )
         self.constraint_metadata = generate_constraint_metadata(self.constraints)
         validate_formulas(self._line_item_definitions, self.line_item_metadata)
@@ -734,6 +735,48 @@ class Model(SerializationMixin):
 
         return ConstraintResults(self, constraint_name)
 
+    def generator(self, generator_name: str = None) -> GeneratorResults:
+        """
+        Get a GeneratorResults object for accessing generator field values.
+
+        This method returns a GeneratorResults instance that provides convenient access
+        to generator field values across all years in the model.
+
+        Args:
+            generator_name (str): The name of the generator to access
+
+        Returns:
+            GeneratorResults: An object with methods for accessing generator fields
+
+        Raises:
+            ValueError: If generator_name is None or empty
+            KeyError: If the generator name is not found
+
+        Examples:
+            >>> debt_gen = model.generator('debt')
+            >>> debt_gen.field('principal')  # Get principal values for all years
+            >>> debt_gen.field('interest', 2024)  # Get interest value for 2024
+            >>> debt_gen.to_dataframe()  # Convert to DataFrame
+        """  # noqa: E501
+        if generator_name is None or generator_name == "":
+            available_generators = [gen.name for gen in self.generators]
+            if available_generators:
+                raise ValueError(
+                    (
+                        f"Generator name is required. "
+                        f"Available generator names are: {available_generators}"
+                    )
+                )
+            else:
+                raise ValueError(
+                    (
+                        "Generator name is required, but no generators are "
+                        "defined in this model."
+                    )
+                )
+
+        return GeneratorResults(self, generator_name)
+
     def table(
         self,
         line_items: Optional[list[str]] = None,
@@ -1114,6 +1157,16 @@ class Model(SerializationMixin):
             list[str]: List of category names
         """
         return [category["name"] for category in self.category_metadata]
+
+    @property
+    def generator_names(self) -> list[str]:
+        """
+        Get list of all generator names.
+
+        Returns:
+            list[str]: List of generator names
+        """
+        return [gen.name for gen in self.generators]
 
     # ============================================================================
     # METADATA & INTERNAL LOOKUPS

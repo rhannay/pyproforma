@@ -86,12 +86,20 @@ ebitda = LineItem(
     formula="annual_revenue - operating_expenses",
 )
 
+# Line items that access generator fields
+debt_interest_expense = LineItem(
+    name="debt_interest_expense",
+    label="Interest Expense",
+    category="debt_service",
+    formula="debt: interest",
+)
+
 # Net income after debt service
 net_income = LineItem(
     name="net_income",
     label="Net Income",
     category="revenues",
-    formula="ebitda - debt_interest",
+    formula="ebitda - debt_interest_expense",
 )
 
 # =============================================================================
@@ -104,14 +112,17 @@ model_with_debt = Model(
         annual_revenue,
         operating_expenses,
         ebitda,
+        debt_interest_expense,
         net_income,
     ],
     generators=[
-        # Debt generator - this will create multiple line items:
-        # - debt_principal (principal payments)
-        # - debt_interest (interest payments)
-        # - debt_bond_proceeds (bond issuance proceeds)
-        # - debt_debt_outstanding (outstanding debt balance)
+        # Debt generator - this will create multiple fields:
+        # - principal (principal payments)
+        # - interest (interest payments)
+        # - bond_proceeds (bond issuance proceeds)
+        # - debt_outstanding (outstanding debt balance)
+        # These can be accessed via Model.generator("debt") or via
+        # line items with formula "debt: field_name"
         debt_financing,
     ],
     years=years,

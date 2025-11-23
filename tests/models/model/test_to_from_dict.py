@@ -371,9 +371,9 @@ class TestModelToFromDict:
         assert len(recreated_model.generators) == 1
         assert recreated_model.generators[0].name == "loan"
 
-        # Verify the values match
-        original_value = model.value("loan_principal", 2023)
-        recreated_value = recreated_model.value("loan_principal", 2023)
+        # Verify the values match via generator() method
+        original_value = model.generator("loan").field("principal", 2023)
+        recreated_value = recreated_model.generator("loan").field("principal", 2023)
         assert original_value == recreated_value
 
     def test_round_trip_preserves_model_functionality(self, simple_model: Model):

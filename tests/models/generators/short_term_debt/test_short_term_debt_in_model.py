@@ -41,29 +41,29 @@ class TestShortTermDebtInModel:
         )
 
         # Test year 2020 values (draw only)
-        assert model.value("credit_line_debt_outstanding", 2020) == 1500000  # 1M + 500k
-        assert model.value("credit_line.draw", 2020) == 500000
-        assert model.value("credit_line_principal", 2020) == 0.0
-        assert _is_close(model.value("credit_line_interest", 2020), 50000)  # 1M * 0.05
+        assert model.generator("credit_line").field("debt_outstanding", 2020) == 1500000  # 1M + 500k
+        assert model.generator("credit_line").field("draw", 2020) == 500000
+        assert model.generator("credit_line").field("principal", 2020) == 0.0
+        assert _is_close(model.generator("credit_line").field("interest", 2020), 50000)  # 1M * 0.05
 
         # Test year 2021 values (draw and paydown)
         assert (
-            model.value("credit_line_debt_outstanding", 2021) == 1600000
+            model.generator("credit_line").field("debt_outstanding", 2021) == 1600000
         )  # 1.5M + 300k - 200k
-        assert model.value("credit_line.draw", 2021) == 300000
-        assert model.value("credit_line_principal", 2021) == 200000
+        assert model.generator("credit_line").field("draw", 2021) == 300000
+        assert model.generator("credit_line").field("principal", 2021) == 200000
         assert _is_close(
-            model.value("credit_line_interest", 2021), 75000
+            model.generator("credit_line").field("interest", 2021), 75000
         )  # 1.5M * 0.05
 
         # Test year 2022 values (paydown only)
         assert (
-            model.value("credit_line_debt_outstanding", 2022) == 1000000
+            model.generator("credit_line").field("debt_outstanding", 2022) == 1000000
         )  # 1.6M - 600k
-        assert model.value("credit_line.draw", 2022) == 0.0
-        assert model.value("credit_line_principal", 2022) == 600000
+        assert model.generator("credit_line").field("draw", 2022) == 0.0
+        assert model.generator("credit_line").field("principal", 2022) == 600000
         assert _is_close(
-            model.value("credit_line_interest", 2022), 80000
+            model.generator("credit_line").field("interest", 2022), 80000
         )  # 1.6M * 0.05
 
     def test_short_term_debt_dynamic_interest_rate_in_model(self):
@@ -105,28 +105,28 @@ class TestShortTermDebtInModel:
         )
 
         # Test debt outstanding remains constant (no draws/paydowns)
-        assert model.value("variable_debt_debt_outstanding", 2020) == 1000000
-        assert model.value("variable_debt_debt_outstanding", 2021) == 1000000
-        assert model.value("variable_debt_debt_outstanding", 2022) == 1000000
+        assert model.generator("variable_debt").field("debt_outstanding", 2020) == 1000000
+        assert model.generator("variable_debt").field("debt_outstanding", 2021) == 1000000
+        assert model.generator("variable_debt").field("debt_outstanding", 2022) == 1000000
 
         # Test interest calculations with varying rates
         assert _is_close(
-            model.value("variable_debt_interest", 2020), 30000
+            model.generator("variable_debt").field("interest", 2020), 30000
         )  # 1M * 0.03
         assert _is_close(
-            model.value("variable_debt_interest", 2021), 45000
+            model.generator("variable_debt").field("interest", 2021), 45000
         )  # 1M * 0.045
         assert _is_close(
-            model.value("variable_debt_interest", 2022), 20000
+            model.generator("variable_debt").field("interest", 2022), 20000
         )  # 1M * 0.02
 
         # Test no draws or paydowns
-        assert model.value("variable_debt.draw", 2020) == 0.0
-        assert model.value("variable_debt.draw", 2021) == 0.0
-        assert model.value("variable_debt.draw", 2022) == 0.0
-        assert model.value("variable_debt_principal", 2020) == 0.0
-        assert model.value("variable_debt_principal", 2021) == 0.0
-        assert model.value("variable_debt_principal", 2022) == 0.0
+        assert model.generator("variable_debt").field("draw", 2020) == 0.0
+        assert model.generator("variable_debt").field("draw", 2021) == 0.0
+        assert model.generator("variable_debt").field("draw", 2022) == 0.0
+        assert model.generator("variable_debt").field("principal", 2020) == 0.0
+        assert model.generator("variable_debt").field("principal", 2021) == 0.0
+        assert model.generator("variable_debt").field("principal", 2022) == 0.0
 
     def test_short_term_debt_dynamic_draws_and_paydown_in_model(self):
         """
@@ -185,34 +185,34 @@ class TestShortTermDebtInModel:
 
         # Test debt outstanding calculations
         assert (
-            model.value("flexible_debt_debt_outstanding", 2020) == 1000000
+            model.generator("flexible_debt").field("debt_outstanding", 2020) == 1000000
         )  # 750k + 250k
         assert (
-            model.value("flexible_debt_debt_outstanding", 2021) == 950000
+            model.generator("flexible_debt").field("debt_outstanding", 2021) == 950000
         )  # 1M + 100k - 150k
         assert (
-            model.value("flexible_debt_debt_outstanding", 2022) == 150000
+            model.generator("flexible_debt").field("debt_outstanding", 2022) == 150000
         )  # 950k + 0 - 800k
 
         # Test draw values match the line items
-        assert model.value("flexible_debt.draw", 2020) == 250000
-        assert model.value("flexible_debt.draw", 2021) == 100000
-        assert model.value("flexible_debt.draw", 2022) == 0
+        assert model.generator("flexible_debt").field("draw", 2020) == 250000
+        assert model.generator("flexible_debt").field("draw", 2021) == 100000
+        assert model.generator("flexible_debt").field("draw", 2022) == 0
 
         # Test principal (paydown) values match the line items
-        assert model.value("flexible_debt_principal", 2020) == 0
-        assert model.value("flexible_debt_principal", 2021) == 150000
-        assert model.value("flexible_debt_principal", 2022) == 800000
+        assert model.generator("flexible_debt").field("principal", 2020) == 0
+        assert model.generator("flexible_debt").field("principal", 2021) == 150000
+        assert model.generator("flexible_debt").field("principal", 2022) == 800000
 
         # Test interest calculations (4% rate on beginning balance)
         assert _is_close(
-            model.value("flexible_debt_interest", 2020), 30000
+            model.generator("flexible_debt").field("interest", 2020), 30000
         )  # 750k * 0.04
         assert _is_close(
-            model.value("flexible_debt_interest", 2021), 40000
+            model.generator("flexible_debt").field("interest", 2021), 40000
         )  # 1M * 0.04
         assert _is_close(
-            model.value("flexible_debt_interest", 2022), 38000
+            model.generator("flexible_debt").field("interest", 2022), 38000
         )  # 950k * 0.04
 
     def test_short_term_debt_defined_names_in_model(self):
@@ -231,15 +231,15 @@ class TestShortTermDebtInModel:
         # Create a model with the generator
         model = Model(line_items=[], years=[2020, 2021], generators=[std])
 
-        # Test that all defined names are in the model and accessible
-        expected_names = [
-            "test_debt_debt_outstanding",
-            "test_debt.draw",
-            "test_debt_principal",
-            "test_debt_interest",
+        # Test that all defined fields are accessible via generator() method
+        expected_fields = [
+            "debt_outstanding",
+            "draw",
+            "principal",
+            "interest",
         ]
 
-        for name in expected_names:
-            # Test that we can get values for all years
-            assert model.value(name, 2020) is not None
-            assert model.value(name, 2021) is not None
+        for field in expected_fields:
+            # Test that we can get values for all years via generator() method
+            assert model.generator("test_debt").field(field, 2020) is not None
+            assert model.generator("test_debt").field(field, 2021) is not None

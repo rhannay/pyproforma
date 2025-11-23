@@ -76,8 +76,9 @@ class TestModelInitWithDuplicateGenerators:
             term=5,
         )
 
-        # This should work because generator creates names like "revenue_principal", "revenue_interest"  # noqa: E501
-        # which don't conflict with line item "revenue"
+        # This should work because generator creates fields like "principal", "interest"
+        # which are stored as "revenue.principal", "revenue.interest" and don't conflict
+        # with line item "revenue"
         model = Model(
             line_items=basic_line_items,
             years=[2023, 2024],
@@ -90,12 +91,18 @@ class TestModelInitWithDuplicateGenerators:
         assert len(model.generators) == 1
         assert model.generators[0].name == "revenue"
 
-        # Verify defined names include both line item and generator variables
+        # Verify defined names include line items only (not generator fields)
         defined_names = [item["name"] for item in model.line_item_metadata]
         assert "revenue" in defined_names  # line item
-        assert "revenue_principal" in defined_names  # generator
-        assert "revenue_interest" in defined_names  # generator
-        assert "revenue_bond_proceeds" in defined_names  # generator
+        assert "expenses" in defined_names  # line item
+        
+        # Generator fields should not be in line_item_metadata
+        assert "revenue.principal" not in defined_names
+        assert "revenue.interest" not in defined_names
+        
+        # But they should be accessible via generator() method
+        assert model.generator("revenue").field("principal", 2023) is not None
+        assert model.generator("revenue").field("interest", 2023) is not None
 
     def test_unique_generator_names_work_correctly(
         self, basic_line_items, basic_categories
@@ -125,12 +132,18 @@ class TestModelInitWithDuplicateGenerators:
         assert model.generators[0].name == "company_debt"
         assert model.generators[1].name == "equipment_debt"
 
-        # Verify defined names include both generators' variables
+        # Verify line_item_metadata only includes line items (not generator fields)
         defined_names = [item["name"] for item in model.line_item_metadata]
-        assert "company_debt_principal" in defined_names
-        assert "company_debt_interest" in defined_names
-        assert "equipment_debt_principal" in defined_names
-        assert "equipment_debt_interest" in defined_names
+        assert "revenue" in defined_names
+        assert "expenses" in defined_names
+        
+        # Generator fields should not be in line_item_metadata
+        assert "company_debt.principal" not in defined_names
+        assert "equipment_debt.principal" not in defined_names
+        
+        # But they should be accessible via generator() method
+        assert model.generator("company_debt").field("principal", 2023) is not None
+        assert model.generator("equipment_debt").field("principal", 2023) is not None
 
     def test_different_generator_types_same_name_should_raise_error(
         self, basic_line_items, basic_categories
@@ -674,3 +687,49 @@ class TestModelInitWithStringCategories:
         # Test category access works
         income_category = model.category("income")
         assert income_category.name == "income"
+
+
+class TestModelGeneratorNamesProperty:
+    """Test the Model.generator_names property."""
+
+    def test_generator_names_returns_list_of_names(self):
+        """Test that generator_names property returns list of generator names."""
+        # Create generators
+        debt1 = Debt(
+            name="company_debt", par_amount={2023: 100000}, interest_rate=0.05, term=10
+        )
+        debt2 = Debt(
+            name="equipment_debt", par_amount={2023: 50000}, interest_rate=0.04, term=5
+        )
+
+        # Create model with generators
+        model = Model(
+            line_items=[],
+            years=[2023, 2024],
+            generators=[debt1, debt2],
+        )
+
+        # Test generator_names property
+        assert hasattr(model, "generator_names")
+        assert model.generator_names == ["company_debt", "equipment_debt"]
+        assert len(model.generator_names) == 2
+
+    def test_generator_names_empty_when_no_generators(self):
+        """Test that generator_names returns empty list when no generators."""
+        model = Model(years=[2023])
+
+        assert model.generator_names == []
+        assert len(model.generator_names) == 0
+
+    def test_generator_names_with_single_generator(self):
+        """Test generator_names with a single generator."""
+        debt = Debt(name="loan", par_amount={2023: 100000}, interest_rate=0.05, term=10)
+
+        model = Model(
+            line_items=[],
+            years=[2023, 2024],
+            generators=[debt],
+        )
+
+        assert model.generator_names == ["loan"]
+        assert len(model.generator_names) == 1

@@ -50,11 +50,11 @@ class Debt(Generator):
         self._interest_rate = interest_rate
         self._term = term
 
-        # Gather the defined names
-        self._principal_name = f"{self.name}_principal"
-        self._interest_name = f"{self.name}_interest"
-        self._bond_proceeds_name = f"{self.name}_bond_proceeds"
-        self._debt_outstanding_name = f"{self.name}_debt_outstanding"
+        # Gather the defined field names (without generator name prefix)
+        self._principal_name = "principal"
+        self._interest_name = "interest"
+        self._bond_proceeds_name = "bond_proceeds"
+        self._debt_outstanding_name = "debt_outstanding"
 
         self.ds_schedules = {}
 
@@ -178,10 +178,13 @@ class Debt(Generator):
     @property
     def defined_names(self) -> List[str]:
         """
-        Returns a list of all line item names defined by this component.
+        Returns a list of all field names defined by this generator.
+
+        These are the field names without the generator name prefix.
+        They will be stored in the value matrix with "generator_name.field" keys.
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.  # noqa: E501
+            List[str]: The field names this generator can generate values for.  # noqa: E501
         """  # noqa: E501
         return [
             self._principal_name,

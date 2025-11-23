@@ -4,16 +4,19 @@ from typing import Any, Dict, List, Optional, Type
 
 class Generator(ABC):
     """
-    Abstract base class for components that define and generate multiple line items.
+    Abstract base class for components that define and generate multiple fields.
 
-    This class provides an interface for accessing multiple line items from a single
-    component in a financial model. Subclasses must implement the defined_names property
-    and get_value method.
+    Generators create fields that can be accessed by line items using the
+    "generator_name: field_name" formula syntax. The fields are stored in the
+    value matrix with "generator_name.field" keys.
+
+    Subclasses must implement the defined_names property (returning field names
+    without the generator name prefix) and get_values method.
 
     Examples of subclasses might be:
-    - DepreciationSchedule (generating depreciation line items for multiple assets)
-    - LoanAmortization (generating principal, interest, and balance line items)
-    - RevenueBreakdown (generating revenue line items by product/service)
+    - Debt (generating principal, interest, bond_proceeds, and debt_outstanding fields)
+    - ShortTermDebt (generating debt_outstanding, draw, principal, and interest fields)
+    - DepreciationSchedule (generating depreciation fields for multiple assets)
     """
 
     # Registry to store generator subclasses by type
@@ -86,10 +89,14 @@ class Generator(ABC):
     @abstractmethod
     def defined_names(self) -> List[str]:
         """
-        Returns a list of all line item names defined by this component.
+        Returns a list of all field names defined by this generator.
+
+        Field names should not include the generator name prefix. The framework
+        will automatically prepend the generator name when storing values in
+        the value matrix (e.g., "field" becomes "generator_name.field").
 
         Returns:
-            List[str]: The names of all line items this component can generate values for.  # noqa: E501
+            List[str]: The field names this generator can generate values for.  # noqa: E501
         """  # noqa: E501
         pass
 
@@ -98,7 +105,7 @@ class Generator(ABC):
         self, interim_values_by_year: Dict[int, Dict[str, Any]], year: int
     ) -> Dict[str, Optional[float]]:
         """
-        Get all values for this generator for a specific year.
+        Get all field values for this generator for a specific year.
 
         Args:
             interim_values_by_year (Dict[int, Dict[str, Any]]): Dictionary containing calculated values  # noqa: E501
@@ -107,8 +114,9 @@ class Generator(ABC):
             year (int): The year for which to get the values.
 
         Returns:
-            Dict[str, Optional[float]]: Dictionary of calculated values for all defined line items in this  # noqa: E501
-                                        component for the specified year, with line item names as keys.  # noqa: E501
+            Dict[str, Optional[float]]: Dictionary of calculated values for all defined fields in this  # noqa: E501
+                                        generator for the specified year, with field names as keys.  # noqa: E501
+                                        Keys should match the field names returned by defined_names.  # noqa: E501
 
         Raises:
             ValueError: If value already exists in interim_values_by_year to prevent circular references.  # noqa: E501

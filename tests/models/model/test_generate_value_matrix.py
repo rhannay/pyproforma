@@ -156,11 +156,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -191,11 +187,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -234,11 +226,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -276,11 +264,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -318,11 +302,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -349,26 +329,30 @@ class TestGenerateValueMatrix:
 
         # Create line items that depend on line item generator values
         revenue = LineItem(name="revenue", category="revenue", values={2023: 150000})
-        # Use the first defined name from the line item generator
-        debt_names = debt_generator.defined_names
-        debt_payment_var = debt_names[0]  # Usually something like "loan_principal"
+        
+        # Create a line item that accesses a generator field
+        debt_payment = LineItem(
+            name="debt_payment",
+            category="expenses",
+            formula="loan: principal",
+        )
 
         net_income = LineItem(
             name="net_income",
             category="net_income",
-            formula=f"revenue - {debt_payment_var}",
+            formula="revenue - debt_payment",
         )
 
         # Test different orders
         model1 = Model(
-            line_items=[revenue, net_income],
+            line_items=[revenue, debt_payment, net_income],
             years=[2023],
             categories=basic_categories,
             generators=[debt_generator],
         )
 
         model2 = Model(
-            line_items=[net_income, revenue],  # Different order
+            line_items=[net_income, revenue, debt_payment],  # Different order
             years=[2023],
             categories=basic_categories,
             generators=[debt_generator],
@@ -392,14 +376,15 @@ class TestGenerateValueMatrix:
         # Both should produce the same result
         assert matrix1[2023] == matrix2[2023]
 
-        # Verify line item generator values are included
-        for debt_name in debt_names:
-            assert debt_name in matrix1[2023]
-            assert isinstance(matrix1[2023][debt_name], (int, float))
+        # Verify line item generator field values are included with generator_name.field format
+        generator_field_names = [f"loan.{field}" for field in debt_generator.defined_names]
+        for full_name in generator_field_names:
+            assert full_name in matrix1[2023]
+            assert isinstance(matrix1[2023][full_name], (int, float))
 
         # Verify line items calculated correctly
         assert matrix1[2023]["revenue"] == 150000
-        assert matrix1[2023]["net_income"] == 150000 - matrix1[2023][debt_payment_var]
+        assert matrix1[2023]["net_income"] == 150000 - matrix1[2023]["debt_payment"]
 
     def test_generate_value_matrix_with_assumptions(self, basic_categories):
         """Test that assumptions (now as line items) are included in the value matrix."""  # noqa: E501
@@ -467,11 +452,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
@@ -506,11 +487,7 @@ class TestGenerateValueMatrix:
         category_metadata = generate_category_metadata(
             category_definitions, multi_line_items
         )
-        line_item_metadata = generate_line_item_metadata(
-            line_item_definitions,
-            category_metadata,
-            multi_line_items,
-        )
+        line_item_metadata = generate_line_item_metadata(line_item_definitions)
 
         with pytest.raises(ValueError) as exc_info:
             generate_value_matrix(
