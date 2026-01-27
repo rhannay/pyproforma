@@ -152,4 +152,5 @@ def to_excel(table: "Table", filename="table.xlsx"):
 
     # Save the workbook
     workbook.save(filename)
+    workbook.close()  # Explicitly close to release file handle on Windows
     print(f"Table exported to {filename}")
