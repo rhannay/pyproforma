@@ -1,5 +1,6 @@
 from typing import List, Literal, Optional
 
+import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -131,6 +132,129 @@ class Chart:
                 fig.update_yaxes(tickformat=".2%")
 
         return fig
+
+    def to_matplotlib(
+        self,
+        width: int = 8,
+        height: int = 6,
+        show_legend: bool = True,
+        style: str = "seaborn-v0_8-whitegrid",
+    ):
+        """
+        Render this Chart object using Matplotlib with mixed chart types.
+
+        Args:
+            width: Figure width in inches
+            height: Figure height in inches
+            show_legend: Whether to show the legend
+            style: Matplotlib style to use
+
+        Returns:
+            tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
+        """
+        # Create figure and axis
+        fig, ax = plt.subplots(figsize=(width, height))
+
+        # Apply style
+        try:
+            plt.style.use(style)
+        except:
+            # If style doesn't exist, continue with default
+            pass
+
+        # Add plots for each dataset based on their individual types
+        x_positions = list(range(len(self.labels)))
+
+        for dataset in self.data_sets:
+            if dataset.type == "bar":
+                self._add_bar_matplotlib(ax, dataset, x_positions)
+            elif dataset.type == "line":
+                self._add_line_matplotlib(ax, dataset, x_positions)
+            elif dataset.type == "scatter":
+                self._add_scatter_matplotlib(ax, dataset, x_positions)
+            elif dataset.type == "pie":
+                self._add_pie_matplotlib(ax, dataset)
+            else:
+                # Default to line chart for unknown types
+                self._add_line_matplotlib(ax, dataset, x_positions)
+
+        # Set title
+        ax.set_title(self.title, fontsize=14, pad=20)
+
+        # Set x-axis labels (not for pie charts)
+        if not any(ds.type == "pie" for ds in self.data_sets):
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(self.labels)
+            ax.set_xlabel("")
+            ax.set_ylabel("")
+
+        # Format y-axis based on value_format
+        if self.value_format and not any(ds.type == "pie" for ds in self.data_sets):
+            if self.value_format == "no_decimals":
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:,.0f}'))
+            elif self.value_format == "two_decimals":
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:,.2f}'))
+            elif self.value_format == "percent":
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0%}'))
+            elif self.value_format == "percent_one_decimal":
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.1%}'))
+            elif self.value_format == "percent_two_decimals":
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.2%}'))
+
+        # Show legend
+        if show_legend and len(self.data_sets) > 0:
+            ax.legend()
+
+        # Adjust layout
+        fig.tight_layout()
+
+        return fig, ax
+
+    def _add_bar_matplotlib(self, ax, dataset: ChartDataSet, x_positions: List[int]) -> None:
+        """Add a bar plot to the matplotlib axis."""
+        ax.bar(
+            x_positions,
+            dataset.data,
+            label=dataset.label,
+            color=dataset.color,
+            alpha=0.8,
+        )
+
+    def _add_line_matplotlib(self, ax, dataset: ChartDataSet, x_positions: List[int]) -> None:
+        """Add a line plot to the matplotlib axis."""
+        linestyle = '--' if dataset.dashed else '-'
+        ax.plot(
+            x_positions,
+            dataset.data,
+            label=dataset.label,
+            color=dataset.color,
+            linestyle=linestyle,
+            linewidth=2,
+            marker='o',
+            markersize=6,
+        )
+
+    def _add_scatter_matplotlib(self, ax, dataset: ChartDataSet, x_positions: List[int]) -> None:
+        """Add a scatter plot to the matplotlib axis."""
+        ax.scatter(
+            x_positions,
+            dataset.data,
+            label=dataset.label,
+            color=dataset.color,
+            s=80,
+            alpha=0.7,
+        )
+
+    def _add_pie_matplotlib(self, ax, dataset: ChartDataSet) -> None:
+        """Add a pie chart to the matplotlib axis."""
+        ax.pie(
+            dataset.data,
+            labels=self.labels,
+            autopct='%1.1f%%',
+            startangle=90,
+            colors=[dataset.color] if dataset.color else None,
+        )
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
 
     def _add_bar_trace(
         self, fig: go.Figure, dataset: ChartDataSet, x_positions: List[int]
