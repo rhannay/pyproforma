@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 
 from pyproforma.tables.excel import to_excel, value_format_to_excel_format
 from pyproforma.tables.table_class import Cell, Column, Row, Table
@@ -141,18 +142,22 @@ class TestToExcelIntegration:
 
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
-            try:
-                # This should not raise any exceptions
-                to_excel(table, tmp_file.name)
+            tmp_name = tmp_file.name
 
-                # Verify file was created
-                assert os.path.exists(tmp_file.name)
-                assert os.path.getsize(tmp_file.name) > 0
+        try:
+            # This should not raise any exceptions
+            to_excel(table, tmp_name)
 
-            finally:
-                # Clean up
-                if os.path.exists(tmp_file.name):
-                    os.unlink(tmp_file.name)
+            # Verify file was created
+            assert os.path.exists(tmp_name)
+            assert os.path.getsize(tmp_name) > 0
+
+        finally:
+            # Clean up
+            if os.path.exists(tmp_name):
+                # On Windows, need to wait briefly for file handle to be released
+                time.sleep(0.1)
+                os.unlink(tmp_name)
 
     def test_to_excel_with_all_format_types(self):
         """Test to_excel with all supported value format types."""
@@ -187,18 +192,22 @@ class TestToExcelIntegration:
 
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
-            try:
-                # This should not raise any exceptions
-                to_excel(table, tmp_file.name)
+            tmp_name = tmp_file.name
 
-                # Verify file was created
-                assert os.path.exists(tmp_file.name)
-                assert os.path.getsize(tmp_file.name) > 0
+        try:
+            # This should not raise any exceptions
+            to_excel(table, tmp_name)
 
-            finally:
-                # Clean up
-                if os.path.exists(tmp_file.name):
-                    os.unlink(tmp_file.name)
+            # Verify file was created
+            assert os.path.exists(tmp_name)
+            assert os.path.getsize(tmp_name) > 0
+
+        finally:
+            # Clean up
+            if os.path.exists(tmp_name):
+                # On Windows, need to wait briefly for file handle to be released
+                time.sleep(0.1)
+                os.unlink(tmp_name)
 
     def test_to_excel_empty_table(self):
         """Test to_excel with an empty table."""
@@ -207,10 +216,14 @@ class TestToExcelIntegration:
         table = Table(columns=columns, rows=rows)
 
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
-            try:
-                to_excel(table, tmp_file.name)
-                assert os.path.exists(tmp_file.name)
-                assert os.path.getsize(tmp_file.name) > 0
-            finally:
-                if os.path.exists(tmp_file.name):
-                    os.unlink(tmp_file.name)
+            tmp_name = tmp_file.name
+
+        try:
+            to_excel(table, tmp_name)
+            assert os.path.exists(tmp_name)
+            assert os.path.getsize(tmp_name) > 0
+        finally:
+            if os.path.exists(tmp_name):
+                # On Windows, need to wait briefly for file handle to be released
+                time.sleep(0.1)
+                os.unlink(tmp_name)

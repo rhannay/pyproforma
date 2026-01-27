@@ -268,10 +268,10 @@ class TestModelToDataFrameEdgeCases:
             include_category=True,
         )
 
-        # Check that name, label, and category are strings
-        assert df["name"].dtype == object
-        assert df["label"].dtype == object
-        assert df["category"].dtype == object
+        # Check that name, label, and category are strings (object or StringDtype)
+        assert pd.api.types.is_string_dtype(df["name"])
+        assert pd.api.types.is_string_dtype(df["label"])
+        assert pd.api.types.is_string_dtype(df["category"])
 
         # Check that year columns are numeric
         assert pd.api.types.is_numeric_dtype(df[2023])
