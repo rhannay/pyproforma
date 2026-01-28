@@ -3,7 +3,7 @@ import pytest
 from pyproforma.charts.chart_class import Chart, ChartDataSet
 
 try:
-    import matplotlib
+    import matplotlib.pyplot  # noqa: F401
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:

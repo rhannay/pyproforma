@@ -156,8 +156,7 @@ class Chart:
         # X-axis positions
         x_positions = list(range(len(self.labels)))
 
-        # Track if we have any bar charts for bar positioning
-        has_bars = any(ds.type == "bar" for ds in self.data_sets)
+        # Track bar datasets for positioning
         bar_datasets = [ds for ds in self.data_sets if ds.type == "bar"]
         num_bars = len(bar_datasets)
 
