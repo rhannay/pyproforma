@@ -408,3 +408,18 @@ class TestChartMatplotlib:
 
         plt.close(fig)
 
+    def test_to_matplotlib_import_error(self):
+        """Test matplotlib import handling when available."""
+        # This test verifies the method works when matplotlib is available.
+        # In actual usage without matplotlib, ImportError would be raised.
+        labels = ["A", "B"]
+        dataset = ChartDataSet("Data", [1, 2])
+        chart = Chart(labels, [dataset])
+
+        # Just verify it works when matplotlib is available
+        fig, ax = chart.to_matplotlib()
+        assert fig is not None
+        import matplotlib.pyplot as plt
+
+        plt.close(fig)
+

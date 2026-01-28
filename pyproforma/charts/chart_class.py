@@ -1,10 +1,13 @@
-from typing import List, Literal, Optional
+from typing import TYPE_CHECKING, List, Literal, Optional, Tuple
 
-import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
 from ..constants import ValueFormat
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
 
 class ChartDataSet:
@@ -138,7 +141,7 @@ class Chart:
         width: int = 10,
         height: int = 6,
         show_legend: bool = True,
-    ):
+    ) -> Tuple["Figure", "Axes"]:
         """
         Render this Chart object using Matplotlib.
 
@@ -150,7 +153,38 @@ class Chart:
         Returns:
             tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
         """
-        # Create figure and axis
+        # Import matplotlib here to make it an optional dependency
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError(
+                "Matplotlib is required to use to_matplotlib(). "
+                "Install it with: pip install matplotlib"
+            ) from e
+
+        # Handle pie charts separately as they need different layout
+        has_pie = any(ds.type == "pie" for ds in self.data_sets)
+        if has_pie:
+            if len(self.data_sets) > 1:
+                raise ValueError(
+                    "Pie charts cannot be rendered with other datasets. "
+                    "Use a single ChartDataSet with type='pie' for pie charts."
+                )
+            # Create pie chart
+            fig, ax = plt.subplots(figsize=(width, height))
+            dataset = self.data_sets[0]
+            ax.pie(
+                dataset.data,
+                labels=self.labels,
+                autopct="%1.1f%%",
+                startangle=90,
+            )
+            ax.axis("equal")  # Equal aspect ratio for circular pie
+            ax.set_title(self.title, fontsize=14, fontweight="bold")
+            fig.tight_layout()
+            return fig, ax
+
+        # Create figure and axis for non-pie charts
         fig, ax = plt.subplots(figsize=(width, height))
 
         # X-axis positions
@@ -206,56 +240,42 @@ class Chart:
                     color=dataset.color,
                 )
 
-            elif dataset.type == "pie":
-                # For pie charts, create a new figure
-                fig, ax = plt.subplots(figsize=(width, height))
-                ax.pie(
-                    dataset.data,
-                    labels=self.labels,
-                    autopct="%1.1f%%",
-                    startangle=90,
-                    colors=[dataset.color] if dataset.color else None,
-                )
-                ax.axis("equal")  # Equal aspect ratio for circular pie
-
         # Set title
         ax.set_title(self.title, fontsize=14, fontweight="bold")
 
-        # Set x-axis labels (skip for pie charts)
-        if not any(ds.type == "pie" for ds in self.data_sets):
-            ax.set_xticks(x_positions)
-            ax.set_xticklabels(self.labels)
+        # Set x-axis labels
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(self.labels)
 
-            # Format y-axis based on value_format
-            if self.value_format:
-                if self.value_format == "no_decimals":
-                    ax.yaxis.set_major_formatter(
-                        plt.FuncFormatter(lambda y, _: f"{y:,.0f}")
-                    )
-                elif self.value_format == "two_decimals":
-                    ax.yaxis.set_major_formatter(
-                        plt.FuncFormatter(lambda y, _: f"{y:,.2f}")
-                    )
-                elif self.value_format == "percent":
-                    ax.yaxis.set_major_formatter(
-                        plt.FuncFormatter(lambda y, _: f"{y:.0%}")
-                    )
-                elif self.value_format == "percent_one_decimal":
-                    ax.yaxis.set_major_formatter(
-                        plt.FuncFormatter(lambda y, _: f"{y:.1%}")
-                    )
-                elif self.value_format == "percent_two_decimals":
-                    ax.yaxis.set_major_formatter(
-                        plt.FuncFormatter(lambda y, _: f"{y:.2%}")
-                    )
+        # Format y-axis based on value_format
+        if self.value_format:
+            if self.value_format == "no_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:,.0f}")
+                )
+            elif self.value_format == "two_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:,.2f}")
+                )
+            elif self.value_format == "percent":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.0%}")
+                )
+            elif self.value_format == "percent_one_decimal":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.1%}")
+                )
+            elif self.value_format == "percent_two_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.2%}")
+                )
 
-        # Show legend if requested and not a pie chart
-        if show_legend and not any(ds.type == "pie" for ds in self.data_sets):
+        # Show legend if requested
+        if show_legend:
             ax.legend()
 
-        # Add grid for better readability (not for pie charts)
-        if not any(ds.type == "pie" for ds in self.data_sets):
-            ax.grid(True, alpha=0.3)
+        # Add grid for better readability
+        ax.grid(True, alpha=0.3)
 
         # Tight layout to prevent label cutoff
         fig.tight_layout()
