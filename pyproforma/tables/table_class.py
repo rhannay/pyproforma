@@ -6,6 +6,7 @@ from pandas.io.formats.style import Styler
 
 from ..constants import ValueFormat
 from .excel import to_excel
+from .html_renderer import to_html_2 as _to_html_2
 
 
 @dataclass
@@ -258,6 +259,31 @@ class Table:
     def to_excel(self, filename="table.xlsx"):
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
+
+    def to_html_2(self) -> str:
+        """Generate custom HTML representation with Excel-like grid styling.
+
+        This method creates an HTML table with Excel-like grid appearance without
+        relying on pandas DataFrame styling. The output includes:
+        - Excel-like grid borders around all cells
+        - Support for bold text, alignment, and colors
+        - Top and bottom borders (single and double)
+        - Value formatting (numbers, percentages, etc.)
+
+        Returns:
+            str: HTML string representation of the table with embedded CSS styling.
+
+        Examples:
+            >>> table.to_html_2()  # Returns HTML string
+            >>> from IPython.display import HTML, display
+            >>> display(HTML(table.to_html_2()))  # Display in Jupyter notebook
+
+        Note:
+            This is an alternative to the default _repr_html_() which uses
+            pandas styled DataFrames. Use this when you want more control over
+            the HTML output or prefer not to depend on pandas styling.
+        """
+        return _to_html_2(self)
 
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
