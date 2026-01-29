@@ -368,7 +368,7 @@ class Table:
                         ),
                         top_border=(
                             None if remove_borders else original_cell.top_border
-                        )
+                        ),
                     )
                     new_row_cells.append(new_cell)
                 else:

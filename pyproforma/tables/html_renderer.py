@@ -49,8 +49,8 @@ def to_html_2(table: "Table") -> str:
     # Generate data rows
     html_parts.extend(_generate_data_rows(table))
 
-    html_parts.append('</table>')
-    html_parts.append('</div>')
+    html_parts.append("</table>")
+    html_parts.append("</div>")
 
     # Combine CSS and HTML
     full_html = f"<style>{css}</style>\n{''.join(html_parts)}"
