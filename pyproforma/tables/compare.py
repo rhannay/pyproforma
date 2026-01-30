@@ -4,7 +4,7 @@ Year-over-year comparison table generation.
 
 from typing import TYPE_CHECKING, Optional
 
-from .table_class import Cell, Column, Row, Table
+from ..table import Cell, Column, Row, Table
 
 if TYPE_CHECKING:
     from pyproforma import Model

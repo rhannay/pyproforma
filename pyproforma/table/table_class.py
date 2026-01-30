@@ -6,7 +6,7 @@ from pandas.io.formats.style import Styler
 
 from ..constants import ValueFormat
 from .excel import to_excel
-from .html_renderer import to_html_2 as _to_html_2
+from .html_renderer import to_html as _to_html
 
 
 @dataclass
@@ -260,7 +260,7 @@ class Table:
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
 
-    def to_html_2(self) -> str:
+    def to_html(self) -> str:
         """Generate custom HTML representation with Excel-like grid styling.
 
         This method creates an HTML table with Excel-like grid appearance without
@@ -274,16 +274,16 @@ class Table:
             str: HTML string representation of the table with embedded CSS styling.
 
         Examples:
-            >>> table.to_html_2()  # Returns HTML string
+            >>> table.to_html()  # Returns HTML string
             >>> from IPython.display import HTML, display
-            >>> display(HTML(table.to_html_2()))  # Display in Jupyter notebook
+            >>> display(HTML(table.to_html()))  # Display in Jupyter notebook
 
         Note:
             This is an alternative to the default _repr_html_() which uses
             pandas styled DataFrames. Use this when you want more control over
             the HTML output or prefer not to depend on pandas styling.
         """
-        return _to_html_2(self)
+        return _to_html(self)
 
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
@@ -390,13 +390,13 @@ class Table:
 
         Returns:
             str: HTML string representation of the table with all formatting preserved.
-                 Generated from the to_html_2() method.
+                 Generated from the to_html() method.
 
         Note:
             This is a magic method that enables automatic rich display when a Table
             object is the last expression in a Jupyter cell or when explicitly displayed.
         """  # noqa: E501
-        return _to_html_2(self)
+        return _to_html(self)
 
     # Private helper methods
     def _to_value_formatted_df(self) -> pd.DataFrame:

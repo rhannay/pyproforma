@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import pandas as pd
 
-from pyproforma.tables.table_class import Table
+from pyproforma.table import Table
 
 if TYPE_CHECKING:
     from ..model import Model

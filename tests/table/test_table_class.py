@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pyproforma.tables.table_class import Cell, Column, Row, Table, format_value
+from pyproforma.table import Cell, Column, Row, Table, format_value
 
 
 class TestFormatValue:

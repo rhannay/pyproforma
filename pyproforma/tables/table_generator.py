@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Union
 
+from ..table import Column, Table
 from .row_types import BaseRow, dict_to_row_config
-from .table_class import Column, Table
 
 if TYPE_CHECKING:
     from pyproforma import Model

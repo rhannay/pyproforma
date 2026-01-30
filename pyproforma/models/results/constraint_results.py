@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union
 
 import plotly.graph_objects as go
 
-from pyproforma.tables.table_class import format_value
+from pyproforma.table import format_value
 
 if TYPE_CHECKING:
     from ..model import Model

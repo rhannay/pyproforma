@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .table_class import Table
 
 
-def to_html_2(table: "Table") -> str:
+def to_html(table: "Table") -> str:
     """Generate custom HTML representation of a Table with Excel-like styling.
 
     This function creates an HTML table with Excel-like grid appearance, including:
@@ -34,7 +34,7 @@ def to_html_2(table: "Table") -> str:
         >>> columns = [Column("Name"), Column("Value")]
         >>> rows = [Row([Cell("Item 1", bold=True), Cell(100)])]
         >>> table = Table(columns=columns, rows=rows)
-        >>> html = to_html_2(table)
+        >>> html = to_html(table)
     """
     # Build CSS styles
     css = _generate_css()

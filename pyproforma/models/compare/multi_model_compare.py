@@ -5,8 +5,8 @@ multiple Model instances.
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
+from pyproforma.table import Table
 from pyproforma.tables import row_types as rt
-from pyproforma.tables.table_class import Table
 from pyproforma.tables.table_generator import generate_multi_model_table
 
 if TYPE_CHECKING:

@@ -2,8 +2,8 @@ import os
 import tempfile
 import time
 
-from pyproforma.tables.excel import to_excel, value_format_to_excel_format
-from pyproforma.tables.table_class import Cell, Column, Row, Table
+from pyproforma.table import Cell, Column, Row, Table, to_excel
+from pyproforma.table.excel import value_format_to_excel_format
 
 
 class TestValueFormatToExcelFormat:
