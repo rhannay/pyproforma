@@ -6,6 +6,7 @@ from pandas.io.formats.style import Styler
 
 from ..constants import ValueFormat
 from .excel import to_excel
+from .html_renderer import to_html_2 as _to_html_2
 
 
 @dataclass
@@ -259,6 +260,31 @@ class Table:
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
 
+    def to_html_2(self) -> str:
+        """Generate custom HTML representation with Excel-like grid styling.
+
+        This method creates an HTML table with Excel-like grid appearance without
+        relying on pandas DataFrame styling. The output includes:
+        - Excel-like grid borders around all cells
+        - Support for bold text, alignment, and colors
+        - Top and bottom borders (single and double)
+        - Value formatting (numbers, percentages, etc.)
+
+        Returns:
+            str: HTML string representation of the table with embedded CSS styling.
+
+        Examples:
+            >>> table.to_html_2()  # Returns HTML string
+            >>> from IPython.display import HTML, display
+            >>> display(HTML(table.to_html_2()))  # Display in Jupyter notebook
+
+        Note:
+            This is an alternative to the default _repr_html_() which uses
+            pandas styled DataFrames. Use this when you want more control over
+            the HTML output or prefer not to depend on pandas styling.
+        """
+        return _to_html_2(self)
+
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
 
@@ -342,7 +368,7 @@ class Table:
                         ),
                         top_border=(
                             None if remove_borders else original_cell.top_border
-                        )
+                        ),
                     )
                     new_row_cells.append(new_cell)
                 else:
@@ -359,19 +385,18 @@ class Table:
 
         This special method is automatically called by Jupyter notebooks and other
         IPython-compatible environments to provide a rich HTML representation of
-        the Table object. The method leverages the styled DataFrame to preserve
-        all cell formatting including bold text, alignment, and background colors.
+        the Table object. The method uses custom HTML rendering with Excel-like
+        grid styling.
 
         Returns:
             str: HTML string representation of the table with all formatting preserved.
-                 Generated from the styled DataFrame's HTML output.
+                 Generated from the to_html_2() method.
 
         Note:
             This is a magic method that enables automatic rich display when a Table
             object is the last expression in a Jupyter cell or when explicitly displayed.
         """  # noqa: E501
-        styled_df = self.to_styled_df()
-        return styled_df.to_html()
+        return _to_html_2(self)
 
     # Private helper methods
     def _to_value_formatted_df(self) -> pd.DataFrame:
