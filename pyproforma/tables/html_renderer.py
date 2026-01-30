@@ -83,8 +83,9 @@ def _generate_css() -> str:
             border: 1px solid #d0d0d0;
             padding: 6px 12px;
             color: #333;
+            background-color: white;
         }
-        .pyproforma-table tr:hover {
+        .pyproforma-table tbody tr:hover td {
             background-color: #f9f9f9;
         }
     """
