@@ -385,19 +385,18 @@ class Table:
 
         This special method is automatically called by Jupyter notebooks and other
         IPython-compatible environments to provide a rich HTML representation of
-        the Table object. The method leverages the styled DataFrame to preserve
-        all cell formatting including bold text, alignment, and background colors.
+        the Table object. The method uses custom HTML rendering with Excel-like
+        grid styling.
 
         Returns:
             str: HTML string representation of the table with all formatting preserved.
-                 Generated from the styled DataFrame's HTML output.
+                 Generated from the to_html_2() method.
 
         Note:
             This is a magic method that enables automatic rich display when a Table
             object is the last expression in a Jupyter cell or when explicitly displayed.
         """  # noqa: E501
-        styled_df = self.to_styled_df()
-        return styled_df.to_html()
+        return _to_html_2(self)
 
     # Private helper methods
     def _to_value_formatted_df(self) -> pd.DataFrame:
