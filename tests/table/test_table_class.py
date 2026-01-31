@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pyproforma.table import Cell, Column, Row, Table, format_value
+from pyproforma.table import Cell, Table, format_value
 
 
 class TestFormatValue:
@@ -85,61 +85,67 @@ class TestFormatValue:
 
 
 class TestTableClass:
-    """Test cases for the Table, Cell, Row, and Column classes."""
+    """Test cases for the Table and Cell classes."""
 
-    def test_table_cell_column_number_mismatch(self):
-        columns = [Column(label="A"), Column(label="B")]
-        rows = [
-            Row(cells=[Cell(1), Cell(2)]),
-            Row(cells=[Cell(3)]),  # This row has only one cell instead of two
+    def test_table_grid_consistency_mismatch(self):
+        """Test that mismatched row lengths raise ValueError."""
+        cells = [
+            [Cell(1), Cell(2)],
+            [Cell(3)],  # This row has only one cell instead of two
         ]
-        try:
-            Table(columns=columns, rows=rows)
-        except ValueError as e:
-            assert (
-                str(e)
-                == "Row 1 has 1 cells, expected 2 based on the number of columns."
-            )
-        else:
-            assert False, "Expected ValueError was not raised."
+        with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
+            Table(cells=cells)
 
     def test_table_to_dataframe_simple(self):
-        columns = [Column(label="A"), Column(label="B")]
-        rows = [
-            Row(cells=[Cell(1), Cell(2)]),
-            Row(cells=[Cell(3), Cell(4)]),
+        """Test basic table to DataFrame conversion."""
+        cells = [
+            [Cell("A"), Cell("B")],  # Header row
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
         ]
-        table = Table(columns=columns, rows=rows)
+        table = Table(cells=cells)
         df = table.to_dataframe()
         expected = pd.DataFrame({"A": [1, 3], "B": [2, 4]})
         pd.testing.assert_frame_equal(df, expected)
 
     def test_table_to_dataframe_with_none(self):
-        columns = [Column(label="X"), Column(label="Y")]
-        rows = [
-            Row(cells=[Cell(None), Cell(5)]),
-            Row(cells=[Cell(7), Cell(None)]),
+        """Test DataFrame conversion with None values."""
+        cells = [
+            [Cell("X"), Cell("Y")],  # Header row
+            [Cell(None), Cell(5)],
+            [Cell(7), Cell(None)],
         ]
-        table = Table(columns=columns, rows=rows)
+        table = Table(cells=cells)
         df = table.to_dataframe()
         expected = pd.DataFrame({"X": [None, 7], "Y": [5, None]})
         pd.testing.assert_frame_equal(df, expected)
 
     def test_table_to_dataframe_empty(self):
-        columns = []
-        rows = []
-        table = Table(columns=columns, rows=rows)
+        """Test DataFrame conversion with empty table."""
+        cells = []
+        table = Table(cells=cells)
+        df = table.to_dataframe()
+        expected = pd.DataFrame()
+        pd.testing.assert_frame_equal(df, expected)
+
+    def test_table_to_dataframe_only_header(self):
+        """Test DataFrame conversion with only header row."""
+        cells = [
+            [Cell("A"), Cell("B")],  # Header row only
+        ]
+        table = Table(cells=cells)
         df = table.to_dataframe()
         expected = pd.DataFrame()
         pd.testing.assert_frame_equal(df, expected)
 
     def test_table_get_style_map(self):
-        columns = [Column(label="A"), Column(label="B")]
-        rows = [
-            Row(cells=[Cell(1, bold=True), Cell(2)]),
-            Row(cells=[Cell(3, align="center"), Cell(4, bold=True)]),
+        """Test that style map is generated correctly."""
+        cells = [
+            [Cell("A"), Cell("B")],  # Header row
+            [Cell(1, bold=True), Cell(2)],
+            [Cell(3, align="center"), Cell(4, bold=True)],
         ]
-        table = Table(columns=columns, rows=rows)
+        table = Table(cells=cells)
         style_map = table._get_style_map()
 
         expected_style_map = {

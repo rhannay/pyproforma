@@ -148,10 +148,10 @@ def test_blank_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 1 label column + number of years
     expected_cells = 1 + len(sample_line_item_set.years)
-    assert len(row.cells) == expected_cells
+    assert len(row) == expected_cells
 
     # All cells should be empty
-    for cell in row.cells:
+    for cell in row:
         assert cell.value == ""
 
     # Test with label_col_count=3
@@ -161,10 +161,10 @@ def test_blank_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 3 label columns + number of years
     expected_cells_three = 3 + len(sample_line_item_set.years)
-    assert len(row_with_three_labels.cells) == expected_cells_three
+    assert len(row_with_three_labels) == expected_cells_three
 
     # All cells should be empty
-    for cell in row_with_three_labels.cells:
+    for cell in row_with_three_labels:
         assert cell.value == ""
 
 
@@ -179,21 +179,21 @@ def test_cumulative_change_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 1 label column + number of years
     expected_cells = 1 + len(sample_line_item_set.years)
-    assert len(row.cells) == expected_cells
+    assert len(row) == expected_cells
 
     # First cell should be the label (not the name)
-    assert "Cumulative Change" in row.cells[0].value
+    assert "Cumulative Change" in row[0].value
 
     # Test with label_col_count=2 - should have name and label
     row_with_name = cumulative_row.generate_row(sample_line_item_set, label_col_count=2)
 
     # Should have 2 label columns + number of years
     expected_cells_two = 2 + len(sample_line_item_set.years)
-    assert len(row_with_name.cells) == expected_cells_two
+    assert len(row_with_name) == expected_cells_two
 
     # First cell should be the name, second should be the label
-    assert row_with_name.cells[0].value == "item1"
-    assert "Cumulative Change" in row_with_name.cells[1].value
+    assert row_with_name[0].value == "item1"
+    assert "Cumulative Change" in row_with_name[1].value
 
 
 def test_custom_row_label_col_count(sample_line_item_set: Model):
@@ -207,21 +207,21 @@ def test_custom_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 1 label column + number of years
     expected_cells = 1 + len(sample_line_item_set.years)
-    assert len(row.cells) == expected_cells
+    assert len(row) == expected_cells
 
     # First cell should be the label
-    assert row.cells[0].value == "Custom Label"
+    assert row[0].value == "Custom Label"
 
     # Test with label_col_count=2 - should have empty name cell and label
     row_with_name = custom_row.generate_row(sample_line_item_set, label_col_count=2)
 
     # Should have 2 label columns + number of years
     expected_cells_two = 2 + len(sample_line_item_set.years)
-    assert len(row_with_name.cells) == expected_cells_two
+    assert len(row_with_name) == expected_cells_two
 
     # First cell should be empty (name placeholder), second should be the label
-    assert row_with_name.cells[0].value == ""
-    assert row_with_name.cells[1].value == "Custom Label"
+    assert row_with_name[0].value == ""
+    assert row_with_name[1].value == "Custom Label"
 
 
 def test_category_total_row_label_col_count(sample_line_item_set: Model):
@@ -239,10 +239,10 @@ def test_category_total_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 1 label column + number of years
     expected_cells = 1 + len(sample_line_item_set.years)
-    assert len(row.cells) == expected_cells
+    assert len(row) == expected_cells
 
     # First cell should be the label (default: category label + "Total")
-    assert "income Total" in row.cells[0].value
+    assert "income Total" in row[0].value
 
     # Test with label_col_count=2 - should have empty name cell and label
     row_with_name = category_total_row.generate_row(
@@ -251,11 +251,11 @@ def test_category_total_row_label_col_count(sample_line_item_set: Model):
 
     # Should have 2 label columns + number of years
     expected_cells_two = 2 + len(sample_line_item_set.years)
-    assert len(row_with_name.cells) == expected_cells_two
+    assert len(row_with_name) == expected_cells_two
 
     # First cell should be empty (name placeholder), second should be the label
-    assert row_with_name.cells[0].value == ""
-    assert "income Total" in row_with_name.cells[1].value
+    assert row_with_name[0].value == ""
+    assert "income Total" in row_with_name[1].value
 
 
 def test_category_total_row_custom_label(sample_line_item_set: Model):
@@ -272,7 +272,7 @@ def test_category_total_row_custom_label(sample_line_item_set: Model):
     row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
 
     # Should use custom label
-    assert row.cells[0].value == "Custom Total Label"
+    assert row[0].value == "Custom Total Label"
 
 
 def test_category_total_row_styling(sample_line_item_set: Model):
@@ -293,11 +293,11 @@ def test_category_total_row_styling(sample_line_item_set: Model):
     row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
 
     # Check styling is applied
-    assert row.cells[0].bold is True
-    assert row.cells[0].bottom_border == "thick"
-    assert row.cells[0].top_border == "thin"
+    assert row[0].bold is True
+    assert row[0].bottom_border == "thick"
+    assert row[0].top_border == "thin"
 
     # Check value cells have correct formatting
-    for i in range(1, len(row.cells)):  # Skip label cell
-        assert row.cells[i].value_format == "percent"
-        assert row.cells[i].bold is True
+    for i in range(1, len(row)):  # Skip label cell
+        assert row[i].value_format == "percent"
+        assert row[i].bold is True

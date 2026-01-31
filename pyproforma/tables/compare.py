@@ -4,7 +4,7 @@ Year-over-year comparison table generation.
 
 from typing import TYPE_CHECKING, Optional
 
-from ..table import Cell, Column, Row, Table
+from ..table import Cell, Table
 
 if TYPE_CHECKING:
     from pyproforma import Model
@@ -64,18 +64,18 @@ def compare_years(
             f"Invalid sort_by value: '{sort_by}'. Must be one of: {valid_sort_options}"
         )
 
-    # Build columns
-    columns = [
-        Column(label="Item", text_align="left"),
-        Column(label=prev_year, value_format="year"),
-        Column(label=year, value_format="year"),
+    # Build header row
+    header_cells = [
+        Cell(value="Item", bold=True, align="left"),
+        Cell(value=prev_year, bold=True, align="center", value_format="year"),
+        Cell(value=year, bold=True, align="center", value_format="year"),
     ]
 
     if include_change:
-        columns.append(Column(label="Change"))
+        header_cells.append(Cell(value="Change", bold=True, align="center"))
 
     if include_percent_change:
-        columns.append(Column(label="% Change"))
+        header_cells.append(Cell(value="% Change", bold=True, align="center"))
 
     # Collect data for each item
     items_data = []
@@ -131,8 +131,8 @@ def compare_years(
             reverse=True,
         )
 
-    # Build rows
-    rows = []
+    # Build data rows
+    data_rows = []
     total_prev = 0
     total_curr = 0
     total_change = 0
@@ -152,7 +152,7 @@ def compare_years(
                 Cell(value=item["percent_change"], value_format="percent_one_decimal")
             )
 
-        rows.append(Row(cells=cells))
+        data_rows.append(cells)
 
         # Accumulate totals
         if item["prev_value"] is not None:
@@ -204,6 +204,9 @@ def compare_years(
             )
         )
 
-    rows.append(Row(cells=total_cells))
+    data_rows.append(total_cells)
 
-    return Table(columns=columns, rows=rows)
+    # Combine header and data rows
+    all_rows = [header_cells] + data_rows
+
+    return Table(cells=all_rows)

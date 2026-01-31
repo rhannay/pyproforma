@@ -71,22 +71,22 @@ def to_excel(table: "Table", filename="table.xlsx"):
         table: The Table instance to export
         filename: The Excel filename to create
     """
+    if not table.cells:
+        # Create empty workbook if table is empty
+        workbook = openpyxl.Workbook()
+        workbook.save(filename)
+        workbook.close()
+        print(f"Empty table exported to {filename}")
+        return
+
     # Create a new workbook and select the active worksheet
     workbook = openpyxl.Workbook()
     worksheet = workbook.active
 
-    # Write column headers
-    for col_idx, column in enumerate(table.columns, start=1):
-        cell = worksheet.cell(row=1, column=col_idx)
-        cell.value = column.label
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal=column.text_align)
-
-    # Write data rows
-    for row_idx, row in enumerate(
-        table.rows, start=2
-    ):  # Start at row 2 (after headers)
-        for col_idx, cell_data in enumerate(row.cells, start=1):
+    # Write all rows (first row is treated as header with special formatting)
+    for row_idx, row in enumerate(table.cells, start=1):
+        is_header = (row_idx == 1)
+        for col_idx, cell_data in enumerate(row, start=1):
             cell = worksheet.cell(row=row_idx, column=col_idx)
 
             # Set the value
@@ -98,8 +98,8 @@ def to_excel(table: "Table", filename="table.xlsx"):
             # Apply other formatting
             font_kwargs = {}
 
-            # Handle bold
-            if cell_data.bold:
+            # Handle bold (headers are always bold, or if cell specifies it)
+            if is_header or cell_data.bold:
                 font_kwargs["bold"] = True
 
             # Handle font color
@@ -133,6 +133,9 @@ def to_excel(table: "Table", filename="table.xlsx"):
             # Set alignment
             if cell_data.align:
                 cell.alignment = Alignment(horizontal=cell_data.align)
+            elif is_header:
+                # Default header alignment to center if not specified
+                cell.alignment = Alignment(horizontal="center")
 
     # Auto-adjust column widths
     for column in worksheet.columns:

@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 from ..constants import VALID_COLS, ColumnType, ValueFormat
-from ..table import Cell, Row
+from ..table import Cell
 
 
 class BaseRow(ABC):
@@ -15,8 +15,13 @@ class BaseRow(ABC):
     @abstractmethod
     def generate_row(
         self, model: "Model", label_col_count: int = 1
-    ) -> Union[Row, list[Row]]:
-        """Generate row(s) for this configuration."""
+    ) -> Union[list[Cell], list[list[Cell]]]:
+        """Generate row(s) for this configuration.
+        
+        Returns:
+            Either a single list of Cell objects representing one row,
+            or a list of lists of Cell objects representing multiple rows.
+        """
         pass
 
     def to_dict(self) -> dict:
@@ -54,7 +59,7 @@ class ItemRow(BaseRow):
                     f"Invalid column '{col}'. Must be one of: {VALID_COLS}"
                 )
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row for a line item with its label and values across all years."""
         # Get line_item
         li = model.line_item(self.name)
@@ -118,7 +123,7 @@ class ItemRow(BaseRow):
                 )
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -129,7 +134,7 @@ class ItemsByCategoryRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Row]:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[list[Cell]]:
         """Create rows for all line items in a specific category."""
         rows = []
         # Get all line items in the specified category
@@ -159,7 +164,7 @@ class PercentChangeRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing percent change of a line item from year to year."""
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -188,7 +193,7 @@ class PercentChangeRow(BaseRow):
                 Cell(value=percent_change, bold=self.bold, value_format=value_format)
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -200,7 +205,7 @@ class CumulativeChangeRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing cumulative change of a line item from the base year."""
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -243,7 +248,7 @@ class CumulativeChangeRow(BaseRow):
                 Cell(value=cumulative_change, bold=self.bold, value_format=value_format)
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -255,7 +260,7 @@ class CumulativePercentChangeRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing cumulative percent change of a line item from the base year."""  # noqa: E501
         # Get the original item's label if no custom label provided
         if self.label is None:
@@ -302,7 +307,7 @@ class CumulativePercentChangeRow(BaseRow):
                 )
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -316,7 +321,7 @@ class ConstraintPassRow(BaseRow):
     color_code: bool = False
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing constraint evaluation results across all years."""
         # Get the constraint results object
         constraint_results = model.constraint(self.constraint_name)
@@ -362,7 +367,7 @@ class ConstraintPassRow(BaseRow):
                     Cell(value=f"Error: {str(e)}", bold=self.bold, align="center")
                 )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -374,7 +379,7 @@ class ConstraintVarianceRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing constraint variance (actual - target) across all years."""  # noqa: E501
         # Get the constraint object
         constraint_results = model.constraint(self.constraint_name)
@@ -414,7 +419,7 @@ class ConstraintVarianceRow(BaseRow):
                     Cell(value=f"Error: {str(e)}", bold=self.bold, align="center")
                 )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -426,7 +431,7 @@ class ConstraintTargetRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing constraint target values across all years."""
 
         constraint_results = model.constraint(self.constraint_name)
@@ -466,7 +471,7 @@ class ConstraintTargetRow(BaseRow):
                     Cell(value=f"Error: {str(e)}", bold=self.bold, align="center")
                 )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -477,7 +482,7 @@ class LabelRow(BaseRow):
     included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row with just a label in the leftmost column and empty cells for all years."""  # noqa: E501
         # Create cells for this row based on included_cols
         cells = []
@@ -495,7 +500,7 @@ class LabelRow(BaseRow):
         for year in model.years:
             cells.append(Cell(value=""))
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -504,7 +509,7 @@ class BlankRow(BaseRow):
 
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a blank row with empty cells for each column."""
         # Create empty cells - start with label columns
         cells = []
@@ -517,7 +522,7 @@ class BlankRow(BaseRow):
         for _ in model.years:
             cells.append(Cell(value=""))
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -531,7 +536,7 @@ class CategoryTotalRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing category totals across all years."""
         # Get the category results to access the total method
         category_results = model.category(self.category_name)
@@ -593,7 +598,7 @@ class CategoryTotalRow(BaseRow):
                 )
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -608,7 +613,7 @@ class LineItemsTotalRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row showing totals for a list of line items across all years.
 
         The label always appears in the first cell regardless of included_cols
@@ -667,7 +672,7 @@ class LineItemsTotalRow(BaseRow):
                 )
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 @dataclass
@@ -679,7 +684,7 @@ class CustomRow(BaseRow):
     value_format: Optional[ValueFormat] = None
     bold: bool = False
 
-    def generate_row(self, model: "Model", label_col_count: int = 1) -> Row:
+    def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
         """Create a row with custom label and values for specified years."""
         # Create cells for this row
         cells = []
@@ -701,7 +706,7 @@ class CustomRow(BaseRow):
                 Cell(value=value, bold=self.bold, value_format=self.value_format)
             )
 
-        return Row(cells=cells)
+        return cells
 
 
 # Type alias for all row config types

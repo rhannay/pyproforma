@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 
-from pyproforma.table import Cell, Column, Row, Table, to_excel
+from pyproforma.table import Cell, Table, to_excel
 from pyproforma.table.excel import value_format_to_excel_format
 
 
@@ -112,33 +112,28 @@ class TestToExcelIntegration:
 
     def test_to_excel_with_different_formats(self):
         """Test that to_excel properly applies different value formats."""
-        columns = [
-            Column(label="Item"),
-            Column(label="Amount"),
-            Column(label="Percentage"),
-            Column(label="Text"),
+        cells = [
+            [
+                Cell(value="Item", bold=True),
+                Cell(value="Amount", bold=True),
+                Cell(value="Percentage", bold=True),
+                Cell(value="Text", bold=True),
+            ],
+            [
+                Cell(value="Revenue", value_format="str"),
+                Cell(value=1234567.89, value_format="no_decimals"),
+                Cell(value=0.1234, value_format="percent_two_decimals"),
+                Cell(value="Sample text", value_format="str"),
+            ],
+            [
+                Cell(value="Expense", value_format="str"),
+                Cell(value=987654.32, value_format="two_decimals"),
+                Cell(value=0.0567, value_format="percent_one_decimal"),
+                Cell(value="Another text", value_format=None),  # Test None format
+            ],
         ]
 
-        rows = [
-            Row(
-                cells=[
-                    Cell(value="Revenue", value_format="str"),
-                    Cell(value=1234567.89, value_format="no_decimals"),
-                    Cell(value=0.1234, value_format="percent_two_decimals"),
-                    Cell(value="Sample text", value_format="str"),
-                ]
-            ),
-            Row(
-                cells=[
-                    Cell(value="Expense", value_format="str"),
-                    Cell(value=987654.32, value_format="two_decimals"),
-                    Cell(value=0.0567, value_format="percent_one_decimal"),
-                    Cell(value="Another text", value_format=None),  # Test None format
-                ]
-            ),
-        ]
-
-        table = Table(columns=columns, rows=rows)
+        table = Table(cells=cells)
 
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
@@ -162,33 +157,30 @@ class TestToExcelIntegration:
     def test_to_excel_with_all_format_types(self):
         """Test to_excel with all supported value format types."""
         # Create a table with one column for each format type
-        columns = [
-            Column(label="None Format"),
-            Column(label="No Decimals"),
-            Column(label="Two Decimals"),
-            Column(label="Percent"),
-            Column(label="Percent One Decimal"),
-            Column(label="Percent Two Decimals"),
-            Column(label="String"),
-            Column(label="Unknown Format"),
+        cells = [
+            [
+                Cell(value="None Format", bold=True),
+                Cell(value="No Decimals", bold=True),
+                Cell(value="Two Decimals", bold=True),
+                Cell(value="Percent", bold=True),
+                Cell(value="Percent One Decimal", bold=True),
+                Cell(value="Percent Two Decimals", bold=True),
+                Cell(value="String", bold=True),
+                Cell(value="Unknown Format", bold=True),
+            ],
+            [
+                Cell(value=12345.67, value_format=None),
+                Cell(value=12345.67, value_format="no_decimals"),
+                Cell(value=12345.67, value_format="two_decimals"),
+                Cell(value=0.1234, value_format="percent"),
+                Cell(value=0.1234, value_format="percent_one_decimal"),
+                Cell(value=0.1234, value_format="percent_two_decimals"),
+                Cell(value=12345.67, value_format="str"),
+                Cell(value=12345.67, value_format="unknown_format"),
+            ]
         ]
 
-        rows = [
-            Row(
-                cells=[
-                    Cell(value=12345.67, value_format=None),
-                    Cell(value=12345.67, value_format="no_decimals"),
-                    Cell(value=12345.67, value_format="two_decimals"),
-                    Cell(value=0.1234, value_format="percent"),
-                    Cell(value=0.1234, value_format="percent_one_decimal"),
-                    Cell(value=0.1234, value_format="percent_two_decimals"),
-                    Cell(value=12345.67, value_format="str"),
-                    Cell(value=12345.67, value_format="unknown_format"),
-                ]
-            )
-        ]
-
-        table = Table(columns=columns, rows=rows)
+        table = Table(cells=cells)
 
         # Create a temporary file for testing
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
@@ -211,9 +203,8 @@ class TestToExcelIntegration:
 
     def test_to_excel_empty_table(self):
         """Test to_excel with an empty table."""
-        columns = [Column(label="Test")]
-        rows = []
-        table = Table(columns=columns, rows=rows)
+        cells = []
+        table = Table(cells=cells)
 
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
             tmp_name = tmp_file.name
