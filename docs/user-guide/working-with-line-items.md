@@ -240,7 +240,10 @@ model['revenue'].values = {2024: 110000, 2025: 125000, 2026: 145000}
 Access and work with multiple line items at once:
 
 ```python
-# Get multiple line items
+# Get all line items
+all_items = model.line_items()
+
+# Or get specific line items
 income_items = model.line_items(['revenue', 'profit'])
 
 # Set category for multiple items
