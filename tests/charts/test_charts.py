@@ -192,7 +192,7 @@ class TestCharts:
         assert mock_model.value.call_count == 6  # 2 items × 3 years
 
     def test_line_items_without_args_uses_all_items(self, charts, mock_model):
-        """Test items method without arguments uses all line items from model."""
+        """Test line_items method without arguments uses all line items from model."""
         with patch.object(Chart, "to_plotly") as mock_to_plotly:
             mock_fig = Mock(spec=go.Figure)
             mock_to_plotly.return_value = mock_fig
