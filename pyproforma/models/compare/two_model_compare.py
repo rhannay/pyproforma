@@ -6,8 +6,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from pyproforma.table import Table
 from pyproforma.tables import row_types as rt
-from pyproforma.tables.table_class import Table
 from pyproforma.tables.table_generator import generate_multi_model_table
 
 

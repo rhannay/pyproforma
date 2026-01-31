@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from pyproforma.constants import ValueFormat
-from pyproforma.tables.table_class import Table, format_value
+from pyproforma.table import Table, format_value
 
 if TYPE_CHECKING:
     from ..model import Model

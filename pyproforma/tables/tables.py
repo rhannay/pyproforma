@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..constants import VALID_COLS
+from ..table import Table
 from . import row_types as rt
 from .compare import compare_years as _compare_years
-from .table_class import Table
 from .table_generator import generate_table_from_template
 
 if TYPE_CHECKING:

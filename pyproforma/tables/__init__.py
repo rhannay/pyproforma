@@ -42,7 +42,7 @@ from .row_types import (
 from .row_types import (
     dict_to_row_config as dict_to_row_config,
 )
-from .table_class import format_value as format_value
+from ..table import format_value as format_value
 from .table_generator import (
     TableGenerationError as TableGenerationError,
 )

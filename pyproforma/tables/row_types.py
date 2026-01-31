@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 from ..constants import VALID_COLS, ColumnType, ValueFormat
-from .table_class import Cell, Row
+from ..table import Cell, Row
 
 
 class BaseRow(ABC):
