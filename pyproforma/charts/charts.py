@@ -125,7 +125,7 @@ class Charts:
             Chart figure: The Plotly chart figure with multiple lines
 
         Raises:
-            ValueError: If the model has no years defined
+            ValueError: If item_names list is empty or if the model has no years defined
             KeyError: If any name is not found in the model
         """  # noqa: E501
         # If no item names provided, use all line items from the model
@@ -546,7 +546,7 @@ class Charts:
             Chart figure: The Plotly pie chart figure
 
         Raises:
-            ValueError: If the model has no years defined, or if year is not in model years
+            ValueError: If item_names list is empty, if the model has no years defined, or if year is not in model years
             KeyError: If any name is not found in the model
         """  # noqa: E501
         # If no item names provided, use all line items from the model
