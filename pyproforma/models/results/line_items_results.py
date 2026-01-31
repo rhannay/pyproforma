@@ -49,9 +49,11 @@ class LineItemsResults:
         if line_item_names is None:
             line_item_names = model.line_item_names
         
+        # Validate that line_item_names is a list
         if not isinstance(line_item_names, list):
             raise ValueError("line_item_names must be a list")
 
+        # Validate that the list is not empty
         if len(line_item_names) == 0:
             raise ValueError("line_item_names must be a non-empty list")
 
