@@ -18,31 +18,43 @@ class LineItemsResults:
 
     Args:
         model: The parent Model instance
-        line_item_names: List of line item names to include
+        line_item_names: List of line item names to include. If None, all line items
+            in the model are included.
 
     Examples:
+        >>> # Get all line items
+        >>> all_items = model.line_items()
+        >>> print(all_items.names)  # Shows all line item names
+        >>> # Get specific line items
         >>> items_results = model.line_items(['revenue', 'costs', 'profit'])
         >>> print(items_results.names)  # Shows list of line item names
         >>> items_results.set_category('income')  # Sets category for all items
         >>> revenue = items_results.line_item('revenue')  # Get specific item
     """
 
-    def __init__(self, model: "Model", line_item_names: list[str]):
+    def __init__(self, model: "Model", line_item_names: list[str] = None):
         """
         Initialize LineItemsResults with a model and list of line item names.
 
         Args:
             model: The parent Model instance
-            line_item_names: List of line item names to include
+            line_item_names: List of line item names to include. If None, all line items
+                in the model are included.
 
         Raises:
-            ValueError: If line_item_names is None, empty, or not a list
+            ValueError: If line_item_names is an empty list or not a list
             KeyError: If any line item name is not found in the model
         """
+        # If line_item_names is None, use all line items from the model
+        if line_item_names is None:
+            line_item_names = model.line_item_names
+        
+        # Validate that line_item_names is a list
         if not isinstance(line_item_names, list):
             raise ValueError("line_item_names must be a list")
 
-        if line_item_names is None or len(line_item_names) == 0:
+        # Validate that the list is not empty
+        if len(line_item_names) == 0:
             raise ValueError("line_item_names must be a non-empty list")
 
         self.model = model

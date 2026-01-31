@@ -282,10 +282,16 @@ print(f"- Revenue 2024 (after values update): ${model_mod['revenue'][2024]:,}")
 print("\n\n13. Working with Multiple Line Items")
 print("-" * 50)
 
+# Get all line items
+all_items = model.line_items()
+
+print("All line items:")
+print(f"- Names: {all_items.names}")
+
 # Get multiple line items
 income_items = model.line_items(["revenue", "profit"])
 
-print("Multiple line items:")
+print("Specific line items:")
 print(f"- Names: {income_items.names}")
 
 # Set category for multiple items

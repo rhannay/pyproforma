@@ -98,11 +98,13 @@ class TestLineItemsResultsInitialization:
             LineItemsResults(model_with_line_items, [])
         assert "non-empty list" in str(exc_info.value)
 
-    def test_init_none_raises_error(self, model_with_line_items):
-        """Test that None raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
-            LineItemsResults(model_with_line_items, None)
-        assert "must be a list" in str(exc_info.value)
+    def test_init_none_uses_all_line_items(self, model_with_line_items):
+        """Test that None uses all line items from the model."""
+        items = LineItemsResults(model_with_line_items, None)
+        
+        assert items.model is model_with_line_items
+        assert len(items.names) == 4  # All line items from fixture
+        assert set(items.names) == set(model_with_line_items.line_item_names)
 
     def test_init_string_raises_error(self, model_with_line_items):
         """Test that passing a string instead of list raises ValueError."""
@@ -154,6 +156,28 @@ class TestLineItemsResultsInitialization:
                 model_with_line_items, ["product_sales", "invalid_name", "salaries"]
             )
         assert "invalid_name" in str(exc_info.value)
+
+    def test_model_line_items_without_args(self, model_with_line_items):
+        """Test Model.line_items() called without arguments returns all line items."""
+        items = model_with_line_items.line_items()
+        
+        assert items.model is model_with_line_items
+        assert len(items.names) == 4  # All line items from fixture
+        assert set(items.names) == set(model_with_line_items.line_item_names)
+        # Verify it contains all expected items
+        assert "product_sales" in items.names
+        assert "service_revenue" in items.names
+        assert "salaries" in items.names
+        assert "office_rent" in items.names
+
+    def test_model_line_items_with_args(self, model_with_line_items):
+        """Test Model.line_items() called with specific items."""
+        items = model_with_line_items.line_items(["product_sales", "service_revenue"])
+        
+        assert items.model is model_with_line_items
+        assert len(items.names) == 2
+        assert "product_sales" in items.names
+        assert "service_revenue" in items.names
 
 
 class TestLineItemsResultsNamesProperty:
