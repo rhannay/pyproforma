@@ -103,7 +103,7 @@ class Charts:
 
     def line_items(
         self,
-        item_names: list[str],
+        item_names: list[str] = None,
         title: str = None,
         width: int = 800,
         height: int = 600,
@@ -114,7 +114,7 @@ class Charts:
         Create a line chart using Plotly showing the values for multiple items over years.
 
         Args:
-            item_names (list[str]): List of item names to chart (line items, assumptions, etc.)
+            item_names (list[str], optional): List of item names to chart (line items, assumptions, etc.). If None, charts all line items in the model.
             title (str, optional): Custom chart title. If None, uses default title "Multiple Line Items".
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
@@ -125,9 +125,13 @@ class Charts:
             Chart figure: The Plotly chart figure with multiple lines
 
         Raises:
-            ValueError: If item_names list is empty or if the model has no years defined
+            ValueError: If the model has no years defined
             KeyError: If any name is not found in the model
         """  # noqa: E501
+        # If no item names provided, use all line items from the model
+        if item_names is None:
+            item_names = self._model.line_item_names
+        
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 
@@ -522,7 +526,7 @@ class Charts:
 
     def line_items_pie(
         self,
-        item_names: list[str],
+        item_names: list[str] = None,
         year: int = None,
         width: int = 800,
         height: int = 600,
@@ -532,7 +536,7 @@ class Charts:
         Create a pie chart using Plotly showing the values for multiple line items at a specific year.
 
         Args:
-            item_names (list[str]): List of line item names to include in the pie chart
+            item_names (list[str], optional): List of line item names to include in the pie chart. If None, includes all line items in the model.
             year (int, optional): The year for which to create the pie chart. If None, uses the latest year in the model.
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
@@ -542,9 +546,13 @@ class Charts:
             Chart figure: The Plotly pie chart figure
 
         Raises:
-            ValueError: If item_names list is empty, if the model has no years defined, or if year is not in model years
+            ValueError: If the model has no years defined, or if year is not in model years
             KeyError: If any name is not found in the model
         """  # noqa: E501
+        # If no item names provided, use all line items from the model
+        if item_names is None:
+            item_names = self._model.line_item_names
+        
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 

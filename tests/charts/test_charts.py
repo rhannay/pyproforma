@@ -16,6 +16,7 @@ class TestCharts:
         """Create a mock model for testing."""
         model = Mock(spec=Model)
         model.years = [2020, 2021, 2022]
+        model.line_item_names = ["revenue", "expenses", "growth_rate"]
 
         # Mock li() method responses with LineItemResults calculation methods
         def mock_li(name):
@@ -189,6 +190,23 @@ class TestCharts:
                 mock_model.line_item.call_count == 3
             )  # 1 for value_format + 2 for items
         assert mock_model.value.call_count == 6  # 2 items × 3 years
+
+    def test_line_items_without_args_uses_all_items(self, charts, mock_model):
+        """Test items method without arguments uses all line items from model."""
+        with patch.object(Chart, "to_plotly") as mock_to_plotly:
+            mock_fig = Mock(spec=go.Figure)
+            mock_to_plotly.return_value = mock_fig
+
+            result = charts.line_items()
+
+            # Should use all line items from the model
+            mock_to_plotly.assert_called_once()
+            assert result is mock_fig
+
+            # Should be called for all items (revenue, expenses, growth_rate) plus value_format check
+            assert mock_model.line_item.call_count == 4  # 1 for value_format + 3 for items
+            # Should fetch values for 3 items × 3 years
+            assert mock_model.value.call_count == 9
 
     def test_line_items_empty_list(self, charts):
         """Test items method with empty list raises ValueError."""
@@ -524,6 +542,36 @@ class TestChartsIntegration:
 
         with pytest.raises(KeyError):
             charts.line_item("non_existent_item")
+
+    def test_real_model_line_items_chart_without_args(self, real_model):
+        """Test line_items chart without arguments - should chart all line items."""
+        charts = Charts(real_model)
+
+        # Call without arguments - should chart all line items
+        fig = charts.line_items()
+
+        assert isinstance(fig, go.Figure)
+        assert fig.layout.title.text == "Multiple Line Items"
+
+        # Check that both datasets are present (revenue and expenses)
+        assert len(fig.data) == 2
+        assert list(fig.data[0].y) == [100.0, 150.0, 200.0]  # Revenue
+        assert list(fig.data[1].y) == [50.0, 75.0, 100.0]  # Expenses
+
+    def test_real_model_line_items_pie_without_args(self, real_model):
+        """Test line_items_pie chart without arguments - should chart all line items."""
+        charts = Charts(real_model)
+
+        # Call without arguments - should chart all line items for the latest year
+        fig = charts.line_items_pie()
+
+        assert isinstance(fig, go.Figure)
+        assert "Line Items Distribution - 2022" in fig.layout.title.text
+
+        # Check that data is present - should have both revenue and expenses
+        assert len(fig.data) == 1  # Pie chart has single trace
+        # Both revenue (200.0) and expenses (100.0) should be included
+        assert len(fig.data[0].labels) == 2
 
     def test_empty_years_raises_error_for_all_methods(self):
         """Test that all chart methods raise ValueError when model has empty years."""
