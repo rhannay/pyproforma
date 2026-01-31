@@ -43,7 +43,7 @@ class TestLineItemsTotalRowLabelPlacement:
         totals_row = result.rows[-1]
         assert totals_row[0].value == "Total"
         # Should have 4 cells total: 1 label column + 3 years
-        assert len(totals_row.cells) == 4
+        assert len(totals_row) == 4
 
     def test_label_in_first_cell_with_name_first(self, sample_model):
         """Test label in first cell when 'name' is first in included_cols."""
@@ -57,7 +57,7 @@ class TestLineItemsTotalRowLabelPlacement:
         assert totals_row[0].value == "Total"
         assert totals_row[1].value == ""  # Second cell should be empty
         # Should have 5 cells total: 2 label columns + 3 years
-        assert len(totals_row.cells) == 5
+        assert len(totals_row) == 5
 
     def test_label_in_first_cell_with_category_first(self, sample_model):
         """Test label in first cell when 'category' is first in included_cols."""
@@ -72,7 +72,7 @@ class TestLineItemsTotalRowLabelPlacement:
         assert totals_row[1].value == ""  # Second cell should be empty
         assert totals_row[2].value == ""  # Third cell should be empty
         # Should have 6 cells total: 3 label columns + 3 years
-        assert len(totals_row.cells) == 6
+        assert len(totals_row) == 6
 
     def test_label_in_first_cell_with_grouping(self, sample_model):
         """Test label in first cell with category grouping enabled."""
@@ -129,7 +129,7 @@ class TestLineItemsTotalRowLabelPlacement:
             # All other label column cells should be empty
             num_label_cols = len(col_order)
             for i in range(1, num_label_cols):
-                assert totals_row.cells[i].value == "", (
+                assert totals_row[i].value == "", (
                     f"Cell {i} should be empty for config {col_order}, "
-                    f"but got: '{totals_row.cells[i].value}'"
+                    f"but got: '{totals_row[i].value}'"
                 )
