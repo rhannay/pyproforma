@@ -103,59 +103,12 @@ class Cell:
         return format_value(self.value, self.value_format)
 
 
-@dataclass
-class Row:
-    """A horizontal row in a table containing a list of cells.
 
-    The Row class represents a single row within a table, containing an ordered
-    list of Cell objects. Each row must have the same number of cells as there
-    are columns in the parent Table.
-
-    Attributes:
-        cells (list[Cell]): Ordered list of Cell objects that make up this row.
-
-    Examples:
-        >>> cell1 = Cell(value="Product A", align='left')
-        >>> cell2 = Cell(value=150.00, value_format='two_decimals')
-        >>> row = Row(cells=[cell1, cell2])
-    """
-
-    cells: list[Cell]
-
-
-@dataclass
-class Column:
-    """A column definition for a table with a descriptive label.
-
-    The Column class defines the structure and labeling for a table column.
-    Column labels are used as headers in DataFrame conversions and Excel exports.
-
-    Attributes:
-        label (Any): The display name/header for this column.
-        text_align (str): Text alignment for the column header
-            ('left', 'center', 'right'). Defaults to 'center'.
-        value_format (Optional[ValueFormat]): Formatting type for the column
-            header display. Defaults to 'str'.
-
-    Examples:
-        >>> column = Column(label="Revenue")
-        >>> column = Column(label="Product", text_align="left")
-        >>> column = Column(label=2024, value_format="year")
-        >>> columns = [Column("Product"), Column("Price"), Column("Quantity")]
-    """
-
-    label: Any
-    text_align: str = "center"
-    value_format: Optional[ValueFormat] = "str"
-
-    @property
-    def formatted_label(self) -> Optional[str]:
-        return format_value(self.label, self.value_format)
 
 
 @dataclass
 class Table:
-    """A structured table representation with rows, columns, and cell formatting.
+    """A structured table representation as a grid of cells with formatting.
 
     The Table class provides a flexible way to create, manipulate, and export tabular data
     with support for cell-level formatting including styling, alignment, and value formatting.
@@ -163,38 +116,44 @@ class Table:
     with preserved formatting.
 
     Attributes:
-        columns (list[Column]): List of Column objects defining the table structure.
-        rows (list[Row]): List of Row objects containing the table data.
+        cells (list[list[Cell]]): A 2D grid of Cell objects. Each inner list represents a row.
+                                  All rows must have the same length to form a valid grid.
 
     Examples:
-        >>> from pyproforma.tables import Table, Column, Row, Cell
-        >>> columns = [Column("Name"), Column("Value")]
-        >>> rows = [Row([Cell("Item 1"), Cell(100)])]
-        >>> table = Table(columns=columns, rows=rows)
+        >>> from pyproforma.table import Table, Cell
+        >>> cells = [
+        ...     [Cell("Name", bold=True), Cell("Value", bold=True)],  # Header row
+        ...     [Cell("Item 1"), Cell(100)],
+        ...     [Cell("Item 2"), Cell(200)]
+        ... ]
+        >>> table = Table(cells=cells)
         >>> df = table.to_dataframe()
 
     Note:
-        The number of cells in each row must match the number of columns.
+        All rows must have the same number of cells to form a valid rectangular grid.
         This is validated automatically during initialization.
     """  # noqa: E501
 
-    columns: list[Column]
-    rows: list[Row]
+    cells: list[list[Cell]]
 
     # Initialization and validation
     def __post_init__(self):
-        self._check_column_and_cell_counts()
+        self._check_grid_consistency()
 
-    def _check_column_and_cell_counts(self):
-        # Check each number of cells in each row matches the number of columns
-        num_columns = len(self.columns)
-        for i, row in enumerate(self.rows):
-            if len(row.cells) != num_columns:
+    def _check_grid_consistency(self):
+        """Ensure all rows have the same number of cells."""
+        if not self.cells:
+            return  # Empty table is valid
+        
+        if not all(isinstance(row, list) for row in self.cells):
+            raise ValueError("cells must be a list of lists of Cell objects")
+        
+        num_cols = len(self.cells[0]) if self.cells else 0
+        for i, row in enumerate(self.cells):
+            if len(row) != num_cols:
                 raise ValueError(
-                    (
-                        f"Row {i} has {len(row.cells)} cells, expected {num_columns} "
-                        "based on the number of columns."
-                    )
+                    f"Row {i} has {len(row)} cells, expected {num_cols} cells. "
+                    "All rows must have the same number of cells."
                 )
 
     # Public API - Conversion and Export methods
@@ -202,23 +161,30 @@ class Table:
         """Convert the Table to a pandas DataFrame with raw cell values.
 
         Creates a standard pandas DataFrame using the raw (unformatted) cell values.
-        Column labels from the Table become DataFrame column names, and each row
-        becomes a DataFrame row. Cell formatting and styling are not preserved.
+        The first row of the table is used as column headers, and subsequent rows
+        become DataFrame rows. Cell formatting and styling are not preserved.
 
         Returns:
-            pd.DataFrame: A DataFrame containing the table data with column labels
+            pd.DataFrame: A DataFrame containing the table data with first row
                          as column names and raw cell values as the data.
 
         Note:
             This method extracts only the raw values from cells. For formatted values
             or styling preservation, use to_styled_df() instead.
+            If the table is empty or has only one row, returns an empty DataFrame.
         """
+        if not self.cells or len(self.cells) < 2:
+            return pd.DataFrame()
+        
+        # First row becomes column headers
+        headers = [cell.value for cell in self.cells[0]]
+        
+        # Remaining rows become data
         data = []
-        for row in self.rows:
-            row_data = {
-                col.label: cell.value for col, cell in zip(self.columns, row.cells)
-            }
+        for row in self.cells[1:]:
+            row_data = {header: cell.value for header, cell in zip(headers, row)}
             data.append(row_data)
+        
         return pd.DataFrame(data)
 
     def to_styled_df(self) -> Styler:
@@ -236,6 +202,7 @@ class Table:
         Note:
             The returned Styler preserves all visual formatting from the original Table cells,
             making it ideal for presentation purposes where formatting matters.
+            The first row is used as column headers.
         """  # noqa: E501
         # get a dataframe with formatted values
         df = self._to_value_formatted_df()
@@ -288,10 +255,8 @@ class Table:
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
 
-        Creates a new Table where:
-        - Column labels become the first cell in each new row
-        - The first cell from each original row becomes new column labels
-        - All other cells are repositioned accordingly
+        Creates a new Table where rows become columns and columns become rows.
+        All cell properties are preserved during transposition.
 
         Args:
             remove_borders (bool): If True, removes all borders from cells in the
@@ -302,15 +267,17 @@ class Table:
                    is not modified.
 
         Examples:
-            >>> columns = [Column("Metric"), Column("Q1")]
-            >>> rows = [Row([Cell("Revenue"), Cell(1000), Cell(1200)]),
-            ...         Row([Cell("Expenses"), Cell(800), Cell(900)])]
-            >>> table = Table(columns=columns, rows=rows)
+            >>> cells = [
+            ...     [Cell("Metric"), Cell("Q1"), Cell("Q2")],
+            ...     [Cell("Revenue"), Cell(1000), Cell(1200)],
+            ...     [Cell("Expenses"), Cell(800), Cell(900)]
+            ... ]
+            >>> table = Table(cells=cells)
             >>> transposed = table.transpose()
-            # Original:     Transposed:
-            #  Metric  Q1      Metric Revenue Expenses
-            # Revenue 1000      Q1    1000     800
-            # Expenses 800
+            # Original:          Transposed:
+            #  Metric  Q1  Q2      Metric Revenue Expenses
+            # Revenue 1000 1200      Q1    1000     800
+            # Expenses 800  900      Q2    1200     900
 
             >>> # Remove borders from transposed table
             >>> transposed_no_borders = table.transpose(remove_borders=True)
@@ -318,66 +285,40 @@ class Table:
         Note:
             - Empty tables return empty tables
             - Cell formatting and properties are preserved where possible
-            - The first column of the transposed table preserves the original first column label
             - When remove_borders=True, all top_border and bottom_border properties are set to None
         """  # noqa: E501
         # Handle empty table case
-        if not self.columns or not self.rows:
-            return Table(columns=[], rows=[])
+        if not self.cells:
+            return Table(cells=[])
 
-        # Create new column labels: preserve first column label + first cell value from
-        # each original row
-        new_column_labels = [
-            self.columns[0].label
-        ]  # Preserve the original first column label
-        for row in self.rows:
-            if row.cells:
-                # Use the value from the first cell as the new column label
-                new_column_labels.append(row.cells[0].value)
-            else:
-                new_column_labels.append("")
+        num_rows = len(self.cells)
+        num_cols = len(self.cells[0]) if self.cells else 0
 
-        # Create new columns
-        new_columns = [Column(label=label) for label in new_column_labels]
+        # Create transposed cells
+        transposed_cells = []
+        for col_idx in range(num_cols):
+            new_row = []
+            for row_idx in range(num_rows):
+                original_cell = self.cells[row_idx][col_idx]
+                # Copy the cell, preserving all its properties
+                new_cell = Cell(
+                    value=original_cell.value,
+                    bold=original_cell.bold,
+                    align=original_cell.align,
+                    value_format=original_cell.value_format,
+                    background_color=original_cell.background_color,
+                    font_color=original_cell.font_color,
+                    bottom_border=(
+                        None if remove_borders else original_cell.bottom_border
+                    ),
+                    top_border=(
+                        None if remove_borders else original_cell.top_border
+                    ),
+                )
+                new_row.append(new_cell)
+            transposed_cells.append(new_row)
 
-        # Create new rows: one row for each original column (excluding the first
-        # column since its label is preserved as column header)
-        new_rows = []
-        for col_idx, original_column in enumerate(
-            self.columns[1:], 1
-        ):  # Skip first column, start index at 1
-            # First cell in the new row is the original column label
-            first_cell = Cell(value=original_column.label, align="left")
-            new_row_cells = [first_cell]
-
-            # Add cells from each original row at the corresponding column position
-            # Note: col_idx because we're now using the actual column index
-            for row in self.rows:
-                if col_idx < len(row.cells):
-                    # Copy the cell, preserving all its properties
-                    original_cell = row.cells[col_idx]
-                    new_cell = Cell(
-                        value=original_cell.value,
-                        bold=original_cell.bold,
-                        align=original_cell.align,
-                        value_format=original_cell.value_format,
-                        background_color=original_cell.background_color,
-                        font_color=original_cell.font_color,
-                        bottom_border=(
-                            None if remove_borders else original_cell.bottom_border
-                        ),
-                        top_border=(
-                            None if remove_borders else original_cell.top_border
-                        ),
-                    )
-                    new_row_cells.append(new_cell)
-                else:
-                    # If original row doesn't have enough cells, add empty cell
-                    new_row_cells.append(Cell(value=None))
-
-            new_rows.append(Row(cells=new_row_cells))
-
-        return Table(columns=new_columns, rows=new_rows)
+        return Table(cells=transposed_cells)
 
     # Display methods
     def _repr_html_(self) -> str:
@@ -400,31 +341,50 @@ class Table:
 
     # Private helper methods
     def _to_value_formatted_df(self) -> pd.DataFrame:
+        """Create DataFrame with formatted values."""
+        if not self.cells or len(self.cells) < 2:
+            return pd.DataFrame()
+        
+        # First row becomes column headers
+        headers = [cell.value for cell in self.cells[0]]
+        
+        # Remaining rows become data with formatted values
         data = []
-        for row in self.rows:
-            row_data = {
-                col.label: cell.formatted_value
-                for col, cell in zip(self.columns, row.cells)
-            }
+        for row in self.cells[1:]:
+            row_data = {header: cell.formatted_value for header, cell in zip(headers, row)}
             data.append(row_data)
+        
         return pd.DataFrame(data)
 
     def _get_style_map(self) -> dict:
+        """Create a mapping of (row_idx, col_name) -> CSS style string."""
+        if not self.cells or len(self.cells) < 2:
+            return {}
+        
+        # First row becomes column headers
+        headers = [cell.value for cell in self.cells[0]]
+        
         style_map = {}
-        for i, row in enumerate(self.rows):
-            for j, cell in enumerate(row.cells):
-                col_name = self.columns[j].label
+        # Start from row 1 (skip header row which is cells[0])
+        for i, row in enumerate(self.cells[1:]):
+            for j, cell in enumerate(row):
+                col_name = headers[j]
                 style_map[(i, col_name)] = cell.df_css
         return style_map
 
     def _get_header_styles(self) -> list[dict]:
-        """Generate header styles based on column text_align property."""
+        """Generate header styles based on first row cells."""
+        if not self.cells:
+            return []
+        
         styles = []
-        for i, column in enumerate(self.columns):
+        for i, cell in enumerate(self.cells[0]):
+            # Use the cell's alignment if set, otherwise default to center
+            align = cell.align if cell.align else "center"
             styles.append(
                 {
                     "selector": f"th.col_heading.level0.col{i}",
-                    "props": [("text-align", column.text_align)],
+                    "props": [("text-align", align)],
                 }
             )
         return styles
