@@ -131,7 +131,7 @@ class Charts:
         # If no item names provided, use all line items from the model
         if item_names is None:
             item_names = self._model.line_item_names
-        
+
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 
@@ -552,7 +552,7 @@ class Charts:
         # If no item names provided, use all line items from the model
         if item_names is None:
             item_names = self._model.line_item_names
-        
+
         if not item_names:
             raise ValueError("item_names list cannot be empty")
 

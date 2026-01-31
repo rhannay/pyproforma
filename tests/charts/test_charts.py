@@ -203,8 +203,10 @@ class TestCharts:
             mock_to_plotly.assert_called_once()
             assert result is mock_fig
 
-            # Should be called for all items (revenue, expenses, growth_rate) plus value_format check
-            assert mock_model.line_item.call_count == 4  # 1 for value_format + 3 for items
+            # Should be called for all items (revenue, expenses, growth_rate)
+            # plus value_format check
+            assert mock_model.line_item.call_count == 4
+            # 1 for value_format + 3 for items
             # Should fetch values for 3 items × 3 years
             assert mock_model.value.call_count == 9
 
