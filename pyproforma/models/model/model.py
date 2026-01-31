@@ -621,7 +621,7 @@ class Model(SerializationMixin):
 
         return LineItemResults(self, item_name)
 
-    def line_items(self, line_item_names: list[str]) -> LineItemsResults:
+    def line_items(self, line_item_names: list[str] = None) -> LineItemsResults:
         """
         Get a LineItemsResults object for exploring and managing multiple line items.
 
@@ -630,16 +630,21 @@ class Model(SerializationMixin):
         items at once.
 
         Args:
-            line_item_names (list[str]): List of line item names to include
+            line_item_names (list[str], optional): List of line item names to include.
+                If not provided, all line items in the model are included.
 
         Returns:
             LineItemsResults: An object with methods for managing multiple line items
 
         Raises:
-            ValueError: If line_item_names is None or empty
+            ValueError: If line_item_names is an empty list
             KeyError: If any line item name is not found in the model
 
         Examples:
+            >>> # Get all line items
+            >>> all_items = model.line_items()
+            >>> print(all_items.names)  # Shows all line item names
+            >>> # Get specific line items
             >>> items = model.line_items(['revenue', 'costs', 'profit'])
             >>> print(items.names)  # Shows list of line item names
             >>> items.set_category('financials')  # Sets category for all items
