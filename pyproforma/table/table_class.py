@@ -156,6 +156,50 @@ class Table:
                     "All rows must have the same number of cells."
                 )
 
+    # Backward compatibility properties
+    @property
+    def columns(self):
+        """Backward compatibility: Returns header cells as pseudo-columns.
+        
+        Note: This is for backward compatibility only. Direct access to cells
+        is preferred. Returns an empty list if there are no cells.
+        """
+        if not self.cells:
+            return []
+        # Return the first row cells as pseudo-column objects
+        class PseudoColumn:
+            def __init__(self, cell):
+                self.label = cell.value
+                self.text_align = cell.align if cell.align else "center"
+                self.value_format = cell.value_format
+        
+        return [PseudoColumn(cell) for cell in self.cells[0]]
+    
+    @property
+    def rows(self):
+        """Backward compatibility: Returns data rows (excluding header) as pseudo-rows.
+        
+        Note: This is for backward compatibility only. Direct access to cells
+        is preferred. Returns an empty list if there are no data rows.
+        """
+        if not self.cells or len(self.cells) < 2:
+            return []
+        
+        # Return rows starting from index 1 (skip header)
+        class PseudoRow:
+            def __init__(self, cell_list):
+                self.cells = cell_list
+            
+            def __getitem__(self, index):
+                """Allow subscripting like row[0]."""
+                return self.cells[index]
+            
+            def __len__(self):
+                """Allow len(row)."""
+                return len(self.cells)
+        
+        return [PseudoRow(row) for row in self.cells[1:]]
+
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the Table to a pandas DataFrame with raw cell values.

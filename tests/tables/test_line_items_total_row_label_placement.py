@@ -41,7 +41,7 @@ class TestLineItemsTotalRowLabelPlacement:
         )
 
         totals_row = result.rows[-1]
-        assert totals_row.cells[0].value == "Total"
+        assert totals_row[0].value == "Total"
         # Should have 4 cells total: 1 label column + 3 years
         assert len(totals_row.cells) == 4
 
@@ -54,8 +54,8 @@ class TestLineItemsTotalRowLabelPlacement:
         )
 
         totals_row = result.rows[-1]
-        assert totals_row.cells[0].value == "Total"
-        assert totals_row.cells[1].value == ""  # Second cell should be empty
+        assert totals_row[0].value == "Total"
+        assert totals_row[1].value == ""  # Second cell should be empty
         # Should have 5 cells total: 2 label columns + 3 years
         assert len(totals_row.cells) == 5
 
@@ -68,9 +68,9 @@ class TestLineItemsTotalRowLabelPlacement:
         )
 
         totals_row = result.rows[-1]
-        assert totals_row.cells[0].value == "Total"
-        assert totals_row.cells[1].value == ""  # Second cell should be empty
-        assert totals_row.cells[2].value == ""  # Third cell should be empty
+        assert totals_row[0].value == "Total"
+        assert totals_row[1].value == ""  # Second cell should be empty
+        assert totals_row[2].value == ""  # Third cell should be empty
         # Should have 6 cells total: 3 label columns + 3 years
         assert len(totals_row.cells) == 6
 
@@ -83,9 +83,9 @@ class TestLineItemsTotalRowLabelPlacement:
         )
 
         totals_row = result.rows[-1]
-        assert totals_row.cells[0].value == "Total"
-        assert totals_row.cells[1].value == ""  # Second cell should be empty
-        assert totals_row.cells[2].value == ""  # Third cell should be empty
+        assert totals_row[0].value == "Total"
+        assert totals_row[1].value == ""  # Second cell should be empty
+        assert totals_row[2].value == ""  # Third cell should be empty
 
     def test_custom_label_in_first_cell(self, sample_model):
         """Test that custom label appears in first cell."""
@@ -100,9 +100,9 @@ class TestLineItemsTotalRowLabelPlacement:
         )
 
         row = custom_total_row.generate_row(sample_model)
-        assert row.cells[0].value == "Custom Total"
-        assert row.cells[1].value == ""  # Second cell should be empty
-        assert row.cells[2].value == ""  # Third cell should be empty
+        assert row[0].value == "Custom Total"
+        assert row[1].value == ""  # Second cell should be empty
+        assert row[2].value == ""  # Third cell should be empty
 
     def test_all_non_first_cells_empty(self, sample_model):
         """Test that all non-first cells in label columns are empty."""
@@ -124,7 +124,7 @@ class TestLineItemsTotalRowLabelPlacement:
             totals_row = result.rows[-1]
 
             # First cell should have the label
-            assert totals_row.cells[0].value == "Total"
+            assert totals_row[0].value == "Total"
 
             # All other label column cells should be empty
             num_label_cols = len(col_order)
