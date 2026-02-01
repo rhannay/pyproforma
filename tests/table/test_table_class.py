@@ -934,3 +934,409 @@ class TestTableInitialization:
         ]
         with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
             Table(cells=cells)
+
+    def test_set_range_values_basic(self):
+        """Test basic range value setting with formatting preserved."""
+        table = Table(cells=[
+            [Cell("A", bold=True), Cell("B", bold=True), Cell("C", bold=True)],
+            [Cell(1, align="left"), Cell(2, align="left"), Cell(3, align="left")],
+            [Cell(4), Cell(5), Cell(6)],
+            [Cell(7), Cell(8), Cell(9)],
+        ])
+        
+        # Update a 2x2 range, preserving formatting
+        table.set_range_values(
+            start=(1, 1),
+            end=(2, 2),
+            values=[[20, 30], [50, 60]]
+        )
+        
+        # Check values were updated
+        assert table[1, 1].value == 20
+        assert table[1, 2].value == 30
+        assert table[2, 1].value == 50
+        assert table[2, 2].value == 60
+        # Check formatting was preserved
+        assert table[1, 1].align == "left"
+        assert table[1, 2].align == "left"
+        # Check unaffected cells
+        assert table[1, 0].value == 1
+        assert table[2, 0].value == 4
+        assert table[3, 1].value == 8
+
+    def test_set_range_values_single_cell(self):
+        """Test setting a single cell using range notation."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        table.set_range_values(start=(0, 1), end=(0, 1), values=[[99]])
+        
+        assert table[0, 1].value == 99
+        assert table[0, 0].value == 1  # Unchanged
+        assert table[0, 2].value == 3  # Unchanged
+
+    def test_set_range_values_full_table(self):
+        """Test setting values for the entire table."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        table.set_range_values(
+            start=(0, 0),
+            end=(1, 1),
+            values=[[10, 20], [30, 40]]
+        )
+        
+        assert table[0, 0].value == 10
+        assert table[0, 1].value == 20
+        assert table[1, 0].value == 30
+        assert table[1, 1].value == 40
+
+    def test_set_range_values_without_preserving_formatting(self):
+        """Test setting range values without preserving formatting."""
+        table = Table(cells=[
+            [Cell(1, bold=True), Cell(2, bold=True), Cell(3, bold=True)],
+            [Cell(4, background_color='red'), Cell(5, background_color='red'), Cell(6)],
+        ])
+        
+        table.set_range_values(
+            start=(1, 0),
+            end=(1, 1),
+            values=[[40, 50]],
+            preserve_formatting=False
+        )
+        
+        assert table[1, 0].value == 40
+        assert table[1, 1].value == 50
+        # Formatting should be lost
+        assert table[1, 0].background_color is None
+        assert table[1, 1].background_color is None
+        # Unaffected cell should preserve formatting
+        assert table[1, 2].value == 6
+
+    def test_set_range_values_invalid_start_tuple(self):
+        """Test that invalid start tuple raises TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="start must be a tuple of \\(row, col\\)"):
+            table.set_range_values(start=[0, 0], end=(1, 1), values=[[10, 20], [30, 40]])
+        
+        with pytest.raises(TypeError, match="start must be a tuple of \\(row, col\\)"):
+            table.set_range_values(start=(0,), end=(1, 1), values=[[10, 20], [30, 40]])
+
+    def test_set_range_values_invalid_end_tuple(self):
+        """Test that invalid end tuple raises TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="end must be a tuple of \\(row, col\\)"):
+            table.set_range_values(start=(0, 0), end=[1, 1], values=[[10, 20], [30, 40]])
+
+    def test_set_range_values_non_integer_coordinates(self):
+        """Test that non-integer coordinates raise TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="start coordinates must be integers"):
+            table.set_range_values(start=(0.5, 0), end=(1, 1), values=[[10, 20], [30, 40]])
+        
+        with pytest.raises(TypeError, match="end coordinates must be integers"):
+            table.set_range_values(start=(0, 0), end=(1, "1"), values=[[10, 20], [30, 40]])
+
+    def test_set_range_values_out_of_range(self):
+        """Test that out of range coordinates raise IndexError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(IndexError, match="start row 2 is out of range"):
+            table.set_range_values(start=(2, 0), end=(2, 1), values=[[10, 20]])
+        
+        with pytest.raises(IndexError, match="end col 2 is out of range"):
+            table.set_range_values(start=(0, 0), end=(1, 2), values=[[10, 20, 30], [40, 50, 60]])
+
+    def test_set_range_values_start_after_end(self):
+        """Test that start after end raises ValueError."""
+        table = Table(cells=[[Cell(1), Cell(2), Cell(3)], [Cell(4), Cell(5), Cell(6)]])
+        
+        with pytest.raises(ValueError, match="start row \\(1\\) must be <= end row \\(0\\)"):
+            table.set_range_values(start=(1, 0), end=(0, 1), values=[[10, 20]])
+        
+        with pytest.raises(ValueError, match="start col \\(2\\) must be <= end col \\(1\\)"):
+            table.set_range_values(start=(0, 2), end=(0, 1), values=[[10]])
+
+    def test_set_range_values_dimension_mismatch_rows(self):
+        """Test that values with wrong number of rows raises ValueError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)], [Cell(5), Cell(6)]])
+        
+        # Range needs 2 rows, but values has 3
+        with pytest.raises(ValueError, match="values has 3 rows but range requires 2 rows"):
+            table.set_range_values(start=(0, 0), end=(1, 1), values=[[10, 20], [30, 40], [50, 60]])
+
+    def test_set_range_values_dimension_mismatch_cols(self):
+        """Test that values with wrong number of columns raises ValueError."""
+        table = Table(cells=[[Cell(1), Cell(2), Cell(3)], [Cell(4), Cell(5), Cell(6)]])
+        
+        # Range needs 2 columns, but values row has 3
+        with pytest.raises(ValueError, match="values row 0 has 3 columns but range requires 2 columns"):
+            table.set_range_values(start=(0, 0), end=(1, 1), values=[[10, 20, 30], [40, 50]])
+
+    def test_set_range_values_empty_table(self):
+        """Test that setting range in empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot set range in empty table"):
+            table.set_range_values(start=(0, 0), end=(0, 0), values=[[10]])
+
+    def test_style_range_basic(self):
+        """Test basic range styling."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Style a 2x2 range
+        table.style_range(
+            start=(0, 0),
+            end=(1, 1),
+            bold=True,
+            background_color='lightgray'
+        )
+        
+        # Check range was styled
+        assert table[0, 0].bold is True
+        assert table[0, 0].background_color == 'lightgray'
+        assert table[0, 1].bold is True
+        assert table[0, 1].background_color == 'lightgray'
+        assert table[1, 0].bold is True
+        assert table[1, 0].background_color == 'lightgray'
+        assert table[1, 1].bold is True
+        assert table[1, 1].background_color == 'lightgray'
+        
+        # Check unaffected cells
+        assert table[0, 2].bold is False
+        assert table[0, 2].background_color is None
+        assert table[2, 0].bold is False
+
+    def test_style_range_single_cell(self):
+        """Test styling a single cell using range notation."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        table.style_range(
+            start=(1, 1),
+            end=(1, 1),
+            bold=True,
+            font_color='red'
+        )
+        
+        assert table[1, 1].bold is True
+        assert table[1, 1].font_color == 'red'
+        # Other cells should be unchanged
+        assert table[1, 0].bold is False
+        assert table[1, 2].bold is False
+
+    def test_style_range_all_properties(self):
+        """Test styling a range with all available properties."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        table.style_range(
+            start=(0, 1),
+            end=(1, 2),
+            bold=True,
+            bottom_border='double',
+            top_border='single',
+            background_color='yellow',
+            font_color='blue',
+            align='center',
+            value_format='two_decimals'
+        )
+        
+        # Check all properties on one cell in the range
+        cell = table[0, 1]
+        assert cell.bold is True
+        assert cell.bottom_border == 'double'
+        assert cell.top_border == 'single'
+        assert cell.background_color == 'yellow'
+        assert cell.font_color == 'blue'
+        assert cell.align == 'center'
+        assert cell.value_format == 'two_decimals'
+        
+        # Check another cell in the range
+        cell2 = table[1, 2]
+        assert cell2.bold is True
+        assert cell2.background_color == 'yellow'
+
+    def test_style_range_partial_update(self):
+        """Test that style_range only updates specified properties."""
+        table = Table(cells=[
+            [Cell(1, bold=True, align='left'), Cell(2)],
+            [Cell(3, background_color='red'), Cell(4)],
+        ])
+        
+        # Only update background_color
+        table.style_range(start=(0, 0), end=(1, 1), background_color='green')
+        
+        # Should preserve existing properties and add new one
+        assert table[0, 0].bold is True  # Preserved
+        assert table[0, 0].align == 'left'  # Preserved
+        assert table[0, 0].background_color == 'green'  # Updated
+        assert table[1, 0].background_color == 'green'  # Updated from red
+
+    def test_style_range_header_row(self):
+        """Test styling entire header row as a range."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Q1"), Cell("Q2"), Cell("Q3")],
+            [Cell("Item 1"), Cell(100), Cell(200), Cell(300)],
+            [Cell("Item 2"), Cell(150), Cell(250), Cell(350)],
+        ])
+        
+        # Style header row
+        table.style_range(
+            start=(0, 0),
+            end=(0, 3),
+            bold=True,
+            background_color='lightgray',
+            align='center'
+        )
+        
+        for col in range(4):
+            assert table[0, col].bold is True
+            assert table[0, col].background_color == 'lightgray'
+            assert table[0, col].align == 'center'
+        
+        # Data rows should be unchanged
+        assert table[1, 0].bold is False
+
+    def test_style_range_data_area(self):
+        """Test styling a data area (excluding labels)."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(1000), Cell(1200)],
+            [Cell("Expenses"), Cell(800), Cell(900)],
+        ])
+        
+        # Style only the numeric data
+        table.style_range(
+            start=(1, 1),
+            end=(2, 2),
+            value_format='no_decimals',
+            align='right'
+        )
+        
+        assert table[1, 1].value_format == 'no_decimals'
+        assert table[1, 1].align == 'right'
+        assert table[2, 2].value_format == 'no_decimals'
+        # Labels should be unchanged
+        assert table[1, 0].value_format is None
+
+    def test_style_range_total_line(self):
+        """Test styling a total line with borders."""
+        table = Table(cells=[
+            [Cell("Item"), Cell("Value")],
+            [Cell("A"), Cell(100)],
+            [Cell("B"), Cell(200)],
+            [Cell("Total"), Cell(300)],
+        ])
+        
+        # Style total row with borders
+        table.style_range(
+            start=(3, 0),
+            end=(3, 1),
+            bold=True,
+            top_border='single',
+            bottom_border='double'
+        )
+        
+        assert table[3, 0].bold is True
+        assert table[3, 0].top_border == 'single'
+        assert table[3, 0].bottom_border == 'double'
+        assert table[3, 1].bold is True
+        assert table[3, 1].bottom_border == 'double'
+
+    def test_style_range_invalid_start_tuple(self):
+        """Test that invalid start tuple raises TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="start must be a tuple of \\(row, col\\)"):
+            table.style_range(start=[0, 0], end=(1, 1), bold=True)
+
+    def test_style_range_invalid_end_tuple(self):
+        """Test that invalid end tuple raises TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="end must be a tuple of \\(row, col\\)"):
+            table.style_range(start=(0, 0), end=[1, 1], bold=True)
+
+    def test_style_range_non_integer_coordinates(self):
+        """Test that non-integer coordinates raise TypeError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(TypeError, match="start coordinates must be integers"):
+            table.style_range(start=(0.5, 0), end=(1, 1), bold=True)
+        
+        with pytest.raises(TypeError, match="end coordinates must be integers"):
+            table.style_range(start=(0, 0), end=(1, "1"), bold=True)
+
+    def test_style_range_out_of_range(self):
+        """Test that out of range coordinates raise IndexError."""
+        table = Table(cells=[[Cell(1), Cell(2)], [Cell(3), Cell(4)]])
+        
+        with pytest.raises(IndexError, match="start row 2 is out of range"):
+            table.style_range(start=(2, 0), end=(2, 1), bold=True)
+        
+        with pytest.raises(IndexError, match="end col 2 is out of range"):
+            table.style_range(start=(0, 0), end=(1, 2), bold=True)
+
+    def test_style_range_start_after_end(self):
+        """Test that start after end raises ValueError."""
+        table = Table(cells=[[Cell(1), Cell(2), Cell(3)], [Cell(4), Cell(5), Cell(6)]])
+        
+        with pytest.raises(ValueError, match="start row \\(1\\) must be <= end row \\(0\\)"):
+            table.style_range(start=(1, 0), end=(0, 1), bold=True)
+        
+        with pytest.raises(ValueError, match="start col \\(2\\) must be <= end col \\(1\\)"):
+            table.style_range(start=(0, 2), end=(0, 1), bold=True)
+
+    def test_style_range_empty_table(self):
+        """Test that styling range in empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot style range in empty table"):
+            table.style_range(start=(0, 0), end=(0, 0), bold=True)
+
+    def test_set_range_values_and_style_range_combined(self):
+        """Test that set_range_values and style_range work together."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(0), Cell(0)],
+            [Cell("Expenses"), Cell(0), Cell(0)],
+        ])
+        
+        # Set values for data area
+        table.set_range_values(
+            start=(1, 1),
+            end=(2, 2),
+            values=[[1000, 1200], [800, 900]]
+        )
+        
+        # Style the same area
+        table.style_range(
+            start=(1, 1),
+            end=(2, 2),
+            value_format='no_decimals',
+            align='right',
+            background_color='lightyellow'
+        )
+        
+        # Check both values and styling
+        assert table[1, 1].value == 1000
+        assert table[1, 1].value_format == 'no_decimals'
+        assert table[1, 1].background_color == 'lightyellow'
+        assert table[2, 2].value == 900
+        assert table[2, 2].align == 'right'
