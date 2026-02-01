@@ -96,6 +96,251 @@ class TestTableClass:
         with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
             Table(cells=cells)
 
+    def test_style_row_bold(self):
+        """Test styling a row with bold."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Style row 0 to be bold
+        table.style_row(0, bold=True)
+        
+        # Check all cells in row 0 are bold
+        assert table[0, 0].bold is True
+        assert table[0, 1].bold is True
+        assert table[0, 2].bold is True
+        
+        # Check other rows are not affected
+        assert table[1, 0].bold is False
+        assert table[2, 0].bold is False
+
+    def test_style_row_multiple_properties(self):
+        """Test styling a row with multiple properties."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value")],
+            [Cell("Item 1"), Cell(100)],
+            [Cell("Total"), Cell(200)],
+        ])
+        
+        # Style last row as a total row
+        table.style_row(2, bold=True, bottom_border='double', background_color='lightgray')
+        
+        assert table[2, 0].bold is True
+        assert table[2, 0].bottom_border == 'double'
+        assert table[2, 0].background_color == 'lightgray'
+        assert table[2, 1].bold is True
+        assert table[2, 1].bottom_border == 'double'
+        assert table[2, 1].background_color == 'lightgray'
+        
+        # Check other rows are not affected
+        assert table[1, 0].bold is False
+        assert table[1, 0].bottom_border is None
+        assert table[1, 0].background_color is None
+
+    def test_style_row_partial_update(self):
+        """Test that style_row only updates specified properties."""
+        table = Table(cells=[
+            [Cell("A", bold=True, align='left'), Cell("B")],
+            [Cell(1, background_color='red'), Cell(2)],
+        ])
+        
+        # Only update bold, should preserve other properties
+        table.style_row(1, bold=True)
+        
+        assert table[1, 0].bold is True
+        assert table[1, 0].background_color == 'red'  # Preserved
+        assert table[1, 1].bold is True
+
+    def test_style_row_out_of_range(self):
+        """Test that styling an out-of-range row raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Row index 2 is out of range"):
+            table.style_row(2, bold=True)
+        
+        with pytest.raises(IndexError, match="Row index -1 is out of range"):
+            table.style_row(-1, bold=True)
+
+    def test_style_row_all_properties(self):
+        """Test styling a row with all available properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        table.style_row(
+            1,
+            bold=True,
+            bottom_border='single',
+            top_border='double',
+            background_color='yellow',
+            font_color='blue',
+            align='center',
+            value_format='two_decimals'
+        )
+        
+        cell = table[1, 0]
+        assert cell.bold is True
+        assert cell.bottom_border == 'single'
+        assert cell.top_border == 'double'
+        assert cell.background_color == 'yellow'
+        assert cell.font_color == 'blue'
+        assert cell.align == 'center'
+        assert cell.value_format == 'two_decimals'
+
+    def test_style_col_bold(self):
+        """Test styling a column with bold."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Style column 0 to be bold
+        table.style_col(0, bold=True)
+        
+        # Check all cells in column 0 are bold
+        assert table[0, 0].bold is True
+        assert table[1, 0].bold is True
+        assert table[2, 0].bold is True
+        
+        # Check other columns are not affected
+        assert table[0, 1].bold is False
+        assert table[0, 2].bold is False
+
+    def test_style_col_value_format(self):
+        """Test styling a column with value format."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value"), Cell("Percent")],
+            [Cell("Item 1"), Cell(100.123), Cell(0.456)],
+            [Cell("Item 2"), Cell(200.789), Cell(0.789)],
+        ])
+        
+        # Style value column to have two decimals
+        table.style_col(1, value_format='two_decimals', align='right')
+        
+        assert table[0, 1].value_format == 'two_decimals'
+        assert table[1, 1].value_format == 'two_decimals'
+        assert table[2, 1].value_format == 'two_decimals'
+        assert table[0, 1].align == 'right'
+        assert table[1, 1].align == 'right'
+        
+        # Check other columns are not affected
+        assert table[0, 0].value_format is None
+        assert table[0, 2].value_format is None
+
+    def test_style_col_multiple_properties(self):
+        """Test styling a column with multiple properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        table.style_col(0, bold=True, align='left', background_color='lightblue')
+        
+        assert table[0, 0].bold is True
+        assert table[0, 0].align == 'left'
+        assert table[0, 0].background_color == 'lightblue'
+        assert table[1, 0].bold is True
+        assert table[2, 0].bold is True
+        
+        # Check other column is not affected
+        assert table[0, 1].bold is False
+        assert table[0, 1].align == 'right'  # default
+
+    def test_style_col_out_of_range(self):
+        """Test that styling an out-of-range column raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            table.style_col(2, bold=True)
+        
+        with pytest.raises(IndexError, match="Column index -1 is out of range"):
+            table.style_col(-1, bold=True)
+
+    def test_style_col_empty_table(self):
+        """Test that styling a column in an empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot style column in empty table"):
+            table.style_col(0, bold=True)
+
+    def test_style_col_partial_update(self):
+        """Test that style_col only updates specified properties."""
+        table = Table(cells=[
+            [Cell("A", bold=True), Cell("B")],
+            [Cell(1, background_color='red'), Cell(2)],
+        ])
+        
+        # Only update align, should preserve other properties
+        table.style_col(0, align='center')
+        
+        assert table[0, 0].bold is True  # Preserved
+        assert table[0, 0].align == 'center'  # Updated
+        assert table[1, 0].background_color == 'red'  # Preserved
+        assert table[1, 0].align == 'center'  # Updated
+
+    def test_style_col_all_properties(self):
+        """Test styling a column with all available properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        table.style_col(
+            1,
+            bold=True,
+            align='right',
+            background_color='pink',
+            font_color='green',
+            value_format='no_decimals',
+            bottom_border='single',
+            top_border='double'
+        )
+        
+        cell = table[0, 1]
+        assert cell.bold is True
+        assert cell.align == 'right'
+        assert cell.background_color == 'pink'
+        assert cell.font_color == 'green'
+        assert cell.value_format == 'no_decimals'
+        assert cell.bottom_border == 'single'
+        assert cell.top_border == 'double'
+
+    def test_style_row_and_col_combined(self):
+        """Test that row and column styling can be combined."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value")],
+            [Cell("Item 1"), Cell(100)],
+            [Cell("Item 2"), Cell(200)],
+        ])
+        
+        # Style header row
+        table.style_row(0, bold=True, background_color='gray')
+        
+        # Style value column
+        table.style_col(1, value_format='no_decimals', align='right')
+        
+        # Header cell in value column should have both styles
+        assert table[0, 1].bold is True
+        assert table[0, 1].background_color == 'gray'
+        assert table[0, 1].value_format == 'no_decimals'
+        assert table[0, 1].align == 'right'
+        
+        # Data cell in value column should only have column styles
+        assert table[1, 1].bold is False
+        assert table[1, 1].value_format == 'no_decimals'
+        assert table[1, 1].align == 'right'
+
     def test_table_to_dataframe_simple(self):
         """Test basic table to DataFrame conversion."""
         cells = [

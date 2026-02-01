@@ -349,6 +349,122 @@ class Table:
         
         return [PseudoRow(row) for row in self.cells[1:]]
 
+    # Public API - Styling methods
+    def style_row(
+        self,
+        row_idx: int,
+        bold: Optional[bool] = None,
+        bottom_border: Optional[str] = None,
+        top_border: Optional[str] = None,
+        background_color: Optional[str] = None,
+        font_color: Optional[str] = None,
+        align: Optional[str] = None,
+        value_format: Optional[ValueFormat] = None,
+    ) -> None:
+        """Apply styling to all cells in a row.
+        
+        This method modifies the styling properties of all cells in the specified row.
+        Only the provided parameters will be applied; omitted parameters leave the
+        corresponding cell properties unchanged.
+        
+        Args:
+            row_idx: Zero-based row index to style.
+            bold: If provided, sets bold formatting for all cells in the row.
+            bottom_border: If provided, sets bottom border style ('single' or 'double').
+            top_border: If provided, sets top border style ('single' or 'double').
+            background_color: If provided, sets background color (CSS color string).
+            font_color: If provided, sets font color (CSS color string).
+            align: If provided, sets text alignment ('left', 'center', or 'right').
+            value_format: If provided, sets value format for all cells.
+            
+        Raises:
+            IndexError: If row_idx is out of range.
+            
+        Examples:
+            >>> table.style_row(0, bold=True, align='center')  # Style header row
+            >>> table.style_row(5, bottom_border='double')     # Add total line
+            >>> table.style_row(2, background_color='lightgray', bold=True)
+        """
+        if row_idx < 0 or row_idx >= len(self.cells):
+            raise IndexError(
+                f"Row index {row_idx} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        for cell in self.cells[row_idx]:
+            if bold is not None:
+                cell.bold = bold
+            if bottom_border is not None:
+                cell.bottom_border = bottom_border
+            if top_border is not None:
+                cell.top_border = top_border
+            if background_color is not None:
+                cell.background_color = background_color
+            if font_color is not None:
+                cell.font_color = font_color
+            if align is not None:
+                cell.align = align
+            if value_format is not None:
+                cell.value_format = value_format
+
+    def style_col(
+        self,
+        col_idx: int,
+        bold: Optional[bool] = None,
+        align: Optional[str] = None,
+        background_color: Optional[str] = None,
+        font_color: Optional[str] = None,
+        value_format: Optional[ValueFormat] = None,
+        bottom_border: Optional[str] = None,
+        top_border: Optional[str] = None,
+    ) -> None:
+        """Apply styling to all cells in a column.
+        
+        This method modifies the styling properties of all cells in the specified column.
+        Only the provided parameters will be applied; omitted parameters leave the
+        corresponding cell properties unchanged.
+        
+        Args:
+            col_idx: Zero-based column index to style.
+            bold: If provided, sets bold formatting for all cells in the column.
+            align: If provided, sets text alignment ('left', 'center', or 'right').
+            background_color: If provided, sets background color (CSS color string).
+            font_color: If provided, sets font color (CSS color string).
+            value_format: If provided, sets value format for all cells.
+            bottom_border: If provided, sets bottom border style ('single' or 'double').
+            top_border: If provided, sets top border style ('single' or 'double').
+            
+        Raises:
+            IndexError: If col_idx is out of range or table is empty.
+            
+        Examples:
+            >>> table.style_col(0, bold=True, align='left')     # Style first column
+            >>> table.style_col(1, value_format='two_decimals', align='right')
+            >>> table.style_col(2, background_color='lightblue')
+        """
+        if not self.cells:
+            raise IndexError("Cannot style column in empty table")
+        if col_idx < 0 or col_idx >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col_idx} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        for row in self.cells:
+            cell = row[col_idx]
+            if bold is not None:
+                cell.bold = bold
+            if align is not None:
+                cell.align = align
+            if background_color is not None:
+                cell.background_color = background_color
+            if font_color is not None:
+                cell.font_color = font_color
+            if value_format is not None:
+                cell.value_format = value_format
+            if bottom_border is not None:
+                cell.bottom_border = bottom_border
+            if top_border is not None:
+                cell.top_border = top_border
+
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the Table to a pandas DataFrame with raw cell values.
