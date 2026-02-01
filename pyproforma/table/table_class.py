@@ -106,7 +106,6 @@ class Cell:
 
 
 
-@dataclass
 class Table:
     """A structured table representation as a grid of cells with formatting.
 
@@ -128,17 +127,53 @@ class Table:
         ... ]
         >>> table = Table(cells=cells)
         >>> df = table.to_dataframe()
+        
+        >>> # Access and modify cells using indexing
+        >>> value = table[0, 0]  # Get cell at row 0, col 0
+        >>> table[1, 1] = Cell(300)  # Set cell at row 1, col 1
+        >>> table[0, 0].bold = True  # Modify cell properties
+        
+        >>> # Initialize from list of lists of values
+        >>> table = Table(cells=[
+        ...     ["Name", "Value"],
+        ...     ["Item 1", 100],
+        ...     ["Item 2", 200]
+        ... ])
 
     Note:
         All rows must have the same number of cells to form a valid rectangular grid.
         This is validated automatically during initialization.
     """  # noqa: E501
 
-    cells: list[list[Cell]]
-
-    # Initialization and validation
-    def __post_init__(self):
+    def __init__(self, cells: list[list[Cell] | list[Any]] | None = None):
+        """Initialize a Table with cells.
+        
+        Args:
+            cells: Can be:
+                - A list of lists of Cell objects
+                - A list of lists of values (will be converted to Cells)
+                - None (creates an empty table)
+        """
+        if cells is None:
+            self.cells = []
+        else:
+            # Convert to list of list of Cell if needed
+            self.cells = self._normalize_cells(cells)
         self._check_grid_consistency()
+    
+    def _normalize_cells(self, cells: list[list[Any]]) -> list[list[Cell]]:
+        """Convert input cells to list of list of Cell objects."""
+        normalized = []
+        for row in cells:
+            normalized_row = []
+            for item in row:
+                if isinstance(item, Cell):
+                    normalized_row.append(item)
+                else:
+                    # Convert raw value to Cell
+                    normalized_row.append(Cell(value=item))
+            normalized.append(normalized_row)
+        return normalized
 
     def _check_grid_consistency(self):
         """Ensure all rows have the same number of cells."""
@@ -155,6 +190,120 @@ class Table:
                     f"Row {i} has {len(row)} cells, expected {num_cols} cells. "
                     "All rows must have the same number of cells."
                 )
+    
+    # Indexing support
+    def __getitem__(self, key: tuple[int, int]) -> Cell:
+        """Get a cell using table[row, col] syntax.
+        
+        Args:
+            key: A tuple of (row_index, col_index) using zero-based indexing.
+        
+        Returns:
+            The Cell at the specified position.
+        
+        Raises:
+            IndexError: If the row or column index is out of range.
+            TypeError: If key is not a tuple of two integers.
+        
+        Examples:
+            >>> cell = table[0, 1]  # Get cell at row 0, column 1
+            >>> cell.value
+        """
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError("Table indices must be a tuple of (row, col)")
+        
+        row, col = key
+        
+        if not isinstance(row, int) or not isinstance(col, int):
+            raise TypeError("Row and column indices must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot index into an empty table")
+        
+        if row < 0 or row >= len(self.cells):
+            raise IndexError(
+                f"Row index {row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if col < 0 or col >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        return self.cells[row][col]
+    
+    def __setitem__(self, key: tuple[int, int], value: Cell | Any):
+        """Set a cell using table[row, col] = cell syntax.
+        
+        Args:
+            key: A tuple of (row_index, col_index) using zero-based indexing.
+            value: A Cell object or a value to convert to a Cell.
+        
+        Raises:
+            IndexError: If the row or column index is out of range.
+            TypeError: If key is not a tuple of two integers.
+        
+        Examples:
+            >>> table[0, 1] = Cell(100, bold=True)  # Set with Cell object
+            >>> table[1, 0] = "New Value"  # Set with raw value (converts to Cell)
+        """
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError("Table indices must be a tuple of (row, col)")
+        
+        row, col = key
+        
+        if not isinstance(row, int) or not isinstance(col, int):
+            raise TypeError("Row and column indices must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot index into an empty table")
+        
+        if row < 0 or row >= len(self.cells):
+            raise IndexError(
+                f"Row index {row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if col < 0 or col >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        # Convert value to Cell if needed
+        if isinstance(value, Cell):
+            self.cells[row][col] = value
+        else:
+            self.cells[row][col] = Cell(value=value)
+    
+    # Properties for table dimensions
+    @property
+    def row_count(self) -> int:
+        """Return the number of rows in the table.
+        
+        Returns:
+            The number of rows (0 for empty table).
+        
+        Examples:
+            >>> table.row_count
+            3
+        """
+        return len(self.cells)
+    
+    @property
+    def col_count(self) -> int:
+        """Return the number of columns in the table.
+        
+        Returns:
+            The number of columns (0 for empty table).
+        
+        Examples:
+            >>> table.col_count
+            2
+        """
+        if not self.cells:
+            return 0
+        return len(self.cells[0])
 
     # Backward compatibility properties
     @property
