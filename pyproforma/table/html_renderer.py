@@ -45,13 +45,16 @@ def to_html(table: "Table") -> str:
     html_parts = ['<div class="pyproforma-table-container">']
     html_parts.append('<table class="pyproforma-table">')
 
-    # Generate header row (first row in cells if it exists)
+    # Generate all rows (treat all rows equally, no special header row)
     if table.cells:
-        html_parts.append(_generate_header_row(table))
-
-        # Generate data rows (remaining rows)
-        if len(table.cells) > 1:
-            html_parts.extend(_generate_data_rows(table))
+        html_parts.append("<tbody>")
+        for row in table.cells:
+            row_cells = []
+            for cell in row:
+                cell_html = _generate_cell_html(cell)
+                row_cells.append(cell_html)
+            html_parts.append(f"<tr>{''.join(row_cells)}</tr>")
+        html_parts.append("</tbody>")
 
     html_parts.append("</table>")
     html_parts.append("</div>")
@@ -75,14 +78,6 @@ def _generate_css() -> str:
             border: 1px solid #d0d0d0;
             background-color: white;
         }
-        .pyproforma-table th {
-            background-color: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            padding: 6px 12px;
-            font-weight: 600;
-            text-align: center;
-            color: #333;
-        }
         .pyproforma-table td {
             border: 1px solid #d0d0d0;
             padding: 6px 12px;
@@ -93,51 +88,6 @@ def _generate_css() -> str:
             background-color: #f9f9f9;
         }
     """
-
-
-def _generate_header_row(table: "Table") -> str:
-    """Generate the header row HTML from first row of cells."""
-    if not table.cells:
-        return "<thead><tr></tr></thead>"
-    
-    header_cells = []
-    for cell in table.cells[0]:
-        # Get cell alignment style
-        align_style = f"text-align: {cell.align};" if cell.align else "text-align: center;"
-        formatted_value = cell.formatted_value if cell.formatted_value is not None else ""
-        
-        # Build additional styles for the header cell
-        styles = [align_style]
-        if cell.bold:
-            styles.append("font-weight: bold")
-        if cell.background_color:
-            styles.append(f"background-color: {cell.background_color}")
-        if cell.font_color:
-            styles.append(f"color: {cell.font_color}")
-        
-        style_str = " ".join(styles)
-        header_cells.append(
-            f'<th style="{style_str}">{_escape_html(str(formatted_value))}</th>'
-        )
-
-    return f"<thead><tr>{''.join(header_cells)}</tr></thead>"
-
-
-def _generate_data_rows(table: "Table") -> list[str]:
-    """Generate all data row HTML (skip first row which is header)."""
-    rows_html = []
-    rows_html.append("<tbody>")
-
-    # Start from index 1 to skip header row
-    for row in table.cells[1:]:
-        row_cells = []
-        for cell in row:
-            cell_html = _generate_cell_html(cell)
-            row_cells.append(cell_html)
-        rows_html.append(f"<tr>{''.join(row_cells)}</tr>")
-
-    rows_html.append("</tbody>")
-    return rows_html
 
 
 def _generate_cell_html(cell) -> str:
