@@ -607,6 +607,71 @@ class Table:
                     else new_value
                 )
 
+    def _validate_range_coordinates(
+        self, start: tuple[int, int], end: tuple[int, int], operation_name: str
+    ) -> tuple[int, int, int, int]:
+        """Validate range coordinates and return unpacked values.
+        
+        Args:
+            start: Tuple of (row, col) for the top-left corner of the range.
+            end: Tuple of (row, col) for the bottom-right corner of the range.
+            operation_name: Name of the operation (for error messages).
+        
+        Returns:
+            Tuple of (start_row, start_col, end_row, end_col).
+        
+        Raises:
+            TypeError: If start or end are not tuples of two integers.
+            IndexError: If start or end coordinates are out of range or table is empty.
+            ValueError: If start is after end.
+        """
+        # Validate start and end tuples
+        if not isinstance(start, tuple) or len(start) != 2:
+            raise TypeError("start must be a tuple of (row, col)")
+        if not isinstance(end, tuple) or len(end) != 2:
+            raise TypeError("end must be a tuple of (row, col)")
+        
+        start_row, start_col = start
+        end_row, end_col = end
+        
+        if not isinstance(start_row, int) or not isinstance(start_col, int):
+            raise TypeError("start coordinates must be integers")
+        if not isinstance(end_row, int) or not isinstance(end_col, int):
+            raise TypeError("end coordinates must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError(f"Cannot {operation_name} in empty table")
+        
+        if start_row < 0 or start_row >= len(self.cells):
+            raise IndexError(
+                f"start row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if end_row < 0 or end_row >= len(self.cells):
+            raise IndexError(
+                f"end row {end_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if start_col < 0 or start_col >= len(self.cells[0]):
+            raise IndexError(
+                f"start col {start_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        if end_col < 0 or end_col >= len(self.cells[0]):
+            raise IndexError(
+                f"end col {end_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        # Validate that start is before or equal to end
+        if start_row > end_row:
+            raise ValueError(
+                f"start row ({start_row}) must be <= end row ({end_row})"
+            )
+        if start_col > end_col:
+            raise ValueError(
+                f"start col ({start_col}) must be <= end col ({end_col})"
+            )
+        
+        return start_row, start_col, end_row, end_col
+
     def set_range_values(
         self,
         start: tuple[int, int],
@@ -648,50 +713,10 @@ class Table:
             ...     values=[[100]]
             ... )
         """
-        # Validate start and end tuples
-        if not isinstance(start, tuple) or len(start) != 2:
-            raise TypeError("start must be a tuple of (row, col)")
-        if not isinstance(end, tuple) or len(end) != 2:
-            raise TypeError("end must be a tuple of (row, col)")
-        
-        start_row, start_col = start
-        end_row, end_col = end
-        
-        if not isinstance(start_row, int) or not isinstance(start_col, int):
-            raise TypeError("start coordinates must be integers")
-        if not isinstance(end_row, int) or not isinstance(end_col, int):
-            raise TypeError("end coordinates must be integers")
-        
-        # Check bounds
-        if not self.cells:
-            raise IndexError("Cannot set range in empty table")
-        
-        if start_row < 0 or start_row >= len(self.cells):
-            raise IndexError(
-                f"start row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
-            )
-        if end_row < 0 or end_row >= len(self.cells):
-            raise IndexError(
-                f"end row {end_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
-            )
-        if start_col < 0 or start_col >= len(self.cells[0]):
-            raise IndexError(
-                f"start col {start_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
-            )
-        if end_col < 0 or end_col >= len(self.cells[0]):
-            raise IndexError(
-                f"end col {end_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
-            )
-        
-        # Validate that start is before or equal to end
-        if start_row > end_row:
-            raise ValueError(
-                f"start row ({start_row}) must be <= end row ({end_row})"
-            )
-        if start_col > end_col:
-            raise ValueError(
-                f"start col ({start_col}) must be <= end col ({end_col})"
-            )
+        # Validate coordinates using helper method
+        start_row, start_col, end_row, end_col = self._validate_range_coordinates(
+            start, end, "set range"
+        )
         
         # Calculate expected dimensions
         expected_rows = end_row - start_row + 1
@@ -785,50 +810,10 @@ class Table:
             ...     bottom_border='double'
             ... )
         """
-        # Validate start and end tuples
-        if not isinstance(start, tuple) or len(start) != 2:
-            raise TypeError("start must be a tuple of (row, col)")
-        if not isinstance(end, tuple) or len(end) != 2:
-            raise TypeError("end must be a tuple of (row, col)")
-        
-        start_row, start_col = start
-        end_row, end_col = end
-        
-        if not isinstance(start_row, int) or not isinstance(start_col, int):
-            raise TypeError("start coordinates must be integers")
-        if not isinstance(end_row, int) or not isinstance(end_col, int):
-            raise TypeError("end coordinates must be integers")
-        
-        # Check bounds
-        if not self.cells:
-            raise IndexError("Cannot style range in empty table")
-        
-        if start_row < 0 or start_row >= len(self.cells):
-            raise IndexError(
-                f"start row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
-            )
-        if end_row < 0 or end_row >= len(self.cells):
-            raise IndexError(
-                f"end row {end_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
-            )
-        if start_col < 0 or start_col >= len(self.cells[0]):
-            raise IndexError(
-                f"start col {start_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
-            )
-        if end_col < 0 or end_col >= len(self.cells[0]):
-            raise IndexError(
-                f"end col {end_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
-            )
-        
-        # Validate that start is before or equal to end
-        if start_row > end_row:
-            raise ValueError(
-                f"start row ({start_row}) must be <= end row ({end_row})"
-            )
-        if start_col > end_col:
-            raise ValueError(
-                f"start col ({start_col}) must be <= end col ({end_col})"
-            )
+        # Validate coordinates using helper method
+        start_row, start_col, end_row, end_col = self._validate_range_coordinates(
+            start, end, "style range"
+        )
         
         # Apply styling to all cells in the range
         for row_idx in range(start_row, end_row + 1):
