@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import pandas as pd
 from pandas.io.formats.style import Styler
@@ -8,6 +8,9 @@ from ..constants import ValueFormat
 from .colors import color_to_hex
 from .excel import to_excel
 from .html_renderer import to_html as _to_html
+
+# Define a type alias for border styles
+BorderStyle = Literal["single", "double"]
 
 
 @dataclass
@@ -58,17 +61,30 @@ class Cell:
     value_format: Optional[ValueFormat] = None
     background_color: Optional[str] = None
     font_color: Optional[str] = None
-    bottom_border: Optional[str] = None
-    top_border: Optional[str] = None
+    bottom_border: Optional[BorderStyle] = None
+    top_border: Optional[BorderStyle] = None
 
     def __post_init__(self):
-        """Validate color values after initialization."""
+        """Validate color values and border styles after initialization."""
         if self.background_color is not None:
             # Validate the color - will raise ValueError if invalid
             color_to_hex(self.background_color)
         if self.font_color is not None:
             # Validate the color - will raise ValueError if invalid
             color_to_hex(self.font_color)
+        
+        # Validate border styles
+        valid_borders = ("single", "double")
+        if self.bottom_border is not None and self.bottom_border not in valid_borders:
+            raise ValueError(
+                f"Invalid bottom_border value: '{self.bottom_border}'. "
+                "Must be None, 'single', or 'double'."
+            )
+        if self.top_border is not None and self.top_border not in valid_borders:
+            raise ValueError(
+                f"Invalid top_border value: '{self.top_border}'. "
+                "Must be None, 'single', or 'double'."
+            )
 
     @property
     def df_css(self) -> str:
@@ -361,13 +377,31 @@ class Table:
         
         return [PseudoRow(row) for row in self.cells[1:]]
 
+    # Helper method for validation
+    @staticmethod
+    def _validate_border(border_value: Optional[str], border_name: str) -> None:
+        """Validate that a border value is valid.
+        
+        Args:
+            border_value: The border value to validate.
+            border_name: Name of the border parameter (for error messages).
+            
+        Raises:
+            ValueError: If border_value is not None, 'single', or 'double'.
+        """
+        if border_value is not None and border_value not in ("single", "double"):
+            raise ValueError(
+                f"Invalid {border_name} value: '{border_value}'. "
+                "Must be None, 'single', or 'double'."
+            )
+
     # Public API - Styling methods
     def style_row(
         self,
         row_idx: int,
         bold: Optional[bool] = None,
-        bottom_border: Optional[str] = None,
-        top_border: Optional[str] = None,
+        bottom_border: Optional[BorderStyle] = None,
+        top_border: Optional[BorderStyle] = None,
         background_color: Optional[str] = None,
         font_color: Optional[str] = None,
         align: Optional[str] = None,
@@ -402,6 +436,10 @@ class Table:
                 f"Row index {row_idx} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
             )
         
+        # Validate border values before applying
+        self._validate_border(bottom_border, "bottom_border")
+        self._validate_border(top_border, "top_border")
+        
         for cell in self.cells[row_idx]:
             if bold is not None:
                 cell.bold = bold
@@ -426,8 +464,8 @@ class Table:
         background_color: Optional[str] = None,
         font_color: Optional[str] = None,
         value_format: Optional[ValueFormat] = None,
-        bottom_border: Optional[str] = None,
-        top_border: Optional[str] = None,
+        bottom_border: Optional[BorderStyle] = None,
+        top_border: Optional[BorderStyle] = None,
     ) -> None:
         """Apply styling to all cells in a column.
         
@@ -459,6 +497,10 @@ class Table:
             raise IndexError(
                 f"Column index {col_idx} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
             )
+        
+        # Validate border values before applying
+        self._validate_border(bottom_border, "bottom_border")
+        self._validate_border(top_border, "top_border")
         
         for row in self.cells:
             cell = row[col_idx]
@@ -766,8 +808,8 @@ class Table:
         start: tuple[int, int],
         end: tuple[int, int],
         bold: Optional[bool] = None,
-        bottom_border: Optional[str] = None,
-        top_border: Optional[str] = None,
+        bottom_border: Optional[BorderStyle] = None,
+        top_border: Optional[BorderStyle] = None,
         background_color: Optional[str] = None,
         font_color: Optional[str] = None,
         align: Optional[str] = None,
@@ -826,6 +868,10 @@ class Table:
         start_row, start_col, end_row, end_col = self._validate_range_coordinates(
             start, end, "style range"
         )
+        
+        # Validate border values before applying
+        self._validate_border(bottom_border, "bottom_border")
+        self._validate_border(top_border, "top_border")
         
         # Apply styling to all cells in the range
         for row_idx in range(start_row, end_row + 1):
