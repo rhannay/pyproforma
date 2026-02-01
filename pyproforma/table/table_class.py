@@ -607,6 +607,248 @@ class Table:
                     else new_value
                 )
 
+    def set_range_values(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        values: list[list[Any]],
+        preserve_formatting: bool = True,
+    ) -> None:
+        """Set values for a rectangular range of cells.
+        
+        This method allows updating a 2D range of cells specified by start and end corner
+        coordinates. The values are provided as a 2D list matching the range dimensions.
+        
+        Args:
+            start: Tuple of (row, col) for the top-left corner of the range (0-based).
+            end: Tuple of (row, col) for the bottom-right corner of the range (0-based, inclusive).
+            values: 2D list of values to set. Must match the dimensions of the range.
+                   Outer list represents rows, inner lists represent columns.
+            preserve_formatting: If True, only updates cell values while keeping
+                               existing formatting. If False, replaces cells entirely
+                               with new Cell objects (losing formatting).
+        
+        Raises:
+            TypeError: If start or end are not tuples of two integers.
+            IndexError: If start or end coordinates are out of range.
+            ValueError: If start is after end, or if values dimensions don't match range.
+            
+        Examples:
+            >>> # Set a 2x3 range starting at (1, 1)
+            >>> table.set_range_values(
+            ...     start=(1, 1),
+            ...     end=(2, 3),
+            ...     values=[[10, 20, 30], [40, 50, 60]]
+            ... )
+            
+            >>> # Set a single cell using range notation
+            >>> table.set_range_values(
+            ...     start=(0, 0),
+            ...     end=(0, 0),
+            ...     values=[[100]]
+            ... )
+        """
+        # Validate start and end tuples
+        if not isinstance(start, tuple) or len(start) != 2:
+            raise TypeError("start must be a tuple of (row, col)")
+        if not isinstance(end, tuple) or len(end) != 2:
+            raise TypeError("end must be a tuple of (row, col)")
+        
+        start_row, start_col = start
+        end_row, end_col = end
+        
+        if not isinstance(start_row, int) or not isinstance(start_col, int):
+            raise TypeError("start coordinates must be integers")
+        if not isinstance(end_row, int) or not isinstance(end_col, int):
+            raise TypeError("end coordinates must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot set range in empty table")
+        
+        if start_row < 0 or start_row >= len(self.cells):
+            raise IndexError(
+                f"start row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if end_row < 0 or end_row >= len(self.cells):
+            raise IndexError(
+                f"end row {end_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if start_col < 0 or start_col >= len(self.cells[0]):
+            raise IndexError(
+                f"start col {start_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        if end_col < 0 or end_col >= len(self.cells[0]):
+            raise IndexError(
+                f"end col {end_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        # Validate that start is before or equal to end
+        if start_row > end_row:
+            raise ValueError(
+                f"start row ({start_row}) must be <= end row ({end_row})"
+            )
+        if start_col > end_col:
+            raise ValueError(
+                f"start col ({start_col}) must be <= end col ({end_col})"
+            )
+        
+        # Calculate expected dimensions
+        expected_rows = end_row - start_row + 1
+        expected_cols = end_col - start_col + 1
+        
+        # Validate values dimensions
+        if len(values) != expected_rows:
+            raise ValueError(
+                f"values has {len(values)} rows but range requires {expected_rows} rows"
+            )
+        for i, row in enumerate(values):
+            if len(row) != expected_cols:
+                raise ValueError(
+                    f"values row {i} has {len(row)} columns but range requires {expected_cols} columns"
+                )
+        
+        # Set values
+        if preserve_formatting:
+            # Update only the value property of existing cells
+            for i, row_values in enumerate(values):
+                for j, new_value in enumerate(row_values):
+                    self.cells[start_row + i][start_col + j].value = new_value
+        else:
+            # Replace cells with new Cell objects
+            for i, row_values in enumerate(values):
+                for j, new_value in enumerate(row_values):
+                    self.cells[start_row + i][start_col + j] = (
+                        Cell(value=new_value)
+                        if not isinstance(new_value, Cell)
+                        else new_value
+                    )
+
+    def style_range(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        bold: Optional[bool] = None,
+        bottom_border: Optional[str] = None,
+        top_border: Optional[str] = None,
+        background_color: Optional[str] = None,
+        font_color: Optional[str] = None,
+        align: Optional[str] = None,
+        value_format: Optional[ValueFormat] = None,
+    ) -> None:
+        """Apply styling to a rectangular range of cells.
+        
+        This method modifies the styling properties of all cells in the specified range.
+        Only the provided parameters will be applied; omitted parameters leave the
+        corresponding cell properties unchanged.
+        
+        Args:
+            start: Tuple of (row, col) for the top-left corner of the range (0-based).
+            end: Tuple of (row, col) for the bottom-right corner of the range (0-based, inclusive).
+            bold: If provided, sets bold formatting for all cells in the range.
+            bottom_border: If provided, sets bottom border style ('single' or 'double').
+            top_border: If provided, sets top border style ('single' or 'double').
+            background_color: If provided, sets background color (CSS color string).
+            font_color: If provided, sets font color (CSS color string).
+            align: If provided, sets text alignment ('left', 'center', or 'right').
+            value_format: If provided, sets value format for all cells.
+            
+        Raises:
+            TypeError: If start or end are not tuples of two integers.
+            IndexError: If start or end coordinates are out of range.
+            ValueError: If start is after end.
+            
+        Examples:
+            >>> # Style a range as a header
+            >>> table.style_range(
+            ...     start=(0, 0),
+            ...     end=(0, 3),
+            ...     bold=True,
+            ...     background_color='lightgray',
+            ...     align='center'
+            ... )
+            
+            >>> # Style a data range with formatting
+            >>> table.style_range(
+            ...     start=(1, 1),
+            ...     end=(5, 3),
+            ...     value_format='two_decimals',
+            ...     align='right'
+            ... )
+            
+            >>> # Add a total line border
+            >>> table.style_range(
+            ...     start=(6, 0),
+            ...     end=(6, 3),
+            ...     bold=True,
+            ...     top_border='single',
+            ...     bottom_border='double'
+            ... )
+        """
+        # Validate start and end tuples
+        if not isinstance(start, tuple) or len(start) != 2:
+            raise TypeError("start must be a tuple of (row, col)")
+        if not isinstance(end, tuple) or len(end) != 2:
+            raise TypeError("end must be a tuple of (row, col)")
+        
+        start_row, start_col = start
+        end_row, end_col = end
+        
+        if not isinstance(start_row, int) or not isinstance(start_col, int):
+            raise TypeError("start coordinates must be integers")
+        if not isinstance(end_row, int) or not isinstance(end_col, int):
+            raise TypeError("end coordinates must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot style range in empty table")
+        
+        if start_row < 0 or start_row >= len(self.cells):
+            raise IndexError(
+                f"start row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if end_row < 0 or end_row >= len(self.cells):
+            raise IndexError(
+                f"end row {end_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        if start_col < 0 or start_col >= len(self.cells[0]):
+            raise IndexError(
+                f"start col {start_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        if end_col < 0 or end_col >= len(self.cells[0]):
+            raise IndexError(
+                f"end col {end_col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        # Validate that start is before or equal to end
+        if start_row > end_row:
+            raise ValueError(
+                f"start row ({start_row}) must be <= end row ({end_row})"
+            )
+        if start_col > end_col:
+            raise ValueError(
+                f"start col ({start_col}) must be <= end col ({end_col})"
+            )
+        
+        # Apply styling to all cells in the range
+        for row_idx in range(start_row, end_row + 1):
+            for col_idx in range(start_col, end_col + 1):
+                cell = self.cells[row_idx][col_idx]
+                if bold is not None:
+                    cell.bold = bold
+                if bottom_border is not None:
+                    cell.bottom_border = bottom_border
+                if top_border is not None:
+                    cell.top_border = top_border
+                if background_color is not None:
+                    cell.background_color = background_color
+                if font_color is not None:
+                    cell.font_color = font_color
+                if align is not None:
+                    cell.align = align
+                if value_format is not None:
+                    cell.value_format = value_format
+
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the Table to a pandas DataFrame with raw cell values.
