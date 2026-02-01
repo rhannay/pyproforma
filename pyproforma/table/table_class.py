@@ -106,7 +106,6 @@ class Cell:
 
 
 
-@dataclass
 class Table:
     """A structured table representation as a grid of cells with formatting.
 
@@ -128,17 +127,53 @@ class Table:
         ... ]
         >>> table = Table(cells=cells)
         >>> df = table.to_dataframe()
+        
+        >>> # Access and modify cells using indexing
+        >>> value = table[0, 0]  # Get cell at row 0, col 0
+        >>> table[1, 1] = Cell(300)  # Set cell at row 1, col 1
+        >>> table[0, 0].bold = True  # Modify cell properties
+        
+        >>> # Initialize from list of lists of values
+        >>> table = Table(cells=[
+        ...     ["Name", "Value"],
+        ...     ["Item 1", 100],
+        ...     ["Item 2", 200]
+        ... ])
 
     Note:
         All rows must have the same number of cells to form a valid rectangular grid.
         This is validated automatically during initialization.
     """  # noqa: E501
 
-    cells: list[list[Cell]]
-
-    # Initialization and validation
-    def __post_init__(self):
+    def __init__(self, cells: list[list[Cell] | list[Any]] | None = None):
+        """Initialize a Table with cells.
+        
+        Args:
+            cells: Can be:
+                - A list of lists of Cell objects
+                - A list of lists of values (will be converted to Cells)
+                - None (creates an empty table)
+        """
+        if cells is None:
+            self.cells = []
+        else:
+            # Convert to list of list of Cell if needed
+            self.cells = self._normalize_cells(cells)
         self._check_grid_consistency()
+    
+    def _normalize_cells(self, cells: list[list[Any]]) -> list[list[Cell]]:
+        """Convert input cells to list of list of Cell objects."""
+        normalized = []
+        for row in cells:
+            normalized_row = []
+            for item in row:
+                if isinstance(item, Cell):
+                    normalized_row.append(item)
+                else:
+                    # Convert raw value to Cell
+                    normalized_row.append(Cell(value=item))
+            normalized.append(normalized_row)
+        return normalized
 
     def _check_grid_consistency(self):
         """Ensure all rows have the same number of cells."""
@@ -155,6 +190,120 @@ class Table:
                     f"Row {i} has {len(row)} cells, expected {num_cols} cells. "
                     "All rows must have the same number of cells."
                 )
+    
+    # Indexing support
+    def __getitem__(self, key: tuple[int, int]) -> Cell:
+        """Get a cell using table[row, col] syntax.
+        
+        Args:
+            key: A tuple of (row_index, col_index) using zero-based indexing.
+        
+        Returns:
+            The Cell at the specified position.
+        
+        Raises:
+            IndexError: If the row or column index is out of range.
+            TypeError: If key is not a tuple of two integers.
+        
+        Examples:
+            >>> cell = table[0, 1]  # Get cell at row 0, column 1
+            >>> cell.value
+        """
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError("Table indices must be a tuple of (row, col)")
+        
+        row, col = key
+        
+        if not isinstance(row, int) or not isinstance(col, int):
+            raise TypeError("Row and column indices must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot index into an empty table")
+        
+        if row < 0 or row >= len(self.cells):
+            raise IndexError(
+                f"Row index {row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if col < 0 or col >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        return self.cells[row][col]
+    
+    def __setitem__(self, key: tuple[int, int], value: Cell | Any):
+        """Set a cell using table[row, col] = cell syntax.
+        
+        Args:
+            key: A tuple of (row_index, col_index) using zero-based indexing.
+            value: A Cell object or a value to convert to a Cell.
+        
+        Raises:
+            IndexError: If the row or column index is out of range.
+            TypeError: If key is not a tuple of two integers.
+        
+        Examples:
+            >>> table[0, 1] = Cell(100, bold=True)  # Set with Cell object
+            >>> table[1, 0] = "New Value"  # Set with raw value (converts to Cell)
+        """
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError("Table indices must be a tuple of (row, col)")
+        
+        row, col = key
+        
+        if not isinstance(row, int) or not isinstance(col, int):
+            raise TypeError("Row and column indices must be integers")
+        
+        # Check bounds
+        if not self.cells:
+            raise IndexError("Cannot index into an empty table")
+        
+        if row < 0 or row >= len(self.cells):
+            raise IndexError(
+                f"Row index {row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if col < 0 or col >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        # Convert value to Cell if needed
+        if isinstance(value, Cell):
+            self.cells[row][col] = value
+        else:
+            self.cells[row][col] = Cell(value=value)
+    
+    # Properties for table dimensions
+    @property
+    def row_count(self) -> int:
+        """Return the number of rows in the table.
+        
+        Returns:
+            The number of rows (0 for empty table).
+        
+        Examples:
+            >>> table.row_count
+            3
+        """
+        return len(self.cells)
+    
+    @property
+    def col_count(self) -> int:
+        """Return the number of columns in the table.
+        
+        Returns:
+            The number of columns (0 for empty table).
+        
+        Examples:
+            >>> table.col_count
+            2
+        """
+        if not self.cells:
+            return 0
+        return len(self.cells[0])
 
     # Backward compatibility properties
     @property
@@ -199,6 +348,264 @@ class Table:
                 return len(self.cells)
         
         return [PseudoRow(row) for row in self.cells[1:]]
+
+    # Public API - Styling methods
+    def style_row(
+        self,
+        row_idx: int,
+        bold: Optional[bool] = None,
+        bottom_border: Optional[str] = None,
+        top_border: Optional[str] = None,
+        background_color: Optional[str] = None,
+        font_color: Optional[str] = None,
+        align: Optional[str] = None,
+        value_format: Optional[ValueFormat] = None,
+    ) -> None:
+        """Apply styling to all cells in a row.
+        
+        This method modifies the styling properties of all cells in the specified row.
+        Only the provided parameters will be applied; omitted parameters leave the
+        corresponding cell properties unchanged.
+        
+        Args:
+            row_idx: Zero-based row index to style.
+            bold: If provided, sets bold formatting for all cells in the row.
+            bottom_border: If provided, sets bottom border style ('single' or 'double').
+            top_border: If provided, sets top border style ('single' or 'double').
+            background_color: If provided, sets background color (CSS color string).
+            font_color: If provided, sets font color (CSS color string).
+            align: If provided, sets text alignment ('left', 'center', or 'right').
+            value_format: If provided, sets value format for all cells.
+            
+        Raises:
+            IndexError: If row_idx is out of range.
+            
+        Examples:
+            >>> table.style_row(0, bold=True, align='center')  # Style header row
+            >>> table.style_row(5, bottom_border='double')     # Add total line
+            >>> table.style_row(2, background_color='lightgray', bold=True)
+        """
+        if row_idx < 0 or row_idx >= len(self.cells):
+            raise IndexError(
+                f"Row index {row_idx} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        for cell in self.cells[row_idx]:
+            if bold is not None:
+                cell.bold = bold
+            if bottom_border is not None:
+                cell.bottom_border = bottom_border
+            if top_border is not None:
+                cell.top_border = top_border
+            if background_color is not None:
+                cell.background_color = background_color
+            if font_color is not None:
+                cell.font_color = font_color
+            if align is not None:
+                cell.align = align
+            if value_format is not None:
+                cell.value_format = value_format
+
+    def style_col(
+        self,
+        col_idx: int,
+        bold: Optional[bool] = None,
+        align: Optional[str] = None,
+        background_color: Optional[str] = None,
+        font_color: Optional[str] = None,
+        value_format: Optional[ValueFormat] = None,
+        bottom_border: Optional[str] = None,
+        top_border: Optional[str] = None,
+    ) -> None:
+        """Apply styling to all cells in a column.
+        
+        This method modifies the styling properties of all cells in the specified column.
+        Only the provided parameters will be applied; omitted parameters leave the
+        corresponding cell properties unchanged.
+        
+        Args:
+            col_idx: Zero-based column index to style.
+            bold: If provided, sets bold formatting for all cells in the column.
+            align: If provided, sets text alignment ('left', 'center', or 'right').
+            background_color: If provided, sets background color (CSS color string).
+            font_color: If provided, sets font color (CSS color string).
+            value_format: If provided, sets value format for all cells.
+            bottom_border: If provided, sets bottom border style ('single' or 'double').
+            top_border: If provided, sets top border style ('single' or 'double').
+            
+        Raises:
+            IndexError: If col_idx is out of range or table is empty.
+            
+        Examples:
+            >>> table.style_col(0, bold=True, align='left')     # Style first column
+            >>> table.style_col(1, value_format='two_decimals', align='right')
+            >>> table.style_col(2, background_color='lightblue')
+        """
+        if not self.cells:
+            raise IndexError("Cannot style column in empty table")
+        if col_idx < 0 or col_idx >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col_idx} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        for row in self.cells:
+            cell = row[col_idx]
+            if bold is not None:
+                cell.bold = bold
+            if align is not None:
+                cell.align = align
+            if background_color is not None:
+                cell.background_color = background_color
+            if font_color is not None:
+                cell.font_color = font_color
+            if value_format is not None:
+                cell.value_format = value_format
+            if bottom_border is not None:
+                cell.bottom_border = bottom_border
+            if top_border is not None:
+                cell.top_border = top_border
+
+    def set_row_values(
+        self,
+        row_idx: int,
+        values: list[Any],
+        start_col: int = 0,
+        preserve_formatting: bool = True,
+    ) -> None:
+        """Set values for cells in a row, optionally starting at a specific column.
+        
+        This method allows updating a subset of columns in a row, useful when you want
+        to skip label columns or update only certain data columns. The length of values
+        must exactly match the number of columns to be updated (from start_col to end).
+        
+        Args:
+            row_idx: Zero-based row index.
+            values: List of values to set. Must exactly match the number of columns
+                   from start_col to the end of the row.
+            start_col: Column index to start setting values (0-based). Defaults to 0.
+                      Use start_col=1 to skip a label column.
+            preserve_formatting: If True, only updates cell values while keeping
+                               existing formatting. If False, replaces cells entirely
+                               with new Cell objects (losing formatting).
+        
+        Raises:
+            IndexError: If row_idx or start_col is out of range.
+            ValueError: If the length of values doesn't exactly match the number of
+                       columns to update (table columns - start_col).
+            
+        Examples:
+            >>> # Table with 4 columns: ["", "Q1", "Q2", "Q3"]
+            >>> # Skip first column (label), update 3 data columns
+            >>> table.set_row_values(1, [100, 200, 300], start_col=1)
+            
+            >>> # Update all 4 columns including label
+            >>> table.set_row_values(1, ["New Label", 100, 200, 300])
+            
+            >>> # ERROR: Too few values - table has 4 columns, need 3 values from col 1
+            >>> table.set_row_values(2, [400, 500], start_col=1)  # Raises ValueError
+        """
+        if row_idx < 0 or row_idx >= len(self.cells):
+            raise IndexError(
+                f"Row index {row_idx} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if start_col < 0 or start_col >= len(self.cells[row_idx]):
+            raise IndexError(
+                f"start_col {start_col} is out of range. Table has {len(self.cells[row_idx])} columns (0-{len(self.cells[row_idx])-1})"
+            )
+        
+        expected_length = len(self.cells[row_idx]) - start_col
+        if len(values) != expected_length:
+            raise ValueError(
+                f"Length of values ({len(values)}) must exactly match number of columns to update. "
+                f"start_col={start_col}, table has {len(self.cells[row_idx])} columns, "
+                f"expected {expected_length} values but got {len(values)}"
+            )
+        
+        if preserve_formatting:
+            # Update only the value property of existing cells
+            for i, new_value in enumerate(values):
+                self.cells[row_idx][start_col + i].value = new_value
+        else:
+            # Replace cells with new Cell objects
+            for i, new_value in enumerate(values):
+                self.cells[row_idx][start_col + i] = (
+                    Cell(value=new_value)
+                    if not isinstance(new_value, Cell)
+                    else new_value
+                )
+
+    def set_col_values(
+        self,
+        col_idx: int,
+        values: list[Any],
+        start_row: int = 0,
+        preserve_formatting: bool = True,
+    ) -> None:
+        """Set values for cells in a column, optionally starting at a specific row.
+        
+        This method allows updating a subset of rows in a column, useful when you want
+        to skip header rows or update only certain data rows. The length of values must
+        exactly match the number of rows to be updated (from start_row to end).
+        
+        Args:
+            col_idx: Zero-based column index.
+            values: List of values to set. Must exactly match the number of rows
+                   from start_row to the end of the table.
+            start_row: Row index to start setting values (0-based). Defaults to 0.
+                      Use start_row=1 to skip a header row.
+            preserve_formatting: If True, only updates cell values while keeping
+                               existing formatting. If False, replaces cells entirely
+                               with new Cell objects (losing formatting).
+        
+        Raises:
+            IndexError: If col_idx or start_row is out of range or table is empty.
+            ValueError: If the length of values doesn't exactly match the number of
+                       rows to update (table rows - start_row).
+            
+        Examples:
+            >>> # Table with 4 rows: header + 3 data rows
+            >>> # Skip header row, update 3 data rows
+            >>> table.set_col_values(1, [100, 200, 300], start_row=1)
+            
+            >>> # Update all 4 rows including header
+            >>> table.set_col_values(1, ["Total", 100, 200, 300])
+            
+            >>> # ERROR: Too few values - table has 4 rows, need 2 values from row 2
+            >>> table.set_col_values(2, [400], start_row=2)  # Raises ValueError
+        """
+        if not self.cells:
+            raise IndexError("Cannot set column values in empty table")
+        if col_idx < 0 or col_idx >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col_idx} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        if start_row < 0 or start_row >= len(self.cells):
+            raise IndexError(
+                f"start_row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        expected_length = len(self.cells) - start_row
+        if len(values) != expected_length:
+            raise ValueError(
+                f"Length of values ({len(values)}) must exactly match number of rows to update. "
+                f"start_row={start_row}, table has {len(self.cells)} rows, "
+                f"expected {expected_length} values but got {len(values)}"
+            )
+        
+        if preserve_formatting:
+            # Update only the value property of existing cells
+            for i, new_value in enumerate(values):
+                self.cells[start_row + i][col_idx].value = new_value
+        else:
+            # Replace cells with new Cell objects
+            for i, new_value in enumerate(values):
+                self.cells[start_row + i][col_idx] = (
+                    Cell(value=new_value)
+                    if not isinstance(new_value, Cell)
+                    else new_value
+                )
 
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:

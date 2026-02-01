@@ -96,6 +96,518 @@ class TestTableClass:
         with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
             Table(cells=cells)
 
+    def test_style_row_bold(self):
+        """Test styling a row with bold."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Style row 0 to be bold
+        table.style_row(0, bold=True)
+        
+        # Check all cells in row 0 are bold
+        assert table[0, 0].bold is True
+        assert table[0, 1].bold is True
+        assert table[0, 2].bold is True
+        
+        # Check other rows are not affected
+        assert table[1, 0].bold is False
+        assert table[2, 0].bold is False
+
+    def test_style_row_multiple_properties(self):
+        """Test styling a row with multiple properties."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value")],
+            [Cell("Item 1"), Cell(100)],
+            [Cell("Total"), Cell(200)],
+        ])
+        
+        # Style last row as a total row
+        table.style_row(2, bold=True, bottom_border='double', background_color='lightgray')
+        
+        assert table[2, 0].bold is True
+        assert table[2, 0].bottom_border == 'double'
+        assert table[2, 0].background_color == 'lightgray'
+        assert table[2, 1].bold is True
+        assert table[2, 1].bottom_border == 'double'
+        assert table[2, 1].background_color == 'lightgray'
+        
+        # Check other rows are not affected
+        assert table[1, 0].bold is False
+        assert table[1, 0].bottom_border is None
+        assert table[1, 0].background_color is None
+
+    def test_style_row_partial_update(self):
+        """Test that style_row only updates specified properties."""
+        table = Table(cells=[
+            [Cell("A", bold=True, align='left'), Cell("B")],
+            [Cell(1, background_color='red'), Cell(2)],
+        ])
+        
+        # Only update bold, should preserve other properties
+        table.style_row(1, bold=True)
+        
+        assert table[1, 0].bold is True
+        assert table[1, 0].background_color == 'red'  # Preserved
+        assert table[1, 1].bold is True
+
+    def test_style_row_out_of_range(self):
+        """Test that styling an out-of-range row raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Row index 2 is out of range"):
+            table.style_row(2, bold=True)
+        
+        with pytest.raises(IndexError, match="Row index -1 is out of range"):
+            table.style_row(-1, bold=True)
+
+    def test_style_row_all_properties(self):
+        """Test styling a row with all available properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        table.style_row(
+            1,
+            bold=True,
+            bottom_border='single',
+            top_border='double',
+            background_color='yellow',
+            font_color='blue',
+            align='center',
+            value_format='two_decimals'
+        )
+        
+        cell = table[1, 0]
+        assert cell.bold is True
+        assert cell.bottom_border == 'single'
+        assert cell.top_border == 'double'
+        assert cell.background_color == 'yellow'
+        assert cell.font_color == 'blue'
+        assert cell.align == 'center'
+        assert cell.value_format == 'two_decimals'
+
+    def test_style_col_bold(self):
+        """Test styling a column with bold."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Style column 0 to be bold
+        table.style_col(0, bold=True)
+        
+        # Check all cells in column 0 are bold
+        assert table[0, 0].bold is True
+        assert table[1, 0].bold is True
+        assert table[2, 0].bold is True
+        
+        # Check other columns are not affected
+        assert table[0, 1].bold is False
+        assert table[0, 2].bold is False
+
+    def test_style_col_value_format(self):
+        """Test styling a column with value format."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value"), Cell("Percent")],
+            [Cell("Item 1"), Cell(100.123), Cell(0.456)],
+            [Cell("Item 2"), Cell(200.789), Cell(0.789)],
+        ])
+        
+        # Style value column to have two decimals
+        table.style_col(1, value_format='two_decimals', align='right')
+        
+        assert table[0, 1].value_format == 'two_decimals'
+        assert table[1, 1].value_format == 'two_decimals'
+        assert table[2, 1].value_format == 'two_decimals'
+        assert table[0, 1].align == 'right'
+        assert table[1, 1].align == 'right'
+        
+        # Check other columns are not affected
+        assert table[0, 0].value_format is None
+        assert table[0, 2].value_format is None
+
+    def test_style_col_multiple_properties(self):
+        """Test styling a column with multiple properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        table.style_col(0, bold=True, align='left', background_color='lightblue')
+        
+        assert table[0, 0].bold is True
+        assert table[0, 0].align == 'left'
+        assert table[0, 0].background_color == 'lightblue'
+        assert table[1, 0].bold is True
+        assert table[2, 0].bold is True
+        
+        # Check other column is not affected
+        assert table[0, 1].bold is False
+        assert table[0, 1].align == 'right'  # default
+
+    def test_style_col_out_of_range(self):
+        """Test that styling an out-of-range column raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            table.style_col(2, bold=True)
+        
+        with pytest.raises(IndexError, match="Column index -1 is out of range"):
+            table.style_col(-1, bold=True)
+
+    def test_style_col_empty_table(self):
+        """Test that styling a column in an empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot style column in empty table"):
+            table.style_col(0, bold=True)
+
+    def test_style_col_partial_update(self):
+        """Test that style_col only updates specified properties."""
+        table = Table(cells=[
+            [Cell("A", bold=True), Cell("B")],
+            [Cell(1, background_color='red'), Cell(2)],
+        ])
+        
+        # Only update align, should preserve other properties
+        table.style_col(0, align='center')
+        
+        assert table[0, 0].bold is True  # Preserved
+        assert table[0, 0].align == 'center'  # Updated
+        assert table[1, 0].background_color == 'red'  # Preserved
+        assert table[1, 0].align == 'center'  # Updated
+
+    def test_style_col_all_properties(self):
+        """Test styling a column with all available properties."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        table.style_col(
+            1,
+            bold=True,
+            align='right',
+            background_color='pink',
+            font_color='green',
+            value_format='no_decimals',
+            bottom_border='single',
+            top_border='double'
+        )
+        
+        cell = table[0, 1]
+        assert cell.bold is True
+        assert cell.align == 'right'
+        assert cell.background_color == 'pink'
+        assert cell.font_color == 'green'
+        assert cell.value_format == 'no_decimals'
+        assert cell.bottom_border == 'single'
+        assert cell.top_border == 'double'
+
+    def test_style_row_and_col_combined(self):
+        """Test that row and column styling can be combined."""
+        table = Table(cells=[
+            [Cell("Name"), Cell("Value")],
+            [Cell("Item 1"), Cell(100)],
+            [Cell("Item 2"), Cell(200)],
+        ])
+        
+        # Style header row
+        table.style_row(0, bold=True, background_color='gray')
+        
+        # Style value column
+        table.style_col(1, value_format='no_decimals', align='right')
+        
+        # Header cell in value column should have both styles
+        assert table[0, 1].bold is True
+        assert table[0, 1].background_color == 'gray'
+        assert table[0, 1].value_format == 'no_decimals'
+        assert table[0, 1].align == 'right'
+        
+        # Data cell in value column should only have column styles
+        assert table[1, 1].bold is False
+        assert table[1, 1].value_format == 'no_decimals'
+        assert table[1, 1].align == 'right'
+
+    def test_set_row_values_basic(self):
+        """Test basic row value setting with formatting preserved."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1, bold=True), Cell(2, bold=True), Cell(3, bold=True)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Update row 1, preserving formatting
+        table.set_row_values(1, [10, 20, 30])
+        
+        assert table[1, 0].value == 10
+        assert table[1, 1].value == 20
+        assert table[1, 2].value == 30
+        # Formatting should be preserved
+        assert table[1, 0].bold is True
+        assert table[1, 1].bold is True
+        assert table[1, 2].bold is True
+
+    def test_set_row_values_with_offset(self):
+        """Test setting row values with start_col offset."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2"), Cell("Q3")],
+            [Cell("Revenue"), Cell(1000), Cell(1200), Cell(1100)],
+            [Cell("Expenses"), Cell(800), Cell(900), Cell(850)],
+        ])
+        
+        # Update data columns only, skip label
+        table.set_row_values(1, [1100, 1250, 1150], start_col=1)
+        
+        assert table[1, 0].value == "Revenue"  # Label unchanged
+        assert table[1, 1].value == 1100
+        assert table[1, 2].value == 1250
+        assert table[1, 3].value == 1150
+
+    def test_set_row_values_without_preserving_formatting(self):
+        """Test setting row values without preserving formatting."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1, bold=True, background_color='red'), Cell(2, bold=True)],
+        ])
+        
+        # Update without preserving formatting
+        table.set_row_values(1, [100, 200], preserve_formatting=False)
+        
+        assert table[1, 0].value == 100
+        assert table[1, 1].value == 200
+        # Formatting should be lost
+        assert table[1, 0].bold is False
+        assert table[1, 0].background_color is None
+        assert table[1, 1].bold is False
+
+    def test_set_row_values_out_of_range_row(self):
+        """Test that out of range row index raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Row index 2 is out of range"):
+            table.set_row_values(2, [10, 20])
+
+    def test_set_row_values_out_of_range_start_col(self):
+        """Test that out of range start_col raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="start_col 2 is out of range"):
+            table.set_row_values(0, [10], start_col=2)
+
+    def test_set_row_values_too_many_values(self):
+        """Test that too many values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20, 30, 40])  # Too many values
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20, 30], start_col=1)  # Would need only 2 values
+
+    def test_set_row_values_too_few_values(self):
+        """Test that too few values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20])  # Too few values (expected 3)
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10], start_col=1)  # Too few values (expected 2)
+
+    def test_set_row_values_with_cell_objects(self):
+        """Test setting row values with Cell objects when not preserving formatting."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Set with Cell objects
+        table.set_row_values(
+            1,
+            [Cell(40, bold=True), Cell(50, background_color='blue'), 60],
+            preserve_formatting=False
+        )
+        
+        assert table[1, 0].value == 40
+        assert table[1, 0].bold is True
+        assert table[1, 1].value == 50
+        assert table[1, 1].background_color == 'blue'
+        assert table[1, 2].value == 60
+
+    def test_set_col_values_basic(self):
+        """Test basic column value setting with formatting preserved."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B", bold=True)],
+            [Cell(1), Cell(2, bold=True)],
+            [Cell(3), Cell(4, bold=True)],
+        ])
+        
+        # Update column 1, preserving formatting
+        table.set_col_values(1, ["Updated", 20, 40])
+        
+        assert table[0, 1].value == "Updated"
+        assert table[1, 1].value == 20
+        assert table[2, 1].value == 40
+        # Formatting should be preserved
+        assert table[0, 1].bold is True
+        assert table[1, 1].bold is True
+        assert table[2, 1].bold is True
+
+    def test_set_col_values_with_offset(self):
+        """Test setting column values with start_row offset."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(1000), Cell(1200)],
+            [Cell("Expenses"), Cell(800), Cell(900)],
+            [Cell("Profit"), Cell(200), Cell(300)],
+        ])
+        
+        # Update data rows only, skip header
+        table.set_col_values(1, [1100, 850, 250], start_row=1)
+        
+        assert table[0, 1].value == "Q1"  # Header unchanged
+        assert table[1, 1].value == 1100
+        assert table[2, 1].value == 850
+        assert table[3, 1].value == 250
+
+    def test_set_col_values_without_preserving_formatting(self):
+        """Test setting column values without preserving formatting."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2, bold=True, align='center')],
+            [Cell(3), Cell(4, bold=True)],
+        ])
+        
+        # Update without preserving formatting
+        table.set_col_values(1, ["New", 20, 40], preserve_formatting=False)
+        
+        assert table[0, 1].value == "New"
+        assert table[1, 1].value == 20
+        assert table[2, 1].value == 40
+        # Formatting should be lost
+        assert table[1, 1].bold is False
+        assert table[1, 1].align == 'right'  # default
+        assert table[2, 1].bold is False
+
+    def test_set_col_values_empty_table(self):
+        """Test that setting column values in empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot set column values in empty table"):
+            table.set_col_values(0, [1, 2, 3])
+
+    def test_set_col_values_out_of_range_col(self):
+        """Test that out of range column index raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            table.set_col_values(2, [10, 20])
+
+    def test_set_col_values_out_of_range_start_row(self):
+        """Test that out of range start_row raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="start_row 2 is out of range"):
+            table.set_col_values(0, [10], start_row=2)
+
+    def test_set_col_values_too_many_values(self):
+        """Test that too many values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20, 30, 40])  # Too many values
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20, 30], start_row=1)  # Would need only 2 values
+
+    def test_set_col_values_too_few_values(self):
+        """Test that too few values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20])  # Too few values (expected 3)
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10], start_row=1)  # Too few values (expected 2)
+
+    def test_set_col_values_with_cell_objects(self):
+        """Test setting column values with Cell objects when not preserving formatting."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        # Set with Cell objects
+        table.set_col_values(
+            1,
+            [Cell(20, bold=True), Cell(40, background_color='green'), 60],
+            preserve_formatting=False
+        )
+        
+        assert table[0, 1].value == 20
+        assert table[0, 1].bold is True
+        assert table[1, 1].value == 40
+        assert table[1, 1].background_color == 'green'
+        assert table[2, 1].value == 60
+
+    def test_set_row_and_col_values_combined(self):
+        """Test that row and column value setting can be combined."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(1000), Cell(1200)],
+            [Cell("Expenses"), Cell(800), Cell(900)],
+        ])
+        
+        # Update a row of data
+        table.set_row_values(1, [1100, 1250], start_col=1)
+        
+        # Update a column of data
+        table.set_col_values(1, [1150, 850], start_row=1)
+        
+        assert table[1, 1].value == 1150  # Updated by col (last operation)
+        assert table[1, 2].value == 1250  # Updated by row
+        assert table[2, 1].value == 850   # Updated by col
+
     def test_table_to_dataframe_simple(self):
         """Test basic table to DataFrame conversion."""
         cells = [
@@ -156,3 +668,269 @@ class TestTableClass:
         }
 
         assert style_map == expected_style_map
+
+
+class TestTableIndexing:
+    """Test cases for Table indexing functionality."""
+
+    def test_getitem_basic(self):
+        """Test basic cell access using table[row, col]."""
+        cells = [
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ]
+        table = Table(cells=cells)
+        
+        assert table[0, 0].value == "A"
+        assert table[0, 1].value == "B"
+        assert table[1, 0].value == 1
+        assert table[1, 1].value == 2
+        assert table[2, 0].value == 3
+        assert table[2, 1].value == 4
+
+    def test_getitem_with_formatting(self):
+        """Test accessing cells with formatting properties."""
+        cells = [
+            [Cell("Header", bold=True, align="center")],
+            [Cell(100, value_format="no_decimals")],
+        ]
+        table = Table(cells=cells)
+        
+        header_cell = table[0, 0]
+        assert header_cell.value == "Header"
+        assert header_cell.bold is True
+        assert header_cell.align == "center"
+        
+        value_cell = table[1, 0]
+        assert value_cell.value == 100
+        assert value_cell.value_format == "no_decimals"
+
+    def test_getitem_out_of_range_row(self):
+        """Test that accessing out of range row raises IndexError."""
+        cells = [[Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        
+        with pytest.raises(IndexError, match="Row index 1 is out of range"):
+            _ = table[1, 0]
+        
+        with pytest.raises(IndexError, match="Row index -1 is out of range"):
+            _ = table[-1, 0]
+
+    def test_getitem_out_of_range_col(self):
+        """Test that accessing out of range column raises IndexError."""
+        cells = [[Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            _ = table[0, 2]
+        
+        with pytest.raises(IndexError, match="Column index -1 is out of range"):
+            _ = table[0, -1]
+
+    def test_getitem_empty_table(self):
+        """Test that accessing empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot index into an empty table"):
+            _ = table[0, 0]
+
+    def test_getitem_invalid_key_type(self):
+        """Test that invalid key types raise TypeError."""
+        cells = [[Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        
+        with pytest.raises(TypeError, match="Table indices must be a tuple"):
+            _ = table[0]
+        
+        with pytest.raises(TypeError, match="Row and column indices must be integers"):
+            _ = table["0", 0]
+        
+        with pytest.raises(TypeError, match="Row and column indices must be integers"):
+            _ = table[0, "1"]
+
+    def test_setitem_with_cell(self):
+        """Test setting a cell using table[row, col] = Cell()."""
+        cells = [
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ]
+        table = Table(cells=cells)
+        
+        new_cell = Cell(value=100, bold=True, align="center")
+        table[1, 1] = new_cell
+        
+        assert table[1, 1].value == 100
+        assert table[1, 1].bold is True
+        assert table[1, 1].align == "center"
+
+    def test_setitem_with_value(self):
+        """Test setting a cell with a raw value (auto-converts to Cell)."""
+        cells = [
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ]
+        table = Table(cells=cells)
+        
+        table[1, 0] = 999
+        
+        assert table[1, 0].value == 999
+        assert isinstance(table[1, 0], Cell)
+
+    def test_setitem_out_of_range_row(self):
+        """Test that setting out of range row raises IndexError."""
+        cells = [[Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        
+        with pytest.raises(IndexError, match="Row index 1 is out of range"):
+            table[1, 0] = Cell(100)
+
+    def test_setitem_out_of_range_col(self):
+        """Test that setting out of range column raises IndexError."""
+        cells = [[Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            table[0, 2] = Cell(100)
+
+    def test_setitem_empty_table(self):
+        """Test that setting in empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot index into an empty table"):
+            table[0, 0] = Cell(1)
+
+    def test_modify_cell_in_place(self):
+        """Test modifying a cell's properties in place like table[row, col].bold = True."""
+        cells = [
+            [Cell("Header"), Cell("Value")],
+            [Cell(1), Cell(2)],
+        ]
+        table = Table(cells=cells)
+        
+        # Modify cell properties in place
+        table[0, 0].bold = True
+        table[0, 0].align = "left"
+        table[1, 1].value_format = "no_decimals"
+        
+        # Verify changes
+        assert table[0, 0].bold is True
+        assert table[0, 0].align == "left"
+        assert table[1, 1].value_format == "no_decimals"
+
+
+class TestTableProperties:
+    """Test cases for Table properties (row_count, col_count)."""
+
+    def test_row_count_basic(self):
+        """Test row_count property."""
+        cells = [
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ]
+        table = Table(cells=cells)
+        assert table.row_count == 3
+
+    def test_col_count_basic(self):
+        """Test col_count property."""
+        cells = [
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ]
+        table = Table(cells=cells)
+        assert table.col_count == 3
+
+    def test_row_count_empty_table(self):
+        """Test row_count for empty table."""
+        table = Table(cells=[])
+        assert table.row_count == 0
+
+    def test_col_count_empty_table(self):
+        """Test col_count for empty table."""
+        table = Table(cells=[])
+        assert table.col_count == 0
+
+    def test_row_count_single_row(self):
+        """Test row_count with single row."""
+        cells = [[Cell(1), Cell(2), Cell(3)]]
+        table = Table(cells=cells)
+        assert table.row_count == 1
+        assert table.col_count == 3
+
+
+class TestTableInitialization:
+    """Test cases for Table initialization with different input types."""
+
+    def test_init_with_cells(self):
+        """Test initializing with Cell objects."""
+        cells = [
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ]
+        table = Table(cells=cells)
+        
+        assert table.row_count == 2
+        assert table.col_count == 2
+        assert table[0, 0].value == "A"
+        assert table[1, 1].value == 2
+
+    def test_init_with_values(self):
+        """Test initializing with raw values (auto-converts to Cells)."""
+        cells = [
+            ["Name", "Age"],
+            ["Alice", 30],
+            ["Bob", 25],
+        ]
+        table = Table(cells=cells)
+        
+        assert table.row_count == 3
+        assert table.col_count == 2
+        assert table[0, 0].value == "Name"
+        assert table[1, 0].value == "Alice"
+        assert table[1, 1].value == 30
+        assert isinstance(table[0, 0], Cell)
+        assert isinstance(table[1, 1], Cell)
+
+    def test_init_with_mixed_cells_and_values(self):
+        """Test initializing with mix of Cells and raw values."""
+        cells = [
+            [Cell("Header1", bold=True), "Header2"],
+            [100, Cell(200, value_format="no_decimals")],
+        ]
+        table = Table(cells=cells)
+        
+        assert table[0, 0].value == "Header1"
+        assert table[0, 0].bold is True
+        assert table[0, 1].value == "Header2"
+        assert isinstance(table[0, 1], Cell)
+        assert table[1, 0].value == 100
+        assert table[1, 1].value == 200
+        assert table[1, 1].value_format == "no_decimals"
+
+    def test_init_empty(self):
+        """Test initializing with empty cells list."""
+        table = Table(cells=[])
+        assert table.row_count == 0
+        assert table.col_count == 0
+
+    def test_init_none(self):
+        """Test initializing with None (creates empty table)."""
+        table = Table(cells=None)
+        assert table.row_count == 0
+        assert table.col_count == 0
+        
+    def test_init_default(self):
+        """Test initializing without arguments (creates empty table)."""
+        table = Table()
+        assert table.row_count == 0
+        assert table.col_count == 0
+
+    def test_init_validates_grid_consistency(self):
+        """Test that initialization validates grid consistency."""
+        cells = [
+            ["A", "B"],
+            ["C"],  # Mismatched row length
+        ]
+        with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
+            Table(cells=cells)
