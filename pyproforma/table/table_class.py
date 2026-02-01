@@ -5,6 +5,7 @@ import pandas as pd
 from pandas.io.formats.style import Styler
 
 from ..constants import ValueFormat
+from .colors import color_to_hex
 from .excel import to_excel
 from .html_renderer import to_html as _to_html
 
@@ -60,6 +61,15 @@ class Cell:
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
+    def __post_init__(self):
+        """Validate color values after initialization."""
+        if self.background_color is not None:
+            # Validate the color - will raise ValueError if invalid
+            color_to_hex(self.background_color)
+        if self.font_color is not None:
+            # Validate the color - will raise ValueError if invalid
+            color_to_hex(self.font_color)
+
     @property
     def df_css(self) -> str:
         """Return CSS style for DataFrame display."""
@@ -69,9 +79,11 @@ class Cell:
         if self.align:
             styles.append(f"text-align: {self.align}")
         if self.background_color:
-            styles.append(f"background-color: {self.background_color}")
+            hex_color = color_to_hex(self.background_color)
+            styles.append(f"background-color: {hex_color}")
         if self.font_color:
-            styles.append(f"color: {self.font_color}")
+            hex_color = color_to_hex(self.font_color)
+            styles.append(f"color: {hex_color}")
         if self.bottom_border:
             if self.bottom_border == "single":
                 styles.append("border-bottom: 1px solid black")

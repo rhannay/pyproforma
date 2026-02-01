@@ -8,6 +8,8 @@ borders, colors, and other styling options.
 
 from typing import TYPE_CHECKING
 
+from .colors import color_to_hex
+
 if TYPE_CHECKING:
     from .table_class import Table
 
@@ -104,11 +106,13 @@ def _generate_cell_html(cell) -> str:
 
     # Background color
     if cell.background_color:
-        styles.append(f"background-color: {cell.background_color}")
+        hex_color = color_to_hex(cell.background_color)
+        styles.append(f"background-color: {hex_color}")
 
     # Font color
     if cell.font_color:
-        styles.append(f"color: {cell.font_color}")
+        hex_color = color_to_hex(cell.font_color)
+        styles.append(f"color: {hex_color}")
 
     # Top border
     if cell.top_border:
