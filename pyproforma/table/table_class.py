@@ -465,6 +465,148 @@ class Table:
             if top_border is not None:
                 cell.top_border = top_border
 
+    def set_row_values(
+        self,
+        row_idx: int,
+        values: list[Any],
+        start_col: int = 0,
+        preserve_formatting: bool = True,
+    ) -> None:
+        """Set values for cells in a row, optionally starting at a specific column.
+        
+        This method allows updating a subset of columns in a row, useful when you want
+        to skip label columns or update only certain data columns. The length of values
+        must exactly match the number of columns to be updated (from start_col to end).
+        
+        Args:
+            row_idx: Zero-based row index.
+            values: List of values to set. Must exactly match the number of columns
+                   from start_col to the end of the row.
+            start_col: Column index to start setting values (0-based). Defaults to 0.
+                      Use start_col=1 to skip a label column.
+            preserve_formatting: If True, only updates cell values while keeping
+                               existing formatting. If False, replaces cells entirely
+                               with new Cell objects (losing formatting).
+        
+        Raises:
+            IndexError: If row_idx or start_col is out of range.
+            ValueError: If the length of values doesn't exactly match the number of
+                       columns to update (table columns - start_col).
+            
+        Examples:
+            >>> # Table with 4 columns: ["", "Q1", "Q2", "Q3"]
+            >>> # Skip first column (label), update 3 data columns
+            >>> table.set_row_values(1, [100, 200, 300], start_col=1)
+            
+            >>> # Update all 4 columns including label
+            >>> table.set_row_values(1, ["New Label", 100, 200, 300])
+            
+            >>> # ERROR: Too few values - table has 4 columns, need 3 values from col 1
+            >>> table.set_row_values(2, [400, 500], start_col=1)  # Raises ValueError
+        """
+        if row_idx < 0 or row_idx >= len(self.cells):
+            raise IndexError(
+                f"Row index {row_idx} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        if start_col < 0 or start_col >= len(self.cells[row_idx]):
+            raise IndexError(
+                f"start_col {start_col} is out of range. Table has {len(self.cells[row_idx])} columns (0-{len(self.cells[row_idx])-1})"
+            )
+        
+        expected_length = len(self.cells[row_idx]) - start_col
+        if len(values) != expected_length:
+            raise ValueError(
+                f"Length of values ({len(values)}) must exactly match number of columns to update. "
+                f"start_col={start_col}, table has {len(self.cells[row_idx])} columns, "
+                f"expected {expected_length} values but got {len(values)}"
+            )
+        
+        if preserve_formatting:
+            # Update only the value property of existing cells
+            for i, new_value in enumerate(values):
+                self.cells[row_idx][start_col + i].value = new_value
+        else:
+            # Replace cells with new Cell objects
+            for i, new_value in enumerate(values):
+                self.cells[row_idx][start_col + i] = (
+                    Cell(value=new_value)
+                    if not isinstance(new_value, Cell)
+                    else new_value
+                )
+
+    def set_col_values(
+        self,
+        col_idx: int,
+        values: list[Any],
+        start_row: int = 0,
+        preserve_formatting: bool = True,
+    ) -> None:
+        """Set values for cells in a column, optionally starting at a specific row.
+        
+        This method allows updating a subset of rows in a column, useful when you want
+        to skip header rows or update only certain data rows. The length of values must
+        exactly match the number of rows to be updated (from start_row to end).
+        
+        Args:
+            col_idx: Zero-based column index.
+            values: List of values to set. Must exactly match the number of rows
+                   from start_row to the end of the table.
+            start_row: Row index to start setting values (0-based). Defaults to 0.
+                      Use start_row=1 to skip a header row.
+            preserve_formatting: If True, only updates cell values while keeping
+                               existing formatting. If False, replaces cells entirely
+                               with new Cell objects (losing formatting).
+        
+        Raises:
+            IndexError: If col_idx or start_row is out of range or table is empty.
+            ValueError: If the length of values doesn't exactly match the number of
+                       rows to update (table rows - start_row).
+            
+        Examples:
+            >>> # Table with 4 rows: header + 3 data rows
+            >>> # Skip header row, update 3 data rows
+            >>> table.set_col_values(1, [100, 200, 300], start_row=1)
+            
+            >>> # Update all 4 rows including header
+            >>> table.set_col_values(1, ["Total", 100, 200, 300])
+            
+            >>> # ERROR: Too few values - table has 4 rows, need 2 values from row 2
+            >>> table.set_col_values(2, [400], start_row=2)  # Raises ValueError
+        """
+        if not self.cells:
+            raise IndexError("Cannot set column values in empty table")
+        if col_idx < 0 or col_idx >= len(self.cells[0]):
+            raise IndexError(
+                f"Column index {col_idx} is out of range. Table has {len(self.cells[0])} columns (0-{len(self.cells[0])-1})"
+            )
+        
+        if start_row < 0 or start_row >= len(self.cells):
+            raise IndexError(
+                f"start_row {start_row} is out of range. Table has {len(self.cells)} rows (0-{len(self.cells)-1})"
+            )
+        
+        expected_length = len(self.cells) - start_row
+        if len(values) != expected_length:
+            raise ValueError(
+                f"Length of values ({len(values)}) must exactly match number of rows to update. "
+                f"start_row={start_row}, table has {len(self.cells)} rows, "
+                f"expected {expected_length} values but got {len(values)}"
+            )
+        
+        if preserve_formatting:
+            # Update only the value property of existing cells
+            for i, new_value in enumerate(values):
+                self.cells[start_row + i][col_idx].value = new_value
+        else:
+            # Replace cells with new Cell objects
+            for i, new_value in enumerate(values):
+                self.cells[start_row + i][col_idx] = (
+                    Cell(value=new_value)
+                    if not isinstance(new_value, Cell)
+                    else new_value
+                )
+
     # Public API - Conversion and Export methods
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the Table to a pandas DataFrame with raw cell values.

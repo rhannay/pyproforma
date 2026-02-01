@@ -341,6 +341,273 @@ class TestTableClass:
         assert table[1, 1].value_format == 'no_decimals'
         assert table[1, 1].align == 'right'
 
+    def test_set_row_values_basic(self):
+        """Test basic row value setting with formatting preserved."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1, bold=True), Cell(2, bold=True), Cell(3, bold=True)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Update row 1, preserving formatting
+        table.set_row_values(1, [10, 20, 30])
+        
+        assert table[1, 0].value == 10
+        assert table[1, 1].value == 20
+        assert table[1, 2].value == 30
+        # Formatting should be preserved
+        assert table[1, 0].bold is True
+        assert table[1, 1].bold is True
+        assert table[1, 2].bold is True
+
+    def test_set_row_values_with_offset(self):
+        """Test setting row values with start_col offset."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2"), Cell("Q3")],
+            [Cell("Revenue"), Cell(1000), Cell(1200), Cell(1100)],
+            [Cell("Expenses"), Cell(800), Cell(900), Cell(850)],
+        ])
+        
+        # Update data columns only, skip label
+        table.set_row_values(1, [1100, 1250, 1150], start_col=1)
+        
+        assert table[1, 0].value == "Revenue"  # Label unchanged
+        assert table[1, 1].value == 1100
+        assert table[1, 2].value == 1250
+        assert table[1, 3].value == 1150
+
+    def test_set_row_values_without_preserving_formatting(self):
+        """Test setting row values without preserving formatting."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1, bold=True, background_color='red'), Cell(2, bold=True)],
+        ])
+        
+        # Update without preserving formatting
+        table.set_row_values(1, [100, 200], preserve_formatting=False)
+        
+        assert table[1, 0].value == 100
+        assert table[1, 1].value == 200
+        # Formatting should be lost
+        assert table[1, 0].bold is False
+        assert table[1, 0].background_color is None
+        assert table[1, 1].bold is False
+
+    def test_set_row_values_out_of_range_row(self):
+        """Test that out of range row index raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Row index 2 is out of range"):
+            table.set_row_values(2, [10, 20])
+
+    def test_set_row_values_out_of_range_start_col(self):
+        """Test that out of range start_col raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="start_col 2 is out of range"):
+            table.set_row_values(0, [10], start_col=2)
+
+    def test_set_row_values_too_many_values(self):
+        """Test that too many values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20, 30, 40])  # Too many values
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20, 30], start_col=1)  # Would need only 2 values
+
+    def test_set_row_values_too_few_values(self):
+        """Test that too few values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10, 20])  # Too few values (expected 3)
+        
+        with pytest.raises(ValueError, match="must exactly match number of columns to update"):
+            table.set_row_values(0, [10], start_col=1)  # Too few values (expected 2)
+
+    def test_set_row_values_with_cell_objects(self):
+        """Test setting row values with Cell objects when not preserving formatting."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+        ])
+        
+        # Set with Cell objects
+        table.set_row_values(
+            1,
+            [Cell(40, bold=True), Cell(50, background_color='blue'), 60],
+            preserve_formatting=False
+        )
+        
+        assert table[1, 0].value == 40
+        assert table[1, 0].bold is True
+        assert table[1, 1].value == 50
+        assert table[1, 1].background_color == 'blue'
+        assert table[1, 2].value == 60
+
+    def test_set_col_values_basic(self):
+        """Test basic column value setting with formatting preserved."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B", bold=True)],
+            [Cell(1), Cell(2, bold=True)],
+            [Cell(3), Cell(4, bold=True)],
+        ])
+        
+        # Update column 1, preserving formatting
+        table.set_col_values(1, ["Updated", 20, 40])
+        
+        assert table[0, 1].value == "Updated"
+        assert table[1, 1].value == 20
+        assert table[2, 1].value == 40
+        # Formatting should be preserved
+        assert table[0, 1].bold is True
+        assert table[1, 1].bold is True
+        assert table[2, 1].bold is True
+
+    def test_set_col_values_with_offset(self):
+        """Test setting column values with start_row offset."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(1000), Cell(1200)],
+            [Cell("Expenses"), Cell(800), Cell(900)],
+            [Cell("Profit"), Cell(200), Cell(300)],
+        ])
+        
+        # Update data rows only, skip header
+        table.set_col_values(1, [1100, 850, 250], start_row=1)
+        
+        assert table[0, 1].value == "Q1"  # Header unchanged
+        assert table[1, 1].value == 1100
+        assert table[2, 1].value == 850
+        assert table[3, 1].value == 250
+
+    def test_set_col_values_without_preserving_formatting(self):
+        """Test setting column values without preserving formatting."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2, bold=True, align='center')],
+            [Cell(3), Cell(4, bold=True)],
+        ])
+        
+        # Update without preserving formatting
+        table.set_col_values(1, ["New", 20, 40], preserve_formatting=False)
+        
+        assert table[0, 1].value == "New"
+        assert table[1, 1].value == 20
+        assert table[2, 1].value == 40
+        # Formatting should be lost
+        assert table[1, 1].bold is False
+        assert table[1, 1].align == 'right'  # default
+        assert table[2, 1].bold is False
+
+    def test_set_col_values_empty_table(self):
+        """Test that setting column values in empty table raises IndexError."""
+        table = Table(cells=[])
+        
+        with pytest.raises(IndexError, match="Cannot set column values in empty table"):
+            table.set_col_values(0, [1, 2, 3])
+
+    def test_set_col_values_out_of_range_col(self):
+        """Test that out of range column index raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="Column index 2 is out of range"):
+            table.set_col_values(2, [10, 20])
+
+    def test_set_col_values_out_of_range_start_row(self):
+        """Test that out of range start_row raises IndexError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(IndexError, match="start_row 2 is out of range"):
+            table.set_col_values(0, [10], start_row=2)
+
+    def test_set_col_values_too_many_values(self):
+        """Test that too many values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20, 30, 40])  # Too many values
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20, 30], start_row=1)  # Would need only 2 values
+
+    def test_set_col_values_too_few_values(self):
+        """Test that too few values raises ValueError."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10, 20])  # Too few values (expected 3)
+        
+        with pytest.raises(ValueError, match="must exactly match number of rows to update"):
+            table.set_col_values(0, [10], start_row=1)  # Too few values (expected 2)
+
+    def test_set_col_values_with_cell_objects(self):
+        """Test setting column values with Cell objects when not preserving formatting."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+            [Cell(5), Cell(6)],
+        ])
+        
+        # Set with Cell objects
+        table.set_col_values(
+            1,
+            [Cell(20, bold=True), Cell(40, background_color='green'), 60],
+            preserve_formatting=False
+        )
+        
+        assert table[0, 1].value == 20
+        assert table[0, 1].bold is True
+        assert table[1, 1].value == 40
+        assert table[1, 1].background_color == 'green'
+        assert table[2, 1].value == 60
+
+    def test_set_row_and_col_values_combined(self):
+        """Test that row and column value setting can be combined."""
+        table = Table(cells=[
+            [Cell(""), Cell("Q1"), Cell("Q2")],
+            [Cell("Revenue"), Cell(1000), Cell(1200)],
+            [Cell("Expenses"), Cell(800), Cell(900)],
+        ])
+        
+        # Update a row of data
+        table.set_row_values(1, [1100, 1250], start_col=1)
+        
+        # Update a column of data
+        table.set_col_values(1, [1150, 850], start_row=1)
+        
+        assert table[1, 1].value == 1150  # Updated by col (last operation)
+        assert table[1, 2].value == 1250  # Updated by row
+        assert table[2, 1].value == 850   # Updated by col
+
     def test_table_to_dataframe_simple(self):
         """Test basic table to DataFrame conversion."""
         cells = [
