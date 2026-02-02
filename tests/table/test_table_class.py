@@ -935,6 +935,188 @@ class TestTableInitialization:
         with pytest.raises(ValueError, match="Row 1 has 1 cells, expected 2 cells"):
             Table(cells=cells)
 
+
+class TestCellBorderValidation:
+    """Test cases for Cell border style validation."""
+
+    def test_cell_valid_borders(self):
+        """Test that valid border values are accepted."""
+        # Test single border
+        cell1 = Cell(value=100, bottom_border="single")
+        assert cell1.bottom_border == "single"
+        
+        # Test double border
+        cell2 = Cell(value=200, top_border="double")
+        assert cell2.top_border == "double"
+        
+        # Test both borders
+        cell3 = Cell(value=300, bottom_border="single", top_border="double")
+        assert cell3.bottom_border == "single"
+        assert cell3.top_border == "double"
+        
+        # Test None (no border)
+        cell4 = Cell(value=400, bottom_border=None, top_border=None)
+        assert cell4.bottom_border is None
+        assert cell4.top_border is None
+
+    def test_cell_invalid_bottom_border(self):
+        """Test that invalid bottom_border values raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'invalid'"):
+            Cell(value=100, bottom_border="invalid")
+        
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'doubles'"):
+            Cell(value=100, bottom_border="doubles")
+        
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'thick'"):
+            Cell(value=100, bottom_border="thick")
+
+    def test_cell_invalid_top_border(self):
+        """Test that invalid top_border values raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid top_border value: 'invalid'"):
+            Cell(value=100, top_border="invalid")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'doubles'"):
+            Cell(value=100, top_border="doubles")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'dashed'"):
+            Cell(value=100, top_border="dashed")
+
+    def test_cell_case_sensitive_border(self):
+        """Test that border values are case-sensitive."""
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'Single'"):
+            Cell(value=100, bottom_border="Single")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'DOUBLE'"):
+            Cell(value=100, top_border="DOUBLE")
+
+    def test_cell_border_validation_in_table(self):
+        """Test that border validation works when creating tables."""
+        # Valid borders should work
+        table = Table(cells=[
+            [Cell("Header", bottom_border="double")],
+            [Cell(100, top_border="single")],
+        ])
+        assert table[0, 0].bottom_border == "double"
+        assert table[1, 0].top_border == "single"
+        
+        # Invalid borders should fail
+        with pytest.raises(ValueError, match="Invalid bottom_border value"):
+            Table(cells=[
+                [Cell("Header", bottom_border="invalid")],
+            ])
+
+
+class TestTableBorderStyling:
+    """Test cases for applying border styles to tables."""
+
+    def test_style_row_with_borders(self):
+        """Test styling a row with border styles."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        # Style row with borders
+        table.style_row(1, top_border="single", bottom_border="double")
+        
+        assert table[1, 0].top_border == "single"
+        assert table[1, 0].bottom_border == "double"
+        assert table[1, 1].top_border == "single"
+        assert table[1, 1].bottom_border == "double"
+        
+        # Other rows should not be affected
+        assert table[0, 0].top_border is None
+        assert table[2, 0].bottom_border is None
+
+    def test_style_row_invalid_border(self):
+        """Test that style_row validates border values."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'invalid'"):
+            table.style_row(0, bottom_border="invalid")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'doubless'"):
+            table.style_row(0, top_border="doubless")
+
+    def test_style_col_with_borders(self):
+        """Test styling a column with border styles."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B"), Cell("C")],
+            [Cell(1), Cell(2), Cell(3)],
+        ])
+        
+        # Style column with borders
+        table.style_col(1, top_border="double", bottom_border="single")
+        
+        assert table[0, 1].top_border == "double"
+        assert table[0, 1].bottom_border == "single"
+        assert table[1, 1].top_border == "double"
+        assert table[1, 1].bottom_border == "single"
+        
+        # Other columns should not be affected
+        assert table[0, 0].top_border is None
+        assert table[0, 2].bottom_border is None
+
+    def test_style_col_invalid_border(self):
+        """Test that style_col validates border values."""
+        table = Table(cells=[
+            [Cell("A"), Cell("B")],
+            [Cell(1), Cell(2)],
+        ])
+        
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'thick'"):
+            table.style_col(0, bottom_border="thick")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'dashed'"):
+            table.style_col(0, top_border="dashed")
+
+    def test_style_range_with_borders(self):
+        """Test styling a range with border styles."""
+        table = Table(cells=[
+            [Cell(1), Cell(2), Cell(3)],
+            [Cell(4), Cell(5), Cell(6)],
+            [Cell(7), Cell(8), Cell(9)],
+        ])
+        
+        # Style a range with borders
+        table.style_range(
+            start=(1, 1),
+            end=(2, 2),
+            top_border="single",
+            bottom_border="double"
+        )
+        
+        # Check range was styled
+        assert table[1, 1].top_border == "single"
+        assert table[1, 1].bottom_border == "double"
+        assert table[2, 2].top_border == "single"
+        assert table[2, 2].bottom_border == "double"
+        
+        # Check unaffected cells
+        assert table[0, 0].top_border is None
+        assert table[0, 0].bottom_border is None
+
+    def test_style_range_invalid_border(self):
+        """Test that style_range validates border values."""
+        table = Table(cells=[
+            [Cell(1), Cell(2)],
+            [Cell(3), Cell(4)],
+        ])
+        
+        with pytest.raises(ValueError, match="Invalid bottom_border value: 'triple'"):
+            table.style_range(start=(0, 0), end=(1, 1), bottom_border="triple")
+        
+        with pytest.raises(ValueError, match="Invalid top_border value: 'dotted'"):
+            table.style_range(start=(0, 0), end=(1, 1), top_border="dotted")
+
+
+class TestTableSetRangeValues:
+    """Test cases for setting range values in tables."""
+
     def test_set_range_values_basic(self):
         """Test basic range value setting with formatting preserved."""
         table = Table(cells=[

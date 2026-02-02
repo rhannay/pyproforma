@@ -1,43 +1,14 @@
 from typing import TYPE_CHECKING, Optional
 
 import openpyxl
-from openpyxl.styles import Alignment, Border, Font, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 if TYPE_CHECKING:
     from .table_class import Table
 
 from ..constants import ValueFormat
-
-# Color name to Excel hex color mapping
-CSS_COLOR_TO_EXCEL = {
-    "red": "FF0000",
-    "blue": "0000FF",
-    "green": "008000",
-    "black": "000000",
-    "white": "FFFFFF",
-    "yellow": "FFFF00",
-    "orange": "FFA500",
-    "purple": "800080",
-    "pink": "FFC0CB",
-    "brown": "A52A2A",
-    "gray": "808080",
-    "grey": "808080",
-    "darkblue": "00008B",
-    "darkgreen": "006400",
-    "darkred": "8B0000",
-    "lightblue": "ADD8E6",
-    "lightgreen": "90EE90",
-    "gold": "FFD700",
-    "silver": "C0C0C0",
-    "navy": "000080",
-    "maroon": "800000",
-    "olive": "808000",
-    "lime": "00FF00",
-    "aqua": "00FFFF",
-    "teal": "008080",
-    "fuchsia": "FF00FF",
-}
+from .colors import color_to_rgb
 
 
 def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
@@ -104,13 +75,20 @@ def to_excel(table: "Table", filename="table.xlsx"):
 
             # Handle font color
             if cell_data.font_color is not None:
-                color_name = cell_data.font_color.lower().strip()
-                if color_name in CSS_COLOR_TO_EXCEL:
-                    font_kwargs["color"] = CSS_COLOR_TO_EXCEL[color_name]
+                r, g, b = color_to_rgb(cell_data.font_color)
+                # openpyxl expects RGB hex string (RRGGBB)
+                font_kwargs["color"] = f"{r:02X}{g:02X}{b:02X}"
 
             # Apply font if any font properties are set
             if font_kwargs:
                 cell.font = Font(**font_kwargs)
+
+            # Handle background color
+            if cell_data.background_color is not None:
+                r, g, b = color_to_rgb(cell_data.background_color)
+                # openpyxl expects RGB hex string (RRGGBB)
+                hex_color = f"{r:02X}{g:02X}{b:02X}"
+                cell.fill = PatternFill(start_color=hex_color, end_color=hex_color, fill_type="solid")
 
             # Handle borders
             border_kwargs = {}
