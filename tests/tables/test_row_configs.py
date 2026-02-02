@@ -285,8 +285,8 @@ def test_category_total_row_styling(sample_line_item_set: Model):
     category_total_row = CategoryTotalRow(
         category_name="income",
         bold=True,
-        bottom_border="thick",
-        top_border="thin",
+        bottom_border="double",
+        top_border="single",
         value_format="percent",
     )
 
@@ -294,8 +294,8 @@ def test_category_total_row_styling(sample_line_item_set: Model):
 
     # Check styling is applied
     assert row[0].bold is True
-    assert row[0].bottom_border == "thick"
-    assert row[0].top_border == "thin"
+    assert row[0].bottom_border == "double"
+    assert row[0].top_border == "single"
 
     # Check value cells have correct formatting
     for i in range(1, len(row)):  # Skip label cell
