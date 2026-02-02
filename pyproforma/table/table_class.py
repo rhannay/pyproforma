@@ -7,6 +7,7 @@ from pandas.io.formats.style import Styler
 from ..constants import ValueFormat
 from .colors import color_to_hex
 from .excel import to_excel
+from .format_value import format_value
 from .html_renderer import to_html as _to_html
 
 # Define a type alias for border styles
@@ -1126,26 +1127,4 @@ class Table:
         return styles
 
 
-def format_value(
-    value: Any, value_format: Optional[ValueFormat], none_returns=""
-) -> Any:
-    if value is None:
-        return none_returns
-    if value_format is None:
-        return value
-    if value_format == "str":
-        return str(value)
-    elif value_format == "no_decimals":
-        return f"{int(round(value)):,}"
-    elif value_format == "two_decimals":
-        return f"{value:,.2f}"
-    elif value_format == "percent":
-        return f"{int(round(value * 100))}%"
-    elif value_format == "percent_one_decimal":
-        return f"{value * 100:.1f}%"
-    elif value_format == "percent_two_decimals":
-        return f"{value * 100:.2f}%"
-    elif value_format == "year":
-        return str(int(round(value)))
-    else:
-        raise ValueError(f"Invalid value_format: {value_format}")
+
