@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from ..table import NumberFormatSpec, ValueFormat
+from ..table import Format, NumberFormatSpec
 from ._utils import validate_name
 
 
@@ -127,7 +127,7 @@ class LineItem:
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
-    value_format: Union[ValueFormat, NumberFormatSpec] = "no_decimals"
+    value_format: Union[NumberFormatSpec, dict, None] = Format.NO_DECIMALS
 
     def __post_init__(self):
         validate_name(self.name)
@@ -183,7 +183,7 @@ class LineItem:
             values = {int(k): v for k, v in values.items()}
 
         # Deserialize value_format
-        value_format_raw = item_dict.get("value_format", "no_decimals")
+        value_format_raw = item_dict.get("value_format", Format.NO_DECIMALS)
         if isinstance(value_format_raw, dict):
             value_format = NumberFormatSpec.from_dict(value_format_raw)
         else:

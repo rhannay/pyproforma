@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.model.model_update import UpdateNamespace
 
 
@@ -311,7 +312,7 @@ class TestAddLineItemReplace:
             name="revenue",
             category="expenses",
             formula="1000 + 2000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
             replace=True,
         )
 

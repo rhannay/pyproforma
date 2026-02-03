@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.line_item import _is_values_dict, _validate_values_keys
 
 
@@ -179,7 +180,7 @@ class TestLineItemMisc:
             label="Test Item",
             values={2020: 100.0, 2021: 200.0},
             formula="test_formula",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
 
         # Convert to dict and back

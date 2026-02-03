@@ -4,7 +4,7 @@ Year-over-year comparison table generation.
 
 from typing import TYPE_CHECKING, Optional
 
-from ..table import Cell, Table
+from ..table import Cell, Format, Table
 
 if TYPE_CHECKING:
     from pyproforma import Model
@@ -149,7 +149,7 @@ def compare_years(
 
         if include_percent_change:
             cells.append(
-                Cell(value=item["percent_change"], value_format="percent_one_decimal")
+                Cell(value=item["percent_change"], value_format=Format.PERCENT_ONE_DECIMAL)
             )
 
         data_rows.append(cells)
@@ -172,13 +172,13 @@ def compare_years(
         Cell(value="Total", align="left", bold=True, top_border="single"),
         Cell(
             value=total_prev,
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
             bold=True,
             top_border="single",
         ),
         Cell(
             value=total_curr,
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
             bold=True,
             top_border="single",
         ),
@@ -188,7 +188,7 @@ def compare_years(
         total_cells.append(
             Cell(
                 value=total_change,
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
                 bold=True,
                 top_border="single",
             )
@@ -198,7 +198,7 @@ def compare_years(
         total_cells.append(
             Cell(
                 value=total_percent_change,
-                value_format="percent_one_decimal",
+                value_format=Format.PERCENT_ONE_DECIMAL,
                 bold=True,
                 top_border="single",
             )

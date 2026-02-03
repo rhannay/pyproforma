@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import plotly.graph_objects as go
 
-from pyproforma.table import Table, ValueFormat, format_value
+from pyproforma.table import Format, Table, format_value
 
 if TYPE_CHECKING:
     from ..model import Model
@@ -156,12 +156,12 @@ class LineItemResults:
         self.model.update.update_line_item(self.name, formula=value)
 
     @property
-    def value_format(self) -> ValueFormat:
+    def value_format(self):
         """Get the value format for this line item."""
         return self._line_item_metadata["value_format"]
 
     @value_format.setter
-    def value_format(self, value: ValueFormat) -> None:
+    def value_format(self, value) -> None:
         """Set the value format for this line item and update it in the model."""
         if self.source_type != "line_item":
             raise ValueError(

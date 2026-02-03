@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 
-from pyproforma.table import Cell, Table, to_excel
+from pyproforma.table import Cell, Table, to_excel, Format
 from pyproforma.table.excel import value_format_to_excel_format
 
 
@@ -15,51 +15,47 @@ class TestValueFormatToExcelFormat:
 
     def test_no_decimals_format(self):
         """Test no_decimals format returns correct Excel format."""
-        assert value_format_to_excel_format("no_decimals") == "#,##0"
+        assert value_format_to_excel_format(Format.NO_DECIMALS) == "#,##0"
 
     def test_two_decimals_format(self):
         """Test two_decimals format returns correct Excel format."""
-        assert value_format_to_excel_format("two_decimals") == "#,##0.00"
+        assert value_format_to_excel_format(Format.TWO_DECIMALS) == "#,##0.00"
 
     def test_percent_format(self):
         """Test percent format returns correct Excel format."""
-        assert value_format_to_excel_format("percent") == "0%"
+        assert value_format_to_excel_format(Format.PERCENT) == "0%"
 
     def test_percent_one_decimal_format(self):
         """Test percent_one_decimal format returns correct Excel format."""
-        assert value_format_to_excel_format("percent_one_decimal") == "0.0%"
+        assert value_format_to_excel_format(Format.PERCENT_ONE_DECIMAL) == "0.0%"
 
     def test_percent_two_decimals_format(self):
         """Test percent_two_decimals format returns correct Excel format."""
-        assert value_format_to_excel_format("percent_two_decimals") == "0.00%"
+        assert value_format_to_excel_format(Format.PERCENT_TWO_DECIMALS) == "0.00%"
 
-    def test_typo_in_format_name(self):
-        """Test that the typo 'percent_two_decinals' is handled correctly."""
-        # The original test file has a typo: 'percent_two_decinals' instead of 'percent_two_decimals'  # noqa: E501
-        # Our function should handle this typo and return the same format as the correct spelling  # noqa: E501
-        assert value_format_to_excel_format("percent_two_decinals") == "0.00%"
-
-    def test_str_format(self):
-        """Test str format returns correct Excel format."""
-        assert value_format_to_excel_format("str") == "@"
+    def test_currency_format(self):
+        """Test currency format returns correct Excel format."""
+        assert value_format_to_excel_format(Format.CURRENCY) == "$#,##0.00"
 
     def test_unknown_format(self):
-        """Test unknown format returns General as fallback."""
+        """Test unknown format type returns reasonable default."""
+        # String should return General
         assert value_format_to_excel_format("unknown_format") == "General"
-        assert value_format_to_excel_format("invalid") == "General"
-        assert value_format_to_excel_format("") == "General"
+        
+        # Invalid dict is converted to default NumberFormatSpec which returns #,##0
+        assert value_format_to_excel_format({"invalid": "dict"}) == "#,##0"
 
     def test_all_known_formats(self):
-        """Test all known formats are correctly mapped."""
+        """Test all known Format constants are correctly mapped."""
         format_mappings = {
             None: "General",
-            "no_decimals": "#,##0",
-            "two_decimals": "#,##0.00",
-            "percent": "0%",
-            "percent_one_decimal": "0.0%",
-            "percent_two_decimals": "0.00%",
-            "percent_two_decinals": "0.00%",  # Handle typo in codebase
-            "str": "@",
+            Format.NO_DECIMALS: "#,##0",
+            Format.TWO_DECIMALS: "#,##0.00",
+            Format.PERCENT: "0%",
+            Format.PERCENT_ONE_DECIMAL: "0.0%",
+            Format.PERCENT_TWO_DECIMALS: "0.00%",
+            Format.CURRENCY: "$#,##0.00",
+            Format.CURRENCY_NO_DECIMALS: "$#,##0",
         }
 
         for value_format, expected_excel_format in format_mappings.items():
@@ -67,17 +63,6 @@ class TestValueFormatToExcelFormat:
             assert result == expected_excel_format, (
                 f"Expected {expected_excel_format} for {value_format}, got {result}"
             )
-
-    def test_case_sensitivity(self):
-        """Test that the function is case sensitive."""
-        # These should return General since they don't match exactly
-        assert value_format_to_excel_format("NO_DECIMALS") == "General"
-        assert value_format_to_excel_format("Two_Decimals") == "General"
-        assert value_format_to_excel_format("PERCENT") == "General"
-        assert value_format_to_excel_format("STR") == "General"
-
-    def test_whitespace_handling(self):
-        """Test that whitespace in format strings returns General."""
         assert value_format_to_excel_format(" no_decimals") == "General"
         assert value_format_to_excel_format("no_decimals ") == "General"
         assert value_format_to_excel_format(" str ") == "General"
@@ -100,10 +85,10 @@ class TestValueFormatToExcelFormat:
         result = value_format_to_excel_format(None)
         assert isinstance(result, str)
 
-        result = value_format_to_excel_format("no_decimals")
+        result = value_format_to_excel_format(Format.NO_DECIMALS)
         assert isinstance(result, str)
 
-        result = value_format_to_excel_format("unknown")
+        result = value_format_to_excel_format({"invalid": "dict"})
         assert isinstance(result, str)
 
 
@@ -121,14 +106,14 @@ class TestToExcelIntegration:
             ],
             [
                 Cell(value="Revenue", value_format="str"),
-                Cell(value=1234567.89, value_format="no_decimals"),
-                Cell(value=0.1234, value_format="percent_two_decimals"),
+                Cell(value=1234567.89, value_format=Format.NO_DECIMALS),
+                Cell(value=0.1234, value_format=Format.PERCENT_TWO_DECIMALS),
                 Cell(value="Sample text", value_format="str"),
             ],
             [
                 Cell(value="Expense", value_format="str"),
-                Cell(value=987654.32, value_format="two_decimals"),
-                Cell(value=0.0567, value_format="percent_one_decimal"),
+                Cell(value=987654.32, value_format=Format.TWO_DECIMALS),
+                Cell(value=0.0567, value_format=Format.PERCENT_ONE_DECIMAL),
                 Cell(value="Another text", value_format=None),  # Test None format
             ],
         ]
@@ -170,11 +155,11 @@ class TestToExcelIntegration:
             ],
             [
                 Cell(value=12345.67, value_format=None),
-                Cell(value=12345.67, value_format="no_decimals"),
-                Cell(value=12345.67, value_format="two_decimals"),
-                Cell(value=0.1234, value_format="percent"),
-                Cell(value=0.1234, value_format="percent_one_decimal"),
-                Cell(value=0.1234, value_format="percent_two_decimals"),
+                Cell(value=12345.67, value_format=Format.NO_DECIMALS),
+                Cell(value=12345.67, value_format=Format.TWO_DECIMALS),
+                Cell(value=0.1234, value_format=Format.PERCENT),
+                Cell(value=0.1234, value_format=Format.PERCENT_ONE_DECIMAL),
+                Cell(value=0.1234, value_format=Format.PERCENT_TWO_DECIMALS),
                 Cell(value=12345.67, value_format="str"),
                 Cell(value=12345.67, value_format="unknown_format"),
             ]

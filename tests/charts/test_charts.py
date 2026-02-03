@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import pytest
 
 from pyproforma import LineItem, Model
+from pyproforma.table import Format
 from pyproforma.charts.chart_class import Chart
 from pyproforma.charts.charts import ChartGenerationError, Charts
 
@@ -21,9 +22,9 @@ class TestCharts:
         # Mock li() method responses with LineItemResults calculation methods
         def mock_li(name):
             line_item_map = {
-                "revenue": Mock(label="Revenue", value_format="no_decimals"),
-                "expenses": Mock(label="Expenses", value_format="two_decimals"),
-                "growth_rate": Mock(label="Growth Rate", value_format="percent"),
+                "revenue": Mock(label="Revenue", value_format=Format.NO_DECIMALS),
+                "expenses": Mock(label="Expenses", value_format=Format.TWO_DECIMALS),
+                "growth_rate": Mock(label="Growth Rate", value_format=Format.PERCENT),
             }
             if name in line_item_map:
                 line_item_result = line_item_map[name]
@@ -288,7 +289,7 @@ class TestCharts:
 
         # Make the line item result raise a ValueError when called
         def mock_li_with_error(name):
-            line_item_result = Mock(label="Revenue", value_format="no_decimals")
+            line_item_result = Mock(label="Revenue", value_format=Format.NO_DECIMALS)
             line_item_result.cumulative_percent_change.side_effect = ValueError(
                 "Test error"
             )
@@ -352,7 +353,7 @@ class TestCharts:
             labels=["2020", "2021", "2022"],
             data_sets=[mock_dataset],
             title="Revenue",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         )
 
         # Verify to_plotly call
@@ -393,7 +394,7 @@ class TestCharts:
             labels=["2020", "2021", "2022"],
             data_sets=[mock_dataset1, mock_dataset2],
             title="Multiple Line Items",
-            value_format="no_decimals",  # From first item
+            value_format=Format.NO_DECIMALS,  # From first item
         )
 
         assert result is mock_fig
@@ -428,7 +429,7 @@ class TestCharts:
             labels=["2020", "2021", "2022"],
             data_sets=[mock_dataset],
             title="Revenue Cumulative % Change",  # This should match the dataset label
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
 
         assert result is mock_fig
@@ -440,7 +441,7 @@ class TestCharts:
 
         # Mock additional items for li() method
         def mock_li_extended(name):
-            return Mock(label=f"Label {name}", value_format="no_decimals")
+            return Mock(label=f"Label {name}", value_format=Format.NO_DECIMALS)
 
         def mock_value_extended(name, year):
             return 100.0  # Simple value for all

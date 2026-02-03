@@ -8,6 +8,7 @@ including their integration with multi-line items.
 import pytest
 
 from pyproforma import Category, Constraint, LineItem
+from pyproforma.table import Format
 from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_constraint_metadata,
@@ -174,7 +175,7 @@ class TestGenerateLineItemMetadata:
                 label="Revenue",
                 category="income",
                 values={2020: 1000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
         category_metadata = []
@@ -204,14 +205,14 @@ class TestGenerateLineItemMetadata:
                 label="Revenue",
                 category="income",
                 values={2020: 1000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="growth_rate",
                 label="Growth Rate",
                 category="assumptions",
                 values={2020: 0.05},
-                value_format="percent",
+                value_format=Format.PERCENT,
             ),
             LineItem(
                 name="description",
@@ -269,7 +270,7 @@ class TestGenerateLineItemMetadata:
                 category="income",
                 formula="revenue * 0.1",
                 values={2020: 100, 2021: 200},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
         category_metadata = []
@@ -299,7 +300,7 @@ class TestGenerateLineItemMetadata:
                 label="Calculated Value",
                 category="calculations",
                 formula="base_value + adjustment",
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             )
         ]
         category_metadata = []

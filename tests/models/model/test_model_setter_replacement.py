@@ -3,6 +3,7 @@
 import pytest
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.models.line_item import LineItem
 
 
@@ -18,7 +19,7 @@ class TestReplaceWithPrimitiveValues:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -56,7 +57,7 @@ class TestReplaceWithPrimitiveValues:
             category="ratios",
             label="Profit Margin",
             values={2023: 0.1, 2024: 0.12, 2025: 0.15},
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
 
         # Verify initial state
@@ -92,7 +93,7 @@ class TestReplaceWithList:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -131,7 +132,7 @@ class TestReplaceWithFormula:
             category="income",
             label="Total Revenue",
             values={2023: 1000, 2024: 1100, 2025: 1200},
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -170,7 +171,7 @@ class TestReplaceWithFormula:
             category="income",
             label="Net Profit",
             formula="revenue * 0.1",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
 
         # Verify initial state (revenue=1000 * 0.1)
@@ -203,7 +204,7 @@ class TestReplaceWithValuesDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -241,7 +242,7 @@ class TestReplaceWithPandasSeries:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -282,7 +283,7 @@ class TestReplaceWithEmptyDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -320,7 +321,7 @@ class TestReplaceWithLineItemOrDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -332,7 +333,7 @@ class TestReplaceWithLineItemOrDict:
             category="sales",
             label="Sales Revenue",
             formula="2000",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         )
         model_with_line_item["revenue"] = new_item
 

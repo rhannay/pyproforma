@@ -1,6 +1,7 @@
 """Test the new dataclass row configuration approach."""
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.tables.row_types import BlankRow, ItemRow, LabelRow, dict_to_row_config
 from pyproforma.tables.table_generator import generate_table_from_template
 
@@ -8,7 +9,7 @@ from pyproforma.tables.table_generator import generate_table_from_template
 def test_dataclass_row_config_creation():
     """Test that we can create row configs as dataclasses."""
     # Test creating an ItemRow
-    item_config = ItemRow(name="revenue", bold=True, value_format="currency")
+    item_config = ItemRow(name="revenue", bold=True, value_format=Format.CURRENCY)
 
     assert item_config.name == "revenue"
     assert item_config.bold is True
@@ -20,7 +21,7 @@ def test_dataclass_row_config_creation():
         name="revenue",
         included_cols=["name", "label", "category"],
         bold=True,
-        value_format="currency",
+        value_format=Format.CURRENCY,
     )
 
     assert item_config_with_cols.included_cols == ["name", "label", "category"]
@@ -66,7 +67,7 @@ def test_dataclass_serialization():
         name="revenue",
         included_cols=["name", "label"],
         bold=True,
-        value_format="currency",
+        value_format=Format.CURRENCY,
     )
 
     # Convert to dict
@@ -287,7 +288,7 @@ def test_category_total_row_styling(sample_line_item_set: Model):
         bold=True,
         bottom_border="double",
         top_border="single",
-        value_format="percent",
+        value_format=Format.PERCENT,
     )
 
     row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)

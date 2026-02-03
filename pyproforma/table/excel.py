@@ -8,46 +8,37 @@ if TYPE_CHECKING:
     from .table_class import Table
 
 from .colors import color_to_rgb
-from .format_value import NumberFormatSpec, ValueFormat
+from .format_value import NumberFormatSpec
 
 
 def value_format_to_excel_format(
-    value_format: Optional[Union[ValueFormat, NumberFormatSpec]],
+    value_format: Optional[Union[NumberFormatSpec, dict]],
 ) -> str:
     """Convert a cell value_format to an Excel number_format.
 
     Args:
-        value_format: Can be a string format (legacy), NumberFormatSpec instance,
-            or None
+        value_format: Can be a NumberFormatSpec instance, dict, or None
 
     Returns:
         Excel number format string
     """
+    # Handle None
+    if value_format is None:
+        return "General"
+    
+    # Handle dict - convert to NumberFormatSpec
+    if isinstance(value_format, dict):
+        try:
+            value_format = NumberFormatSpec.from_dict(value_format)
+        except (KeyError, TypeError, ValueError):
+            return "General"
+    
     # Handle NumberFormatSpec instances
     if isinstance(value_format, NumberFormatSpec):
         return _spec_to_excel_format(value_format)
-
-    # Handle legacy string formats and None
-    if value_format is None:
-        return "General"  # Excel default
-    elif value_format == "no_decimals":
-        return "#,##0"  # Number with commas, no decimals
-    elif value_format == "two_decimals":
-        return "#,##0.00"  # Number with commas and 2 decimals
-    elif value_format == "percent":
-        return "0%"  # Percentage with no decimals
-    elif value_format == "percent_one_decimal":
-        return "0.0%"  # Percentage with 1 decimal
-    elif value_format == "percent_two_decimals":
-        return "0.00%"  # Percentage with 2 decimals
-    elif value_format == "percent_two_decinals":  # Handle typo that exists in codebase
-        return "0.00%"  # Percentage with 2 decimals (same as correct spelling)
-    elif value_format == "str":
-        return "@"  # Text format
-    elif value_format == "year":
-        return "0"  # Integer format (no decimals, no commas)
-    else:
-        return "General"  # Default fallback
+    
+    # Unknown type
+    return "General"
 
 
 def _spec_to_excel_format(spec: NumberFormatSpec) -> str:
@@ -60,13 +51,13 @@ def _spec_to_excel_format(spec: NumberFormatSpec) -> str:
         Excel number format string
 
     Note:
-        Excel has limited support for custom number formats with display scales.
-        For formats with display_scale, we fall back to "General" and rely on
+        Excel has limited support for custom number formats with scales.
+        For formats with scale, we fall back to text format and rely on
         the Python-formatted value being written to the cell.
     """
-    # If display_scale is set, we can't represent this in Excel number format
+    # If scale is set, we can't represent this in Excel number format
     # The value will already be formatted by format_value(), so use text format
-    if spec.display_scale:
+    if spec.scale:
         return "@"  # Text format
 
     # Build the Excel format string
@@ -83,12 +74,11 @@ def _spec_to_excel_format(spec: NumberFormatSpec) -> str:
             number_format = "0." + "0" * spec.decimals
 
     # Add prefix and suffix
-    # Excel format: prefix "number_format" suffix
+    # Excel format: prefix number_format suffix
+    # For simple symbols like $ and %, no quotes needed
+    # Excel will format them correctly as part of the format string
     if spec.prefix or spec.suffix:
-        # Escape special characters in prefix/suffix
-        prefix = f'"{spec.prefix}"' if spec.prefix else ""
-        suffix = f'"{spec.suffix}"' if spec.suffix else ""
-        number_format = f"{prefix}{number_format}{suffix}"
+        number_format = f"{spec.prefix}{number_format}{spec.suffix}"
 
     return number_format
 

@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.constraint import Constraint
 from pyproforma.models.generator.debt import Debt
 
@@ -353,7 +354,7 @@ class TestOtherMisc:
                     name="growth_rate",
                     label="Growth Rate",
                     category="assumption",
-                    value_format="two_decimals",
+                    value_format=Format.TWO_DECIMALS,
                 ),
             ],
             categories=[

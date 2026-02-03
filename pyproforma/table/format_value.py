@@ -1,19 +1,7 @@
 """Value formatting utilities for table cells."""
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
-
-# Type alias for valid value formats
-ValueFormat = Literal[
-    None,
-    "str",
-    "no_decimals",
-    "two_decimals",
-    "percent",
-    "percent_one_decimal",
-    "percent_two_decimals",
-    "year",
-]
+from typing import Any, Optional, Union
 
 
 @dataclass(frozen=True)
@@ -88,6 +76,55 @@ class NumberFormatSpec:
             scale=data.get("scale", None),
         )
 
+    def format(self, value: Any) -> str:
+        """Format a value using this specification.
+
+        Args:
+            value: The numeric value to format
+
+        Returns:
+            The formatted string
+
+        Examples:
+            >>> spec = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
+            >>> spec.format(1234.56)
+            '$1,234.56'
+        """
+        # Apply multiplier first
+        formatted_value = value * self.multiplier
+
+        # Apply scale if specified
+        if self.scale:
+            scale_map = {
+                "thousands": 1_000,
+                "millions": 1_000_000,
+                "billions": 1_000_000_000,
+                "trillions": 1_000_000_000_000,
+            }
+            scale_factor = scale_map.get(self.scale.lower())
+            if scale_factor:
+                formatted_value = formatted_value / scale_factor
+            else:
+                raise ValueError(
+                    f"Invalid scale: {self.scale}. "
+                    f"Valid options: {', '.join(scale_map.keys())}"
+                )
+
+        # Format the number with appropriate decimals and thousands separator
+        if self.thousands:
+            if self.decimals == 0:
+                formatted_str = f"{int(round(formatted_value)):,}"
+            else:
+                formatted_str = f"{formatted_value:,.{self.decimals}f}"
+        else:
+            if self.decimals == 0:
+                formatted_str = str(int(round(formatted_value)))
+            else:
+                formatted_str = f"{formatted_value:.{self.decimals}f}"
+
+        # Add prefix and suffix
+        return self.prefix + formatted_str + self.suffix
+
 
 class Format:
     """Namespace for common number format specifications.
@@ -138,113 +175,46 @@ class Format:
 
 def format_value(
     value: Any,
-    value_format: Optional[Union[ValueFormat, NumberFormatSpec]],
+    value_format: Optional[Union[NumberFormatSpec, dict]] = None,
     none_returns="",
 ) -> Any:
     """Format a value according to the specified format.
 
     Args:
         value: The value to format
-        value_format: The format to apply. Can be a string format (legacy), a
-            NumberFormatSpec instance, or None. String options: 'str',
-            'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal',
-            'percent_two_decimals', 'year'
-        none_returns: Value to return if value is None. Defaults to empty string.
+        value_format: The format to apply. Can be a NumberFormatSpec instance,
+            a dict (which will be converted to NumberFormatSpec), or None.
+        none_returns: Value to return if value is None (default: empty string)
 
     Returns:
-        The formatted value
+        The formatted value, or the original value if value_format is None
 
     Raises:
-        ValueError: If an invalid value_format is provided
+        ValueError: If an invalid value_format type is provided
 
     Examples:
-        >>> format_value(123.45, None)
-        123.45
-        >>> format_value(123.45, "str")
-        '123.45'
-        >>> format_value(123.456, "two_decimals")
-        '123.46'
-        >>> format_value(0.1234, "percent")
-        '12%'
         >>> format_value(1234.56, Format.CURRENCY)
         '$1,234.56'
+        >>> format_value(0.1234, Format.PERCENT)
+        '12%'
+        >>> format_value(1234.56, None)
+        1234.56
         >>> format_value(3100000, Format.MILLIONS)
-        '3.1M'
+        '3.1'
     """
     if value is None:
         return none_returns
 
-    # Handle NumberFormatSpec instances
-    if isinstance(value_format, NumberFormatSpec):
-        return _format_with_spec(value, value_format)
-
-    # Handle legacy string formats and None
     if value_format is None:
         return value
-    if value_format == "str":
-        return str(value)
-    elif value_format == "no_decimals":
-        return f"{int(round(value)):,}"
-    elif value_format == "two_decimals":
-        return f"{value:,.2f}"
-    elif value_format == "percent":
-        return f"{int(round(value * 100))}%"
-    elif value_format == "percent_one_decimal":
-        return f"{value * 100:.1f}%"
-    elif value_format == "percent_two_decimals":
-        return f"{value * 100:.2f}%"
-    elif value_format == "year":
-        return str(int(round(value)))
-    else:
-        raise ValueError(f"Invalid value_format: {value_format}")
 
+    if isinstance(value_format, dict):
+        value_format = NumberFormatSpec.from_dict(value_format)
 
-def _format_with_spec(value: Any, spec: NumberFormatSpec) -> str:
-    """Format a value using a NumberFormatSpec.
+    if isinstance(value_format, NumberFormatSpec):
+        return value_format.format(value)
 
-    Args:
-        value: The numeric value to format
-        spec: The NumberFormatSpec defining the format
-
-    Returns:
-        The formatted string
-
-    Examples:
-        >>> spec = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
-        >>> _format_with_spec(1234.56, spec)
-        '$1,234.56'
-    """
-    # Apply multiplier first
-    formatted_value = value * spec.multiplier
-
-    # Apply scale if specified
-    if spec.scale:
-        scale_map = {
-            "thousands": 1_000,
-            "millions": 1_000_000,
-            "billions": 1_000_000_000,
-            "trillions": 1_000_000_000_000,
-        }
-        scale_factor = scale_map.get(spec.scale.lower())
-        if scale_factor:
-            formatted_value = formatted_value / scale_factor
-        else:
-            raise ValueError(
-                f"Invalid scale: {spec.scale}. "
-                f"Valid options: {', '.join(scale_map.keys())}"
-            )
-
-    # Format the number with appropriate decimals and thousands separator
-    if spec.thousands:
-        if spec.decimals == 0:
-            formatted_str = f"{int(round(formatted_value)):,}"
-        else:
-            formatted_str = f"{formatted_value:,.{spec.decimals}f}"
-    else:
-        if spec.decimals == 0:
-            formatted_str = str(int(round(formatted_value)))
-        else:
-            formatted_str = f"{formatted_value:.{spec.decimals}f}"
-
-    # Add prefix and suffix
-    return spec.prefix + formatted_str + spec.suffix
+    raise ValueError(
+        f"Invalid value_format type: {type(value_format).__name__}. "
+        f"Expected NumberFormatSpec, dict, or None."
+    )

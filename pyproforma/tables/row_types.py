@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pyproforma import Model
 
 from ..constants import VALID_COLS, ColumnType
-from ..table import Cell, ValueFormat
+from ..table import Cell, Format
 
 
 class BaseRow(ABC):
@@ -41,7 +41,7 @@ class ItemRow(BaseRow):
     name: str
     included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
     hardcoded_color: Optional[str] = None
     bottom_border: Optional[str] = None
@@ -131,7 +131,7 @@ class ItemsByCategoryRow(BaseRow):
     """Configuration for items by category row generation."""
 
     category: str
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[list[Cell]]:
@@ -161,7 +161,7 @@ class PercentChangeRow(BaseRow):
 
     name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
@@ -174,7 +174,7 @@ class PercentChangeRow(BaseRow):
             label = self.label
 
         # Default to percentage format if not specified
-        value_format = self.value_format or "percent_two_decimals"
+        value_format = self.value_format or Format.PERCENT_TWO_DECIMALS
 
         # Create cells for this row
         cells = []
@@ -202,7 +202,7 @@ class CumulativeChangeRow(BaseRow):
 
     name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
@@ -257,7 +257,7 @@ class CumulativePercentChangeRow(BaseRow):
 
     name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
@@ -270,7 +270,7 @@ class CumulativePercentChangeRow(BaseRow):
             label = self.label
 
         # Default to percentage format if not specified
-        value_format = self.value_format or "percent"
+        value_format = self.value_format or Format.PERCENT
 
         # Create cells for this row
         cells = []
@@ -376,7 +376,7 @@ class ConstraintVarianceRow(BaseRow):
 
     constraint_name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
@@ -428,7 +428,7 @@ class ConstraintTargetRow(BaseRow):
 
     constraint_name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:
@@ -531,7 +531,7 @@ class CategoryTotalRow(BaseRow):
 
     category_name: str
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
@@ -548,7 +548,7 @@ class CategoryTotalRow(BaseRow):
             label = self.label
 
         # Default to no_decimals format if not specified
-        value_format = self.value_format or "no_decimals"
+        value_format = self.value_format or Format.NO_DECIMALS
 
         # Create cells for this row
         cells = []
@@ -608,7 +608,7 @@ class LineItemsTotalRow(BaseRow):
     line_item_names: list[str]
     included_cols: list[ColumnType] = field(default_factory=lambda: ["label"])
     label: Optional[str] = None
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
@@ -629,7 +629,7 @@ class LineItemsTotalRow(BaseRow):
             label = self.label
 
         # Default to no_decimals format if not specified
-        value_format = self.value_format or "no_decimals"
+        value_format = self.value_format or Format.NO_DECIMALS
 
         # Create cells for this row - label always goes in first cell
         cells = []
@@ -681,7 +681,7 @@ class CustomRow(BaseRow):
 
     label: str
     values: dict  # dict of year: float
-    value_format: Optional[ValueFormat] = None
+    value_format = None
     bold: bool = False
 
     def generate_row(self, model: "Model", label_col_count: int = 1) -> list[Cell]:

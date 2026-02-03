@@ -3,8 +3,6 @@ from typing import List, Literal, Optional
 import plotly.express as px
 import plotly.graph_objects as go
 
-from ..table import ValueFormat
-
 
 class ChartDataSet:
     """A dataset for chart plotting."""
@@ -43,7 +41,7 @@ class Chart:
         data_sets: List[ChartDataSet],
         id: str = "chart",
         title: str = "Chart",
-        value_format: Optional[ValueFormat] = None,
+        value_format: Optional[any] = None,
     ):
         self.id = id
         self.title = title
