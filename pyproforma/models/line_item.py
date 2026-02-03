@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..constants import ValueFormat
+from ..table import ValueFormat
 from ._utils import validate_name
 
 

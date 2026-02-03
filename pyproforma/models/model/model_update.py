@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .model import Model
 
-from ...constants import ValueFormat
+from ...table import ValueFormat
 from ..category import Category
 from ..constraint import Constraint
 from ..line_item import LineItem

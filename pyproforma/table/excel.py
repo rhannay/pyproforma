@@ -7,8 +7,8 @@ from openpyxl.utils import get_column_letter
 if TYPE_CHECKING:
     from .table_class import Table
 
-from ..constants import ValueFormat
 from .colors import color_to_rgb
+from .format_value import ValueFormat
 
 
 def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:

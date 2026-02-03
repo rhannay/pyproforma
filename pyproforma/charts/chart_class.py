@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 import plotly.express as px
 import plotly.graph_objects as go
 
-from ..constants import ValueFormat
+from ..table import ValueFormat
 
 
 class ChartDataSet:

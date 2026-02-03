@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from pyproforma import Model
 
-from ..constants import VALID_COLS, ColumnType, ValueFormat
-from ..table import Cell
+from ..constants import VALID_COLS, ColumnType
+from ..table import Cell, ValueFormat
 
 
 class BaseRow(ABC):

@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 import plotly.graph_objects as go
 
-from pyproforma.constants import ValueFormat
-from pyproforma.table import Table, format_value
+from pyproforma.table import Table, ValueFormat, format_value
 
 if TYPE_CHECKING:
     from ..model import Model
