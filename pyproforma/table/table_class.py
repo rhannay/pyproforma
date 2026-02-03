@@ -4,10 +4,9 @@ from typing import Any, Literal, Optional
 import pandas as pd
 from pandas.io.formats.style import Styler
 
-from ..constants import ValueFormat
 from .colors import color_to_hex
 from .excel import to_excel
-from .format_value import format_value
+from .format_value import ValueFormat, format_value
 from .html_renderer import to_html as _to_html
 
 # Define a type alias for border styles

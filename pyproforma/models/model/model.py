@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import pandas as pd
 
 from pyproforma.charts import Charts
-from pyproforma.constants import ValueFormat
+from pyproforma.table import ValueFormat
 from pyproforma.models.generator import Generator
 
 # Namespace imports

@@ -1,8 +1,18 @@
 """Value formatting utilities for table cells."""
 
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
-from ..constants import ValueFormat
+# Type alias for valid value formats
+ValueFormat = Literal[
+    None,
+    "str",
+    "no_decimals",
+    "two_decimals",
+    "percent",
+    "percent_one_decimal",
+    "percent_two_decimals",
+    "year",
+]
 
 
 def format_value(

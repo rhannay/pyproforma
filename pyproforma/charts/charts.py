@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union
 
 import plotly.graph_objects as go
 
-from ..constants import ValueFormat
+from ..table import ValueFormat
 from .chart_class import Chart, ChartDataSet
 
 if TYPE_CHECKING:
