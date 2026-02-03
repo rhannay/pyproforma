@@ -67,8 +67,8 @@ def compare_years(
     # Build header row
     header_cells = [
         Cell(value="Item", bold=True, align="left"),
-        Cell(value=prev_year, bold=True, align="center", value_format="year"),
-        Cell(value=year, bold=True, align="center", value_format="year"),
+        Cell(value=prev_year, bold=True, align="center", value_format=None),
+        Cell(value=year, bold=True, align="center", value_format=None),
     ]
 
     if include_change:

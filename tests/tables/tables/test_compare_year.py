@@ -255,8 +255,8 @@ class TestCompareYears:
         assert table.columns[4].label == "% Change"
 
         # Check that year columns have correct format
-        assert table.columns[1].value_format == "year"
-        assert table.columns[2].value_format == "year"
+        assert table.columns[1].value_format is None
+        assert table.columns[2].value_format is None
 
     def test_compare_years_values_correctness(self, sample_model: Model):
         """Test that calculated values are correct."""
