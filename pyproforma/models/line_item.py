@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from typing import Union
 
-from ..table import ValueFormat
+from ..table import NumberFormatSpec, ValueFormat
 from ._utils import validate_name
 
 
@@ -88,10 +89,10 @@ class LineItem:
             Values can be numbers or None. Defaults to empty dict if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
-        value_format (ValueFormat, optional): Format specification for displaying values.
-            Must be one of the values in VALUE_FORMATS constant: None, 'str', 'no_decimals',
-            'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals'.
-            Defaults to 'no_decimals'.
+        value_format (ValueFormat | NumberFormatSpec, optional): Format specification
+            for displaying values. Can be a string format like 'no_decimals',
+            'two_decimals', 'percent', etc., or a NumberFormatSpec instance for more
+            control. Defaults to 'no_decimals'.
 
     Raises:
         ValueError: If name contains invalid characters (spaces or special characters).
@@ -126,7 +127,7 @@ class LineItem:
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
-    value_format: ValueFormat = "no_decimals"
+    value_format: Union[ValueFormat, NumberFormatSpec] = "no_decimals"
 
     def __post_init__(self):
         validate_name(self.name)
@@ -145,13 +146,19 @@ class LineItem:
 
     def to_dict(self) -> dict:
         """Convert LineItem to dictionary representation."""
+        # Serialize value_format
+        if isinstance(self.value_format, NumberFormatSpec):
+            value_format_serialized = self.value_format.to_dict()
+        else:
+            value_format_serialized = self.value_format
+
         return {
             "name": self.name,
             "category": self.category,
             "label": self.label,
             "values": self.values,
             "formula": self.formula,
-            "value_format": self.value_format,
+            "value_format": value_format_serialized,
         }
 
     @classmethod
@@ -175,11 +182,18 @@ class LineItem:
         if values:
             values = {int(k): v for k, v in values.items()}
 
+        # Deserialize value_format
+        value_format_raw = item_dict.get("value_format", "no_decimals")
+        if isinstance(value_format_raw, dict):
+            value_format = NumberFormatSpec.from_dict(value_format_raw)
+        else:
+            value_format = value_format_raw
+
         return cls(
             name=item_dict["name"],
             category=(item_dict.get("category") or "").strip() or "general",
             label=item_dict.get("label"),
             values=values,
             formula=item_dict.get("formula"),
-            value_format=item_dict.get("value_format", "no_decimals"),
+            value_format=value_format,
         )
