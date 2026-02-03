@@ -16,7 +16,7 @@ ValueFormat = Literal[
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class NumberFormatSpec:
     """Specification for number formatting with flexible display options.
 
