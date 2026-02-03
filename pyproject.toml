@@ -47,6 +47,9 @@ dev = [
     "pytest>=6.0",
     "pytest-cov",
 ]
+matplotlib = [
+    "matplotlib>=3.5.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,9 +1,13 @@
-from typing import List, Literal, Optional
+from typing import TYPE_CHECKING, List, Literal, Optional, Tuple
 
 import plotly.express as px
 import plotly.graph_objects as go
 
 from ..table import ValueFormat
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
 
 class ChartDataSet:
@@ -131,6 +135,152 @@ class Chart:
                 fig.update_yaxes(tickformat=".2%")
 
         return fig
+
+    def to_matplotlib(
+        self,
+        width: int = 10,
+        height: int = 6,
+        show_legend: bool = True,
+    ) -> Tuple["Figure", "Axes"]:
+        """
+        Render this Chart object using Matplotlib.
+
+        Args:
+            width: Figure width in inches
+            height: Figure height in inches
+            show_legend: Whether to show the legend
+
+        Returns:
+            tuple of (matplotlib.figure.Figure, matplotlib.axes.Axes)
+        """
+        # Import matplotlib here to make it an optional dependency
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError(
+                "Matplotlib is required to use to_matplotlib(). "
+                "Install it with: pip install matplotlib"
+            ) from e
+
+        # Handle pie charts separately as they need different layout
+        has_pie = any(ds.type == "pie" for ds in self.data_sets)
+        if has_pie:
+            if len(self.data_sets) > 1:
+                raise ValueError(
+                    "Pie charts cannot be rendered with other datasets. "
+                    "Use a single ChartDataSet with type='pie' for pie charts."
+                )
+            # Create pie chart
+            fig, ax = plt.subplots(figsize=(width, height))
+            dataset = self.data_sets[0]
+            ax.pie(
+                dataset.data,
+                labels=self.labels,
+                autopct="%1.1f%%",
+                startangle=90,
+            )
+            ax.axis("equal")  # Equal aspect ratio for circular pie
+            ax.set_title(self.title, fontsize=14, fontweight="bold")
+            fig.tight_layout()
+            return fig, ax
+
+        # Create figure and axis for non-pie charts
+        fig, ax = plt.subplots(figsize=(width, height))
+
+        # X-axis positions
+        x_positions = list(range(len(self.labels)))
+
+        # Track bar datasets for positioning
+        bar_datasets = [ds for ds in self.data_sets if ds.type == "bar"]
+        num_bars = len(bar_datasets)
+
+        # Calculate bar width for grouped bars
+        bar_width = 0.8 / num_bars if num_bars > 0 else 0.8
+
+        # Add traces for each dataset based on their individual types
+        bar_index = 0
+        for dataset in self.data_sets:
+            if dataset.type == "bar":
+                # Calculate bar positions for grouped bars
+                if num_bars > 1:
+                    offset = (bar_index - (num_bars - 1) / 2) * bar_width
+                    positions = [x + offset for x in x_positions]
+                else:
+                    positions = x_positions
+
+                ax.bar(
+                    positions,
+                    dataset.data,
+                    width=bar_width,
+                    label=dataset.label,
+                    color=dataset.color,
+                )
+                bar_index += 1
+
+            elif dataset.type == "line":
+                linestyle = "--" if dataset.dashed else "-"
+                ax.plot(
+                    x_positions,
+                    dataset.data,
+                    marker="o",
+                    linestyle=linestyle,
+                    linewidth=2,
+                    markersize=6,
+                    label=dataset.label,
+                    color=dataset.color,
+                )
+
+            elif dataset.type == "scatter":
+                ax.scatter(
+                    x_positions,
+                    dataset.data,
+                    s=80,
+                    alpha=0.7,
+                    label=dataset.label,
+                    color=dataset.color,
+                )
+
+        # Set title
+        ax.set_title(self.title, fontsize=14, fontweight="bold")
+
+        # Set x-axis labels
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(self.labels)
+
+        # Format y-axis based on value_format
+        if self.value_format:
+            if self.value_format == "no_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:,.0f}")
+                )
+            elif self.value_format == "two_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:,.2f}")
+                )
+            elif self.value_format == "percent":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.0%}")
+                )
+            elif self.value_format == "percent_one_decimal":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.1%}")
+                )
+            elif self.value_format == "percent_two_decimals":
+                ax.yaxis.set_major_formatter(
+                    plt.FuncFormatter(lambda y, _: f"{y:.2%}")
+                )
+
+        # Show legend if requested
+        if show_legend:
+            ax.legend()
+
+        # Add grid for better readability
+        ax.grid(True, alpha=0.3)
+
+        # Tight layout to prevent label cutoff
+        fig.tight_layout()
+
+        return fig, ax
 
     def _add_bar_trace(
         self, fig: go.Figure, dataset: ChartDataSet, x_positions: List[int]
