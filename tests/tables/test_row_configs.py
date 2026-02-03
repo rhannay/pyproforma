@@ -13,7 +13,7 @@ def test_dataclass_row_config_creation():
 
     assert item_config.name == "revenue"
     assert item_config.bold is True
-    assert item_config.value_format == "currency"
+    assert item_config.value_format == Format.CURRENCY
     assert item_config.included_cols == ["label"]  # default value
 
     # Test creating an ItemRow with custom included_cols
@@ -75,7 +75,15 @@ def test_dataclass_serialization():
 
     assert config_dict["name"] == "revenue"
     assert config_dict["bold"] is True
-    assert config_dict["value_format"] == "currency"
+    # value_format is converted to dict representation by asdict()
+    assert config_dict["value_format"] == {
+        "decimals": 2,
+        "thousands": True,
+        "prefix": "$",
+        "suffix": "",
+        "multiplier": 1.0,
+        "scale": None,
+    }
     assert config_dict["included_cols"] == ["name", "label"]
 
     # Convert back from dict
@@ -83,7 +91,15 @@ def test_dataclass_serialization():
 
     assert new_config.name == "revenue"
     assert new_config.bold is True
-    assert new_config.value_format == "currency"
+    # When reconstructing from dict, the dict becomes the value_format
+    assert new_config.value_format == {
+        "decimals": 2,
+        "thousands": True,
+        "prefix": "$",
+        "suffix": "",
+        "multiplier": 1.0,
+        "scale": None,
+    }
     assert new_config.included_cols == ["name", "label"]
 
 
@@ -300,5 +316,5 @@ def test_category_total_row_styling(sample_line_item_set: Model):
 
     # Check value cells have correct formatting
     for i in range(1, len(row)):  # Skip label cell
-        assert row[i].value_format == "percent"
+        assert row[i].value_format == Format.PERCENT
         assert row[i].bold is True

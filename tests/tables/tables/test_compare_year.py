@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma.models import Category, LineItem, Model
+from pyproforma.table import Format
 
 
 class TestCompareYears:
@@ -233,7 +234,7 @@ class TestCompareYears:
         percent_cell = table.rows[0].cells[-1]
 
         # Check format is percent_one_decimal
-        assert percent_cell.value_format == "percent_one_decimal"
+        assert percent_cell.value_format == Format.PERCENT_ONE_DECIMAL
 
         # The value should be 0.10 (10% growth), formatted as "10.0%"
         assert percent_cell.value == pytest.approx(0.10, rel=0.01)

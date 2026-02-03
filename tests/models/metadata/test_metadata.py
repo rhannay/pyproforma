@@ -187,7 +187,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "revenue",
                 "label": "Revenue",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
@@ -231,7 +231,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "revenue",
                 "label": "Revenue",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
@@ -241,7 +241,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "growth_rate",
                 "label": "Growth Rate",
-                "value_format": "percent",
+                "value_format": Format.PERCENT,
                 "source_type": "line_item",
                 "source_name": "growth_rate",
                 "category": "assumptions",
@@ -282,7 +282,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "profit",
                 "label": "Profit",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "profit",
                 "category": "income",
@@ -312,7 +312,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "calculated_value",
                 "label": "Calculated Value",
-                "value_format": "two_decimals",
+                "value_format": Format.TWO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "calculated_value",
                 "category": "calculations",

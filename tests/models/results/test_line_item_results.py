@@ -67,7 +67,7 @@ class TestLineItemResultsInitialization:
         assert line_item_results.name == "revenue"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Revenue"
-        assert line_item_results.value_format == "no_decimals"
+        assert line_item_results.value_format == Format.NO_DECIMALS
 
     def test_init_line_item_with_formula(self, model_with_line_items):
         """Test LineItemResults initialization with line item that has formula."""
@@ -77,7 +77,7 @@ class TestLineItemResultsInitialization:
         assert line_item_results.name == "profit"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Profit"
-        assert line_item_results.value_format == "no_decimals"
+        assert line_item_results.value_format == Format.NO_DECIMALS
 
     def test_init_invalid_item_name(self, model_with_line_items):
         """Test LineItemResults initialization with invalid item name."""
@@ -105,7 +105,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('revenue')" in str_result
         assert "Label: Revenue" in str_result
         assert "Source Type: line_item" in str_result
-        assert "Value Format: no_decimals" in str_result
+        assert "Value Format: NumberFormatSpec" in str_result  # Shows repr now
         assert "Values:" in str_result
 
     def test_repr_method(self, line_item_results):
@@ -121,7 +121,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('revenue')" in summary
         assert "Label: Revenue" in summary
         assert "Source Type: line_item" in summary
-        assert "Value Format: no_decimals" in summary
+        assert "Value Format: NumberFormatSpec" in summary  # Shows repr now
         assert "Values: 100,000, 120,000, 140,000" in summary
         assert "Formula: None (explicit values)" in summary
 
@@ -132,7 +132,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('profit')" in summary
         assert "Label: Profit" in summary
         assert "Source Type: line_item" in summary
-        assert "Value Format: no_decimals" in summary
+        assert "Value Format: NumberFormatSpec" in summary  # Shows repr now
         assert "Formula: revenue - expenses" in summary
 
 
@@ -591,11 +591,11 @@ class TestLineItemResultsEdgeCases:
 
         # Test percentage format
         percentage_results = LineItemResults(model, "percentage_item")
-        assert percentage_results.value_format == "percent"
+        assert percentage_results.value_format == Format.PERCENT
 
         # Test decimal format
         decimal_results = LineItemResults(model, "decimal_item")
-        assert decimal_results.value_format == "two_decimals"
+        assert decimal_results.value_format == Format.TWO_DECIMALS
 
 
 class TestLineItemResultsCalculationMethods:

@@ -375,7 +375,7 @@ class TestOtherMisc:
         assumption_info = sample._get_item_metadata("growth_rate")
         assert assumption_info["name"] == "growth_rate"
         assert assumption_info["label"] == "Growth Rate"
-        assert assumption_info["value_format"] == "two_decimals"
+        assert assumption_info["value_format"] == Format.TWO_DECIMALS
         assert assumption_info["source_type"] == "line_item"
 
         # Test KeyError for non-existent item

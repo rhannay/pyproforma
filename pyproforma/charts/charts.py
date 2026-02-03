@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Union
 
 import plotly.graph_objects as go
 
+from pyproforma.table.format_value import Format
 from .chart_class import Chart, ChartDataSet
 
 if TYPE_CHECKING:
@@ -295,7 +296,7 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
 
         # Render the chart with Plotly

@@ -64,7 +64,7 @@ class TestGetItemMetadata:
 
         assert metadata["name"] == "revenue"
         assert metadata["label"] == "Revenue"
-        assert metadata["value_format"] == "currency"
+        assert metadata["value_format"] == Format.CURRENCY
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "revenue"
 
@@ -74,7 +74,7 @@ class TestGetItemMetadata:
 
         assert metadata["name"] == "expenses"
         assert metadata["label"] == "Expenses"
-        assert metadata["value_format"] == "currency"
+        assert metadata["value_format"] == Format.CURRENCY
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "expenses"
 
