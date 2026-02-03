@@ -131,39 +131,68 @@ class TestNumberFormatSpec:
         spec = NumberFormatSpec(decimals=1, thousands=False, suffix="%", multiplier=100)
         assert format_value(0.1234, spec) == "12.3%"
 
-    def test_display_scale_millions(self):
-        """Test millions display scale."""
-        spec = NumberFormatSpec(decimals=1, thousands=False, display_scale="M")
+    def test_scale_millions_with_suffix(self):
+        """Test millions scale with suffix."""
+        spec = NumberFormatSpec(decimals=1, thousands=False, scale="millions", suffix="M")
         assert format_value(3100000, spec) == "3.1M"
         assert format_value(1500000, spec) == "1.5M"
         assert format_value(1234567, spec) == "1.2M"
 
-    def test_display_scale_thousands(self):
-        """Test thousands display scale."""
-        spec = NumberFormatSpec(decimals=1, thousands=False, display_scale="K")
+    def test_scale_thousands_with_suffix(self):
+        """Test thousands scale with suffix."""
+        spec = NumberFormatSpec(decimals=1, thousands=False, scale="thousands", suffix="K")
         assert format_value(3100, spec) == "3.1K"
         assert format_value(1500, spec) == "1.5K"
         assert format_value(999, spec) == "1.0K"
 
-    def test_display_scale_billions(self):
-        """Test billions display scale."""
-        spec = NumberFormatSpec(decimals=2, thousands=False, display_scale="B")
+    def test_scale_billions_with_suffix(self):
+        """Test billions scale with suffix."""
+        spec = NumberFormatSpec(decimals=2, thousands=False, scale="billions", suffix="B")
         assert format_value(3_100_000_000, spec) == "3.10B"
         assert format_value(1_500_000_000, spec) == "1.50B"
 
-    def test_display_scale_case_insensitive(self):
-        """Test that display scale is case insensitive."""
-        spec_upper = NumberFormatSpec(decimals=1, thousands=False, display_scale="M")
-        spec_lower = NumberFormatSpec(decimals=1, thousands=False, display_scale="m")
-        assert format_value(3100000, spec_upper) == "3.1M"
-        assert format_value(3100000, spec_lower) == "3.1m"
+    def test_scale_thousands(self):
+        """Test scale parameter for thousands without suffix."""
+        spec = NumberFormatSpec(decimals=1, thousands=True, scale="thousands")
+        assert format_value(3456789, spec) == "3,456.8"
+        assert format_value(1234, spec) == "1.2"
+        assert format_value(999, spec) == "1.0"
+
+    def test_scale_millions(self):
+        """Test scale parameter for millions without suffix."""
+        spec = NumberFormatSpec(decimals=2, thousands=True, scale="millions")
+        assert format_value(3456789, spec) == "3.46"
+        assert format_value(1500000, spec) == "1.50"
+        assert format_value(123456, spec) == "0.12"
+
+    def test_scale_billions(self):
+        """Test scale parameter for billions without suffix."""
+        spec = NumberFormatSpec(decimals=2, thousands=True, scale="billions")
+        assert format_value(3_500_000_000, spec) == "3.50"
+        assert format_value(1_234_567_890, spec) == "1.23"
+
+    def test_scale_case_insensitive(self):
+        """Test that scale parameter is case insensitive."""
+        spec_lower = NumberFormatSpec(decimals=1, thousands=True, scale="thousands")
+        spec_upper = NumberFormatSpec(decimals=1, thousands=True, scale="THOUSANDS")
+        spec_mixed = NumberFormatSpec(decimals=1, thousands=True, scale="Thousands")
+        
+        assert format_value(3456, spec_lower) == "3.5"
+        assert format_value(3456, spec_upper) == "3.5"
+        assert format_value(3456, spec_mixed) == "3.5"
+
+    def test_scale_invalid_value(self):
+        """Test that invalid scale value raises ValueError."""
+        spec = NumberFormatSpec(decimals=1, thousands=True, scale="invalid")
+        with pytest.raises(ValueError, match="Invalid scale: invalid"):
+            format_value(1234, spec)
 
     def test_negative_values(self):
         """Test formatting negative values."""
         spec = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
         assert format_value(-1234.56, spec) == "$-1,234.56"
 
-        spec = NumberFormatSpec(decimals=1, thousands=False, display_scale="M")
+        spec = NumberFormatSpec(decimals=1, thousands=False, scale="millions", suffix="M")
         assert format_value(-3100000, spec) == "-3.1M"
 
     def test_serialization(self):
@@ -174,7 +203,6 @@ class TestNumberFormatSpec:
             prefix="$",
             suffix=" USD",
             multiplier=1.0,
-            display_scale="M",
         )
 
         # Serialize to dict
@@ -185,7 +213,7 @@ class TestNumberFormatSpec:
             "prefix": "$",
             "suffix": " USD",
             "multiplier": 1.0,
-            "display_scale": "M",
+            "scale": None,
         }
 
         # Deserialize from dict
@@ -195,7 +223,32 @@ class TestNumberFormatSpec:
         assert spec_restored.prefix == "$"
         assert spec_restored.suffix == " USD"
         assert spec_restored.multiplier == 1.0
-        assert spec_restored.display_scale == "M"
+        assert spec_restored.scale is None
+
+    def test_serialization_with_scale(self):
+        """Test serialization with scale parameter."""
+        spec = NumberFormatSpec(
+            decimals=1,
+            thousands=True,
+            scale="thousands",
+        )
+
+        # Serialize to dict
+        spec_dict = spec.to_dict()
+        assert spec_dict == {
+            "decimals": 1,
+            "thousands": True,
+            "prefix": "",
+            "suffix": "",
+            "multiplier": 1.0,
+            "scale": "thousands",
+        }
+
+        # Deserialize from dict
+        spec_restored = NumberFormatSpec.from_dict(spec_dict)
+        assert spec_restored.decimals == 1
+        assert spec_restored.thousands is True
+        assert spec_restored.scale == "thousands"
 
     def test_serialization_defaults(self):
         """Test deserialization with missing fields uses defaults."""
@@ -207,7 +260,7 @@ class TestNumberFormatSpec:
         assert spec.prefix == ""  # default
         assert spec.suffix == ""  # default
         assert spec.multiplier == 1.0  # default
-        assert spec.display_scale is None  # default
+        assert spec.scale is None  # default
 
 
 class TestFormatConstants:
@@ -249,11 +302,21 @@ class TestFormatConstants:
         assert format_value(123, Format.CURRENCY_NO_DECIMALS) == "$123"
 
     def test_format_millions(self):
-        """Test Format.MILLIONS constant."""
-        assert format_value(3100000, Format.MILLIONS) == "3.1M"
-        assert format_value(1500000, Format.MILLIONS) == "1.5M"
+        """Test Format.MILLIONS constant (no suffix)."""
+        assert format_value(3456789, Format.MILLIONS) == "3.5"
+        assert format_value(1500000, Format.MILLIONS) == "1.5"
+
+    def test_format_millions_m(self):
+        """Test Format.MILLIONS_M constant (with suffix)."""
+        assert format_value(3100000, Format.MILLIONS_M) == "3.1M"
+        assert format_value(1500000, Format.MILLIONS_M) == "1.5M"
 
     def test_format_thousands(self):
-        """Test Format.THOUSANDS constant."""
-        assert format_value(3100, Format.THOUSANDS) == "3.1K"
-        assert format_value(1500, Format.THOUSANDS) == "1.5K"
+        """Test Format.THOUSANDS constant (no suffix)."""
+        assert format_value(3456789, Format.THOUSANDS) == "3,456.8"
+        assert format_value(1234, Format.THOUSANDS) == "1.2"
+
+    def test_format_thousands_k(self):
+        """Test Format.THOUSANDS_K constant (with suffix)."""
+        assert format_value(3100, Format.THOUSANDS_K) == "3.1K"
+        assert format_value(1500, Format.THOUSANDS_K) == "1.5K"
