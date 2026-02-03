@@ -1,6 +1,7 @@
 """Value formatting utilities for table cells."""
 
-from typing import Any, Literal, Optional
+from dataclasses import dataclass
+from typing import Any, Literal, Optional, Union
 
 # Type alias for valid value formats
 ValueFormat = Literal[
@@ -15,15 +16,130 @@ ValueFormat = Literal[
 ]
 
 
+@dataclass
+class NumberFormatSpec:
+    """Specification for number formatting with flexible display options.
+
+    Defines how numbers should be formatted for display, including decimal precision,
+    thousands separators, prefixes/suffixes, multipliers, and scale indicators.
+
+    Args:
+        decimals: Number of decimal places to display (0, 1, 2, etc.)
+        thousands: Whether to include thousands separator (commas)
+        prefix: String to prepend to the formatted value (e.g., "$" for currency)
+        suffix: String to append to the formatted value (e.g., "%" for percentages)
+        multiplier: Multiplier to apply before formatting (e.g., 100 for
+            percentages, 0.000001 for millions). Applied before display_scale.
+        display_scale: Scale suffix for large numbers (e.g., "M" for millions,
+            "K" for thousands). When set, the value is automatically scaled and
+            the suffix added.
+
+    Examples:
+        >>> # Currency format
+        >>> spec = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
+        >>> format_value(1234.56, spec)
+        '$1,234.56'
+
+        >>> # Percentage format
+        >>> spec = NumberFormatSpec(
+        ...     decimals=0, thousands=False, suffix="%", multiplier=100
+        ... )
+        >>> format_value(0.1234, spec)
+        '12%'
+
+        >>> # Millions format
+        >>> spec = NumberFormatSpec(decimals=1, thousands=False, display_scale="M")
+        >>> format_value(3100000, spec)
+        '3.1M'
+    """
+
+    decimals: int = 0
+    thousands: bool = True
+    prefix: str = ""
+    suffix: str = ""
+    multiplier: float = 1.0
+    display_scale: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """Serialize NumberFormatSpec to dictionary."""
+        return {
+            "decimals": self.decimals,
+            "thousands": self.thousands,
+            "prefix": self.prefix,
+            "suffix": self.suffix,
+            "multiplier": self.multiplier,
+            "display_scale": self.display_scale,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "NumberFormatSpec":
+        """Deserialize NumberFormatSpec from dictionary."""
+        return cls(
+            decimals=data.get("decimals", 0),
+            thousands=data.get("thousands", True),
+            prefix=data.get("prefix", ""),
+            suffix=data.get("suffix", ""),
+            multiplier=data.get("multiplier", 1.0),
+            display_scale=data.get("display_scale", None),
+        )
+
+
+class Format:
+    """Namespace for common number format specifications.
+
+    Provides pre-defined format constants for common formatting needs.
+    All constants are NumberFormatSpec instances that can be used directly
+    or modified for custom formatting.
+
+    Examples:
+        >>> from pyproforma.table import Format, format_value
+        >>> format_value(1234.56, Format.NO_DECIMALS)
+        '1,235'
+        >>> format_value(1234.56, Format.CURRENCY)
+        '$1,234.56'
+        >>> format_value(0.1234, Format.PERCENT)
+        '12%'
+        >>> format_value(3100000, Format.MILLIONS)
+        '3.1M'
+    """
+
+    # Integer with thousands separator
+    NO_DECIMALS = NumberFormatSpec(decimals=0, thousands=True)
+
+    # Float with 2 decimals and thousands separator
+    TWO_DECIMALS = NumberFormatSpec(decimals=2, thousands=True)
+
+    # Percentage formats (multiply by 100 and add % suffix)
+    PERCENT = NumberFormatSpec(decimals=0, thousands=False, suffix="%", multiplier=100)
+    PERCENT_ONE_DECIMAL = NumberFormatSpec(
+        decimals=1, thousands=False, suffix="%", multiplier=100
+    )
+    PERCENT_TWO_DECIMALS = NumberFormatSpec(
+        decimals=2, thousands=False, suffix="%", multiplier=100
+    )
+
+    # Currency formats ($ prefix)
+    CURRENCY = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
+    CURRENCY_NO_DECIMALS = NumberFormatSpec(decimals=0, thousands=True, prefix="$")
+
+    # Large number scale formats
+    MILLIONS = NumberFormatSpec(decimals=1, thousands=False, display_scale="M")
+    THOUSANDS = NumberFormatSpec(decimals=1, thousands=False, display_scale="K")
+
+
 def format_value(
-    value: Any, value_format: Optional[ValueFormat], none_returns=""
+    value: Any,
+    value_format: Optional[Union[ValueFormat, NumberFormatSpec]],
+    none_returns="",
 ) -> Any:
     """Format a value according to the specified format.
 
     Args:
         value: The value to format
-        value_format: The format to apply. Options: 'str', 'no_decimals', 
-            'two_decimals', 'percent', 'percent_one_decimal', 'percent_two_decimals', 'year'
+        value_format: The format to apply. Can be a string format (legacy), a
+            NumberFormatSpec instance, or None. String options: 'str',
+            'no_decimals', 'two_decimals', 'percent', 'percent_one_decimal',
+            'percent_two_decimals', 'year'
         none_returns: Value to return if value is None. Defaults to empty string.
 
     Returns:
@@ -41,9 +157,19 @@ def format_value(
         '123.46'
         >>> format_value(0.1234, "percent")
         '12%'
+        >>> format_value(1234.56, Format.CURRENCY)
+        '$1,234.56'
+        >>> format_value(3100000, Format.MILLIONS)
+        '3.1M'
     """
     if value is None:
         return none_returns
+
+    # Handle NumberFormatSpec instances
+    if isinstance(value_format, NumberFormatSpec):
+        return _format_with_spec(value, value_format)
+
+    # Handle legacy string formats and None
     if value_format is None:
         return value
     if value_format == "str":
@@ -62,3 +188,53 @@ def format_value(
         return str(int(round(value)))
     else:
         raise ValueError(f"Invalid value_format: {value_format}")
+
+
+def _format_with_spec(value: Any, spec: NumberFormatSpec) -> str:
+    """Format a value using a NumberFormatSpec.
+
+    Args:
+        value: The numeric value to format
+        spec: The NumberFormatSpec defining the format
+
+    Returns:
+        The formatted string
+
+    Examples:
+        >>> spec = NumberFormatSpec(decimals=2, thousands=True, prefix="$")
+        >>> _format_with_spec(1234.56, spec)
+        '$1,234.56'
+    """
+    # Apply multiplier first
+    formatted_value = value * spec.multiplier
+
+    # Apply display scale if specified
+    if spec.display_scale:
+        scale_map = {
+            "K": 1_000,
+            "M": 1_000_000,
+            "B": 1_000_000_000,
+            "T": 1_000_000_000_000,
+        }
+        scale_factor = scale_map.get(spec.display_scale.upper())
+        if scale_factor:
+            formatted_value = formatted_value / scale_factor
+
+    # Format the number with appropriate decimals and thousands separator
+    if spec.thousands:
+        if spec.decimals == 0:
+            formatted_str = f"{int(round(formatted_value)):,}"
+        else:
+            formatted_str = f"{formatted_value:,.{spec.decimals}f}"
+    else:
+        if spec.decimals == 0:
+            formatted_str = str(int(round(formatted_value)))
+        else:
+            formatted_str = f"{formatted_value:.{spec.decimals}f}"
+
+    # Add scale suffix if specified
+    if spec.display_scale:
+        formatted_str = formatted_str + spec.display_scale
+
+    # Add prefix and suffix
+    return spec.prefix + formatted_str + spec.suffix
