@@ -13,9 +13,9 @@ class LineItemsResults:
     A helper class that provides convenient methods for exploring and managing
     multiple line items together in a financial model.
 
-    This class is typically instantiated through the Model.line_items property or
-    Model.select() method and provides an intuitive interface for batch operations
-    on multiple line items.
+    This class is typically instantiated through the Model.line_items property and
+    provides an intuitive interface for batch operations on multiple line items.
+    Supports indexing to select a subset of line items.
 
     Args:
         model: The parent Model instance
@@ -27,10 +27,8 @@ class LineItemsResults:
         >>> all_items = model.line_items
         >>> print(all_items.names)  # Shows all line item names
         >>>
-        >>> # Select specific line items
-        >>> items_results = model.select(['revenue', 'costs', 'profit'])
-        >>> # Or equivalently:
-        >>> items_results = model.line_items.select(['revenue', 'costs', 'profit'])
+        >>> # Select specific line items using indexing
+        >>> items_results = model.line_items[['revenue', 'costs', 'profit']]
         >>> print(items_results.names)  # Shows list of line item names
         >>> items_results.set_category('income')  # Sets category for all items
         >>> revenue = items_results.line_item('revenue')  # Get specific item
@@ -92,6 +90,40 @@ class LineItemsResults:
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
         return self.summary(html=True)
+
+    def __getitem__(self, key) -> "LineItemsResults":
+        """
+        Allow indexing to select a subset of line items.
+
+        Supports list indexing to select multiple line items at once.
+
+        Args:
+            key: A list of line item names to select
+
+        Returns:
+            LineItemsResults: A new LineItemsResults object with only the selected items
+
+        Raises:
+            ValueError: If key is not a list or is an empty list
+            KeyError: If any line item name is not found in the model
+
+        Examples:
+            >>> # Get all line items, then select a subset using indexing
+            >>> all_items = model.line_items
+            >>> revenue_items = all_items[['revenue_sales', 'service_revenue']]
+            >>> print(revenue_items.names)  # ['revenue_sales', 'service_revenue']
+            >>>
+            >>> # Chain operations after selection
+            >>> model.line_items[['costs', 'salaries']].set_category('expenses')
+        """
+        if not isinstance(key, list):
+            raise ValueError(
+                "LineItemsResults indexing requires a list of line item names. "
+                f"Got {type(key).__name__} instead."
+            )
+        # Create a new LineItemsResults with the selected items
+        # This will handle validation (empty list, invalid names, etc.)
+        return LineItemsResults(self.model, key)
 
     # ============================================================================
     # PROPERTY ACCESSORS
@@ -228,37 +260,6 @@ class LineItemsResults:
             )
 
         return LineItemResults(self.model, name)
-
-    def select(self, line_item_names: list[str]) -> "LineItemsResults":
-        """
-        Create a new LineItemsResults with a subset of the current line items.
-
-        This method allows you to filter down to a specific set of line items,
-        returning a new LineItemsResults object that only contains the specified items.
-
-        Args:
-            line_item_names (list[str]): List of line item names to select.
-                All names must exist in the model.
-
-        Returns:
-            LineItemsResults: A new LineItemsResults object with only the selected items
-
-        Raises:
-            ValueError: If line_item_names is an empty list or not a list
-            KeyError: If any line item name is not found in the model
-
-        Examples:
-            >>> # Get all line items, then select a subset
-            >>> all_items = model.line_items
-            >>> revenue_items = all_items.select(['revenue_sales', 'service_revenue'])
-            >>> print(revenue_items.names)  # ['revenue_sales', 'service_revenue']
-            >>>
-            >>> # Chain operations after selection
-            >>> model.line_items.select(['costs', 'salaries']).set_category('expenses')
-        """
-        # Create a new LineItemsResults with the selected items
-        # This will handle validation (empty list, invalid names, etc.)
-        return LineItemsResults(self.model, line_item_names)
 
     def table(self, **kwargs):
         """
