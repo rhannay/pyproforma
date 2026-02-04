@@ -3,7 +3,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
-from pyproforma.models.results import LineItemsResults
+from pyproforma.models.results import LineItemResults, LineItemsResults
 
 
 @pytest.fixture
@@ -71,10 +71,29 @@ class TestLineItemsResultsIndexing:
         with pytest.raises(ValueError):
             sample_model.line_items[[]]
 
-    def test_indexing_non_list_raises_error(self, sample_model):
-        """Test that indexing with a non-list raises ValueError."""
+    def test_indexing_string_returns_line_item_results(self, sample_model):
+        """Test that indexing with a string returns a LineItemResults instance."""
+        result = sample_model.line_items["revenue"]
+        assert isinstance(result, LineItemResults)
+
+    def test_indexing_string_returns_correct_item(self, sample_model):
+        """Test that indexing with a string returns the correct item."""
+        result = sample_model.line_items["revenue"]
+        assert result.name == "revenue"
+        assert result[2023] == 1000
+        assert result[2024] == 1100
+
+    def test_indexing_string_invalid_item_raises_error(self, sample_model):
+        """Test that indexing with an invalid string raises KeyError."""
+        with pytest.raises(KeyError):
+            sample_model.line_items["invalid_item"]
+
+    def test_indexing_non_string_or_list_raises_error(self, sample_model):
+        """Test that indexing with invalid type raises ValueError."""
         with pytest.raises(ValueError):
-            sample_model.line_items["revenue"]
+            sample_model.line_items[123]
+        with pytest.raises(ValueError):
+            sample_model.line_items[{"revenue"}]
 
     def test_indexing_chain_operations(self, sample_model):
         """Test that operations can be chained after indexing."""

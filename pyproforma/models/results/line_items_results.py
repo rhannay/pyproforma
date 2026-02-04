@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import pandas as pd
 
@@ -91,24 +91,31 @@ class LineItemsResults:
         """
         return self.summary(html=True)
 
-    def __getitem__(self, key) -> "LineItemsResults":
+    def __getitem__(self, key) -> Union[LineItemResults, "LineItemsResults"]:
         """
-        Allow indexing to select a subset of line items.
+        Allow indexing to select line items.
 
-        Supports list indexing to select multiple line items at once.
+        Supports both string and list indexing:
+        - String key: Returns a single LineItemResults for the specified item
+        - List key: Returns a LineItemsResults with the selected items
 
         Args:
-            key: A list of line item names to select
+            key: Either a string (single line item name) or a list of line item names
 
         Returns:
-            LineItemsResults: A new LineItemsResults object with only the selected items
+            LineItemResults: If key is a string, returns results for a single item
+            LineItemsResults: If key is a list, returns results for multiple items
 
         Raises:
-            ValueError: If key is not a list or is an empty list
+            ValueError: If key is not a string or list, or if list is empty
             KeyError: If any line item name is not found in the model
 
         Examples:
-            >>> # Get all line items, then select a subset using indexing
+            >>> # Get a single line item using string indexing
+            >>> revenue = model.line_items['revenue']
+            >>> print(revenue.name)  # 'revenue'
+            >>>
+            >>> # Get multiple line items using list indexing
             >>> all_items = model.line_items
             >>> revenue_items = all_items[['revenue_sales', 'service_revenue']]
             >>> print(revenue_items.names)  # ['revenue_sales', 'service_revenue']
@@ -116,14 +123,18 @@ class LineItemsResults:
             >>> # Chain operations after selection
             >>> model.line_items[['costs', 'salaries']].set_category('expenses')
         """
-        if not isinstance(key, list):
+        if isinstance(key, str):
+            # Return a single LineItemResults for string key
+            return LineItemResults(self.model, key)
+        elif isinstance(key, list):
+            # Create a new LineItemsResults with the selected items
+            # This will handle validation (empty list, invalid names, etc.)
+            return LineItemsResults(self.model, key)
+        else:
             raise ValueError(
-                "LineItemsResults indexing requires a list of line item names. "
-                f"Got {type(key).__name__} instead."
+                "LineItemsResults indexing requires either a string (single item) "
+                f"or a list of line item names. Got {type(key).__name__} instead."
             )
-        # Create a new LineItemsResults with the selected items
-        # This will handle validation (empty list, invalid names, etc.)
-        return LineItemsResults(self.model, key)
 
     # ============================================================================
     # PROPERTY ACCESSORS
