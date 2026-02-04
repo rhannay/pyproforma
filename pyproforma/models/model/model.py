@@ -4,8 +4,8 @@ from typing import List, Optional, Union
 import pandas as pd
 
 from pyproforma.charts import Charts
-from pyproforma.table import Format
 from pyproforma.models.generator import Generator
+from pyproforma.table import Format
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -626,9 +626,10 @@ class Model(SerializationMixin):
         """
         Get a LineItemsResults object for all line items in the model.
 
-        This property returns a LineItemsResults instance that provides convenient methods
-        for batch operations on all line items, such as setting categories, filtering
-        with select(), or generating tables and charts.
+        This property returns a LineItemsResults instance that provides
+        convenient methods for batch operations on all line items, such as
+        setting categories, filtering with select(), or generating tables
+        and charts.
 
         Returns:
             LineItemsResults: An object with methods for managing all line items
@@ -637,12 +638,12 @@ class Model(SerializationMixin):
             >>> # Get all line items (as a property)
             >>> all_items = model.line_items
             >>> print(all_items.names)  # Shows all line item names
-            >>> 
+            >>>
             >>> # Select a subset of line items
             >>> items = model.line_items.select(['revenue', 'costs', 'profit'])
             >>> print(items.names)  # Shows list of line item names
             >>> items.set_category('financials')  # Sets category for selected items
-            >>> 
+            >>>
             >>> # Chain operations
             >>> model.line_items.select(['revenue', 'costs']).table()
         """
@@ -653,14 +654,16 @@ class Model(SerializationMixin):
         Select a subset of line items by name.
 
         This is a convenience method equivalent to `model.line_items.select(names)`.
-        It returns a LineItemsResults object containing only the specified line items.
+        It returns a LineItemsResults object containing only the specified
+        line items.
 
         Args:
             line_item_names (list[str]): List of line item names to select.
                 All names must exist in the model.
 
         Returns:
-            LineItemsResults: An object with methods for managing the selected line items
+            LineItemsResults: An object with methods for managing the
+                selected line items
 
         Raises:
             ValueError: If line_item_names is an empty list or not a list
@@ -670,10 +673,10 @@ class Model(SerializationMixin):
             >>> # Select specific line items
             >>> items = model.select(['revenue', 'costs', 'profit'])
             >>> print(items.names)  # ['revenue', 'costs', 'profit']
-            >>> 
+            >>>
             >>> # Equivalent to using .select() on line_items property
             >>> items = model.line_items.select(['revenue', 'costs'])
-            >>> 
+            >>>
             >>> # Chain operations after selection
             >>> model.select(['revenue', 'costs']).set_category('financials')
         """

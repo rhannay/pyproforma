@@ -26,7 +26,7 @@ class LineItemsResults:
         >>> # Get all line items (property syntax)
         >>> all_items = model.line_items
         >>> print(all_items.names)  # Shows all line item names
-        >>> 
+        >>>
         >>> # Select specific line items
         >>> items_results = model.select(['revenue', 'costs', 'profit'])
         >>> # Or equivalently:
@@ -52,7 +52,7 @@ class LineItemsResults:
         # If line_item_names is None, use all line items from the model
         if line_item_names is None:
             line_item_names = model.line_item_names
-        
+
         # Validate that line_item_names is a list
         if not isinstance(line_item_names, list):
             raise ValueError("line_item_names must be a list")
@@ -252,7 +252,7 @@ class LineItemsResults:
             >>> all_items = model.line_items
             >>> revenue_items = all_items.select(['revenue_sales', 'service_revenue'])
             >>> print(revenue_items.names)  # ['revenue_sales', 'service_revenue']
-            >>> 
+            >>>
             >>> # Chain operations after selection
             >>> model.line_items.select(['costs', 'salaries']).set_category('expenses')
         """
