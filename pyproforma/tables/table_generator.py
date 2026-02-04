@@ -40,7 +40,7 @@ def generate_table_from_template(
 
     # Build header row
     header_cells = []
-    
+
     # Add label column headers
     if isinstance(col_labels, str):
         header_cells.append(Cell(value=col_labels, bold=True, align="left"))
@@ -52,7 +52,9 @@ def generate_table_from_template(
 
     # Add year column headers
     for year in model.years:
-        header_cells.append(Cell(value=year, bold=True, align="center", value_format=None))
+        header_cells.append(
+            Cell(value=year, bold=True, align="center", value_format=None)
+        )
 
     # Create data rows
     data_rows = []

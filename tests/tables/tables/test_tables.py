@@ -299,7 +299,10 @@ class TestTableLineItemsWithTotals:
     def test_totals_with_three_columns(self, totals_model):
         """Test include_totals=True with three columns."""
         table = totals_model.tables.line_items(
-            include_name=True, include_label=True, include_category=True, include_totals=True
+            include_name=True,
+            include_label=True,
+            include_category=True,
+            include_totals=True,
         )
 
         # Should have 4 rows: 3 items + 1 total
@@ -361,7 +364,9 @@ class TestTablePercentChangeWithMultipleColumns:
             Category(name="income", label="Income"),
             Category(name="costs", label="Costs"),
         ]
-        return Model(line_items=line_items, years=[2020, 2021, 2022], categories=categories)
+        return Model(
+            line_items=line_items, years=[2020, 2021, 2022], categories=categories
+        )
 
     def test_percent_change_with_label_only(self, simple_model):
         """Test percent change with include_label=True (the bug scenario)."""
@@ -451,7 +456,7 @@ class TestTablePercentChangeWithMultipleColumns:
             f"Expected 5 cells (2 label cols + 3 year cols), got {len(percent_change_row.cells)}"
         )
 
-        # Check the label is in the first cell (for percent change rows, 
+        # Check the label is in the first cell (for percent change rows,
         # the label goes in the first cell, remaining label columns are empty)
         assert percent_change_row.cells[0].value == "Revenue % Change"
 
