@@ -379,8 +379,9 @@ class TestTablePercentChangeWithMultipleColumns:
         # Should have 4 rows: 2 items + 2 percent change rows
         assert len(table.rows) == 4, f"Should have 4 rows, got {len(table.rows)}"
 
-        # All rows should have the same number of cells (2 label columns + 3 year columns)
-        expected_cell_count = 5  # name + label + 3 years
+        # All rows should have the same number of cells
+        # (2 label columns: name (default) + label + 3 year columns)
+        expected_cell_count = 5
         for i, row in enumerate(table.rows):
             assert len(row.cells) == expected_cell_count, (
                 f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
