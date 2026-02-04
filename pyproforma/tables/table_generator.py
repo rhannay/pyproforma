@@ -40,17 +40,21 @@ def generate_table_from_template(
 
     # Build header row
     header_cells = []
-    
+
     # Add label column headers
     if isinstance(col_labels, str):
         header_cells.append(Cell(value=col_labels, bold=True, align="left"))
+        label_col_count = 1
     else:
         for label in col_labels:
             header_cells.append(Cell(value=label, bold=True, align="left"))
+        label_col_count = len(col_labels)
 
     # Add year column headers
     for year in model.years:
-        header_cells.append(Cell(value=year, bold=True, align="center", value_format=None))
+        header_cells.append(
+            Cell(value=year, bold=True, align="center", value_format=None)
+        )
 
     # Create data rows
     data_rows = []
@@ -60,7 +64,7 @@ def generate_table_from_template(
             config = dict_to_row_config(config)
 
         # Generate row(s)
-        result = config.generate_row(model)
+        result = config.generate_row(model, label_col_count=label_col_count)
         if isinstance(result, list) and result and isinstance(result[0], list):
             # Multiple rows returned
             data_rows.extend(result)
