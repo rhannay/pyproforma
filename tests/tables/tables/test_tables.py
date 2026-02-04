@@ -335,3 +335,160 @@ class TestTableLineItemsWithTotals:
         totals_row = table.rows[-1]
         assert totals_row.cells[2].value == 400  # 100+300
         assert totals_row.cells[3].value == 440  # 110+330
+
+
+class TestTablePercentChangeWithMultipleColumns:
+    """Test Tables.line_items() with include_percent_change and multiple label columns."""
+
+    @pytest.fixture
+    def simple_model(self):
+        """Create a simple model for testing percent change with multiple columns."""
+        line_items = [
+            LineItem(
+                name="revenue",
+                label="Revenue",
+                category="income",
+                values={2020: 1000, 2021: 1100, 2022: 1210},
+            ),
+            LineItem(
+                name="expenses",
+                label="Expenses",
+                category="costs",
+                values={2020: 800, 2021: 850, 2022: 900},
+            ),
+        ]
+        categories = [
+            Category(name="income", label="Income"),
+            Category(name="costs", label="Costs"),
+        ]
+        return Model(line_items=line_items, years=[2020, 2021, 2022], categories=categories)
+
+    def test_percent_change_with_label_only(self, simple_model):
+        """Test percent change with include_label=True (the bug scenario)."""
+        # This was the failing case from the bug report
+        table = simple_model.tables.line_items(
+            include_label=True, include_percent_change=True
+        )
+        assert table is not None, "Table creation failed"
+
+        # Should have 4 rows: 2 items + 2 percent change rows
+        assert len(table.rows) == 4, f"Should have 4 rows, got {len(table.rows)}"
+
+        # All rows should have the same number of cells (2 label columns + 3 year columns)
+        expected_cell_count = 5  # name + label + 3 years
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
+
+    def test_percent_change_with_name_and_label(self, simple_model):
+        """Test percent change with both include_name and include_label."""
+        table = simple_model.tables.line_items(
+            include_name=True, include_label=True, include_percent_change=True
+        )
+        assert table is not None
+
+        # Should have 4 rows: 2 items + 2 percent change rows
+        assert len(table.rows) == 4
+
+        # All rows should have same number of cells (2 label columns + 3 year columns)
+        expected_cell_count = 5
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
+
+    def test_percent_change_with_three_columns(self, simple_model):
+        """Test percent change with name, label, and category columns."""
+        table = simple_model.tables.line_items(
+            include_name=True,
+            include_label=True,
+            include_category=True,
+            include_percent_change=True,
+        )
+        assert table is not None
+
+        # Should have 4 rows: 2 items + 2 percent change rows
+        assert len(table.rows) == 4
+
+        # All rows should have same number of cells (3 label columns + 3 year columns)
+        expected_cell_count = 6
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
+
+    def test_percent_change_with_col_order(self, simple_model):
+        """Test percent change with custom col_order."""
+        table = simple_model.tables.line_items(
+            col_order=["label", "category"], include_percent_change=True
+        )
+        assert table is not None
+
+        # Should have 4 rows: 2 items + 2 percent change rows
+        assert len(table.rows) == 4
+
+        # All rows should have same number of cells (2 label columns + 3 year columns)
+        expected_cell_count = 5
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
+
+    def test_percent_change_values_correctness(self, simple_model):
+        """Test that percent change values are calculated correctly with multiple columns."""
+        table = simple_model.tables.line_items(
+            include_label=True,
+            include_percent_change=True,
+            line_items=["revenue"],
+        )
+
+        # Get the percent change row (should be row 1)
+        percent_change_row = table.rows[1]
+
+        # Check the label (it's in cell 0 for percent change rows)
+        assert "Revenue % Change" in percent_change_row.cells[0].value
+
+        # Check that percent change values are correct
+        # Year 2020: None (first year)
+        # Year 2021: (1100 - 1000) / 1000 = 0.10
+        # Year 2022: (1210 - 1100) / 1100 = 0.10
+        assert percent_change_row.cells[2].value is None  # 2020 (first year)
+        assert abs(percent_change_row.cells[3].value - 0.10) < 0.001  # 2021
+        assert abs(percent_change_row.cells[4].value - 0.10) < 0.001  # 2022
+
+    def test_percent_change_with_group_by_category(self, simple_model):
+        """Test percent change with group_by_category=True."""
+        table = simple_model.tables.line_items(
+            include_label=True, include_percent_change=True, group_by_category=True
+        )
+        assert table is not None
+
+        # Should have 6 rows: 2 category labels + 2 items + 2 percent change rows
+        assert len(table.rows) == 6, f"Should have 6 rows, got {len(table.rows)}"
+
+        # All rows should have same number of cells
+        expected_cell_count = 5
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
+
+    def test_percent_change_with_totals(self, simple_model):
+        """Test percent change with include_totals=True."""
+        table = simple_model.tables.line_items(
+            include_label=True,
+            include_percent_change=True,
+            include_totals=True,
+        )
+        assert table is not None
+
+        # Should have 5 rows: 2 items + 2 percent change rows + 1 total row
+        assert len(table.rows) == 5, f"Should have 5 rows, got {len(table.rows)}"
+
+        # All rows should have same number of cells
+        expected_cell_count = 5
+        for i, row in enumerate(table.rows):
+            assert len(row.cells) == expected_cell_count, (
+                f"Row {i} has {len(row.cells)} cells, expected {expected_cell_count}"
+            )
