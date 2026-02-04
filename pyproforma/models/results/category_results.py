@@ -206,7 +206,7 @@ class CategoryResults:
             return 0.0
 
         # Use LineItemsResults.total() to calculate the sum
-        line_items_results = self.model.line_items(line_item_names)
+        line_items_results = self.model.line_items[line_item_names]
         return line_items_results.total(year)
 
     # ============================================================================

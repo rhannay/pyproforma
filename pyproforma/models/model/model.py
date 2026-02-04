@@ -4,8 +4,8 @@ from typing import List, Optional, Union
 import pandas as pd
 
 from pyproforma.charts import Charts
-from pyproforma.table import Format
 from pyproforma.models.generator import Generator
+from pyproforma.table import Format
 
 # Namespace imports
 from pyproforma.tables import Tables
@@ -621,36 +621,33 @@ class Model(SerializationMixin):
 
         return LineItemResults(self, item_name)
 
-    def line_items(self, line_item_names: list[str] = None) -> LineItemsResults:
+    @property
+    def line_items(self) -> LineItemsResults:
         """
-        Get a LineItemsResults object for exploring and managing multiple line items.
+        Get a LineItemsResults object for all line items in the model.
 
-        This method returns a LineItemsResults instance that provides convenient methods
-        for batch operations on multiple line items, such as setting categories for all
-        items at once.
-
-        Args:
-            line_item_names (list[str], optional): List of line item names to include.
-                If not provided, all line items in the model are included.
+        This property returns a LineItemsResults instance that provides
+        convenient methods for batch operations on all line items, such as
+        setting categories, filtering with indexing, or generating tables
+        and charts.
 
         Returns:
-            LineItemsResults: An object with methods for managing multiple line items
-
-        Raises:
-            ValueError: If line_item_names is an empty list
-            KeyError: If any line item name is not found in the model
+            LineItemsResults: An object with methods for managing all line items
 
         Examples:
-            >>> # Get all line items
-            >>> all_items = model.line_items()
+            >>> # Get all line items (as a property)
+            >>> all_items = model.line_items
             >>> print(all_items.names)  # Shows all line item names
-            >>> # Get specific line items
-            >>> items = model.line_items(['revenue', 'costs', 'profit'])
+            >>>
+            >>> # Select a subset of line items using indexing
+            >>> items = model.line_items[['revenue', 'costs', 'profit']]
             >>> print(items.names)  # Shows list of line item names
-            >>> items.set_category('financials')  # Sets category for all items
-            >>> revenue = items.line_item('revenue')  # Get specific item
+            >>> items.set_category('financials')  # Sets category for selected items
+            >>>
+            >>> # Chain operations
+            >>> model.line_items[['revenue', 'costs']].table()
         """
-        return LineItemsResults(self, line_item_names)
+        return LineItemsResults(self, None)
 
     def category(self, category_name: str = None) -> CategoryResults:
         """

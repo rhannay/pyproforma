@@ -1637,9 +1637,9 @@ class TestCategoryResultsTotalMethod:
         category_total = income_category.total(2023)
 
         # Get the same result using LineItemsResults directly
-        line_items_results = model_with_categories.line_items(
+        line_items_results = model_with_categories.line_items[
             ["product_sales", "service_revenue"]
-        )
+        ]
         direct_total = line_items_results.total(2023)
 
         # Should be the same

@@ -620,7 +620,7 @@ class LineItemsTotalRow(BaseRow):
         configuration. All other label columns are empty.
         """
         # Get the line items results to access the total method
-        line_items_results = model.line_items(self.line_item_names)
+        line_items_results = model.line_items[self.line_item_names]
 
         # Use provided label or default to "Total"
         if self.label is None:

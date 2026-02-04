@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import pandas as pd
 
@@ -13,8 +13,9 @@ class LineItemsResults:
     A helper class that provides convenient methods for exploring and managing
     multiple line items together in a financial model.
 
-    This class is typically instantiated through the Model.line_items() method and
+    This class is typically instantiated through the Model.line_items property and
     provides an intuitive interface for batch operations on multiple line items.
+    Supports indexing to select a subset of line items.
 
     Args:
         model: The parent Model instance
@@ -22,11 +23,12 @@ class LineItemsResults:
             in the model are included.
 
     Examples:
-        >>> # Get all line items
-        >>> all_items = model.line_items()
+        >>> # Get all line items (property syntax)
+        >>> all_items = model.line_items
         >>> print(all_items.names)  # Shows all line item names
-        >>> # Get specific line items
-        >>> items_results = model.line_items(['revenue', 'costs', 'profit'])
+        >>>
+        >>> # Select specific line items using indexing
+        >>> items_results = model.line_items[['revenue', 'costs', 'profit']]
         >>> print(items_results.names)  # Shows list of line item names
         >>> items_results.set_category('income')  # Sets category for all items
         >>> revenue = items_results.line_item('revenue')  # Get specific item
@@ -48,7 +50,7 @@ class LineItemsResults:
         # If line_item_names is None, use all line items from the model
         if line_item_names is None:
             line_item_names = model.line_item_names
-        
+
         # Validate that line_item_names is a list
         if not isinstance(line_item_names, list):
             raise ValueError("line_item_names must be a list")
@@ -88,6 +90,51 @@ class LineItemsResults:
         This ensures proper formatting when the object is displayed in a notebook cell.
         """
         return self.summary(html=True)
+
+    def __getitem__(self, key) -> Union[LineItemResults, "LineItemsResults"]:
+        """
+        Allow indexing to select line items.
+
+        Supports both string and list indexing:
+        - String key: Returns a single LineItemResults for the specified item
+        - List key: Returns a LineItemsResults with the selected items
+
+        Args:
+            key: Either a string (single line item name) or a list of line item names
+
+        Returns:
+            LineItemResults: If key is a string, returns results for a single item
+            LineItemsResults: If key is a list, returns results for multiple items
+
+        Raises:
+            ValueError: If key is not a string or list, or if list is empty
+            KeyError: If any line item name is not found in the model
+
+        Examples:
+            >>> # Get a single line item using string indexing
+            >>> revenue = model.line_items['revenue']
+            >>> print(revenue.name)  # 'revenue'
+            >>>
+            >>> # Get multiple line items using list indexing
+            >>> all_items = model.line_items
+            >>> revenue_items = all_items[['revenue_sales', 'service_revenue']]
+            >>> print(revenue_items.names)  # ['revenue_sales', 'service_revenue']
+            >>>
+            >>> # Chain operations after selection
+            >>> model.line_items[['costs', 'salaries']].set_category('expenses')
+        """
+        if isinstance(key, str):
+            # Return a single LineItemResults for string key
+            return LineItemResults(self.model, key)
+        elif isinstance(key, list):
+            # Create a new LineItemsResults with the selected items
+            # This will handle validation (empty list, invalid names, etc.)
+            return LineItemsResults(self.model, key)
+        else:
+            raise ValueError(
+                "LineItemsResults indexing requires either a string (single item) "
+                f"or a list of line item names. Got {type(key).__name__} instead."
+            )
 
     # ============================================================================
     # PROPERTY ACCESSORS

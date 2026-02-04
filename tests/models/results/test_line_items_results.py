@@ -159,8 +159,8 @@ class TestLineItemsResultsInitialization:
         assert "invalid_name" in str(exc_info.value)
 
     def test_model_line_items_without_args(self, model_with_line_items):
-        """Test Model.line_items() called without arguments returns all line items."""
-        items = model_with_line_items.line_items()
+        """Test Model.line_items property returns all line items."""
+        items = model_with_line_items.line_items
         
         assert items.model is model_with_line_items
         assert len(items.names) == 4  # All line items from fixture
@@ -172,8 +172,8 @@ class TestLineItemsResultsInitialization:
         assert "office_rent" in items.names
 
     def test_model_line_items_with_args(self, model_with_line_items):
-        """Test Model.line_items() called with specific items."""
-        items = model_with_line_items.line_items(["product_sales", "service_revenue"])
+        """Test Model.line_items with indexing to select specific items."""
+        items = model_with_line_items.line_items[["product_sales", "service_revenue"]]
         
         assert items.model is model_with_line_items
         assert len(items.names) == 2
@@ -409,7 +409,7 @@ class TestLineItemsResultsModelIntegration:
         self, model_with_line_items
     ):
         """Test that Model.line_items() returns LineItemsResults."""
-        items = model_with_line_items.line_items(["product_sales", "service_revenue"])
+        items = model_with_line_items.line_items[["product_sales", "service_revenue"]]
 
         assert isinstance(items, LineItemsResults)
         assert items.model is model_with_line_items
@@ -418,21 +418,21 @@ class TestLineItemsResultsModelIntegration:
     def test_model_line_items_with_empty_list_raises_error(self, model_with_line_items):
         """Test that Model.line_items() with empty list raises error."""
         with pytest.raises(ValueError):
-            model_with_line_items.line_items([])
+            model_with_line_items.line_items[[]]
 
     def test_model_line_items_with_invalid_name_raises_error(
         self, model_with_line_items
     ):
         """Test that Model.line_items() with invalid name raises error."""
         with pytest.raises(KeyError):
-            model_with_line_items.line_items(["invalid_name"])
+            model_with_line_items.line_items[["invalid_name"]]
 
     def test_model_line_items_end_to_end(self, model_with_line_items):
         """Test end-to-end usage of Model.line_items()."""
         # Get multiple line items
-        items = model_with_line_items.line_items(
+        items = model_with_line_items.line_items[
             ["product_sales", "service_revenue", "salaries"]
-        )
+        ]
 
         # Check names
         assert set(items.names) == {"product_sales", "service_revenue", "salaries"}
@@ -475,7 +475,7 @@ class TestLineItemsResultsEdgeCases:
             name="item2", category="cat1", values={2023: 150, 2024: 250}
         )
 
-        items = model.line_items(["item1", "item2"])
+        items = model.line_items[["item1", "item2"]]
         items.set_category("new_cat")
 
         # Should create new category
@@ -802,7 +802,7 @@ class TestLineItemsResultsTotalMethod:
             line_items=line_items, years=[2023, 2024, 2025], categories=categories
         )
 
-        items = model.line_items(["item1", "item2"])
+        items = model.line_items[["item1", "item2"]]
 
         # 2023: 100 + 50 = 150 (no None values)
         assert items.total(2023) == 150.0
@@ -894,7 +894,7 @@ class TestLineItemsResultsTotalMethod:
         categories = [Category(name="test", label="Test")]
         model = Model(line_items=line_items, years=[2023, 2024], categories=categories)
 
-        items = model.line_items(["item1", "item2"])
+        items = model.line_items[["item1", "item2"]]
 
         # 2023: 0 + 50 = 50
         assert items.total(2023) == 50.0
@@ -1011,7 +1011,7 @@ class TestLineItemsResultsToDataFrameMethod:
             line_items=line_items, years=[2023, 2024, 2025], categories=categories
         )
 
-        items = model.line_items(["item1", "item2"])
+        items = model.line_items[["item1", "item2"]]
         df = items.to_dataframe()
 
         assert isinstance(df, pd.DataFrame)
@@ -1312,7 +1312,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items c and d to top
-        items = move_testing_model.line_items(["item_c", "item_d"])
+        items = move_testing_model.line_items[["item_c", "item_d"]]
         items.move(position="top")
 
         # Verify new order - c and d should be at top in their original order
@@ -1326,7 +1326,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items a and b to bottom
-        items = move_testing_model.line_items(["item_a", "item_b"])
+        items = move_testing_model.line_items[["item_a", "item_b"]]
         items.move(position="bottom")
 
         # Verify new order - a and b should be at bottom in their original order
@@ -1340,7 +1340,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items a and e after item_c
-        items = move_testing_model.line_items(["item_a", "item_e"])
+        items = move_testing_model.line_items[["item_a", "item_e"]]
         items.move(position="after", target="item_c")
 
         # Verify new order - a and e should be after c in their original order
@@ -1354,7 +1354,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items d and e before item_b
-        items = move_testing_model.line_items(["item_d", "item_e"])
+        items = move_testing_model.line_items[["item_d", "item_e"]]
         items.move(position="before", target="item_b")
 
         # Verify new order - d and e should be before b in their original order
@@ -1368,7 +1368,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items b and d to index 2
-        items = move_testing_model.line_items(["item_b", "item_d"])
+        items = move_testing_model.line_items[["item_b", "item_d"]]
         items.move(position="index", index=2)
 
         # Verify new order - b and d should be at index 2 and 3
@@ -1382,7 +1382,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items in specific order - should maintain the order we specify
-        items = move_testing_model.line_items(["item_e", "item_c", "item_a"])
+        items = move_testing_model.line_items[["item_e", "item_c", "item_a"]]
         items.move(position="top")
 
         # Verify order - items should appear in the order we specified them
@@ -1397,7 +1397,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move single item to bottom
-        items = move_testing_model.line_items(["item_c"])
+        items = move_testing_model.line_items[["item_c"]]
         items.move(position="bottom")
 
         # Verify new order
@@ -1406,7 +1406,7 @@ class TestLineItemsResultsMove:
 
     def test_move_with_invalid_target(self, move_testing_model):
         """Test that move raises error with invalid target."""
-        items = move_testing_model.line_items(["item_a", "item_b"])
+        items = move_testing_model.line_items[["item_a", "item_b"]]
 
         with pytest.raises(
             ValueError, match="Target line item 'nonexistent' not found"
@@ -1415,7 +1415,7 @@ class TestLineItemsResultsMove:
 
     def test_move_with_invalid_position(self, move_testing_model):
         """Test that move raises error with invalid position."""
-        items = move_testing_model.line_items(["item_a", "item_b"])
+        items = move_testing_model.line_items[["item_a", "item_b"]]
 
         with pytest.raises(ValueError, match="Invalid position 'invalid'"):
             items.move(position="invalid")
@@ -1427,7 +1427,7 @@ class TestLineItemsResultsMove:
         assert initial_order == ["item_a", "item_b", "item_c", "item_d", "item_e"]
 
         # Move items with default position (should be top)
-        items = move_testing_model.line_items(["item_d", "item_e"])
+        items = move_testing_model.line_items[["item_d", "item_e"]]
         items.move()
 
         # Verify new order (items should be at top)
