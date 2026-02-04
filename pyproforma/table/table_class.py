@@ -982,6 +982,54 @@ class Table:
         """
         return _to_html(self)
 
+    def show(self) -> None:
+        """Display the table in HTML format within a notebook environment.
+
+        This method automatically displays the table in Jupyter notebooks or other
+        IPython-based environments by rendering the HTML representation. It provides
+        a convenient way to visualize tables without explicitly using IPython.display.
+
+        The method will:
+        - Automatically detect if running in a notebook environment
+        - Use IPython.display.HTML to render the table
+        - Provide a helpful error message if IPython is not available
+
+        Returns:
+            None
+
+        Raises:
+            ImportError: If IPython is not installed. Install it with:
+                        pip install ipython
+                        (or include it in your notebook environment)
+
+        Examples:
+            >>> from pyproforma.table import Table, Cell
+            >>> table = Table(cells=[
+            ...     [Cell("Name", bold=True), Cell("Value", bold=True)],
+            ...     [Cell("Item 1"), Cell(100)],
+            ...     [Cell("Item 2"), Cell(200)]
+            ... ])
+            >>> table.show()  # Displays the table in a notebook
+
+        Note:
+            This method is primarily intended for interactive notebook use.
+            For programmatic HTML generation, use to_html() instead.
+            Similar to plotly's Figure.show() method for displaying visualizations.
+        """
+        try:
+            from IPython.display import HTML, display
+        except ImportError as e:
+            raise ImportError(
+                "IPython is required to use the show() method. "
+                "Install it with: pip install ipython\n"
+                "Alternatively, use table.to_html() to get the HTML string "
+                "and display it manually."
+            ) from e
+
+        # Get the HTML representation and display it
+        html_content = self.to_html()
+        display(HTML(html_content))
+
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
 
