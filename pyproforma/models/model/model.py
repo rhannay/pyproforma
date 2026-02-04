@@ -621,34 +621,61 @@ class Model(SerializationMixin):
 
         return LineItemResults(self, item_name)
 
-    def line_items(self, line_item_names: list[str] = None) -> LineItemsResults:
+    @property
+    def line_items(self) -> LineItemsResults:
         """
-        Get a LineItemsResults object for exploring and managing multiple line items.
+        Get a LineItemsResults object for all line items in the model.
 
-        This method returns a LineItemsResults instance that provides convenient methods
-        for batch operations on multiple line items, such as setting categories for all
-        items at once.
-
-        Args:
-            line_item_names (list[str], optional): List of line item names to include.
-                If not provided, all line items in the model are included.
+        This property returns a LineItemsResults instance that provides convenient methods
+        for batch operations on all line items, such as setting categories, filtering
+        with select(), or generating tables and charts.
 
         Returns:
-            LineItemsResults: An object with methods for managing multiple line items
+            LineItemsResults: An object with methods for managing all line items
+
+        Examples:
+            >>> # Get all line items (as a property)
+            >>> all_items = model.line_items
+            >>> print(all_items.names)  # Shows all line item names
+            >>> 
+            >>> # Select a subset of line items
+            >>> items = model.line_items.select(['revenue', 'costs', 'profit'])
+            >>> print(items.names)  # Shows list of line item names
+            >>> items.set_category('financials')  # Sets category for selected items
+            >>> 
+            >>> # Chain operations
+            >>> model.line_items.select(['revenue', 'costs']).table()
+        """
+        return LineItemsResults(self, None)
+
+    def select(self, line_item_names: list[str]) -> LineItemsResults:
+        """
+        Select a subset of line items by name.
+
+        This is a convenience method equivalent to `model.line_items.select(names)`.
+        It returns a LineItemsResults object containing only the specified line items.
+
+        Args:
+            line_item_names (list[str]): List of line item names to select.
+                All names must exist in the model.
+
+        Returns:
+            LineItemsResults: An object with methods for managing the selected line items
 
         Raises:
-            ValueError: If line_item_names is an empty list
+            ValueError: If line_item_names is an empty list or not a list
             KeyError: If any line item name is not found in the model
 
         Examples:
-            >>> # Get all line items
-            >>> all_items = model.line_items()
-            >>> print(all_items.names)  # Shows all line item names
-            >>> # Get specific line items
-            >>> items = model.line_items(['revenue', 'costs', 'profit'])
-            >>> print(items.names)  # Shows list of line item names
-            >>> items.set_category('financials')  # Sets category for all items
-            >>> revenue = items.line_item('revenue')  # Get specific item
+            >>> # Select specific line items
+            >>> items = model.select(['revenue', 'costs', 'profit'])
+            >>> print(items.names)  # ['revenue', 'costs', 'profit']
+            >>> 
+            >>> # Equivalent to using .select() on line_items property
+            >>> items = model.line_items.select(['revenue', 'costs'])
+            >>> 
+            >>> # Chain operations after selection
+            >>> model.select(['revenue', 'costs']).set_category('financials')
         """
         return LineItemsResults(self, line_item_names)
 

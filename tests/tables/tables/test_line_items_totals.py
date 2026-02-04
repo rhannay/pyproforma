@@ -133,7 +133,7 @@ class TestLineItemsIncludeTotals:
         totals_row = table.rows[-1]
 
         # Get expected totals from the model
-        line_items_results = sample_model.line_items(revenue_items)
+        line_items_results = sample_model.select(revenue_items)
 
         # Check that totals match for each year
         for i, year in enumerate(sample_model.years):
@@ -186,7 +186,7 @@ class TestLineItemsIncludeTotals:
 
         # Get expected totals from the model (all items)
         all_items = sample_model.line_item_names
-        line_items_results = sample_model.line_items(all_items)
+        line_items_results = sample_model.select(all_items)
 
         # Check that totals match for each year
         for i, year in enumerate(sample_model.years):
