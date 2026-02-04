@@ -463,7 +463,7 @@ class Table:
         align: Optional[str] = None,
         background_color: Optional[str] = None,
         font_color: Optional[str] = None,
-        value_format: Optional[ValueFormat] = None,
+        value_format: Optional[Union[NumberFormatSpec, dict]] = None,
         bottom_border: Optional[BorderStyle] = None,
         top_border: Optional[BorderStyle] = None,
     ) -> None:
