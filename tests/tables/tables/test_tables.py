@@ -446,10 +446,17 @@ class TestTablePercentChangeWithMultipleColumns:
         # Get the percent change row (should be row 1)
         percent_change_row = table.rows[1]
 
-        # Check the label (it's in cell 0 for percent change rows)
-        assert "Revenue % Change" in percent_change_row.cells[0].value
+        # Verify we have the expected number of cells (2 label cols + 3 year cols)
+        assert len(percent_change_row.cells) == 5, (
+            f"Expected 5 cells (2 label cols + 3 year cols), got {len(percent_change_row.cells)}"
+        )
+
+        # Check the label is in the first cell (for percent change rows, 
+        # the label goes in the first cell, remaining label columns are empty)
+        assert percent_change_row.cells[0].value == "Revenue % Change"
 
         # Check that percent change values are correct
+        # Cells 0-1 are label columns, cells 2-4 are year values (2020, 2021, 2022)
         # Year 2020: None (first year)
         # Year 2021: (1100 - 1000) / 1000 = 0.10
         # Year 2022: (1210 - 1100) / 1100 = 0.10
