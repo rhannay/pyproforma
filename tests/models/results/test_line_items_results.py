@@ -3,6 +3,7 @@ import pytest
 
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.results import LineItemResults, LineItemsResults
+from pyproforma.table import Format
 
 
 # Module-level fixtures available to all test classes
@@ -15,28 +16,28 @@ def basic_line_items():
             category="income",
             label="Product Sales",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="service_revenue",
             category="income",
             label="Service Revenue",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="salaries",
             category="costs",
             label="Salaries",
             values={2023: 40000, 2024: 45000, 2025: 50000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="office_rent",
             category="costs",
             label="Office Rent",
             values={2023: 24000, 2024: 24000, 2025: 24000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
     ]
 
@@ -1096,7 +1097,7 @@ class TestLineItemsResultsChartMethod:
                 width=1000,
                 height=700,
                 template="plotly_dark",
-                value_format="currency",
+                value_format=Format.CURRENCY,
             )
 
             mock_line_items.assert_called_once_with(
@@ -1105,7 +1106,7 @@ class TestLineItemsResultsChartMethod:
                 width=1000,
                 height=700,
                 template="plotly_dark",
-                value_format="currency",
+                value_format=Format.CURRENCY,
             )
 
     def test_chart_method_uses_line_item_names(self, line_items_results):

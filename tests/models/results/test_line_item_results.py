@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.results import LineItemResults
 
 
@@ -17,21 +18,21 @@ def basic_line_items():
             category="income",
             label="Revenue",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="expenses",
             category="costs",
             label="Expenses",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="profit",
             category="income",
             label="Profit",
             formula="revenue - expenses",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
     ]
 
@@ -66,7 +67,7 @@ class TestLineItemResultsInitialization:
         assert line_item_results.name == "revenue"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Revenue"
-        assert line_item_results.value_format == "no_decimals"
+        assert line_item_results.value_format == Format.NO_DECIMALS
 
     def test_init_line_item_with_formula(self, model_with_line_items):
         """Test LineItemResults initialization with line item that has formula."""
@@ -76,7 +77,7 @@ class TestLineItemResultsInitialization:
         assert line_item_results.name == "profit"
         assert line_item_results.source_type == "line_item"
         assert line_item_results.label == "Profit"
-        assert line_item_results.value_format == "no_decimals"
+        assert line_item_results.value_format == Format.NO_DECIMALS
 
     def test_init_invalid_item_name(self, model_with_line_items):
         """Test LineItemResults initialization with invalid item name."""
@@ -104,7 +105,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('revenue')" in str_result
         assert "Label: Revenue" in str_result
         assert "Source Type: line_item" in str_result
-        assert "Value Format: no_decimals" in str_result
+        assert "Value Format: NumberFormatSpec" in str_result  # Shows repr now
         assert "Values:" in str_result
 
     def test_repr_method(self, line_item_results):
@@ -120,7 +121,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('revenue')" in summary
         assert "Label: Revenue" in summary
         assert "Source Type: line_item" in summary
-        assert "Value Format: no_decimals" in summary
+        assert "Value Format: NumberFormatSpec" in summary  # Shows repr now
         assert "Values: 100,000, 120,000, 140,000" in summary
         assert "Formula: None (explicit values)" in summary
 
@@ -131,7 +132,7 @@ class TestLineItemResultsStringRepresentation:
         assert "LineItemResults('profit')" in summary
         assert "Label: Profit" in summary
         assert "Source Type: line_item" in summary
-        assert "Value Format: no_decimals" in summary
+        assert "Value Format: NumberFormatSpec" in summary  # Shows repr now
         assert "Formula: revenue - expenses" in summary
 
 
@@ -437,14 +438,14 @@ class TestLineItemResultsIntegration:
                 category="income",
                 label="Revenue",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 label="Expenses",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -527,7 +528,7 @@ class TestLineItemResultsEdgeCases:
                 category="income",
                 label="Revenue 2024",
                 values={2024: 100000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
 
@@ -550,7 +551,7 @@ class TestLineItemResultsEdgeCases:
                 name="revenue",
                 category="income",
                 values={2024: 100000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
 
@@ -574,13 +575,13 @@ class TestLineItemResultsEdgeCases:
                 name="percentage_item",
                 category="metrics",
                 values={2024: 0.15},
-                value_format="percent",
+                value_format=Format.PERCENT,
             ),
             LineItem(
                 name="decimal_item",
                 category="metrics",
                 values={2024: 1234.56},
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             ),
         ]
 
@@ -590,11 +591,11 @@ class TestLineItemResultsEdgeCases:
 
         # Test percentage format
         percentage_results = LineItemResults(model, "percentage_item")
-        assert percentage_results.value_format == "percent"
+        assert percentage_results.value_format == Format.PERCENT
 
         # Test decimal format
         decimal_results = LineItemResults(model, "decimal_item")
-        assert decimal_results.value_format == "two_decimals"
+        assert decimal_results.value_format == Format.TWO_DECIMALS
 
 
 class TestLineItemResultsCalculationMethods:
@@ -608,19 +609,19 @@ class TestLineItemResultsCalculationMethods:
                 name="revenue",
                 category="income",
                 values={2020: 100, 2021: 120, 2022: 150, 2023: 120},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expense",
                 category="costs",
                 values={2020: 50, 2021: 50, 2022: 75, 2023: 0},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="zero_item",
                 category="other",
                 values={2020: 0, 2021: 10, 2022: 0, 2023: 5},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -889,19 +890,19 @@ class TestLineItemResultsDeleteMethod:
                 name="revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="profit",
                 category="income",
                 formula="revenue - expenses",
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -944,13 +945,13 @@ class TestLineItemResultsDeleteMethod:
                 name="revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -1051,21 +1052,21 @@ class TestLineItemResultsValueSetting:
                 category="income",
                 label="Revenue",
                 values={2023: 100000, 2024: 120000, 2025: 140000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 label="Expenses",
                 values={2023: 50000, 2024: 60000, 2025: 70000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="profit",
                 category="income",
                 label="Profit",
                 formula="revenue - expenses",
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -1261,14 +1262,14 @@ class TestLineItemResultsCategoryProperty:
                 category="income",
                 label="Revenue",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 label="Expenses",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 

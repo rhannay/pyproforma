@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.model.model_update import UpdateNamespace
 
 
@@ -311,7 +312,7 @@ class TestAddLineItemReplace:
             name="revenue",
             category="expenses",
             formula="1000 + 2000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
             replace=True,
         )
 
@@ -319,7 +320,7 @@ class TestAddLineItemReplace:
         new_item = sample_model._line_item_definition("revenue")
         assert new_item.category == "expenses"
         assert new_item.formula == "1000 + 2000"
-        assert new_item.value_format == "currency"
+        assert new_item.value_format == Format.CURRENCY
         assert sample_model.value("revenue", 2023) == 3000
 
     def test_add_line_item_replace_validation_still_works(self, sample_model):

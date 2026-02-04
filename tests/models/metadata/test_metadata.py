@@ -8,6 +8,7 @@ including their integration with multi-line items.
 import pytest
 
 from pyproforma import Category, Constraint, LineItem
+from pyproforma.table import Format
 from pyproforma.models.metadata import (
     generate_category_metadata,
     generate_constraint_metadata,
@@ -174,7 +175,7 @@ class TestGenerateLineItemMetadata:
                 label="Revenue",
                 category="income",
                 values={2020: 1000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
         category_metadata = []
@@ -186,7 +187,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "revenue",
                 "label": "Revenue",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
@@ -204,14 +205,14 @@ class TestGenerateLineItemMetadata:
                 label="Revenue",
                 category="income",
                 values={2020: 1000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="growth_rate",
                 label="Growth Rate",
                 category="assumptions",
                 values={2020: 0.05},
-                value_format="percent",
+                value_format=Format.PERCENT,
             ),
             LineItem(
                 name="description",
@@ -230,7 +231,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "revenue",
                 "label": "Revenue",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "revenue",
                 "category": "income",
@@ -240,7 +241,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "growth_rate",
                 "label": "Growth Rate",
-                "value_format": "percent",
+                "value_format": Format.PERCENT,
                 "source_type": "line_item",
                 "source_name": "growth_rate",
                 "category": "assumptions",
@@ -269,7 +270,7 @@ class TestGenerateLineItemMetadata:
                 category="income",
                 formula="revenue * 0.1",
                 values={2020: 100, 2021: 200},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
         category_metadata = []
@@ -281,7 +282,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "profit",
                 "label": "Profit",
-                "value_format": "no_decimals",
+                "value_format": Format.NO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "profit",
                 "category": "income",
@@ -299,7 +300,7 @@ class TestGenerateLineItemMetadata:
                 label="Calculated Value",
                 category="calculations",
                 formula="base_value + adjustment",
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             )
         ]
         category_metadata = []
@@ -311,7 +312,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "calculated_value",
                 "label": "Calculated Value",
-                "value_format": "two_decimals",
+                "value_format": Format.TWO_DECIMALS,
                 "source_type": "line_item",
                 "source_name": "calculated_value",
                 "category": "calculations",

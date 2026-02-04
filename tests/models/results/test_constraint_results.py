@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.constraint import Constraint
 from pyproforma.models.results import ConstraintResults
 
@@ -16,13 +17,13 @@ def basic_line_items():
             name="revenue",
             category="income",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="two_decimals",
+            value_format=Format.TWO_DECIMALS,
         ),
         LineItem(
             name="expenses",
             category="costs",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="two_decimals",
+            value_format=Format.TWO_DECIMALS,
         ),
     ]
 
@@ -637,13 +638,13 @@ class TestConstraintResultsIntegration:
                 name="revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000},
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             ),
             LineItem(
                 name="expenses",
                 category="costs",
                 values={2023: 50000, 2024: 60000},
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             ),
         ]
 
@@ -935,7 +936,7 @@ class TestConstraintResultsEdgeCases:
                 name="revenue_2024",
                 category="income",
                 values={2024: 100000},
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             )
         ]
 

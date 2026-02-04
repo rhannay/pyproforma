@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .model import Model
 
-from ...table import ValueFormat
+from ...table import Format
 from ..category import Category
 from ..constraint import Constraint
 from ..line_item import LineItem
@@ -102,7 +102,7 @@ class UpdateNamespace:
         label: str | None = None,
         values: dict[int, float] | None = None,
         formula: str | None = None,
-        value_format: ValueFormat = "no_decimals",
+        value_format = Format.NO_DECIMALS,
         replace: bool = False,
     ) -> None:
         """
@@ -119,7 +119,7 @@ class UpdateNamespace:
             label (str, optional): Human-readable display name. Defaults to name if not provided.
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+            value_format (optional): Format for displaying values. Defaults to Format.NO_DECIMALS
             replace (bool, optional): If True, replace existing line item with same name. Defaults to False.
 
         Returns:
@@ -334,7 +334,7 @@ class UpdateNamespace:
         label: str = None,
         values: dict[int, float] = None,
         formula: str = None,
-        value_format: ValueFormat = None,
+        value_format = None,
     ) -> None:
         """
         Update a line item in the model by name.
@@ -352,7 +352,7 @@ class UpdateNamespace:
             label (str, optional): New label for the line item
             values (dict[int, float], optional): New values dictionary for the line item
             formula (str, optional): New formula string for the line item
-            value_format (ValueFormat, optional): New value format for the line item
+            value_format (optional): New value format for the line item
 
         Returns:
             None

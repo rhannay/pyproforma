@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import pytest
 
 from pyproforma import Category, Constraint, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.charts.chart_class import Chart
 from pyproforma.charts.charts import ChartGenerationError, Charts
 
@@ -21,9 +22,9 @@ class TestChartsLineItemsPie:
         # Mock line_item() method responses
         def mock_li(name):
             line_item_map = {
-                "revenue": Mock(label="Revenue", value_format="no_decimals"),
-                "expenses": Mock(label="Expenses", value_format="no_decimals"),
-                "profit": Mock(label="Profit", value_format="no_decimals"),
+                "revenue": Mock(label="Revenue", value_format=Format.NO_DECIMALS),
+                "expenses": Mock(label="Expenses", value_format=Format.NO_DECIMALS),
+                "profit": Mock(label="Profit", value_format=Format.NO_DECIMALS),
             }
             if name in line_item_map:
                 return line_item_map[name]
@@ -182,7 +183,7 @@ class TestChartsLineItemsPie:
             labels=["Revenue", "Expenses"],
             data_sets=[mock_dataset],
             title="Line Items Distribution - 2022",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         )
 
         # Verify to_plotly call
@@ -205,7 +206,7 @@ class TestChartsConstraint:
         # Mock line_item() method
         def mock_li(name):
             if name == "revenue":
-                return Mock(label="Revenue", value_format="no_decimals")
+                return Mock(label="Revenue", value_format=Format.NO_DECIMALS)
             raise KeyError(f"Name '{name}' not found in model defined names.")
 
         model.line_item.side_effect = mock_li
@@ -347,7 +348,7 @@ class TestChartsConstraint:
             labels=["2023", "2024", "2025"],
             data_sets=[mock_dataset1, mock_dataset2],
             title="Revenue vs Minimum Revenue Target",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         )
 
         # Verify to_plotly call
@@ -401,7 +402,7 @@ class TestChartsConstraintIntegration:
                 label="Revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000, 2025: 140000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pyproforma.table import Cell, Table
+from pyproforma.table import Cell, Format, Table
 
 
 class TestTableClass:
@@ -613,7 +613,7 @@ class TestTableIndexing:
         """Test accessing cells with formatting properties."""
         cells = [
             [Cell("Header", bold=True, align="center")],
-            [Cell(100, value_format="no_decimals")],
+            [Cell(100, value_format=Format.NO_DECIMALS)],
         ]
         table = Table(cells=cells)
         
@@ -624,7 +624,7 @@ class TestTableIndexing:
         
         value_cell = table[1, 0]
         assert value_cell.value == 100
-        assert value_cell.value_format == "no_decimals"
+        assert value_cell.value_format == Format.NO_DECIMALS
 
     def test_getitem_out_of_range_row(self):
         """Test that accessing out of range row raises IndexError."""
@@ -731,12 +731,12 @@ class TestTableIndexing:
         # Modify cell properties in place
         table[0, 0].bold = True
         table[0, 0].align = "left"
-        table[1, 1].value_format = "no_decimals"
+        table[1, 1].value_format = Format.NO_DECIMALS
         
         # Verify changes
         assert table[0, 0].bold is True
         assert table[0, 0].align == "left"
-        assert table[1, 1].value_format == "no_decimals"
+        assert table[1, 1].value_format == Format.NO_DECIMALS
 
 
 class TestTableProperties:
@@ -816,7 +816,7 @@ class TestTableInitialization:
         """Test initializing with mix of Cells and raw values."""
         cells = [
             [Cell("Header1", bold=True), "Header2"],
-            [100, Cell(200, value_format="no_decimals")],
+            [100, Cell(200, value_format=Format.NO_DECIMALS)],
         ]
         table = Table(cells=cells)
         
@@ -826,7 +826,7 @@ class TestTableInitialization:
         assert isinstance(table[0, 1], Cell)
         assert table[1, 0].value == 100
         assert table[1, 1].value == 200
-        assert table[1, 1].value_format == "no_decimals"
+        assert table[1, 1].value_format == Format.NO_DECIMALS
 
     def test_init_empty(self):
         """Test initializing with empty cells list."""

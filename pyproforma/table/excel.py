@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -8,31 +8,79 @@ if TYPE_CHECKING:
     from .table_class import Table
 
 from .colors import color_to_rgb
-from .format_value import ValueFormat
+from .format_value import NumberFormatSpec
 
 
-def value_format_to_excel_format(value_format: Optional[ValueFormat]) -> str:
-    """Convert a cell value_format to an Excel number_format."""
+def value_format_to_excel_format(
+    value_format: Optional[Union[NumberFormatSpec, dict]],
+) -> str:
+    """Convert a cell value_format to an Excel number_format.
+
+    Args:
+        value_format: Can be a NumberFormatSpec instance, dict, or None
+
+    Returns:
+        Excel number format string
+    """
+    # Handle None
     if value_format is None:
-        return "General"  # Excel default
-    elif value_format == "no_decimals":
-        return "#,##0"  # Number with commas, no decimals
-    elif value_format == "two_decimals":
-        return "#,##0.00"  # Number with commas and 2 decimals
-    elif value_format == "percent":
-        return "0%"  # Percentage with no decimals
-    elif value_format == "percent_one_decimal":
-        return "0.0%"  # Percentage with 1 decimal
-    elif value_format == "percent_two_decimals":
-        return "0.00%"  # Percentage with 2 decimals
-    elif value_format == "percent_two_decinals":  # Handle typo that exists in codebase
-        return "0.00%"  # Percentage with 2 decimals (same as correct spelling)
-    elif value_format == "str":
+        return "General"
+    
+    # Handle dict - convert to NumberFormatSpec
+    if isinstance(value_format, dict):
+        try:
+            value_format = NumberFormatSpec.from_dict(value_format)
+        except (KeyError, TypeError, ValueError):
+            return "General"
+    
+    # Handle NumberFormatSpec instances
+    if isinstance(value_format, NumberFormatSpec):
+        return _spec_to_excel_format(value_format)
+    
+    # Unknown type
+    return "General"
+
+
+def _spec_to_excel_format(spec: NumberFormatSpec) -> str:
+    """Convert a NumberFormatSpec to an Excel number format string.
+
+    Args:
+        spec: NumberFormatSpec instance
+
+    Returns:
+        Excel number format string
+
+    Note:
+        Excel has limited support for custom number formats with scales.
+        For formats with scale, we fall back to text format and rely on
+        the Python-formatted value being written to the cell.
+    """
+    # If scale is set, we can't represent this in Excel number format
+    # The value will already be formatted by format_value(), so use text format
+    if spec.scale:
         return "@"  # Text format
-    elif value_format == "year":
-        return "0"  # Integer format (no decimals, no commas)
+
+    # Build the Excel format string
+    # Start with the number format
+    if spec.thousands:
+        if spec.decimals == 0:
+            number_format = "#,##0"
+        else:
+            number_format = "#,##0." + "0" * spec.decimals
     else:
-        return "General"  # Default fallback
+        if spec.decimals == 0:
+            number_format = "0"
+        else:
+            number_format = "0." + "0" * spec.decimals
+
+    # Add prefix and suffix
+    # Excel format: prefix number_format suffix
+    # For simple symbols like $ and %, no quotes needed
+    # Excel will format them correctly as part of the format string
+    if spec.prefix or spec.suffix:
+        number_format = f"{spec.prefix}{number_format}{spec.suffix}"
+
+    return number_format
 
 
 def to_excel(table: "Table", filename="table.xlsx"):
@@ -56,7 +104,7 @@ def to_excel(table: "Table", filename="table.xlsx"):
 
     # Write all rows (first row is treated as header with special formatting)
     for row_idx, row in enumerate(table.cells, start=1):
-        is_header = (row_idx == 1)
+        is_header = row_idx == 1
         for col_idx, cell_data in enumerate(row, start=1):
             cell = worksheet.cell(row=row_idx, column=col_idx)
 
@@ -88,7 +136,9 @@ def to_excel(table: "Table", filename="table.xlsx"):
                 r, g, b = color_to_rgb(cell_data.background_color)
                 # openpyxl expects RGB hex string (RRGGBB)
                 hex_color = f"{r:02X}{g:02X}{b:02X}"
-                cell.fill = PatternFill(start_color=hex_color, end_color=hex_color, fill_type="solid")
+                cell.fill = PatternFill(
+                    start_color=hex_color, end_color=hex_color, fill_type="solid"
+                )
 
             # Handle borders
             border_kwargs = {}

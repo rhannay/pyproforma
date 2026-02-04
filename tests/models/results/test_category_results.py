@@ -5,6 +5,7 @@ import pytest
 
 from pyproforma import Category, LineItem, Model
 from pyproforma.models.results import CategoryResults
+from pyproforma.table import Format
 
 
 # Module-level fixtures available to all test classes
@@ -17,28 +18,28 @@ def basic_line_items():
             category="income",
             label="Product Sales",
             values={2023: 100000, 2024: 120000, 2025: 140000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="service_revenue",
             category="income",
             label="Service Revenue",
             values={2023: 50000, 2024: 60000, 2025: 70000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="salaries",
             category="costs",
             label="Salaries",
             values={2023: 40000, 2024: 45000, 2025: 50000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
         LineItem(
             name="office_rent",
             category="costs",
             label="Office Rent",
             values={2023: 24000, 2024: 24000, 2025: 24000},
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         ),
     ]
 
@@ -83,7 +84,7 @@ class TestCategoryResultsInitialization:
             name="conversion_rate",
             category="metrics",
             values={2023: 0.15, 2024: 0.18, 2025: 0.20},
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
         model_with_categories.update.add_line_item(metrics_item)
 
@@ -768,7 +769,7 @@ class TestCategoryResultsChartMethod:
                 width=1000,
                 height=700,
                 template="plotly_dark",
-                value_format="currency",
+                value_format=Format.CURRENCY,
             )
 
             mock_line_items.assert_called_once_with(
@@ -777,7 +778,7 @@ class TestCategoryResultsChartMethod:
                 width=1000,
                 height=700,
                 template="plotly_dark",
-                value_format="currency",
+                value_format=Format.CURRENCY,
             )
 
     def test_chart_method_uses_category_line_items(self, category_results):
@@ -940,21 +941,21 @@ class TestCategoryResultsIntegration:
                 category="income",
                 label="Product Sales",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="service_revenue",
                 category="income",
                 label="Service Revenue",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="salaries",
                 category="costs",
                 label="Salaries",
                 values={2023: 40000, 2024: 45000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -1032,21 +1033,21 @@ class TestCategoryResultsDeleteMethod:
                 category="revenue",
                 label="Product Sales",
                 values={2023: 100000, 2024: 120000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="service_revenue",
                 category="revenue",
                 label="Service Revenue",
                 values={2023: 50000, 2024: 60000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
             LineItem(
                 name="salaries",
                 category="expenses",
                 label="Salaries",
                 values={2023: 40000, 2024: 45000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             ),
         ]
 
@@ -1307,7 +1308,7 @@ class TestCategoryResultsEdgeCases:
                 category="income_2024",
                 label="Revenue 2024",
                 values={2024: 100000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
 
@@ -1329,7 +1330,7 @@ class TestCategoryResultsEdgeCases:
                 name="revenue",
                 category="income",
                 values={2024: 100000},
-                value_format="no_decimals",
+                value_format=Format.NO_DECIMALS,
             )
         ]
 
@@ -1371,13 +1372,13 @@ class TestCategoryResultsEdgeCases:
                 name="percentage_metric",
                 category="metrics",
                 values={2024: 0.15},
-                value_format="percent",
+                value_format=Format.PERCENT,
             ),
             LineItem(
                 name="decimal_metric",
                 category="metrics",
                 values={2024: 1234.56},
-                value_format="two_decimals",
+                value_format=Format.TWO_DECIMALS,
             ),
         ]
 
