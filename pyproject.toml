@@ -47,6 +47,9 @@ dev = [
     "pytest>=6.0",
     "pytest-cov",
 ]
+notebook = [
+    "ipython>=7.0.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
