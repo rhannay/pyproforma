@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import pytest
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.charts.chart_class import Chart
 from pyproforma.charts.charts import Charts
 
@@ -20,9 +21,9 @@ class TestIndexToYearChart:
         # Mock li() method responses
         def mock_li(name):
             line_item_map = {
-                "revenue": Mock(label="Revenue", value_format="no_decimals"),
-                "expenses": Mock(label="Expenses", value_format="two_decimals"),
-                "growth_rate": Mock(label="Growth Rate", value_format="percent"),
+                "revenue": Mock(label="Revenue", value_format=Format.NO_DECIMALS),
+                "expenses": Mock(label="Expenses", value_format=Format.TWO_DECIMALS),
+                "growth_rate": Mock(label="Growth Rate", value_format=Format.PERCENT),
             }
             if name in line_item_map:
                 line_item_result = line_item_map[name]

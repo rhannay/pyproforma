@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.models.line_item import LineItem
 
 
@@ -367,7 +368,7 @@ class TestSetterLineItem:
             category="special",
             label="Detailed Item",
             formula="1500",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         model_with_years["detailed_item"] = line_item
 
@@ -377,7 +378,7 @@ class TestSetterLineItem:
         assert added_item.category == "special"
         assert added_item.label == "Detailed Item"
         assert added_item.formula == "1500"
-        assert added_item.value_format == "currency"
+        assert added_item.value_format == Format.CURRENCY
 
         # Verify it calculates correctly
         assert model_with_years.value("detailed_item", 2023) == 1500

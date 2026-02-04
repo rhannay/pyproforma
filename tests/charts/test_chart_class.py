@@ -1,3 +1,4 @@
+from pyproforma.table import Format
 import pytest
 
 from pyproforma.charts.chart_class import Chart, ChartDataSet
@@ -103,14 +104,14 @@ class TestChart:
             data_sets=data_sets,
             id="revenue_chart",
             title="Monthly Revenue",
-            value_format="two_decimals",
+            value_format=Format.TWO_DECIMALS,
         )
 
         assert chart.id == "revenue_chart"
         assert chart.title == "Monthly Revenue"
         assert chart.labels == labels
         assert chart.data_sets == data_sets
-        assert chart.value_format == "two_decimals"
+        assert chart.value_format == Format.TWO_DECIMALS
 
     def test_init_with_all_chart_types(self):
         """Test Chart initialization with datasets of different chart types."""

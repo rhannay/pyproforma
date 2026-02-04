@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import pandas as pd
 
 from pyproforma.charts import Charts
-from pyproforma.table import ValueFormat
+from pyproforma.table import Format
 from pyproforma.models.generator import Generator
 
 # Namespace imports
@@ -1564,7 +1564,7 @@ class Model(SerializationMixin):
         label: str | None = None,
         values: dict[int, float] | None = None,
         formula: str | None = None,
-        value_format: ValueFormat = "no_decimals",
+        value_format = Format.NO_DECIMALS,
         replace: bool = False,
     ) -> None:
         """
@@ -1580,7 +1580,7 @@ class Model(SerializationMixin):
             label (str, optional): Human-readable display name. Defaults to name if not provided.
             values (dict[int, float], optional): Dictionary mapping years to explicit values
             formula (str, optional): Formula string for calculating values
-            value_format (ValueFormat, optional): Format for displaying values. Defaults to 'no_decimals'
+            value_format (optional): Format for displaying values. Defaults to Format.NO_DECIMALS
             replace (bool, optional): If True, replace existing line item with same name. Defaults to False.
 
         Returns:

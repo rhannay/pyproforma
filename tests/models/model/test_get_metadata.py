@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma import Category, LineItem, Model
+from pyproforma.table import Format
 from pyproforma.models.constraint import Constraint
 from pyproforma.models.generator.debt import Debt
 
@@ -17,14 +18,14 @@ class TestGetItemMetadata:
                 label="Revenue",
                 category="income",
                 values={2023: 100000, 2024: 120000},
-                value_format="currency",
+                value_format=Format.CURRENCY,
             ),
             LineItem(
                 name="expenses",
                 label="Expenses",
                 category="costs",
                 formula="revenue * 0.6",
-                value_format="currency",
+                value_format=Format.CURRENCY,
             ),
         ]
         categories = [
@@ -63,7 +64,7 @@ class TestGetItemMetadata:
 
         assert metadata["name"] == "revenue"
         assert metadata["label"] == "Revenue"
-        assert metadata["value_format"] == "currency"
+        assert metadata["value_format"] == Format.CURRENCY
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "revenue"
 
@@ -73,7 +74,7 @@ class TestGetItemMetadata:
 
         assert metadata["name"] == "expenses"
         assert metadata["label"] == "Expenses"
-        assert metadata["value_format"] == "currency"
+        assert metadata["value_format"] == Format.CURRENCY
         assert metadata["source_type"] == "line_item"
         assert metadata["source_name"] == "expenses"
 

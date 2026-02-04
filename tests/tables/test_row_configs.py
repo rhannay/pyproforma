@@ -1,6 +1,7 @@
 """Test the new dataclass row configuration approach."""
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.tables.row_types import BlankRow, ItemRow, LabelRow, dict_to_row_config
 from pyproforma.tables.table_generator import generate_table_from_template
 
@@ -8,11 +9,11 @@ from pyproforma.tables.table_generator import generate_table_from_template
 def test_dataclass_row_config_creation():
     """Test that we can create row configs as dataclasses."""
     # Test creating an ItemRow
-    item_config = ItemRow(name="revenue", bold=True, value_format="currency")
+    item_config = ItemRow(name="revenue", bold=True, value_format=Format.CURRENCY)
 
     assert item_config.name == "revenue"
     assert item_config.bold is True
-    assert item_config.value_format == "currency"
+    assert item_config.value_format == Format.CURRENCY
     assert item_config.included_cols == ["label"]  # default value
 
     # Test creating an ItemRow with custom included_cols
@@ -20,7 +21,7 @@ def test_dataclass_row_config_creation():
         name="revenue",
         included_cols=["name", "label", "category"],
         bold=True,
-        value_format="currency",
+        value_format=Format.CURRENCY,
     )
 
     assert item_config_with_cols.included_cols == ["name", "label", "category"]
@@ -66,7 +67,7 @@ def test_dataclass_serialization():
         name="revenue",
         included_cols=["name", "label"],
         bold=True,
-        value_format="currency",
+        value_format=Format.CURRENCY,
     )
 
     # Convert to dict
@@ -74,7 +75,15 @@ def test_dataclass_serialization():
 
     assert config_dict["name"] == "revenue"
     assert config_dict["bold"] is True
-    assert config_dict["value_format"] == "currency"
+    # value_format is converted to dict representation by asdict()
+    assert config_dict["value_format"] == {
+        "decimals": 2,
+        "thousands": True,
+        "prefix": "$",
+        "suffix": "",
+        "multiplier": 1.0,
+        "scale": None,
+    }
     assert config_dict["included_cols"] == ["name", "label"]
 
     # Convert back from dict
@@ -82,7 +91,15 @@ def test_dataclass_serialization():
 
     assert new_config.name == "revenue"
     assert new_config.bold is True
-    assert new_config.value_format == "currency"
+    # When reconstructing from dict, the dict becomes the value_format
+    assert new_config.value_format == {
+        "decimals": 2,
+        "thousands": True,
+        "prefix": "$",
+        "suffix": "",
+        "multiplier": 1.0,
+        "scale": None,
+    }
     assert new_config.included_cols == ["name", "label"]
 
 
@@ -287,7 +304,7 @@ def test_category_total_row_styling(sample_line_item_set: Model):
         bold=True,
         bottom_border="double",
         top_border="single",
-        value_format="percent",
+        value_format=Format.PERCENT,
     )
 
     row = category_total_row.generate_row(sample_line_item_set, label_col_count=1)
@@ -299,5 +316,5 @@ def test_category_total_row_styling(sample_line_item_set: Model):
 
     # Check value cells have correct formatting
     for i in range(1, len(row)):  # Skip label cell
-        assert row[i].value_format == "percent"
+        assert row[i].value_format == Format.PERCENT
         assert row[i].bold is True

@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import plotly.graph_objects as go
 
-from ..table import ValueFormat
+from pyproforma.table.format_value import Format
 from .chart_class import Chart, ChartDataSet
 
 if TYPE_CHECKING:
@@ -108,7 +108,7 @@ class Charts:
         width: int = 800,
         height: int = 600,
         template: str = "plotly_white",
-        value_format: ValueFormat = None,
+        value_format: Any = None,
     ) -> go.Figure:
         """
         Create a line chart using Plotly showing the values for multiple items over years.
@@ -119,7 +119,7 @@ class Charts:
             width (int): Chart width in pixels (default: 800)
             height (int): Chart height in pixels (default: 600)
             template (str): Plotly template to use (default: 'plotly_white')
-            value_format (ValueFormat, optional): Y-axis value format. If None, uses the first item's format.
+            value_format (optional): Y-axis value format. If None, uses the first item's format.
 
         Returns:
             Chart figure: The Plotly chart figure with multiple lines
@@ -296,7 +296,7 @@ class Charts:
             labels=[str(year) for year in years],
             data_sets=datasets,
             title=chart_title,
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
 
         # Render the chart with Plotly

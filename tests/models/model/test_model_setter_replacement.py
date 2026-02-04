@@ -3,6 +3,7 @@
 import pytest
 
 from pyproforma import Model
+from pyproforma.table import Format
 from pyproforma.models.line_item import LineItem
 
 
@@ -18,7 +19,7 @@ class TestReplaceWithPrimitiveValues:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -30,7 +31,7 @@ class TestReplaceWithPrimitiveValues:
         assert initial_item.formula == "1000"
         assert initial_item.category == "income"
         assert initial_item.label == "Total Revenue"
-        assert initial_item.value_format == "currency"
+        assert initial_item.value_format == Format.CURRENCY
 
         # Replace with integer constant
         model_with_line_item["revenue"] = 2000
@@ -44,7 +45,7 @@ class TestReplaceWithPrimitiveValues:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values == {2023: 2000.0, 2024: 2000.0, 2025: 2000.0}
 
@@ -56,7 +57,7 @@ class TestReplaceWithPrimitiveValues:
             category="ratios",
             label="Profit Margin",
             values={2023: 0.1, 2024: 0.12, 2025: 0.15},
-            value_format="percent",
+            value_format=Format.PERCENT,
         )
 
         # Verify initial state
@@ -75,7 +76,7 @@ class TestReplaceWithPrimitiveValues:
         updated_item = model_with_line_item._line_item_definition("margin")
         assert updated_item.category == "ratios"  # Preserved
         assert updated_item.label == "Profit Margin"  # Preserved
-        assert updated_item.value_format == "percent"  # Preserved
+        assert updated_item.value_format == Format.PERCENT  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values == {2023: 0.2, 2024: 0.2, 2025: 0.2}
 
@@ -92,7 +93,7 @@ class TestReplaceWithList:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -113,7 +114,7 @@ class TestReplaceWithList:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values == {2023: 2000.0, 2024: 2200.0, 2025: 2400.0}
 
@@ -131,7 +132,7 @@ class TestReplaceWithFormula:
             category="income",
             label="Total Revenue",
             values={2023: 1000, 2024: 1100, 2025: 1200},
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -157,7 +158,7 @@ class TestReplaceWithFormula:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula == "base * 2"  # Updated
         assert updated_item.values is None  # Cleared
 
@@ -170,7 +171,7 @@ class TestReplaceWithFormula:
             category="income",
             label="Net Profit",
             formula="revenue * 0.1",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
 
         # Verify initial state (revenue=1000 * 0.1)
@@ -186,7 +187,7 @@ class TestReplaceWithFormula:
         updated_item = model_with_line_item._line_item_definition("profit")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Net Profit"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula == "revenue * 0.2"  # Updated
         assert updated_item.values is None  # Still None
 
@@ -203,7 +204,7 @@ class TestReplaceWithValuesDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -224,7 +225,7 @@ class TestReplaceWithValuesDict:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values == {2023: 1500, 2024: 1650, 2025: 1800}
 
@@ -241,7 +242,7 @@ class TestReplaceWithPandasSeries:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -265,7 +266,7 @@ class TestReplaceWithPandasSeries:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values == {2023: 3000.0, 2024: 3300.0, 2025: 3600.0}
 
@@ -282,7 +283,7 @@ class TestReplaceWithEmptyDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -303,7 +304,7 @@ class TestReplaceWithEmptyDict:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "income"  # Preserved
         assert updated_item.label == "Total Revenue"  # Preserved
-        assert updated_item.value_format == "currency"  # Preserved
+        assert updated_item.value_format == Format.CURRENCY  # Preserved
         assert updated_item.formula is None  # Cleared
         assert updated_item.values is None  # Cleared
 
@@ -320,7 +321,7 @@ class TestReplaceWithLineItemOrDict:
             category="income",
             label="Total Revenue",
             formula="1000",
-            value_format="currency",
+            value_format=Format.CURRENCY,
         )
         return model
 
@@ -332,7 +333,7 @@ class TestReplaceWithLineItemOrDict:
             category="sales",
             label="Sales Revenue",
             formula="2000",
-            value_format="no_decimals",
+            value_format=Format.NO_DECIMALS,
         )
         model_with_line_item["revenue"] = new_item
 
@@ -340,7 +341,7 @@ class TestReplaceWithLineItemOrDict:
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "sales"  # Changed
         assert updated_item.label == "Sales Revenue"  # Changed
-        assert updated_item.value_format == "no_decimals"  # Changed
+        assert updated_item.value_format == Format.NO_DECIMALS  # Changed
         assert updated_item.formula == "2000"  # Changed
         assert model_with_line_item.value("revenue", 2023) == 2000
 
@@ -353,14 +354,14 @@ class TestReplaceWithLineItemOrDict:
             "category": "sales",
             "label": "Sales Revenue",
             "formula": "3000",
-            "value_format": "two_decimals",
+            "value_format": Format.TWO_DECIMALS,
         }
 
         # Verify all attributes are replaced
         updated_item = model_with_line_item._line_item_definition("revenue")
         assert updated_item.category == "sales"  # Changed
         assert updated_item.label == "Sales Revenue"  # Changed
-        assert updated_item.value_format == "two_decimals"  # Changed
+        assert updated_item.value_format == Format.TWO_DECIMALS  # Changed
         assert updated_item.formula == "3000"  # Changed
         assert model_with_line_item.value("revenue", 2023) == 3000
 

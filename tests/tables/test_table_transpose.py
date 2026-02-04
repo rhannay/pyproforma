@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pyproforma.table import Cell, Table
+from pyproforma.table import Cell, Table, Format
 
 
 class TestTableTranspose:
@@ -62,7 +62,7 @@ class TestTableTranspose:
             [Cell("A"), Cell("B")],
             [
                 Cell("X", bold=True, align="center"), 
-                Cell(1, bold=True, background_color="red", value_format="no_decimals")
+                Cell(1, bold=True, background_color="red", value_format=Format.NO_DECIMALS)
             ],
             [
                 Cell("Y", font_color="blue"), 

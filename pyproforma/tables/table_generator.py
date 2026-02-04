@@ -50,7 +50,7 @@ def generate_table_from_template(
 
     # Add year column headers
     for year in model.years:
-        header_cells.append(Cell(value=year, bold=True, align="center", value_format="year"))
+        header_cells.append(Cell(value=year, bold=True, align="center", value_format=None))
 
     # Create data rows
     data_rows = []
