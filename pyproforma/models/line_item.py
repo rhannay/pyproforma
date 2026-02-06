@@ -89,13 +89,16 @@ class LineItem:
             Values can be numbers or None. Defaults to empty dict if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
+        constant (float, optional): A constant scalar value that applies to all years.
+            Cannot be used together with values or formula. Defaults to None.
         value_format (ValueFormat | NumberFormatSpec, optional): Format specification
             for displaying values. Can be a string format like 'no_decimals',
             'two_decimals', 'percent', etc., or a NumberFormatSpec instance for more
             control. Defaults to 'no_decimals'.
 
     Raises:
-        ValueError: If name contains invalid characters (spaces or special characters).
+        ValueError: If name contains invalid characters (spaces or special characters),
+            or if constant is used together with values or formula.
 
     Examples:
         >>> # Create a line item with explicit values (including None)
@@ -113,6 +116,13 @@ class LineItem:
         ...     formula="revenue * 0.1"
         ... )
 
+        >>> # Create a line item with a constant value
+        >>> inflation = LineItem(
+        ...     name="inflation_rate",
+        ...     category="assumptions",
+        ...     constant=0.03
+        ... )
+
         >>> # Create a line item using default category
         >>> misc_item = LineItem(
         ...     name="misc_expense",
@@ -127,11 +137,31 @@ class LineItem:
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
+    constant: float = None
     value_format: Union[NumberFormatSpec, dict, None] = Format.NO_DECIMALS
 
     def __post_init__(self):
         validate_name(self.name)
         _validate_values_keys(self.values)
+
+        # Validate that constant is not used with values or formula
+        if self.constant is not None:
+            if self.values is not None:
+                raise ValueError(
+                    f"LineItem '{self.name}' cannot have both 'constant' and 'values'. "
+                    f"Use either constant for a scalar value or values for year-specific values."
+                )
+            if self.formula is not None:
+                raise ValueError(
+                    f"LineItem '{self.name}' cannot have both 'constant' and 'formula'. "
+                    f"Use either constant for a scalar value or formula for calculated values."
+                )
+            # Validate that constant is numeric
+            if not isinstance(self.constant, (int, float, bool)):
+                raise TypeError(
+                    f"LineItem constant must be numeric (int, float, or bool), "
+                    f"got {type(self.constant).__name__}"
+                )
 
         # Handle None category by converting to "general"
         if self.category is None:
@@ -158,6 +188,7 @@ class LineItem:
             "label": self.label,
             "values": self.values,
             "formula": self.formula,
+            "constant": self.constant,
             "value_format": value_format_serialized,
         }
 
@@ -178,7 +209,7 @@ class LineItem:
         """
         # Convert string keys back to integers for values dict (JSON converts int keys
         # to strings)
-        values = item_dict.get("values", {})
+        values = item_dict.get("values")
         if values:
             values = {int(k): v for k, v in values.items()}
 
@@ -195,5 +226,6 @@ class LineItem:
             label=item_dict.get("label"),
             values=values,
             formula=item_dict.get("formula"),
+            constant=item_dict.get("constant"),
             value_format=value_format,
         )

@@ -171,16 +171,19 @@ def calculate_line_item_value(
     name: str,
     line_item_metadata: list[dict] | None = None,
     category_metadata: list[dict] | None = None,
+    is_constant: bool = False,
+    constant_value: float | None = None,
 ) -> float | None:
     """
     Calculate the value for a line item in a specific year.
 
     The function follows this precedence:
     1. Check if value already exists in interim_values_by_year (raises error if found)
-    2. Return explicit value from hardcoded_values if available for the year and not None
-    3. Check if formula is category_total:category_name pattern and calculate category total
-    4. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
-    5. Return None if no value or formula is available
+    2. Return constant_value if this is a constant line item
+    3. Return explicit value from hardcoded_values if available for the year and not None
+    4. Check if formula is category_total:category_name pattern and calculate category total
+    5. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
+    6. Return None if no value or formula is available
 
     Args:
         hardcoded_values (dict[int, float | None]): Dictionary mapping years to explicit values.
@@ -196,6 +199,8 @@ def calculate_line_item_value(
             if formula uses the category_total:category_name pattern.
         category_metadata (list[dict] | None): Metadata for all defined categories. Required
             if formula uses the category_total:category_name pattern.
+        is_constant (bool): Whether this line item is a constant (same value for all years).
+        constant_value (float | None): The constant value if is_constant is True.
 
     Returns:
         float or None: The calculated/stored value for the specified year, or None if no value/formula exists.
@@ -212,6 +217,10 @@ def calculate_line_item_value(
         raise ValueError(
             f"Value for {name} in year {year} already exists in interim values."
         )
+
+    # If this is a constant, return the constant value
+    if is_constant:
+        return constant_value
 
     # If value for this year is in hardcoded_values and is not None, return that value
     if year in hardcoded_values and hardcoded_values[year] is not None:
@@ -398,6 +407,8 @@ def generate_value_matrix(
                         item.name,
                         line_item_metadata,
                         category_metadata,
+                        li_metadata.get("is_constant", False),
+                        li_metadata.get("constant_value", None),
                     )
                     calculated_items.add(item.name)
                     items_calculated_this_round.append(item)

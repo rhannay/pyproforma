@@ -116,6 +116,10 @@ def generate_line_item_metadata(
         # If hardcoded values are None, use {}
         hardcoded_values = item.values if item.values is not None else {}
 
+        # Check if this is a constant line item
+        is_constant = item.constant is not None
+        constant_value = item.constant if is_constant else None
+
         defined_names.append(
             {
                 "name": item.name,
@@ -126,6 +130,8 @@ def generate_line_item_metadata(
                 "category": item.category,
                 "formula": item.formula,
                 "hardcoded_values": hardcoded_values,
+                "is_constant": is_constant,
+                "constant_value": constant_value,
             }
         )
 
