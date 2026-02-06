@@ -410,7 +410,7 @@ class TestValidateValuesKeys:
             _validate_values_keys([100, 200, 300])
 
         error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "LineItem values must be a dictionary, scalar, or None" in error_msg
         assert "got list" in error_msg
 
     def test_validate_values_keys_rejects_string(self):
@@ -419,17 +419,18 @@ class TestValidateValuesKeys:
             _validate_values_keys("100,200,300")
 
         error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "LineItem values must be a dictionary, scalar, or None" in error_msg
         assert "got str" in error_msg
 
-    def test_validate_values_keys_rejects_int(self):
-        """Test that int values are rejected with helpful error."""
-        with pytest.raises(TypeError) as excinfo:
-            _validate_values_keys(100)
+    def test_validate_values_keys_accepts_int(self):
+        """Test that int scalar values are accepted."""
+        # Should not raise any exception
+        _validate_values_keys(100)
 
-        error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
-        assert "got int" in error_msg
+    def test_validate_values_keys_accepts_float(self):
+        """Test that float scalar values are accepted."""
+        # Should not raise any exception
+        _validate_values_keys(0.21)
 
     def test_validate_values_keys_rejects_tuple(self):
         """Test that tuple values are rejected with helpful error."""
@@ -437,7 +438,7 @@ class TestValidateValuesKeys:
             _validate_values_keys((100, 200))
 
         error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "LineItem values must be a dictionary, scalar, or None" in error_msg
         assert "got tuple" in error_msg
 
     def test_validate_values_keys_integration_with_line_item_non_dict(self):
@@ -447,7 +448,7 @@ class TestValidateValuesKeys:
             LineItem(name="test_list", category="revenue", values=[100, 200, 300])
 
         error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "LineItem values must be a dictionary, scalar, or None" in error_msg
         assert "got list" in error_msg
 
         # Test with string
@@ -455,16 +456,16 @@ class TestValidateValuesKeys:
             LineItem(name="test_string", category="revenue", values="100,200,300")
 
         error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
+        assert "LineItem values must be a dictionary, scalar, or None" in error_msg
         assert "got str" in error_msg
 
-        # Test with int
-        with pytest.raises(TypeError) as excinfo:
-            LineItem(name="test_int", category="revenue", values=100)
+        # Test with scalar int - should work now
+        item = LineItem(name="test_int", category="revenue", values=100)
+        assert item.values == 100
 
-        error_msg = str(excinfo.value)
-        assert "LineItem values must be a dictionary or None" in error_msg
-        assert "got int" in error_msg
+        # Test with scalar float - should work now
+        item = LineItem(name="test_float", category="revenue", values=0.21)
+        assert item.values == 0.21
 
 
 class TestLineItemCategoryValidation:

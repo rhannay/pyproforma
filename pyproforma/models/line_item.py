@@ -5,12 +5,24 @@ from ..table import Format, NumberFormatSpec
 from ._utils import validate_name
 
 
-def _validate_values_keys(values: dict[int, float | None] | None):
-    """Validate that all keys in the values dictionary are integers."""
+def _validate_values_keys(values: dict[int, float | None] | float | int | None):
+    """
+    Validate values parameter for LineItem.
+    
+    Values can be:
+    - None: No explicit values
+    - A scalar (int/float): Constant value for all years
+    - A dictionary: Year-specific values
+    """
     if values is not None:
+        # Allow scalar values (constants)
+        if isinstance(values, (int, float, bool)):
+            return
+        
+        # Validate dictionary values
         if not isinstance(values, dict):
             raise TypeError(
-                f"LineItem values must be a dictionary or None, "
+                f"LineItem values must be a dictionary, scalar, or None, "
                 f"got {type(values).__name__}"
             )
         for key in values.keys():
@@ -85,20 +97,18 @@ class LineItem:
         category (str, optional): Category or type classification for the line item.
             Defaults to "general" if None is provided.
         label (str, optional): Human-readable display name. Defaults to name if not provided.
-        values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
-            Values can be numbers or None. Defaults to empty dict if not provided.
+        values (dict[int, float | None] | float | int, optional): Dictionary mapping years 
+            to explicit values, or a scalar value (constant for all years).
+            Values can be numbers or None. Defaults to None if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
-        constant (float, optional): A constant scalar value that applies to all years.
-            Cannot be used together with values or formula. Defaults to None.
         value_format (ValueFormat | NumberFormatSpec, optional): Format specification
             for displaying values. Can be a string format like 'no_decimals',
             'two_decimals', 'percent', etc., or a NumberFormatSpec instance for more
             control. Defaults to 'no_decimals'.
 
     Raises:
-        ValueError: If name contains invalid characters (spaces or special characters),
-            or if constant is used together with values or formula.
+        ValueError: If name contains invalid characters (spaces or special characters).
 
     Examples:
         >>> # Create a line item with explicit values (including None)
@@ -116,11 +126,11 @@ class LineItem:
         ...     formula="revenue * 0.1"
         ... )
 
-        >>> # Create a line item with a constant value
-        >>> inflation = LineItem(
-        ...     name="inflation_rate",
+        >>> # Create a line item with a constant value (scalar)
+        >>> tax_rate = LineItem(
+        ...     name="tax_rate",
         ...     category="assumptions",
-        ...     constant=0.03
+        ...     values=0.21  # Same value for all years
         ... )
 
         >>> # Create a line item using default category
@@ -135,35 +145,13 @@ class LineItem:
     name: str
     category: str = None
     label: str = None
-    values: dict[int, float | None] = None
+    values: Union[dict[int, float | None], float, int, None] = None
     formula: str = None
-    constant: float = None
     value_format: Union[NumberFormatSpec, dict, None] = Format.NO_DECIMALS
 
     def __post_init__(self):
         validate_name(self.name)
         _validate_values_keys(self.values)
-
-        # Validate that constant is not used with values or formula
-        if self.constant is not None:
-            if self.values is not None:
-                raise ValueError(
-                    f"LineItem '{self.name}' cannot have both 'constant' and "
-                    f"'values'. Use either constant for a scalar value or values "
-                    f"for year-specific values."
-                )
-            if self.formula is not None:
-                raise ValueError(
-                    f"LineItem '{self.name}' cannot have both 'constant' and "
-                    f"'formula'. Use either constant for a scalar value or "
-                    f"formula for calculated values."
-                )
-            # Validate that constant is numeric
-            if not isinstance(self.constant, (int, float, bool)):
-                raise TypeError(
-                    f"LineItem constant must be numeric (int, float, or bool), "
-                    f"got {type(self.constant).__name__}"
-                )
 
         # Handle None category by converting to "general"
         if self.category is None:
@@ -190,7 +178,6 @@ class LineItem:
             "label": self.label,
             "values": self.values,
             "formula": self.formula,
-            "constant": self.constant,
             "value_format": value_format_serialized,
         }
 
@@ -210,10 +197,11 @@ class LineItem:
             it defaults to "general".
         """
         # Convert string keys back to integers for values dict (JSON converts int keys
-        # to strings)
-        values = item_dict.get("values")
-        if values:
+        # to strings). Handle both scalar and dict values.
+        values = item_dict.get("values", {})
+        if values and isinstance(values, dict):
             values = {int(k): v for k, v in values.items()}
+        # If values is a scalar (int/float), leave it as-is
 
         # Deserialize value_format
         value_format_raw = item_dict.get("value_format", Format.NO_DECIMALS)
@@ -228,6 +216,5 @@ class LineItem:
             label=item_dict.get("label"),
             values=values,
             formula=item_dict.get("formula"),
-            constant=item_dict.get("constant"),
             value_format=value_format,
         )

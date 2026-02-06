@@ -113,12 +113,20 @@ def generate_line_item_metadata(
         # If label is None, use name as label
         label = item.label if item.label is not None else item.name
 
-        # If hardcoded values are None, use {}
-        hardcoded_values = item.values if item.values is not None else {}
-
-        # Check if this is a constant line item
-        is_constant = item.constant is not None
-        constant_value = item.constant if is_constant else None
+        # Handle values: can be None, dict, or scalar
+        if item.values is None:
+            hardcoded_values = {}
+            is_constant = False
+            constant_value = None
+        elif isinstance(item.values, dict):
+            hardcoded_values = item.values
+            is_constant = False
+            constant_value = None
+        else:
+            # Scalar value - treat as constant
+            hardcoded_values = {}
+            is_constant = True
+            constant_value = item.values
 
         defined_names.append(
             {

@@ -68,8 +68,8 @@ def _parse_generator_field_formula(formula: str) -> tuple[str, str] | None:
         formula (str): The formula string to parse
 
     Returns:
-        tuple[str, str] | None: (generator_name, field_name) if the formula
-                                matches the pattern, None otherwise
+        tuple[str, str] | None: (generator_name, field_name) if the formula matches 
+                                the pattern, None otherwise
 
     Examples:
         >>> _parse_generator_field_formula("debt: principal")
@@ -179,7 +179,7 @@ def calculate_line_item_value(
 
     The function follows this precedence:
     1. Check if value already exists in interim_values_by_year (raises error if found)
-    2. Return constant_value if this is a constant line item
+    2. Return constant_value if is_constant is True
     3. Return explicit value from hardcoded_values if available for the year and not None
     4. Check if formula is category_total:category_name pattern and calculate category total
     5. Calculate value using formula if formula is defined (used when hardcoded value is None or missing)
@@ -199,7 +199,7 @@ def calculate_line_item_value(
             if formula uses the category_total:category_name pattern.
         category_metadata (list[dict] | None): Metadata for all defined categories. Required
             if formula uses the category_total:category_name pattern.
-        is_constant (bool): Whether this line item is a constant (same value for all years).
+        is_constant (bool): Whether this line item has a constant value.
         constant_value (float | None): The constant value if is_constant is True.
 
     Returns:
@@ -267,13 +267,12 @@ def calculate_line_item_value(
             # This is a generator field formula
             generator_name, field_name = generator_field
             full_name = f"{generator_name}.{field_name}"
-
+            
             # Look up the value in the value matrix
             values_by_name = interim_values_by_year.get(year, {})
             if full_name not in values_by_name:
                 raise ValueError(
-                    f"Generator field '{full_name}' not found in value "
-                    f"matrix for year {year}"
+                    f"Generator field '{full_name}' not found in value matrix for year {year}"
                 )
             return values_by_name[full_name]
 
@@ -473,8 +472,7 @@ def generate_value_matrix(
 
                     # Add all generated full names to calculated_items
                     calculated_items.update(
-                        f"{item.name}.{field_name}"
-                        for field_name in generated_values.keys()
+                        f"{item.name}.{field_name}" for field_name in generated_values.keys()
                     )
 
                     # Mark this generator as calculated

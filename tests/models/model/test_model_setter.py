@@ -469,7 +469,7 @@ class TestSetterDictionary:
 
     def test_setter_dict_malformed_values(self, model_with_years):
         """Test that malformed dictionary values raise appropriate errors."""
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):  # Now raises TypeError not AttributeError
             model_with_years["bad_values"] = {"values": "invalid_values_type"}
 
     def test_setter_dict_existing_item_replacement(self, model_with_years):
