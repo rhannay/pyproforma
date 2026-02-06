@@ -68,8 +68,8 @@ def _parse_generator_field_formula(formula: str) -> tuple[str, str] | None:
         formula (str): The formula string to parse
 
     Returns:
-        tuple[str, str] | None: (generator_name, field_name) if the formula matches 
-                                the pattern, None otherwise
+        tuple[str, str] | None: (generator_name, field_name) if the formula
+                                matches the pattern, None otherwise
 
     Examples:
         >>> _parse_generator_field_formula("debt: principal")
@@ -267,12 +267,13 @@ def calculate_line_item_value(
             # This is a generator field formula
             generator_name, field_name = generator_field
             full_name = f"{generator_name}.{field_name}"
-            
+
             # Look up the value in the value matrix
             values_by_name = interim_values_by_year.get(year, {})
             if full_name not in values_by_name:
                 raise ValueError(
-                    f"Generator field '{full_name}' not found in value matrix for year {year}"
+                    f"Generator field '{full_name}' not found in value "
+                    f"matrix for year {year}"
                 )
             return values_by_name[full_name]
 
@@ -472,7 +473,8 @@ def generate_value_matrix(
 
                     # Add all generated full names to calculated_items
                     calculated_items.update(
-                        f"{item.name}.{field_name}" for field_name in generated_values.keys()
+                        f"{item.name}.{field_name}"
+                        for field_name in generated_values.keys()
                     )
 
                     # Mark this generator as calculated

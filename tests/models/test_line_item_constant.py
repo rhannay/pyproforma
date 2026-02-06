@@ -127,11 +127,8 @@ class TestConstantInModel:
     def test_constant_in_multi_year_formula(self):
         """Test constant used across multiple years in formulas."""
         growth_rate = LineItem(name="growth_rate", constant=0.1)
-        revenue_2020 = LineItem(name="revenue", values={2020: 1000, 2021: 1100, 2022: 1210})
-
-        model = Model(
-            line_items=[growth_rate, revenue_2020],
-            years=[2020, 2021, 2022],
+        revenue_2020 = LineItem(
+            name="revenue", values={2020: 1000, 2021: 1100, 2022: 1210}
         )
 
         # Add formula-based line item that uses the constant

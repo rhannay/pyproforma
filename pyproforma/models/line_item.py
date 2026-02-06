@@ -148,13 +148,15 @@ class LineItem:
         if self.constant is not None:
             if self.values is not None:
                 raise ValueError(
-                    f"LineItem '{self.name}' cannot have both 'constant' and 'values'. "
-                    f"Use either constant for a scalar value or values for year-specific values."
+                    f"LineItem '{self.name}' cannot have both 'constant' and "
+                    f"'values'. Use either constant for a scalar value or values "
+                    f"for year-specific values."
                 )
             if self.formula is not None:
                 raise ValueError(
-                    f"LineItem '{self.name}' cannot have both 'constant' and 'formula'. "
-                    f"Use either constant for a scalar value or formula for calculated values."
+                    f"LineItem '{self.name}' cannot have both 'constant' and "
+                    f"'formula'. Use either constant for a scalar value or "
+                    f"formula for calculated values."
                 )
             # Validate that constant is numeric
             if not isinstance(self.constant, (int, float, bool)):
