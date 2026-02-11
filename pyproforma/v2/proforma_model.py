@@ -8,6 +8,8 @@ line items as class attributes using FixedLine, FormulaLine, or Assumption.
 
 from typing import Any
 
+from pyproforma.v2.assumption import Assumption
+
 
 class ProformaModel:
     """
@@ -32,6 +34,27 @@ class ProformaModel:
     Attributes:
         periods (list[int]): List of periods (typically years) for the model.
     """
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Called when a subclass is created.
+
+        This method automatically discovers and stores the names of all Assumption
+        attributes defined on the subclass.
+
+        Args:
+            **kwargs: Additional keyword arguments passed to super().__init_subclass__
+        """
+        super().__init_subclass__(**kwargs)
+
+        # Discover assumption names from class attributes
+        assumption_names = []
+        for name, value in cls.__dict__.items():
+            if isinstance(value, Assumption):
+                assumption_names.append(name)
+
+        # Store as a class attribute
+        cls._assumption_names = assumption_names
 
     def __init__(self, periods: list[int] | None = None):
         """
