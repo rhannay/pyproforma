@@ -36,7 +36,6 @@ class FormulaLine:
         formula (Callable): Function that calculates the line item values.
         values (dict[int, float], optional): Dictionary of value overrides for specific periods.
         label (str, optional): Human-readable label for display purposes.
-        description (str, optional): Longer description of the line item.
     """
 
     def __init__(
@@ -44,7 +43,6 @@ class FormulaLine:
         formula: Callable | None = None,
         values: dict[int, float] | None = None,
         label: str | None = None,
-        description: str | None = None,
     ):
         """
         Initialize a FormulaLine.
@@ -55,12 +53,10 @@ class FormulaLine:
             values (dict[int, float], optional): Dictionary of value overrides for
                 specific periods. These override calculated values. Defaults to None.
             label (str, optional): Human-readable label. Defaults to None.
-            description (str, optional): Description of the line item. Defaults to None.
         """
         self.formula = formula
         self.values = values or {}
         self.label = label
-        self.description = description
 
     def calculate(self) -> Any:
         """
@@ -97,9 +93,9 @@ class FormulaLine:
 
     def __repr__(self):
         """Return a string representation of the FormulaLine."""
-        return (
-            f"FormulaLine(formula={self.formula!r}, "
-            f"values={self.values}, "
-            f"label={self.label!r}, "
-            f"description={self.description!r})"
-        )
+        parts = [f"formula={self.formula!r}"]
+        if self.values:
+            parts.append(f"values={self.values}")
+        if self.label:
+            parts.append(f"label={self.label!r}")
+        return f"FormulaLine({', '.join(parts)})"

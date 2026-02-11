@@ -26,14 +26,12 @@ class FixedLine:
     Attributes:
         values (dict[int, float]): Dictionary mapping periods to numeric values.
         label (str, optional): Human-readable label for display purposes.
-        description (str, optional): Longer description of the line item.
     """
 
     def __init__(
         self,
         values: dict[int, float] | None = None,
         label: str | None = None,
-        description: str | None = None,
     ):
         """
         Initialize a FixedLine.
@@ -42,11 +40,9 @@ class FixedLine:
             values (dict[int, float], optional): Dictionary mapping periods (years)
                 to numeric values. Defaults to None (empty dict).
             label (str, optional): Human-readable label. Defaults to None.
-            description (str, optional): Description of the line item. Defaults to None.
         """
         self.values = values or {}
         self.label = label
-        self.description = description
 
     def get_value(self, period: int) -> float | None:
         """
@@ -62,8 +58,6 @@ class FixedLine:
 
     def __repr__(self):
         """Return a string representation of the FixedLine."""
-        return (
-            f"FixedLine(values={self.values}, "
-            f"label={self.label!r}, "
-            f"description={self.description!r})"
-        )
+        if self.label:
+            return f"FixedLine(values={self.values}, label={self.label!r})"
+        return f"FixedLine(values={self.values})"

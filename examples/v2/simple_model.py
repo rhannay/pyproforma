@@ -28,7 +28,6 @@ class SimpleFinancialModel(ProformaModel):
     revenue = FixedLine(
         values={2024: 100000, 2025: 110000, 2026: 121000},
         label="Revenue",
-        description="Annual revenue projections",
     )
 
     # Define calculated values
@@ -36,13 +35,11 @@ class SimpleFinancialModel(ProformaModel):
     expenses = FormulaLine(
         formula=lambda: revenue * expense_ratio,
         label="Operating Expenses",
-        description="Calculated as revenue * expense ratio",
     )
 
     profit = FormulaLine(
         formula=lambda: revenue - expenses,
         label="Net Profit",
-        description="Revenue minus expenses",
     )
 
 

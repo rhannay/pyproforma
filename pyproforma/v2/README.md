@@ -39,14 +39,14 @@ expenses = FormulaLine(
 ```
 
 ### Assumption
-Represents simple values that can be constants or vary by period.
+Represents simple scalar values that apply across all periods.
 
 ```python
-# Constant assumption
+# Simple assumption
 tax_rate = Assumption(value=0.21)
 
-# Period-varying assumption
-growth_rate = Assumption(values={2024: 0.1, 2025: 0.12, 2026: 0.11})
+# Assumption with label
+growth_rate = Assumption(value=0.1, label="Annual Growth Rate")
 ```
 
 ## Current Status
