@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from ..table import Format, NumberFormatSpec
+from ..table import Format, NumberFormatSpec, normalize_format
 from ._utils import validate_name
 
 
@@ -89,10 +89,10 @@ class LineItem:
             Values can be numbers or None. Defaults to empty dict if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
-        value_format (ValueFormat | NumberFormatSpec, optional): Format specification
-            for displaying values. Can be a string format like 'no_decimals',
-            'two_decimals', 'percent', etc., or a NumberFormatSpec instance for more
-            control. Defaults to 'no_decimals'.
+        value_format (str | NumberFormatSpec | dict, optional): Format specification
+            for displaying values. Can be a string format name like 'percent',
+            'currency', 'no_decimals', etc., a NumberFormatSpec instance for more
+            control, or a dict. Defaults to 'no_decimals'.
 
     Raises:
         ValueError: If name contains invalid characters (spaces or special characters).
@@ -127,11 +127,14 @@ class LineItem:
     label: str = None
     values: dict[int, float | None] = None
     formula: str = None
-    value_format: Union[NumberFormatSpec, dict, None] = Format.NO_DECIMALS
+    value_format: Union[str, NumberFormatSpec, dict, None] = Format.NO_DECIMALS
 
     def __post_init__(self):
         validate_name(self.name)
         _validate_values_keys(self.values)
+
+        # Normalize value_format to NumberFormatSpec
+        self.value_format = normalize_format(self.value_format)
 
         # Handle None category by converting to "general"
         if self.category is None:
@@ -184,10 +187,7 @@ class LineItem:
 
         # Deserialize value_format
         value_format_raw = item_dict.get("value_format", Format.NO_DECIMALS)
-        if isinstance(value_format_raw, dict):
-            value_format = NumberFormatSpec.from_dict(value_format_raw)
-        else:
-            value_format = value_format_raw
+        value_format = normalize_format(value_format_raw)
 
         return cls(
             name=item_dict["name"],
