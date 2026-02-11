@@ -6,7 +6,7 @@ from pandas.io.formats.style import Styler
 
 from .colors import color_to_hex
 from .excel import to_excel
-from .format_value import NumberFormatSpec, format_value
+from .format_value import NumberFormatSpec, format_value, normalize_format
 from .html_renderer import to_html as _to_html
 
 # Define a type alias for border styles
@@ -26,8 +26,8 @@ class Cell:
         value (Optional[Any]): The raw data value stored in the cell. Can be any type.
         bold (bool): Whether the cell text should be displayed in bold. Defaults to False.
         align (str): Text alignment for the cell ('left', 'center', 'right'). Defaults to 'right'.
-        value_format (Optional[Union[NumberFormatSpec, dict]]): Formatting specification for the value display.
-            Can be a NumberFormatSpec instance, dict, or None.
+        value_format (str | NumberFormatSpec | dict | None): Formatting specification for the value display.
+            Can be a string format name like 'percent', 'currency', a NumberFormatSpec instance, dict, or None.
         background_color (Optional[str]): CSS color string for cell background.
         font_color (Optional[str]): CSS color string for font color.
         bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.
@@ -58,7 +58,7 @@ class Cell:
     value: Optional[Any] = None
     bold: bool = False
     align: str = "right"
-    value_format: Optional[Union[NumberFormatSpec, dict]] = None
+    value_format: Optional[Union[str, NumberFormatSpec, dict]] = None
     background_color: Optional[str] = None
     font_color: Optional[str] = None
     bottom_border: Optional[BorderStyle] = None
@@ -66,6 +66,9 @@ class Cell:
 
     def __post_init__(self):
         """Validate color values and border styles after initialization."""
+        # Normalize value_format to NumberFormatSpec
+        self.value_format = normalize_format(self.value_format)
+        
         if self.background_color is not None:
             # Validate the color - will raise ValueError if invalid
             color_to_hex(self.background_color)

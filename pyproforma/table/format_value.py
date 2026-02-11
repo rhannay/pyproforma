@@ -172,17 +172,112 @@ class Format:
     THOUSANDS_K = NumberFormatSpec(decimals=1, thousands=False, scale="thousands", suffix="K")
     MILLIONS_M = NumberFormatSpec(decimals=1, thousands=False, scale="millions", suffix="M")
 
+    # Mapping of string names to format constants
+    _STRING_MAP = {
+        "no_decimals": NO_DECIMALS,
+        "two_decimals": TWO_DECIMALS,
+        "percent": PERCENT,
+        "percent_one_decimal": PERCENT_ONE_DECIMAL,
+        "percent_two_decimals": PERCENT_TWO_DECIMALS,
+        "currency": CURRENCY,
+        "currency_no_decimals": CURRENCY_NO_DECIMALS,
+        "thousands": THOUSANDS,
+        "millions": MILLIONS,
+        "thousands_k": THOUSANDS_K,
+        "millions_m": MILLIONS_M,
+    }
+
+    @classmethod
+    def from_string(cls, format_str: str) -> NumberFormatSpec:
+        """Convert a string format name to NumberFormatSpec.
+
+        Args:
+            format_str: String name of the format (case-insensitive).
+                Valid values: 'no_decimals', 'two_decimals', 'percent',
+                'percent_one_decimal', 'percent_two_decimals', 'currency',
+                'currency_no_decimals', 'thousands', 'millions',
+                'thousands_k', 'millions_m'
+
+        Returns:
+            The corresponding NumberFormatSpec instance
+
+        Raises:
+            ValueError: If the format string is not recognized
+
+        Examples:
+            >>> Format.from_string('percent')
+            NumberFormatSpec(decimals=0, thousands=False, suffix='%', multiplier=100)
+            >>> Format.from_string('currency')
+            NumberFormatSpec(decimals=2, thousands=True, prefix='$')
+        """
+        normalized = format_str.lower().strip()
+        if normalized in cls._STRING_MAP:
+            return cls._STRING_MAP[normalized]
+        
+        valid_formats = ', '.join(f"'{k}'" for k in sorted(cls._STRING_MAP.keys()))
+        raise ValueError(
+            f"Unknown format string: '{format_str}'. "
+            f"Valid formats are: {valid_formats}"
+        )
+
+
+def normalize_format(
+    value_format: Optional[Union[str, NumberFormatSpec, dict]]
+) -> Optional[NumberFormatSpec]:
+    """Normalize a value_format parameter to a NumberFormatSpec instance.
+
+    Args:
+        value_format: The format to normalize. Can be:
+            - str: A format name like 'percent', 'currency', etc.
+            - NumberFormatSpec: Returned as-is
+            - dict: Converted to NumberFormatSpec via from_dict()
+            - None: Returns None
+
+    Returns:
+        A NumberFormatSpec instance or None
+
+    Raises:
+        ValueError: If an invalid value_format type is provided
+
+    Examples:
+        >>> normalize_format('percent')
+        NumberFormatSpec(decimals=0, thousands=False, suffix='%', multiplier=100)
+        >>> normalize_format(Format.CURRENCY)
+        NumberFormatSpec(decimals=2, thousands=True, prefix='$')
+        >>> normalize_format({'decimals': 3, 'prefix': '$'})
+        NumberFormatSpec(decimals=3, prefix='$')
+        >>> normalize_format(None) is None
+        True
+    """
+    if value_format is None:
+        return None
+
+    if isinstance(value_format, str):
+        return Format.from_string(value_format)
+
+    if isinstance(value_format, dict):
+        return NumberFormatSpec.from_dict(value_format)
+
+    if isinstance(value_format, NumberFormatSpec):
+        return value_format
+
+    raise ValueError(
+        f"Invalid value_format type: {type(value_format).__name__}. "
+        f"Expected str, NumberFormatSpec, dict, or None."
+    )
+
 
 def format_value(
     value: Any,
-    value_format: Optional[Union[NumberFormatSpec, dict]] = None,
+    value_format: Optional[Union[str, NumberFormatSpec, dict]] = None,
     none_returns="",
 ) -> Any:
     """Format a value according to the specified format.
 
     Args:
         value: The value to format
-        value_format: The format to apply. Can be a NumberFormatSpec instance,
+        value_format: The format to apply. Can be a string format name
+            (e.g., 'percent', 'currency'), a NumberFormatSpec instance,
             a dict (which will be converted to NumberFormatSpec), or None.
         none_returns: Value to return if value is None (default: empty string)
 
@@ -195,7 +290,9 @@ def format_value(
     Examples:
         >>> format_value(1234.56, Format.CURRENCY)
         '$1,234.56'
-        >>> format_value(0.1234, Format.PERCENT)
+        >>> format_value(1234.56, 'currency')
+        '$1,234.56'
+        >>> format_value(0.1234, 'percent')
         '12%'
         >>> format_value(1234.56, None)
         1234.56
@@ -208,13 +305,8 @@ def format_value(
     if value_format is None:
         return value
 
-    if isinstance(value_format, dict):
-        value_format = NumberFormatSpec.from_dict(value_format)
+    normalized = normalize_format(value_format)
+    if normalized is not None:
+        return normalized.format(value)
 
-    if isinstance(value_format, NumberFormatSpec):
-        return value_format.format(value)
-
-    raise ValueError(
-        f"Invalid value_format type: {type(value_format).__name__}. "
-        f"Expected NumberFormatSpec, dict, or None."
-    )
+    return value
