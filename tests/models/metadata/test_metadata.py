@@ -193,6 +193,8 @@ class TestGenerateLineItemMetadata:
                 "category": "income",
                 "formula": None,
                 "hardcoded_values": {2020: 1000},
+                "is_constant": False,
+                "constant_value": None,
             }
         ]
         assert result == expected
@@ -237,6 +239,8 @@ class TestGenerateLineItemMetadata:
                 "category": "income",
                 "formula": None,
                 "hardcoded_values": {2020: 1000},
+                "is_constant": False,
+                "constant_value": None,
             },
             {
                 "name": "growth_rate",
@@ -247,6 +251,8 @@ class TestGenerateLineItemMetadata:
                 "category": "assumptions",
                 "formula": None,
                 "hardcoded_values": {2020: 0.05},
+                "is_constant": False,
+                "constant_value": None,
             },
             {
                 "name": "description",
@@ -257,6 +263,8 @@ class TestGenerateLineItemMetadata:
                 "category": "notes",
                 "formula": None,
                 "hardcoded_values": {2020: "test"},
+                "is_constant": False,
+                "constant_value": None,
             },
         ]
         assert result == expected
@@ -288,6 +296,8 @@ class TestGenerateLineItemMetadata:
                 "category": "income",
                 "formula": "revenue * 0.1",
                 "hardcoded_values": {2020: 100, 2021: 200},
+                "is_constant": False,
+                "constant_value": None,
             }
         ]
         assert result == expected
@@ -318,6 +328,8 @@ class TestGenerateLineItemMetadata:
                 "category": "calculations",
                 "formula": "base_value + adjustment",
                 "hardcoded_values": {},
+                "is_constant": False,
+                "constant_value": None,
             }
         ]
         assert result == expected

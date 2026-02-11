@@ -5,12 +5,24 @@ from ..table import Format, NumberFormatSpec, normalize_format
 from ._utils import validate_name
 
 
-def _validate_values_keys(values: dict[int, float | None] | None):
-    """Validate that all keys in the values dictionary are integers."""
+def _validate_values_keys(values: dict[int, float | None] | float | int | None):
+    """
+    Validate values parameter for LineItem.
+    
+    Values can be:
+    - None: No explicit values
+    - A scalar (int/float): Constant value for all years
+    - A dictionary: Year-specific values
+    """
     if values is not None:
+        # Allow scalar values (constants)
+        if isinstance(values, (int, float, bool)):
+            return
+        
+        # Validate dictionary values
         if not isinstance(values, dict):
             raise TypeError(
-                f"LineItem values must be a dictionary or None, "
+                f"LineItem values must be a dictionary, scalar, or None, "
                 f"got {type(values).__name__}"
             )
         for key in values.keys():
@@ -85,8 +97,9 @@ class LineItem:
         category (str, optional): Category or type classification for the line item.
             Defaults to "general" if None is provided.
         label (str, optional): Human-readable display name. Defaults to name if not provided.
-        values (dict[int, float | None], optional): Dictionary mapping years to explicit values.
-            Values can be numbers or None. Defaults to empty dict if not provided.
+        values (dict[int, float | None] | float | int, optional): Dictionary mapping years 
+            to explicit values, or a scalar value (constant for all years).
+            Values can be numbers or None. Defaults to None if not provided.
         formula (str, optional): Formula string for calculating values when explicit
             values are not available. Defaults to None.
         value_format (str | NumberFormatSpec | dict, optional): Format specification
@@ -113,6 +126,13 @@ class LineItem:
         ...     formula="revenue * 0.1"
         ... )
 
+        >>> # Create a line item with a constant value (scalar)
+        >>> tax_rate = LineItem(
+        ...     name="tax_rate",
+        ...     category="assumptions",
+        ...     values=0.21  # Same value for all years
+        ... )
+
         >>> # Create a line item using default category
         >>> misc_item = LineItem(
         ...     name="misc_expense",
@@ -125,7 +145,7 @@ class LineItem:
     name: str
     category: str = None
     label: str = None
-    values: dict[int, float | None] = None
+    values: Union[dict[int, float | None], float, int, None] = None
     formula: str = None
     value_format: Union[str, NumberFormatSpec, dict, None] = Format.NO_DECIMALS
 
@@ -180,10 +200,11 @@ class LineItem:
             it defaults to "general".
         """
         # Convert string keys back to integers for values dict (JSON converts int keys
-        # to strings)
+        # to strings). Handle both scalar and dict values.
         values = item_dict.get("values", {})
-        if values:
+        if values and isinstance(values, dict):
             values = {int(k): v for k, v in values.items()}
+        # If values is a scalar (int/float), leave it as-is
 
         # Deserialize value_format
         value_format_raw = item_dict.get("value_format", Format.NO_DECIMALS)

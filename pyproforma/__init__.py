@@ -7,6 +7,7 @@ from .models import Model as Model
 from .models.compare import MultiModelCompare as MultiModelCompare
 from .models.compare import TwoModelCompare as TwoModelCompare
 from .models.compare import compare_models as compare_models
+from .table import Table as Table
 from .tables import TableGenerationError as TableGenerationError
 
 # Bringing in row types for easy table generation
