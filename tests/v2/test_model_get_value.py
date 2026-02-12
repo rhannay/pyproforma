@@ -45,9 +45,9 @@ class TestGetValue:
         model = TestModel(periods=[2024])
 
         # Both approaches should give the same result
-        assert model.get_value("profit", 2024) == model.li.get("profit", 2024)
-        assert model.get_value("revenue", 2024) == model.li.get("revenue", 2024)
-        assert model.get_value("expenses", 2024) == model.li.get("expenses", 2024)
+        assert model.get_value("profit", 2024) == model._li.get("profit", 2024)
+        assert model.get_value("revenue", 2024) == model._li.get("revenue", 2024)
+        assert model.get_value("expenses", 2024) == model._li.get("expenses", 2024)
 
     def test_get_value_multiple_periods(self):
         """Test getting values across multiple periods."""

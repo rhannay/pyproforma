@@ -82,9 +82,9 @@ class ProformaModel:
 
         # Calculate line item values
         if self.periods:
-            self.li = calculate_line_items(self, self.av, self.periods)
+            self._li = calculate_line_items(self, self.av, self.periods)
         else:
-            self.li = LineItemValues(periods=[])
+            self._li = LineItemValues(periods=[])
 
     def _initialize_assumptions(self) -> AssumptionValues:
         """
@@ -119,7 +119,7 @@ class ProformaModel:
             KeyError: If the period hasn't been calculated.
         """
         # Use attribute access which raises proper errors
-        line_item = getattr(self.li, name)  # Raises AttributeError if name doesn't exist
+        line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
         return line_item[period]  # Raises KeyError if period doesn't exist
 
     def __repr__(self):

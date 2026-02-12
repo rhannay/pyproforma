@@ -64,7 +64,7 @@ class TestTypoDetection:
 
         # This should work - revenue and expenses are valid, just defined after profit
         model = TestModel(periods=[2024])
-        assert model.li.get("profit", 2024) == 40.0
+        assert model.get_value("profit", 2024) == 40.0
 
     def test_multiple_typos_first_one_caught(self):
         """Test that the first typo encountered is reported."""

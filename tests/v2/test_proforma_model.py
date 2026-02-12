@@ -109,7 +109,7 @@ class TestFixedLineCalculation:
             revenue = FixedLine(values={2024: 100})
 
         model = TestModel(periods=[2024])
-        assert model.li.get("revenue", 2024) == 100
+        assert model.get_value("revenue", 2024) == 100
 
     def test_multiple_periods(self):
         """Test FixedLine with multiple periods."""
@@ -118,9 +118,9 @@ class TestFixedLineCalculation:
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
 
         model = TestModel(periods=[2024, 2025, 2026])
-        assert model.li.get("revenue", 2024) == 100
-        assert model.li.get("revenue", 2025) == 110
-        assert model.li.get("revenue", 2026) == 121
+        assert model.get_value("revenue", 2024) == 100
+        assert model.get_value("revenue", 2025) == 110
+        assert model.get_value("revenue", 2026) == 121
 
     def test_missing_value_raises_error(self):
         """Test that missing value for a period raises an error."""
@@ -143,7 +143,7 @@ class TestFormulaLineCalculation:
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
 
         model = TestModel(periods=[2024])
-        assert model.li.get("expenses", 2024) == 60.0
+        assert model.get_value("expenses", 2024) == 60.0
 
     def test_formula_with_assumption(self):
         """Test formula using an assumption."""
@@ -154,7 +154,7 @@ class TestFormulaLineCalculation:
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
 
         model = TestModel(periods=[2024])
-        assert model.li.get("expenses", 2024) == 60.0
+        assert model.get_value("expenses", 2024) == 60.0
 
     def test_formula_referencing_formula(self):
         """Test formula referencing another formula line."""
@@ -165,9 +165,9 @@ class TestFormulaLineCalculation:
             profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
 
         model = TestModel(periods=[2024])
-        assert model.li.get("revenue", 2024) == 100
-        assert model.li.get("expenses", 2024) == 60.0
-        assert model.li.get("profit", 2024) == 40.0
+        assert model.get_value("revenue", 2024) == 100
+        assert model.get_value("expenses", 2024) == 60.0
+        assert model.get_value("profit", 2024) == 40.0
 
     def test_formula_with_override(self):
         """Test formula with value override."""
@@ -180,8 +180,8 @@ class TestFormulaLineCalculation:
             )
 
         model = TestModel(periods=[2024, 2025])
-        assert model.li.get("expenses", 2024) == 50  # Override value
-        assert model.li.get("expenses", 2025) == 66.0  # Calculated value
+        assert model.get_value("expenses", 2024) == 50  # Override value
+        assert model.get_value("expenses", 2025) == 66.0  # Calculated value
 
     def test_multiple_periods(self):
         """Test formula calculation across multiple periods."""
@@ -192,9 +192,9 @@ class TestFormulaLineCalculation:
             profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
 
         model = TestModel(periods=[2024, 2025, 2026])
-        assert model.li.get("profit", 2024) == 40.0
-        assert model.li.get("profit", 2025) == 44.0
-        assert abs(model.li.get("profit", 2026) - 48.4) < 0.0001
+        assert model.get_value("profit", 2024) == 40.0
+        assert model.get_value("profit", 2025) == 44.0
+        assert abs(model.get_value("profit", 2026) - 48.4) < 0.0001
 
 
 class TestComplexModel:
@@ -224,16 +224,16 @@ class TestComplexModel:
         assert model.av.expense_ratio == 0.6
 
         # Check revenue
-        assert model.li.get("revenue", 2024) == 100000
-        assert model.li.get("revenue", 2025) == 110000
-        assert model.li.get("revenue", 2026) == 121000
+        assert model.get_value("revenue", 2024) == 100000
+        assert model.get_value("revenue", 2025) == 110000
+        assert model.get_value("revenue", 2026) == 121000
 
         # Check expenses
-        assert model.li.get("expenses", 2024) == 60000.0
-        assert model.li.get("expenses", 2025) == 66000.0
-        assert model.li.get("expenses", 2026) == 72600.0
+        assert model.get_value("expenses", 2024) == 60000.0
+        assert model.get_value("expenses", 2025) == 66000.0
+        assert model.get_value("expenses", 2026) == 72600.0
 
         # Check profit
-        assert model.li.get("profit", 2024) == 40000.0
-        assert model.li.get("profit", 2025) == 44000.0
-        assert model.li.get("profit", 2026) == 48400.0
+        assert model.get_value("profit", 2024) == 40000.0
+        assert model.get_value("profit", 2025) == 44000.0
+        assert model.get_value("profit", 2026) == 48400.0

@@ -301,10 +301,10 @@ class TestIntegrationWithProformaModel:
         model = SimpleModel(periods=[2024, 2025])
 
         # Verify the model's li attribute is properly populated
-        assert model.li.get("revenue", 2024) == 100
-        assert model.li.get("revenue", 2025) == 110
-        assert model.li.get("expenses", 2024) == 60.0
-        assert model.li.get("expenses", 2025) == 66.0
+        assert model.get_value("revenue", 2024) == 100
+        assert model.get_value("revenue", 2025) == 110
+        assert model.get_value("expenses", 2024) == 60.0
+        assert model.get_value("expenses", 2025) == 66.0
 
     def test_model_with_no_periods(self):
         """Test that model with no periods gets empty LineItemValues."""
@@ -314,9 +314,9 @@ class TestIntegrationWithProformaModel:
 
         model = TestModel(periods=[])
 
-        assert isinstance(model.li, LineItemValues)
+        assert isinstance(model._li, LineItemValues)
         # No periods means no calculations
-        assert model.li._values == {}
+        assert model._li._values == {}
 
     def test_complex_model_integration(self):
         """Test a complex model with assumptions and multiple dependencies."""
@@ -334,11 +334,11 @@ class TestIntegrationWithProformaModel:
         model = ComplexModel(periods=[2024, 2025, 2026])
 
         # Verify all calculations are correct
-        assert model.li.get("revenue", 2024) == 100
-        assert model.li.get("expenses", 2024) == 60.0
-        assert model.li.get("ebitda", 2024) == 40.0
-        assert model.li.get("tax", 2024) == 8.4
-        assert abs(model.li.get("net_income", 2024) - 31.6) < 0.0001
+        assert model.get_value("revenue", 2024) == 100
+        assert model.get_value("expenses", 2024) == 60.0
+        assert model.get_value("ebitda", 2024) == 40.0
+        assert model.get_value("tax", 2024) == 8.4
+        assert abs(model.get_value("net_income", 2024) - 31.6) < 0.0001
 
 
 class TestDependencyResolution:
@@ -487,8 +487,8 @@ class TestDependencyResolution:
         # This should work seamlessly through __init__
         model = ReversedModel(periods=[2024])
 
-        assert model.li.get("revenue", 2024) == 100
-        assert model.li.get("expenses", 2024) == 60.0
-        assert model.li.get("ebitda", 2024) == 40.0
-        assert model.li.get("tax", 2024) == 8.4
-        assert abs(model.li.get("net_income", 2024) - 31.6) < 0.0001
+        assert model.get_value("revenue", 2024) == 100
+        assert model.get_value("expenses", 2024) == 60.0
+        assert model.get_value("ebitda", 2024) == 40.0
+        assert model.get_value("tax", 2024) == 8.4
+        assert abs(model.get_value("net_income", 2024) - 31.6) < 0.0001

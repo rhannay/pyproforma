@@ -22,9 +22,9 @@ class TestTimeOffsets:
             )
 
         model = TestModel(periods=[2024, 2025, 2026])
-        assert model.li.get("growth", 2024) == 0  # Override
-        assert model.li.get("growth", 2025) == 10  # 110 - 100
-        assert model.li.get("growth", 2026) == 11  # 121 - 110
+        assert model.get_value("growth", 2024) == 0  # Override
+        assert model.get_value("growth", 2025) == 10  # 110 - 100
+        assert model.get_value("growth", 2026) == 11  # 121 - 110
 
     def test_lookback_two_periods(self):
         """Test referencing value two periods back."""
@@ -40,10 +40,10 @@ class TestTimeOffsets:
             )
 
         model = TestModel(periods=[2024, 2025, 2026, 2027])
-        assert model.li.get("two_period_change", 2024) == 0
-        assert model.li.get("two_period_change", 2025) == 0
-        assert model.li.get("two_period_change", 2026) == 21  # 121 - 100
-        assert model.li.get("two_period_change", 2027) == 23  # 133 - 110
+        assert model.get_value("two_period_change", 2024) == 0
+        assert model.get_value("two_period_change", 2025) == 0
+        assert model.get_value("two_period_change", 2026) == 21  # 121 - 100
+        assert model.get_value("two_period_change", 2027) == 23  # 133 - 110
 
     def test_compound_growth(self):
         """Test compound growth using current period value."""
@@ -57,11 +57,11 @@ class TestTimeOffsets:
             )
 
         model = TestModel(periods=[2024, 2025, 2026])
-        assert model.li.get("revenue", 2024) == 100
+        assert model.get_value("revenue", 2024) == 100
         # next_revenue uses current period revenue, not previous
-        assert abs(model.li.get("next_revenue", 2024) - 110.0) < 0.01  # 100 * 1.1
-        assert abs(model.li.get("next_revenue", 2025) - 121.0) < 0.01  # 110 * 1.1
-        assert abs(model.li.get("next_revenue", 2026) - 133.1) < 0.01  # 121 * 1.1
+        assert abs(model.get_value("next_revenue", 2024) - 110.0) < 0.01  # 100 * 1.1
+        assert abs(model.get_value("next_revenue", 2025) - 121.0) < 0.01  # 110 * 1.1
+        assert abs(model.get_value("next_revenue", 2026) - 133.1) < 0.01  # 121 * 1.1
 
     def test_missing_period_error(self):
         """Test that referencing a missing period raises an error."""
@@ -87,10 +87,10 @@ class TestTimeOffsets:
 
         model = TestModel(periods=[2024, 2025, 2026])
         # derived values: 200, 220, 242
-        assert model.li.get("derived", 2024) == 200
-        assert model.li.get("derived", 2025) == 220
-        assert model.li.get("derived", 2026) == 242
+        assert model.get_value("derived", 2024) == 200
+        assert model.get_value("derived", 2025) == 220
+        assert model.get_value("derived", 2026) == 242
         # change values
-        assert model.li.get("change", 2024) == 0  # Override
-        assert model.li.get("change", 2025) == 20  # 220 - 200
-        assert model.li.get("change", 2026) == 22  # 242 - 220
+        assert model.get_value("change", 2024) == 0  # Override
+        assert model.get_value("change", 2025) == 20  # 220 - 200
+        assert model.get_value("change", 2026) == 22  # 242 - 220
