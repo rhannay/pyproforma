@@ -5,8 +5,6 @@ This module contains the logic for calculating line item values from formulas,
 handling dependencies, and resolving values across periods.
 """
 
-import ast
-import inspect
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
@@ -28,9 +26,7 @@ class TimeSeriesValue:
         _value (float): The value for the current period.
     """
 
-    def __init__(
-        self, name: str, li: "LineItemValues", period: int, value: float
-    ):
+    def __init__(self, name: str, li: "LineItemValues", period: int, value: float):
         """
         Initialize TimeSeriesValue.
 
@@ -162,7 +158,9 @@ class FormulaContext:
             AttributeError: If the name is not found.
         """
         if name.startswith("_"):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
 
         # Check assumptions first (return scalar value)
         assumption_value = self._av.get(name)
@@ -261,9 +259,7 @@ class CalculationEngine:
         if isinstance(line_item, FixedLine):
             value = line_item.get_value(period)
             if value is None:
-                raise ValueError(
-                    f"No value defined for '{name}' in period {period}"
-                )
+                raise ValueError(f"No value defined for '{name}' in period {period}")
             self.li.set(name, period, value)
             return value
 
@@ -283,9 +279,7 @@ class CalculationEngine:
             context = FormulaContext(self.av, self.li, period)
 
             # Inject context into formula's globals
-            formula_func = self._inject_context_into_formula(
-                line_item.formula, context
-            )
+            formula_func = self._inject_context_into_formula(line_item.formula, context)
 
             # Evaluate the formula
             try:

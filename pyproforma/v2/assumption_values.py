@@ -63,7 +63,9 @@ class AssumptionValues:
             AttributeError: If the assumption name is not found.
         """
         if name.startswith("_"):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
         if name in self._values:
             return self._values[name]
         raise AttributeError(f"Assumption '{name}' not found")

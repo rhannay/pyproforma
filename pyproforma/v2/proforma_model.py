@@ -6,8 +6,6 @@ become model fields. Users define models by subclassing ProformaModel and declar
 line items as class attributes using FixedLine, FormulaLine, or Assumption.
 """
 
-from typing import Any
-
 from pyproforma.v2.assumption import Assumption
 from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import CalculationEngine
@@ -54,7 +52,7 @@ class ProformaModel:
         # Discover assumption names from class attributes
         assumption_names = []
         line_item_names = []
-        
+
         for name, value in cls.__dict__.items():
             if isinstance(value, Assumption):
                 assumption_names.append(name)
@@ -74,13 +72,13 @@ class ProformaModel:
                 Defaults to None.
         """
         self.periods = periods or []
-        
+
         # Initialize assumption values
         self.av = self._initialize_assumptions()
-        
+
         # Initialize line item values (empty initially)
         self.li = LineItemValues(periods=self.periods)
-        
+
         # Run calculation engine if periods are defined
         if self.periods:
             engine = CalculationEngine(self, self.av, self.li, self.periods)
@@ -94,16 +92,16 @@ class ProformaModel:
             AssumptionValues: Container with all assumption values.
         """
         assumption_values = {}
-        
+
         # Get assumption names discovered during __init_subclass__
         assumption_names = getattr(self.__class__, "_assumption_names", [])
-        
+
         # Extract values from each assumption
         for name in assumption_names:
             assumption = getattr(self.__class__, name)
             if isinstance(assumption, Assumption):
                 assumption_values[name] = assumption.value
-        
+
         return AssumptionValues(assumption_values)
 
     def __repr__(self):

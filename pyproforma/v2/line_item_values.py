@@ -50,7 +50,9 @@ class LineItemValues:
         self._values = values or {}
         self._periods = periods or []
 
-    def get(self, name: str, period: int | None = None) -> float | dict[int, float] | None:
+    def get(
+        self, name: str, period: int | None = None
+    ) -> float | dict[int, float] | None:
         """
         Get the value(s) for a line item.
 
@@ -98,7 +100,9 @@ class LineItemValues:
             AttributeError: If the line item name is not found.
         """
         if name.startswith("_"):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
         if name in self._values:
             return self._values[name]
         raise AttributeError(f"Line item '{name}' not found")
