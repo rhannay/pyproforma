@@ -103,6 +103,25 @@ class ProformaModel:
 
         return AssumptionValues(assumption_values)
 
+    def get_value(self, name: str, period: int) -> float:
+        """
+        Get the calculated value for a line item at a specific period.
+
+        Args:
+            name (str): The name of the line item.
+            period (int): The period to get the value for.
+
+        Returns:
+            float: The calculated value.
+
+        Raises:
+            AttributeError: If the line item name doesn't exist.
+            KeyError: If the period hasn't been calculated.
+        """
+        # Use attribute access which raises proper errors
+        line_item = getattr(self.li, name)  # Raises AttributeError if name doesn't exist
+        return line_item[period]  # Raises KeyError if period doesn't exist
+
     def __repr__(self):
         """Return a string representation of the model."""
         line_item_count = len(self.line_item_names)
