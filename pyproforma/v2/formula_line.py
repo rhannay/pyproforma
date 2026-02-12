@@ -5,7 +5,7 @@ FormulaLine represents a line item whose values are calculated using a formula f
 Values can be overridden for specific periods using the values parameter.
 """
 
-from typing import Any, Callable
+from typing import Callable
 
 from pyproforma.v2.line_item import LineItem
 
@@ -59,19 +59,6 @@ class FormulaLine(LineItem):
         super().__init__(label=label)
         self.formula = formula
         self.values = values or {}
-
-    def calculate(self) -> Any:
-        """
-        Calculate the formula result.
-
-        Returns:
-            Any: The result of evaluating the formula function.
-        """
-        # Scaffolding: Actual implementation would evaluate the formula
-        # in the context of the model and return calculated values
-        if self.formula is not None:
-            return self.formula()
-        return None
 
     def get_value(self, period: int) -> float | None:
         """
