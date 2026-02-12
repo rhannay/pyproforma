@@ -332,3 +332,156 @@ class TestIntegrationWithProformaModel:
         assert model.li.get("ebitda", 2024) == 40.0
         assert model.li.get("tax", 2024) == 8.4
         assert abs(model.li.get("net_income", 2024) - 31.6) < 0.0001
+
+
+class TestDependencyResolution:
+    """Tests for automatic dependency resolution in calculation engine."""
+
+    def test_formula_before_fixed_line(self):
+        """Test that formula can come before the fixed line it depends on."""
+
+        class TestModel(ProformaModel):
+            # Define expenses BEFORE revenue to test dependency resolution
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024, 2025]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        li = calculate_line_items(model, av, [2024, 2025])
+
+        # Should calculate correctly despite order
+        assert li.get("revenue", 2024) == 100
+        assert li.get("expenses", 2024) == 60.0
+        assert li.get("revenue", 2025) == 110
+        assert li.get("expenses", 2025) == 66.0
+
+    def test_reverse_dependency_chain(self):
+        """Test formulas defined in reverse dependency order."""
+
+        class TestModel(ProformaModel):
+            # Define in reverse order: profit depends on expenses and revenue,
+            # expenses depends on revenue
+            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        li = calculate_line_items(model, av, [2024])
+
+        # All should calculate correctly
+        assert li.get("revenue", 2024) == 100
+        assert li.get("expenses", 2024) == 60.0
+        assert li.get("profit", 2024) == 40.0
+
+    def test_mixed_order_dependencies(self):
+        """Test complex dependency graph with mixed ordering."""
+
+        class TestModel(ProformaModel):
+            # Mixed order to test dependency resolution
+            net_income = FormulaLine(formula=lambda a, li, t: li.ebitda[t] - li.tax[t])
+            revenue = FixedLine(values={2024: 100})
+            tax = FormulaLine(formula=lambda a, li, t: li.ebitda[t] * 0.21)
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            ebitda = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        li = calculate_line_items(model, av, [2024])
+
+        # All should calculate correctly despite mixed order
+        assert li.get("revenue", 2024) == 100
+        assert li.get("expenses", 2024) == 60.0
+        assert li.get("ebitda", 2024) == 40.0
+        assert li.get("tax", 2024) == 8.4
+        assert abs(li.get("net_income", 2024) - 31.6) < 0.0001
+
+    def test_circular_reference_detection(self):
+        """Test that circular references are detected and raise an error."""
+
+        class TestModel(ProformaModel):
+            # Create a circular reference: a -> b -> c -> a
+            a = FormulaLine(formula=lambda av, li, t: li.c[t] + 1)
+            b = FormulaLine(formula=lambda av, li, t: li.a[t] + 1)
+            c = FormulaLine(formula=lambda av, li, t: li.b[t] + 1)
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        # Should detect circular reference and raise error
+        with pytest.raises(ValueError, match="Circular reference detected"):
+            calculate_line_items(model, av, [2024])
+
+    def test_self_circular_reference(self):
+        """Test that self-referencing formula is detected as circular."""
+
+        class TestModel(ProformaModel):
+            # Formula that references itself
+            bad = FormulaLine(formula=lambda av, li, t: li.bad[t] + 1)
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        # Should detect self-reference as circular
+        with pytest.raises(ValueError, match="Circular reference detected"):
+            calculate_line_items(model, av, [2024])
+
+    def test_dependency_resolution_multiple_periods(self):
+        """Test dependency resolution works across multiple periods."""
+
+        class TestModel(ProformaModel):
+            # Define in non-dependency order
+            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
+
+        model = TestModel.__new__(TestModel)
+        model.periods = [2024, 2025, 2026]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
+        av = AssumptionValues({})
+
+        li = calculate_line_items(model, av, [2024, 2025, 2026])
+
+        # Check all periods calculated correctly
+        assert li.get("profit", 2024) == 40.0
+        assert li.get("profit", 2025) == 44.0
+        assert abs(li.get("profit", 2026) - 48.4) < 0.0001
+
+    def test_integration_with_proforma_model(self):
+        """Integration test: ProformaModel with reversed dependency order."""
+
+        class ReversedModel(ProformaModel):
+            # Define everything in reverse order
+            net_income = FormulaLine(formula=lambda a, li, t: li.ebitda[t] - li.tax[t])
+            tax = FormulaLine(formula=lambda a, li, t: li.ebitda[t] * 0.21)
+            ebitda = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            revenue = FixedLine(values={2024: 100})
+
+        # This should work seamlessly through __init__
+        model = ReversedModel(periods=[2024])
+
+        assert model.li.get("revenue", 2024) == 100
+        assert model.li.get("expenses", 2024) == 60.0
+        assert model.li.get("ebitda", 2024) == 40.0
+        assert model.li.get("tax", 2024) == 8.4
+        assert abs(model.li.get("net_income", 2024) - 31.6) < 0.0001

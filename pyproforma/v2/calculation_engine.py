@@ -46,14 +46,55 @@ def calculate_line_items(
     # Import here to avoid circular imports
     from .line_item_values import LineItemValues
 
+    # Import here to avoid circular imports
+    from .fixed_line import FixedLine
+    from .formula_line import FormulaLine
+
     # Initialize empty line item values
     li = LineItemValues(periods=periods)
 
+    # Separate fixed and formula line items
+    fixed_items = []
+    formula_items = []
+    
+    for name in model.line_item_names:
+        line_item = getattr(model.__class__, name, None)
+        if isinstance(line_item, FixedLine):
+            fixed_items.append(name)
+        elif isinstance(line_item, FormulaLine):
+            formula_items.append(name)
+
     # Calculate values for each period
     for period in periods:
-        # Calculate each line item for this period
-        for name in model.line_item_names:
+        # First, calculate all fixed line items (they don't depend on other line items)
+        for name in fixed_items:
             _calculate_single_line_item(model, av, li, name, period)
+        
+        # Then calculate formula items with dependency resolution
+        remaining = formula_items.copy()
+        max_iterations = len(formula_items) + 1
+        iteration = 0
+        
+        while remaining and iteration < max_iterations:
+            iteration += 1
+            still_pending = []
+            
+            for name in remaining:
+                try:
+                    _calculate_single_line_item(model, av, li, name, period)
+                except Exception:
+                    # Failed, likely due to missing dependency
+                    # Keep in the list to try again
+                    still_pending.append(name)
+            
+            # If we made no progress, we have a circular reference
+            if len(still_pending) == len(remaining):
+                raise ValueError(
+                    f"Circular reference detected for period {period}. "
+                    f"Cannot calculate: {', '.join(still_pending)}"
+                )
+            
+            remaining = still_pending
 
     return li
 
