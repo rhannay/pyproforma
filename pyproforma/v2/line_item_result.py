@@ -66,7 +66,7 @@ class LineItemResult:
 
     def __str__(self) -> str:
         """Return a string representation showing the item name and values."""
-        values_str = ", ".join(f"{year}: {value}" for year, value in self.values.items())
+        values_str = ", ".join(f"{period}: {value}" for period, value in self.values.items())
         return f"{self._name}: {{{values_str}}}"
 
     def __getitem__(self, period: int) -> float:
@@ -112,7 +112,8 @@ class LineItemResult:
             >>> result.values
             {2024: 100000, 2025: 110000, 2026: 121000}
         """
-        return self._model._li.get(self._name) or {}
+        result = self._model._li.get(self._name, period=None)
+        return result if result is not None else {}
 
     def value(self, period: int) -> float:
         """

@@ -57,10 +57,20 @@ if __name__ == "__main__":
 
     # Access calculated line item values
     # Using subscript notation: li.revenue[t]
-    print("Line Item Values (using subscript notation):")
+    print("Line Item Values (using model.li.item[period] notation):")
     print(f"  Revenue 2024: ${model.li.revenue[2024]:,.0f}")
     print(f"  Revenue 2025: ${model.li.revenue[2025]:,.0f}")
     print(f"  Revenue 2026: ${model.li.revenue[2026]:,.0f}")
+    print()
+
+    # NEW: Access line items using model['item'] (similar to v1)
+    print("Line Item Values (using model['item'][period] notation):")
+    revenue = model["revenue"]
+    expenses = model["expenses"]
+    profit = model["profit"]
+    print(f"  Revenue 2024: ${revenue[2024]:,.0f}")
+    print(f"  Expenses 2024: ${expenses[2024]:,.0f}")
+    print(f"  Profit 2024: ${profit[2024]:,.0f}")
     print()
 
     # Access specific period values
