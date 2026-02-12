@@ -9,6 +9,7 @@ line items as class attributes using FixedLine, FormulaLine, or Assumption.
 from typing import Any
 
 from pyproforma.v2.assumption import Assumption
+from pyproforma.v2.line_item import LineItem
 
 
 class ProformaModel:
@@ -40,7 +41,7 @@ class ProformaModel:
         Called when a subclass is created.
 
         This method automatically discovers and stores the names of all Assumption
-        attributes defined on the subclass.
+        and LineItem attributes defined on the subclass.
 
         Args:
             **kwargs: Additional keyword arguments passed to super().__init_subclass__
@@ -49,12 +50,17 @@ class ProformaModel:
 
         # Discover assumption names from class attributes
         assumption_names = []
+        line_item_names = []
+        
         for name, value in cls.__dict__.items():
             if isinstance(value, Assumption):
                 assumption_names.append(name)
+            elif isinstance(value, LineItem):
+                line_item_names.append(name)
 
-        # Store as a class attribute
+        # Store as class attributes
         cls._assumption_names = assumption_names
+        cls._line_item_names = line_item_names
 
     def __init__(self, periods: list[int] | None = None):
         """

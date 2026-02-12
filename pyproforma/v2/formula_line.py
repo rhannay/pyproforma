@@ -7,8 +7,10 @@ Values can be overridden for specific periods using the values parameter.
 
 from typing import Any, Callable
 
+from pyproforma.v2.line_item import LineItem
 
-class FormulaLine:
+
+class FormulaLine(LineItem):
     """
     A line item with values calculated from a formula.
 
@@ -54,9 +56,9 @@ class FormulaLine:
                 specific periods. These override calculated values. Defaults to None.
             label (str, optional): Human-readable label. Defaults to None.
         """
+        super().__init__(label=label)
         self.formula = formula
         self.values = values or {}
-        self.label = label
 
     def calculate(self) -> Any:
         """

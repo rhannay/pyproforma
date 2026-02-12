@@ -7,8 +7,10 @@ Values are provided as a dictionary mapping periods (years) to numeric values.
 
 from typing import Any
 
+from pyproforma.v2.line_item import LineItem
 
-class FixedLine:
+
+class FixedLine(LineItem):
     """
     A line item with fixed values for each period.
 
@@ -41,8 +43,8 @@ class FixedLine:
                 to numeric values. Defaults to None (empty dict).
             label (str, optional): Human-readable label. Defaults to None.
         """
+        super().__init__(label=label)
         self.values = values or {}
-        self.label = label
 
     def get_value(self, period: int) -> float | None:
         """

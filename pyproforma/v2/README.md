@@ -49,6 +49,35 @@ tax_rate = Assumption(value=0.21)
 growth_rate = Assumption(value=0.1, label="Annual Growth Rate")
 ```
 
+### LineItem (ABC)
+Abstract base class for all line items. Both `FixedLine` and `FormulaLine` inherit from this class.
+This allows for type checking and ensures consistency across different line item types.
+
+```python
+from pyproforma.v2 import LineItem
+
+# Check if something is a line item
+isinstance(revenue, LineItem)  # True for FixedLine and FormulaLine
+```
+
+## Automatic Discovery
+
+When you create a subclass of `ProformaModel`, the framework automatically discovers and categorizes
+all class attributes:
+
+- `_assumption_names`: List of all `Assumption` attribute names
+- `_line_item_names`: List of all `LineItem` (FixedLine/FormulaLine) attribute names
+
+```python
+class MyModel(ProformaModel):
+    tax_rate = Assumption(value=0.21)
+    revenue = FixedLine(values={2024: 100})
+    profit = FormulaLine(formula=lambda: revenue * 0.1)
+
+print(MyModel._assumption_names)  # ['tax_rate']
+print(MyModel._line_item_names)   # ['revenue', 'profit']
+```
+
 ## Current Status
 
 **This is scaffolding only.** The classes are implemented with basic structure and documentation, but:
