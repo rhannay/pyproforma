@@ -14,6 +14,111 @@ if TYPE_CHECKING:
     from .line_item_values import LineItemValues
 
 
+class TimeSeriesValue:
+    """
+    Wrapper for line item values that supports time-offset subscript access.
+
+    This class allows formulas to reference previous period values using
+    subscript notation, e.g., revenue[-1] for the previous period's revenue.
+
+    Attributes:
+        _name (str): The name of the line item.
+        _li (LineItemValues): Line item values container.
+        _period (int): Current period being calculated.
+        _value (float): The value for the current period.
+    """
+
+    def __init__(
+        self, name: str, li: "LineItemValues", period: int, value: float
+    ):
+        """
+        Initialize TimeSeriesValue.
+
+        Args:
+            name (str): The name of the line item.
+            li (LineItemValues): Line item values container.
+            period (int): Current period.
+            value (float): The value for the current period.
+        """
+        self._name = name
+        self._li = li
+        self._period = period
+        self._value = value
+
+    def __getitem__(self, offset: int) -> float:
+        """
+        Get value with time offset using subscript notation.
+
+        Args:
+            offset (int): Time offset (must be negative for lookback).
+
+        Returns:
+            float: The value at the offset period.
+
+        Raises:
+            ValueError: If offset is not negative or period not found.
+        """
+        if offset >= 0:
+            raise ValueError(
+                f"Only negative time offsets are allowed, got [{offset}]. "
+                "Future references are not permitted."
+            )
+
+        target_period = self._period + offset
+        value = self._li.get(self._name, target_period)
+
+        if value is None:
+            raise ValueError(
+                f"No value found for '{self._name}' in period {target_period}"
+            )
+
+        return value
+
+    def __float__(self) -> float:
+        """Convert to float (returns current period value)."""
+        return float(self._value)
+
+    def __int__(self) -> int:
+        """Convert to int (returns current period value)."""
+        return int(self._value)
+
+    def __add__(self, other):
+        """Add operation."""
+        return self._value + other
+
+    def __radd__(self, other):
+        """Reverse add operation."""
+        return other + self._value
+
+    def __sub__(self, other):
+        """Subtract operation."""
+        return self._value - other
+
+    def __rsub__(self, other):
+        """Reverse subtract operation."""
+        return other - self._value
+
+    def __mul__(self, other):
+        """Multiply operation."""
+        return self._value * other
+
+    def __rmul__(self, other):
+        """Reverse multiply operation."""
+        return other * self._value
+
+    def __truediv__(self, other):
+        """Divide operation."""
+        return self._value / other
+
+    def __rtruediv__(self, other):
+        """Reverse divide operation."""
+        return other / self._value
+
+    def __repr__(self):
+        """String representation."""
+        return f"TimeSeriesValue(name={self._name!r}, period={self._period}, value={self._value})"
+
+
 class FormulaContext:
     """
     Context object passed to formulas during evaluation.
@@ -40,15 +145,18 @@ class FormulaContext:
         self._li = li
         self._period = period
 
-    def __getattr__(self, name: str) -> float:
+    def __getattr__(self, name: str):
         """
         Get a value by name, checking assumptions first, then line items.
+
+        For assumptions, returns the scalar value.
+        For line items, returns a TimeSeriesValue that supports subscript access.
 
         Args:
             name (str): The name to look up.
 
         Returns:
-            float: The value for the current period.
+            float | TimeSeriesValue: The value or time series wrapper.
 
         Raises:
             AttributeError: If the name is not found.
@@ -56,15 +164,15 @@ class FormulaContext:
         if name.startswith("_"):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
-        # Check assumptions first
+        # Check assumptions first (return scalar value)
         assumption_value = self._av.get(name)
         if assumption_value is not None:
             return assumption_value
 
-        # Check line items
+        # Check line items (return TimeSeriesValue for subscript support)
         line_value = self._li.get(name, self._period)
         if line_value is not None:
-            return line_value
+            return TimeSeriesValue(name, self._li, self._period, line_value)
 
         raise AttributeError(
             f"'{name}' not found in assumptions or line items for period {self._period}"
