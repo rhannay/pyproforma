@@ -1,6 +1,7 @@
 """Test the updated LineItem.from_dict functionality for category handling."""
 
 from pyproforma.models.line_item import LineItem
+from pyproforma.table import Format
 
 
 class TestLineItemFromDictCategoryHandling:
@@ -69,4 +70,4 @@ class TestLineItemFromDictCategoryHandling:
         assert line_item.label == "Test Item"
         assert line_item.values == {2023: 100, 2024: 200}
         assert line_item.formula == "base_value * 2"
-        assert line_item.value_format == "two_decimals"
+        assert line_item.value_format == Format.TWO_DECIMALS

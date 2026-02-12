@@ -16,8 +16,8 @@ class TestFormatValue:
 
     def test_format_value_invalid_type(self):
         """Test that invalid value_format type raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid value_format type: str"):
-            format_value(123, "no_decimals")
+        with pytest.raises(ValueError, match="Unknown format string"):
+            format_value(123, "invalid_format_string")
         
         with pytest.raises(ValueError, match="Invalid value_format type: int"):
             format_value(123, 42)
