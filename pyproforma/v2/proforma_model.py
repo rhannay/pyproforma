@@ -10,6 +10,7 @@ from pyproforma.v2.assumption import Assumption
 from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
+from pyproforma.v2.line_item_result import LineItemResult
 from pyproforma.v2.line_item_values import LineItemValues
 
 
@@ -121,6 +122,51 @@ class ProformaModel:
         # Use attribute access which raises proper errors
         line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
         return line_item[period]  # Raises KeyError if period doesn't exist
+
+    @property
+    def li(self) -> LineItemValues:
+        """
+        Access line item values.
+
+        Returns:
+            LineItemValues: Container with all calculated line item values.
+
+        Examples:
+            >>> model.li.revenue[2024]
+            100000
+        """
+        return self._li
+
+    def __getitem__(self, name: str) -> LineItemResult:
+        """
+        Get LineItemResult using dictionary-style access.
+
+        This enables convenient access to line item results using subscript notation,
+        similar to the v1 API. The returned LineItemResult provides read-only access
+        to the line item's values and basic properties.
+
+        Args:
+            name (str): The name of the line item
+
+        Returns:
+            LineItemResult: Results object for the specified line item
+
+        Raises:
+            TypeError: If name is not a string
+            AttributeError: If the line item name doesn't exist
+
+        Examples:
+            >>> result = model['revenue']
+            >>> result[2024]
+            100000
+            >>> result.values
+            {2024: 100000, 2025: 110000}
+        """
+        if not isinstance(name, str):
+            raise TypeError(
+                f"Expected string for line item name, got {type(name).__name__}"
+            )
+        return LineItemResult(self, name)
 
     def __repr__(self):
         """Return a string representation of the model."""

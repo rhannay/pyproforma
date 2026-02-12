@@ -9,6 +9,7 @@ from .assumption_values import AssumptionValues
 from .fixed_line import FixedLine
 from .formula_line import FormulaLine
 from .line_item import LineItem
+from .line_item_result import LineItemResult
 from .line_item_values import LineItemValue, LineItemValues
 from .proforma_model import ProformaModel
 
@@ -21,4 +22,5 @@ __all__ = [
     "AssumptionValues",
     "LineItemValues",
     "LineItemValue",
+    "LineItemResult",
 ]
