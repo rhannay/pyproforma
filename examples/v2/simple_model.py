@@ -49,7 +49,34 @@ if __name__ == "__main__":
     model = SimpleFinancialModel(periods=[2024, 2025, 2026])
     print(f"Created model: {model}")
     print(f"Periods: {model.periods}")
+    print()
 
-    # The following would work once calculation logic is implemented:
-    # print(f"Revenue 2024: {model.revenue.get_value(2024)}")
-    # print(f"Profit 2024: {model.profit.get_value(2024)}")
+    # Access assumption values
+    print("Assumptions:")
+    print(f"  Expense Ratio: {model.av.expense_ratio}")
+    print()
+
+    # Access calculated line item values
+    print("Line Item Values:")
+    print(f"  Revenue: {model.li.revenue}")
+    print(f"  Expenses: {model.li.expenses}")
+    print(f"  Profit: {model.li.profit}")
+    print()
+
+    # Access specific period values
+    print("2024 Values:")
+    print(f"  Revenue: ${model.li.get('revenue', 2024):,.0f}")
+    print(f"  Expenses: ${model.li.get('expenses', 2024):,.0f}")
+    print(f"  Profit: ${model.li.get('profit', 2024):,.0f}")
+    print()
+
+    print("2025 Values:")
+    print(f"  Revenue: ${model.li.get('revenue', 2025):,.0f}")
+    print(f"  Expenses: ${model.li.get('expenses', 2025):,.0f}")
+    print(f"  Profit: ${model.li.get('profit', 2025):,.0f}")
+    print()
+
+    print("2026 Values:")
+    print(f"  Revenue: ${model.li.get('revenue', 2026):,.0f}")
+    print(f"  Expenses: ${model.li.get('expenses', 2026):,.0f}")
+    print(f"  Profit: ${model.li.get('profit', 2026):,.0f}")
