@@ -69,7 +69,7 @@ def calculate_line_items(
         # First, calculate all fixed line items (they don't depend on other line items)
         for name in fixed_items:
             line_item = getattr(model.__class__, name)
-            _calculate_single_line_item(line_item, name, av, li, period)
+            _calculate_single_line_item(line_item, av, li, period)
         
         # Then calculate formula items with dependency resolution
         remaining = formula_items.copy()
@@ -83,7 +83,7 @@ def calculate_line_items(
             for name in remaining:
                 line_item = getattr(model.__class__, name)
                 try:
-                    _calculate_single_line_item(line_item, name, av, li, period)
+                    _calculate_single_line_item(line_item, av, li, period)
                 except AttributeError:
                     # Failed due to missing dependency (line item not yet calculated)
                     # Keep in the list to try again
@@ -100,7 +100,7 @@ def calculate_line_items(
                     else:
                         # Accessing a period outside the model - wrap in ValueError  
                         raise ValueError(
-                            f"Error evaluating formula for '{name}' in period {period}: {e}"
+                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
                         ) from e
             
             # If we made no progress, we have a circular reference
@@ -117,7 +117,6 @@ def calculate_line_items(
 
 def _calculate_single_line_item(
     line_item: Any,
-    name: str,
     av: "AssumptionValues",
     li: "LineItemValues",
     period: int,
@@ -127,7 +126,7 @@ def _calculate_single_line_item(
 
     Args:
         line_item: The line item definition (FixedLine or FormulaLine).
-        name (str): The name of the line item.
+            Must have a .name attribute set by __set_name__.
         av (AssumptionValues): Assumption values.
         li (LineItemValues): Line item values container.
         period (int): The period to calculate for.
@@ -141,6 +140,9 @@ def _calculate_single_line_item(
     # Import here to avoid circular imports
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
+
+    # Get the name from the line item itself
+    name = line_item.name
 
     # Handle FixedLine
     if isinstance(line_item, FixedLine):

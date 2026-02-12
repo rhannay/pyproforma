@@ -27,7 +27,21 @@ class LineItem(ABC):
         Args:
             label (str, optional): Human-readable label. Defaults to None.
         """
+        self.name: str | None = None  # Set by __set_name__ when assigned to class
         self.label = label
+
+    def __set_name__(self, owner, name: str):
+        """
+        Store the attribute name when the descriptor is assigned to a class.
+
+        This method is called automatically by Python when a descriptor is assigned
+        to a class attribute. It allows line items to know their own names.
+
+        Args:
+            owner: The class that owns this descriptor.
+            name (str): The attribute name.
+        """
+        self.name = name
 
     @abstractmethod
     def get_value(self, period: Any) -> Any:
