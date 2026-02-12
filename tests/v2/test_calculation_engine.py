@@ -202,7 +202,7 @@ class TestCalculateSingleLineItem:
         av = AssumptionValues({})
         li = LineItemValues(periods=[2024])
 
-        value = _calculate_single_line_item(model, av, li, "revenue", 2024)
+        value = _calculate_single_line_item(TestModel.revenue, "revenue", av, li, 2024)
 
         assert value == 100
         assert li.get("revenue", 2024) == 100
@@ -219,16 +219,16 @@ class TestCalculateSingleLineItem:
         li = LineItemValues(periods=[2024])
 
         # First calculate revenue
-        _calculate_single_line_item(model, av, li, "revenue", 2024)
+        _calculate_single_line_item(TestModel.revenue, "revenue", av, li, 2024)
 
         # Then calculate expenses
-        value = _calculate_single_line_item(model, av, li, "expenses", 2024)
+        value = _calculate_single_line_item(TestModel.expenses, "expenses", av, li, 2024)
 
         assert value == 60.0
         assert li.get("expenses", 2024) == 60.0
 
     def test_missing_line_item_raises_error(self):
-        """Test that referencing a non-existent line item raises ValueError."""
+        """Test that referencing a non-existent line item raises AttributeError."""
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
@@ -237,8 +237,8 @@ class TestCalculateSingleLineItem:
         av = AssumptionValues({})
         li = LineItemValues(periods=[2024])
 
-        with pytest.raises(ValueError, match="Line item 'missing' not found"):
-            _calculate_single_line_item(model, av, li, "missing", 2024)
+        with pytest.raises(AttributeError):
+            _calculate_single_line_item(TestModel.missing, "missing", av, li, 2024)
 
     def test_missing_fixed_value_raises_error(self):
         """Test that missing FixedLine value raises ValueError."""
@@ -251,7 +251,7 @@ class TestCalculateSingleLineItem:
         li = LineItemValues(periods=[2024, 2025])
 
         with pytest.raises(ValueError, match="No value defined for 'revenue' in period 2025"):
-            _calculate_single_line_item(model, av, li, "revenue", 2025)
+            _calculate_single_line_item(TestModel.revenue, "revenue", av, li, 2025)
 
     def test_formula_error_raises_value_error(self):
         """Test that formula execution errors are wrapped in ValueError."""
@@ -265,7 +265,7 @@ class TestCalculateSingleLineItem:
         li = LineItemValues(periods=[2024])
 
         with pytest.raises(ValueError, match="Error evaluating formula for 'bad_formula'"):
-            _calculate_single_line_item(model, av, li, "bad_formula", 2024)
+            _calculate_single_line_item(TestModel.bad_formula, "bad_formula", av, li, 2024)
 
     def test_formula_returns_non_numeric_raises_error(self):
         """Test that formula returning non-numeric value raises ValueError."""
@@ -278,7 +278,7 @@ class TestCalculateSingleLineItem:
         li = LineItemValues(periods=[2024])
 
         with pytest.raises(ValueError, match="returned invalid type"):
-            _calculate_single_line_item(model, av, li, "bad_formula", 2024)
+            _calculate_single_line_item(TestModel.bad_formula, "bad_formula", av, li, 2024)
 
 
 class TestIntegrationWithProformaModel:
