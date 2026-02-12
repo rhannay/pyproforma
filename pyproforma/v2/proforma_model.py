@@ -6,10 +6,11 @@ become model fields. Users define models by subclassing ProformaModel and declar
 line items as class attributes using FixedLine, FormulaLine, or Assumption.
 """
 
-from typing import Any
-
 from pyproforma.v2.assumption import Assumption
+from pyproforma.v2.assumption_values import AssumptionValues
+from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
+from pyproforma.v2.line_item_values import LineItemValues
 
 
 class ProformaModel:
@@ -51,7 +52,7 @@ class ProformaModel:
         # Discover assumption names from class attributes
         assumption_names = []
         line_item_names = []
-        
+
         for name, value in cls.__dict__.items():
             if isinstance(value, Assumption):
                 assumption_names.append(name)
@@ -71,25 +72,61 @@ class ProformaModel:
                 Defaults to None.
         """
         self.periods = periods or []
-        self._line_items = {}
-        self._initialize_line_items()
 
-    def _initialize_line_items(self):
-        """
-        Discover and initialize all line items declared as class attributes.
+        # Store instance copies of discovered names
+        self.line_item_names = self.__class__._line_item_names
+        self.assumption_names = self.__class__._assumption_names
 
-        This method scans the class hierarchy for line item declarations
-        (FixedLine, FormulaLine, Assumption) and initializes them for this
-        model instance.
+        # Initialize assumption values
+        self.av = self._initialize_assumptions()
+
+        # Calculate line item values
+        if self.periods:
+            self._li = calculate_line_items(self, self.av, self.periods)
+        else:
+            self._li = LineItemValues(periods=[])
+
+    def _initialize_assumptions(self) -> AssumptionValues:
         """
-        # Scaffolding: Actual implementation would discover line items from class
-        # attributes and initialize them with the model's periods
-        pass
+        Initialize assumption values from class attributes.
+
+        Returns:
+            AssumptionValues: Container with all assumption values.
+        """
+        assumption_values = {}
+
+        # Extract values from each assumption
+        for name in self.assumption_names:
+            assumption = getattr(self.__class__, name)
+            if isinstance(assumption, Assumption):
+                assumption_values[name] = assumption.value
+
+        return AssumptionValues(assumption_values)
+
+    def get_value(self, name: str, period: int) -> float:
+        """
+        Get the calculated value for a line item at a specific period.
+
+        Args:
+            name (str): The name of the line item.
+            period (int): The period to get the value for.
+
+        Returns:
+            float: The calculated value.
+
+        Raises:
+            AttributeError: If the line item name doesn't exist.
+            KeyError: If the period hasn't been calculated.
+        """
+        # Use attribute access which raises proper errors
+        line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
+        return line_item[period]  # Raises KeyError if period doesn't exist
 
     def __repr__(self):
         """Return a string representation of the model."""
+        line_item_count = len(self.line_item_names)
         return (
             f"{self.__class__.__name__}("
             f"periods={self.periods}, "
-            f"line_items={len(self._line_items)})"
+            f"line_items={line_item_count})"
         )

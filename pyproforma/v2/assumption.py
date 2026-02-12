@@ -6,8 +6,6 @@ This is a simplified version of FixedLine for common assumptions like growth rat
 tax rates, or other constant values.
 """
 
-from typing import Any
-
 
 class Assumption:
     """

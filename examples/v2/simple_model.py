@@ -31,14 +31,13 @@ class SimpleFinancialModel(ProformaModel):
     )
 
     # Define calculated values
-    # Note: Formula calculation not yet implemented in scaffolding
     expenses = FormulaLine(
-        formula=lambda: revenue * expense_ratio,
+        formula=lambda a, li, t: li.revenue[t] * a.expense_ratio,
         label="Operating Expenses",
     )
 
     profit = FormulaLine(
-        formula=lambda: revenue - expenses,
+        formula=lambda a, li, t: li.revenue[t] - li.expenses[t],
         label="Net Profit",
     )
 
@@ -49,7 +48,35 @@ if __name__ == "__main__":
     model = SimpleFinancialModel(periods=[2024, 2025, 2026])
     print(f"Created model: {model}")
     print(f"Periods: {model.periods}")
+    print()
 
-    # The following would work once calculation logic is implemented:
-    # print(f"Revenue 2024: {model.revenue.get_value(2024)}")
-    # print(f"Profit 2024: {model.profit.get_value(2024)}")
+    # Access assumption values
+    print("Assumptions:")
+    print(f"  Expense Ratio: {model.av.expense_ratio}")
+    print()
+
+    # Access calculated line item values
+    # Using subscript notation: li.revenue[t]
+    print("Line Item Values (using subscript notation):")
+    print(f"  Revenue 2024: ${model.li.revenue[2024]:,.0f}")
+    print(f"  Revenue 2025: ${model.li.revenue[2025]:,.0f}")
+    print(f"  Revenue 2026: ${model.li.revenue[2026]:,.0f}")
+    print()
+
+    # Access specific period values
+    print("2024 Income Statement:")
+    print(f"  Revenue:   ${model.li.revenue[2024]:>10,.0f}")
+    print(f"  Expenses:  ${model.li.expenses[2024]:>10,.0f}")
+    print(f"  Profit:    ${model.li.profit[2024]:>10,.0f}")
+    print()
+
+    print("2025 Income Statement:")
+    print(f"  Revenue:   ${model.li.revenue[2025]:>10,.0f}")
+    print(f"  Expenses:  ${model.li.expenses[2025]:>10,.0f}")
+    print(f"  Profit:    ${model.li.profit[2025]:>10,.0f}")
+    print()
+
+    print("2026 Income Statement:")
+    print(f"  Revenue:   ${model.li.revenue[2026]:>10,.0f}")
+    print(f"  Expenses:  ${model.li.expenses[2026]:>10,.0f}")
+    print(f"  Profit:    ${model.li.profit[2026]:>10,.0f}")

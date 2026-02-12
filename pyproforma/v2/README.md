@@ -14,7 +14,7 @@ Base class for user-defined financial models. Users subclass this and declare li
 ```python
 class MyModel(ProformaModel):
     revenue = FixedLine(values={2024: 100, 2025: 110})
-    profit = FormulaLine(formula=lambda: revenue * 0.1)
+    profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.1)
 ```
 
 ### FixedLine
@@ -28,13 +28,25 @@ revenue = FixedLine(
 ```
 
 ### FormulaLine
-Represents a line item calculated using a formula function. Supports value overrides for specific periods.
+Represents a line item calculated using a formula function. Formulas receive three parameters:
+- `a` (AssumptionValues): Access assumptions via `a.tax_rate`, `a.growth_rate`
+- `li` (LineItemValues): Access line items via `li.revenue[t]`, `li.revenue[t-1]`
+- `t` (int): Current period being calculated
+
+Value overrides are supported for specific periods.
 
 ```python
 expenses = FormulaLine(
-    formula=lambda: revenue * 0.6,
+    formula=lambda a, li, t: li.revenue[t] * 0.6,
     values={2024: 50000},  # Override for 2024
     label="Operating Expenses"
+)
+
+# Time-offset lookback example
+growth = FormulaLine(
+    formula=lambda a, li, t: (li.revenue[t] - li.revenue[t-1]) / li.revenue[t-1],
+    values={2024: 0.0},  # First period has no prior value
+    label="YoY Growth %"
 )
 ```
 
@@ -80,20 +92,28 @@ print(MyModel._line_item_names)   # ['revenue', 'profit']
 
 ## Current Status
 
-**This is scaffolding only.** The classes are implemented with basic structure and documentation, but:
-
-- ❌ Formula calculation logic is not implemented
-- ❌ Model calculation and value resolution is not implemented
-- ❌ Integration with existing PyProforma features (tables, charts) is not implemented
-- ❌ Tests are not included
-
-The scaffolding provides:
+**Implemented features:**
 
 - ✅ Class structure and interfaces
 - ✅ Type hints
 - ✅ Comprehensive docstrings
 - ✅ Basic methods and properties
-- ✅ Example usage in `examples/v2_simple_model.py`
+- ✅ Formula calculation logic
+- ✅ Model calculation and value resolution
+- ✅ Dependency tracking (sequential evaluation)
+- ✅ Time-offset lookback references (e.g., `revenue[-1]`)
+- ✅ AssumptionValues and LineItemValues containers
+- ✅ Comprehensive test suite (46 tests)
+- ✅ Example usage in `examples/v2/simple_model.py`
+
+**Not yet implemented:**
+
+- ❌ Integration with existing PyProforma features (tables, charts)
+- ❌ Advanced dependency tracking with topological sorting
+- ❌ Circular reference detection before execution
+
+The v2 API is functional for basic and intermediate financial models. Formulas can reference
+other line items, assumptions, and use time offsets for lookback calculations.
 
 ## Example
 
@@ -101,11 +121,13 @@ See `examples/v2_simple_model.py` for a complete example of the intended API des
 
 ## Next Steps
 
-To complete the v2 implementation, the following would be needed:
+To enhance the v2 implementation further, the following could be added:
 
-1. Implement formula evaluation and calculation logic
-2. Implement value resolution and dependency tracking
-3. Add model calculation methods
-4. Create comprehensive test suite
+1. ~~Implement formula evaluation and calculation logic~~ ✅ Done
+2. ~~Implement value resolution and dependency tracking~~ ✅ Done (sequential)
+3. ~~Add model calculation methods~~ ✅ Done
+4. ~~Create comprehensive test suite~~ ✅ Done
 5. Integrate with existing PyProforma features (tables, charts)
-6. Add documentation and examples
+6. Add advanced dependency tracking with topological sorting
+7. Add pre-execution circular reference detection
+8. Add documentation and more examples

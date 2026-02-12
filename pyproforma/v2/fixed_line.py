@@ -5,8 +5,6 @@ FixedLine represents a line item with fixed values specified for each period.
 Values are provided as a dictionary mapping periods (years) to numeric values.
 """
 
-from typing import Any
-
 from pyproforma.v2.line_item import LineItem
 
 
