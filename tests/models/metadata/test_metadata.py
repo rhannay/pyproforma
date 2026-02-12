@@ -221,7 +221,7 @@ class TestGenerateLineItemMetadata:
                 label="Description",
                 category="notes",
                 values={2020: "test"},
-                value_format="str",
+                value_format=None,
             ),
         ]
         category_metadata = []
@@ -257,7 +257,7 @@ class TestGenerateLineItemMetadata:
             {
                 "name": "description",
                 "label": "Description",
-                "value_format": "str",
+                "value_format": None,
                 "source_type": "line_item",
                 "source_name": "description",
                 "category": "notes",

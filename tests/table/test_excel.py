@@ -105,13 +105,13 @@ class TestToExcelIntegration:
                 Cell(value="Text", bold=True),
             ],
             [
-                Cell(value="Revenue", value_format="str"),
+                Cell(value="Revenue", value_format=None),
                 Cell(value=1234567.89, value_format=Format.NO_DECIMALS),
                 Cell(value=0.1234, value_format=Format.PERCENT_TWO_DECIMALS),
-                Cell(value="Sample text", value_format="str"),
+                Cell(value="Sample text", value_format=None),
             ],
             [
-                Cell(value="Expense", value_format="str"),
+                Cell(value="Expense", value_format=None),
                 Cell(value=987654.32, value_format=Format.TWO_DECIMALS),
                 Cell(value=0.0567, value_format=Format.PERCENT_ONE_DECIMAL),
                 Cell(value="Another text", value_format=None),  # Test None format
@@ -150,8 +150,7 @@ class TestToExcelIntegration:
                 Cell(value="Percent", bold=True),
                 Cell(value="Percent One Decimal", bold=True),
                 Cell(value="Percent Two Decimals", bold=True),
-                Cell(value="String", bold=True),
-                Cell(value="Unknown Format", bold=True),
+                Cell(value="Currency", bold=True),
             ],
             [
                 Cell(value=12345.67, value_format=None),
@@ -160,8 +159,7 @@ class TestToExcelIntegration:
                 Cell(value=0.1234, value_format=Format.PERCENT),
                 Cell(value=0.1234, value_format=Format.PERCENT_ONE_DECIMAL),
                 Cell(value=0.1234, value_format=Format.PERCENT_TWO_DECIMALS),
-                Cell(value=12345.67, value_format="str"),
-                Cell(value=12345.67, value_format="unknown_format"),
+                Cell(value=12345.67, value_format=Format.CURRENCY),
             ]
         ]
 

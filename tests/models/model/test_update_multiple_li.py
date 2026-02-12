@@ -1,6 +1,7 @@
 import pytest
 
 from pyproforma.models.model.model import Model
+from pyproforma.table import Format
 
 
 @pytest.fixture
@@ -27,7 +28,7 @@ def basic_model() -> Model:
         name="margin",
         category="profit",
         formula="profit / revenue",
-        value_format="percentage",
+        value_format="percent",
     )
 
     return model
@@ -116,7 +117,7 @@ def test_update_multiple_line_items_formulas(basic_model):
         basic_model._line_item_definition("margin").formula == "profit / revenue * 100"
     )
     assert basic_model.value("margin", 2023) == 40  # (100-60)/100 * 100 = 40
-    assert basic_model._line_item_definition("margin").value_format == "no_decimals"
+    assert basic_model._line_item_definition("margin").value_format == Format.NO_DECIMALS
 
 
 def test_update_multiple_line_items_rename(basic_model):
@@ -223,7 +224,7 @@ def test_update_multiple_line_items_all_properties(basic_model):
     assert updated_item.category == "profit"
     assert updated_item.label == "Total Revenue"
     assert updated_item.values[2023] == 500
-    assert updated_item.value_format == "two_decimals"
+    assert updated_item.value_format == Format.TWO_DECIMALS
 
 
 def test_update_multiple_line_items_mixed_updates(basic_model):
@@ -244,5 +245,5 @@ def test_update_multiple_line_items_mixed_updates(basic_model):
     assert basic_model._line_item_definition("costs").formula == "revenue * 0.5"
     assert basic_model.value("costs", 2023) == 100  # 200 * 0.5
 
-    assert basic_model._line_item_definition("profit").value_format == "two_decimals"
+    assert basic_model._line_item_definition("profit").value_format == Format.TWO_DECIMALS
     assert basic_model.value("profit", 2023) == 100  # 200 - 100
