@@ -50,8 +50,8 @@ def calculate_line_items(
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
 
-    # Initialize empty line item values
-    li = LineItemValues(periods=periods)
+    # Initialize line item values with registered names for validation
+    li = LineItemValues(periods=periods, names=model.line_item_names)
 
     # Separate fixed and formula line items
     fixed_items = []
@@ -86,9 +86,16 @@ def calculate_line_items(
                 try:
                     value = _calculate_single_line_item(line_item, av, li, period)
                     li.set(name, period, value)
-                except AttributeError:
-                    # Failed due to missing dependency (line item not yet calculated)
-                    # Keep in the list to try again
+                except AttributeError as e:
+                    # AttributeError means accessing unregistered line item (typo)
+                    # LineItemValues now raises helpful error with available names
+                    error_msg = str(e)
+                    if "is not registered" in error_msg:
+                        # This is a typo - raise immediately with helpful message
+                        raise ValueError(
+                            f"Error in formula for '{line_item.name}': {e}"
+                        ) from e
+                    # Otherwise, it's some other AttributeError - retry
                     still_pending.append(name)
                 except KeyError as e:
                     # KeyError could mean:

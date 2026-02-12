@@ -219,7 +219,7 @@ class TestCalculateSingleLineItem:
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
-        li = LineItemValues(periods=[2024])
+        li = LineItemValues(periods=[2024], names=["revenue", "expenses"])
 
         # First calculate revenue
         revenue_value = _calculate_single_line_item(TestModel.revenue, av, li, 2024)
@@ -241,7 +241,7 @@ class TestCalculateSingleLineItem:
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
-        li = LineItemValues(periods=[2024])
+        li = LineItemValues(periods=[2024], names=["revenue"])
 
         with pytest.raises(AttributeError):
             # Accessing a non-existent attribute will raise AttributeError
@@ -255,7 +255,7 @@ class TestCalculateSingleLineItem:
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
-        li = LineItemValues(periods=[2024, 2025])
+        li = LineItemValues(periods=[2024, 2025], names=["revenue"])
 
         with pytest.raises(ValueError, match="No value defined for 'revenue' in period 2025"):
             _calculate_single_line_item(TestModel.revenue, av, li, 2025)
@@ -269,7 +269,7 @@ class TestCalculateSingleLineItem:
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
-        li = LineItemValues(periods=[2024])
+        li = LineItemValues(periods=[2024], names=["revenue", "bad_formula"])
 
         with pytest.raises(ValueError, match="Error evaluating formula for 'bad_formula'"):
             _calculate_single_line_item(TestModel.bad_formula, av, li, 2024)
@@ -282,7 +282,7 @@ class TestCalculateSingleLineItem:
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
-        li = LineItemValues(periods=[2024])
+        li = LineItemValues(periods=[2024], names=["bad_formula"])
 
         with pytest.raises(ValueError, match="returned invalid type"):
             _calculate_single_line_item(TestModel.bad_formula, av, li, 2024)
