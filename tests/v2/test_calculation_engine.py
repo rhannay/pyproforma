@@ -26,6 +26,8 @@ class TestCalculateLineItems:
 
         model = EmptyModel.__new__(EmptyModel)
         model.periods = [2024]
+        model.line_item_names = EmptyModel._line_item_names
+        model.assumption_names = EmptyModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024])
@@ -41,6 +43,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024, 2025]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024, 2025])
@@ -57,6 +61,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024, 2025]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024, 2025])
@@ -75,6 +81,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024])
@@ -92,6 +100,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({"expense_ratio": 0.65})
 
         li = calculate_line_items(model, av, [2024])
@@ -108,6 +118,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024])
@@ -128,6 +140,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024, 2025]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024, 2025])
@@ -145,6 +159,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024, 2025, 2026]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         li = calculate_line_items(model, av, [2024, 2025, 2026])
@@ -162,6 +178,8 @@ class TestCalculateLineItems:
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
+        model.line_item_names = TestModel._line_item_names
+        model.assumption_names = TestModel._assumption_names
         av = AssumptionValues({})
 
         result = calculate_line_items(model, av, [2024])

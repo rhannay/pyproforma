@@ -49,13 +49,10 @@ def calculate_line_items(
     # Initialize empty line item values
     li = LineItemValues(periods=periods)
 
-    # Get all line item names from the model class
-    line_item_names = getattr(model.__class__, "_line_item_names", [])
-
     # Calculate values for each period
     for period in periods:
         # Calculate each line item for this period
-        for name in line_item_names:
+        for name in model.line_item_names:
             _calculate_single_line_item(model, av, li, name, period)
 
     return li

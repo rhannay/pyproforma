@@ -40,6 +40,40 @@ class TestProformaModelBasic:
         model = TestModel(periods=[2024, 2025])
         assert model.periods == [2024, 2025]
 
+    def test_stores_line_item_names_on_instance(self):
+        """Test that line item names are stored on the instance."""
+
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21)
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+
+        model = TestModel(periods=[2024])
+
+        assert hasattr(model, "line_item_names")
+        assert isinstance(model.line_item_names, list)
+        assert "revenue" in model.line_item_names
+        assert "expenses" in model.line_item_names
+        assert "profit" in model.line_item_names
+        assert len(model.line_item_names) == 3
+
+    def test_stores_assumption_names_on_instance(self):
+        """Test that assumption names are stored on the instance."""
+
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21)
+            growth_rate = Assumption(value=0.1)
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel(periods=[2024])
+
+        assert hasattr(model, "assumption_names")
+        assert isinstance(model.assumption_names, list)
+        assert "tax_rate" in model.assumption_names
+        assert "growth_rate" in model.assumption_names
+        assert len(model.assumption_names) == 2
+
 
 class TestAssumptionCalculation:
     """Tests for assumption value calculation."""

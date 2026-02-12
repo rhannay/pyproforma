@@ -73,6 +73,10 @@ class ProformaModel:
         """
         self.periods = periods or []
 
+        # Store instance copies of discovered names
+        self.line_item_names = self.__class__._line_item_names
+        self.assumption_names = self.__class__._assumption_names
+
         # Initialize assumption values
         self.av = self._initialize_assumptions()
 
@@ -91,11 +95,8 @@ class ProformaModel:
         """
         assumption_values = {}
 
-        # Get assumption names discovered during __init_subclass__
-        assumption_names = getattr(self.__class__, "_assumption_names", [])
-
         # Extract values from each assumption
-        for name in assumption_names:
+        for name in self.assumption_names:
             assumption = getattr(self.__class__, name)
             if isinstance(assumption, Assumption):
                 assumption_values[name] = assumption.value
@@ -104,7 +105,7 @@ class ProformaModel:
 
     def __repr__(self):
         """Return a string representation of the model."""
-        line_item_count = len(getattr(self.__class__, "_line_item_names", []))
+        line_item_count = len(self.line_item_names)
         return (
             f"{self.__class__.__name__}("
             f"periods={self.periods}, "
