@@ -65,7 +65,11 @@ class TestLineItemValues:
         """Test accessing line item values via attributes."""
         values = {"revenue": {2024: 100, 2025: 110}}
         li = LineItemValues(values)
-        assert li.revenue == {2024: 100, 2025: 110}
+        # Now returns a LineItemValue object that supports subscripting
+        revenue_item = li.revenue
+        assert isinstance(revenue_item, LineItemValue)
+        assert revenue_item[2024] == 100
+        assert revenue_item[2025] == 110
 
     def test_attribute_access_missing(self):
         """Test that accessing missing attribute raises AttributeError."""

@@ -36,31 +36,32 @@ class AdvancedFinancialModel(ProformaModel):
 
     # Calculate operating expenses
     operating_expenses = FormulaLine(
-        formula=lambda: revenue * expense_ratio,
+        formula=lambda a, li, t: li.revenue[t] * a.expense_ratio,
         label="Operating Expenses",
     )
 
     # Calculate EBITDA
     ebitda = FormulaLine(
-        formula=lambda: revenue - operating_expenses,
+        formula=lambda a, li, t: li.revenue[t] - li.operating_expenses[t],
         label="EBITDA",
     )
 
     # Calculate tax expense
     tax_expense = FormulaLine(
-        formula=lambda: ebitda * tax_rate,
+        formula=lambda a, li, t: li.ebitda[t] * a.tax_rate,
         label="Tax Expense",
     )
 
     # Calculate net income
     net_income = FormulaLine(
-        formula=lambda: ebitda - tax_expense,
+        formula=lambda a, li, t: li.ebitda[t] - li.tax_expense[t],
         label="Net Income",
     )
 
     # Calculate YoY growth rate (with override for first year)
     yoy_growth = FormulaLine(
-        formula=lambda: (revenue - revenue[-1]) / revenue[-1],
+        formula=lambda a, li, t: (li.revenue[t] - li.revenue[t - 1])
+        / li.revenue[t - 1],
         values={2024: 0.0},  # First year has no prior year
         label="YoY Revenue Growth %",
     )

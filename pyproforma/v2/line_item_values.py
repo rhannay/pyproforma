@@ -86,15 +86,18 @@ class LineItemValues:
             self._values[name] = {}
         self._values[name][period] = value
 
-    def __getattr__(self, name: str) -> dict[int, float]:
+    def __getattr__(self, name: str) -> "LineItemValue":
         """
         Get line item values via attribute access.
+
+        Returns a LineItemValue object that supports subscript notation
+        for accessing period values.
 
         Args:
             name (str): The name of the line item.
 
         Returns:
-            dict[int, float]: Dictionary mapping periods to values for the line item.
+            LineItemValue: Wrapper object supporting subscript access to period values.
 
         Raises:
             AttributeError: If the line item name is not found.
@@ -104,7 +107,7 @@ class LineItemValues:
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
         if name in self._values:
-            return self._values[name]
+            return LineItemValue(name, self._values[name])
         raise AttributeError(f"Line item '{name}' not found")
 
     def __repr__(self):

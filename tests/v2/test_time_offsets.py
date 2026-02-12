@@ -17,7 +17,7 @@ class TestTimeOffsets:
             base = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             # For 2025+, reference previous period
             growth = FormulaLine(
-                formula=lambda: base - base[-1],
+                formula=lambda a, li, t: li.base[t] - li.base[t - 1],
                 values={2024: 0},  # First period has no previous value
             )
 
@@ -32,8 +32,11 @@ class TestTimeOffsets:
         class TestModel(ProformaModel):
             value = FixedLine(values={2024: 100, 2025: 110, 2026: 121, 2027: 133})
             two_period_change = FormulaLine(
-                formula=lambda: value - value[-2],
-                values={2024: 0, 2025: 0},  # First two periods have no value 2 periods back
+                formula=lambda a, li, t: li.value[t] - li.value[t - 2],
+                values={
+                    2024: 0,
+                    2025: 0,
+                },  # First two periods have no value 2 periods back
             )
 
         model = TestModel(periods=[2024, 2025, 2026, 2027])
@@ -43,13 +46,13 @@ class TestTimeOffsets:
         assert model.li.get("two_period_change", 2027) == 23  # 133 - 110
 
     def test_compound_growth(self):
-        """Test compound growth using previous period reference."""
+        """Test compound growth using current period value."""
 
         class TestModel(ProformaModel):
             growth_rate = Assumption(value=0.1)
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             next_revenue = FormulaLine(
-                formula=lambda: revenue * (1 + growth_rate),
+                formula=lambda a, li, t: li.revenue[t] * (1 + a.growth_rate),
                 # No override - this calculates based on current period revenue
             )
 
@@ -60,28 +63,15 @@ class TestTimeOffsets:
         assert abs(model.li.get("next_revenue", 2025) - 121.0) < 0.01  # 110 * 1.1
         assert abs(model.li.get("next_revenue", 2026) - 133.1) < 0.01  # 121 * 1.1
 
-    def test_self_reference_error_positive_offset(self):
-        """Test that positive offsets raise an error."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100, 2025: 110})
-            # This should fail - positive offset not allowed
-            future_ref = FormulaLine(
-                formula=lambda: revenue[1],  # Trying to reference future
-            )
-
-        with pytest.raises(ValueError, match="Only negative time offsets are allowed"):
-            TestModel(periods=[2024, 2025])
-
     def test_missing_period_error(self):
         """Test that referencing a missing period raises an error."""
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             # This should fail for 2024 - no period 2023
-            prev_revenue = FormulaLine(formula=lambda: revenue[-1])
+            prev_revenue = FormulaLine(formula=lambda a, li, t: li.revenue[t - 1])
 
-        with pytest.raises(ValueError, match="No value found"):
+        with pytest.raises(ValueError, match="Error evaluating formula"):
             TestModel(periods=[2024])
 
     def test_formula_referencing_formula_with_offset(self):
@@ -89,9 +79,9 @@ class TestTimeOffsets:
 
         class TestModel(ProformaModel):
             base = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
-            derived = FormulaLine(formula=lambda: base * 2)
+            derived = FormulaLine(formula=lambda a, li, t: li.base[t] * 2)
             change = FormulaLine(
-                formula=lambda: derived - derived[-1],
+                formula=lambda a, li, t: li.derived[t] - li.derived[t - 1],
                 values={2024: 0},  # First period override
             )
 

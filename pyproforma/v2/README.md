@@ -14,7 +14,7 @@ Base class for user-defined financial models. Users subclass this and declare li
 ```python
 class MyModel(ProformaModel):
     revenue = FixedLine(values={2024: 100, 2025: 110})
-    profit = FormulaLine(formula=lambda: revenue * 0.1)
+    profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.1)
 ```
 
 ### FixedLine
@@ -28,13 +28,25 @@ revenue = FixedLine(
 ```
 
 ### FormulaLine
-Represents a line item calculated using a formula function. Supports value overrides for specific periods.
+Represents a line item calculated using a formula function. Formulas receive three parameters:
+- `a` (AssumptionValues): Access assumptions via `a.tax_rate`, `a.growth_rate`
+- `li` (LineItemValues): Access line items via `li.revenue[t]`, `li.revenue[t-1]`
+- `t` (int): Current period being calculated
+
+Value overrides are supported for specific periods.
 
 ```python
 expenses = FormulaLine(
-    formula=lambda: revenue * 0.6,
+    formula=lambda a, li, t: li.revenue[t] * 0.6,
     values={2024: 50000},  # Override for 2024
     label="Operating Expenses"
+)
+
+# Time-offset lookback example
+growth = FormulaLine(
+    formula=lambda a, li, t: (li.revenue[t] - li.revenue[t-1]) / li.revenue[t-1],
+    values={2024: 0.0},  # First period has no prior value
+    label="YoY Growth %"
 )
 ```
 
