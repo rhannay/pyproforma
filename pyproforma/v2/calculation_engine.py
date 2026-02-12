@@ -69,7 +69,8 @@ def calculate_line_items(
         # First, calculate all fixed line items (they don't depend on other line items)
         for name in fixed_items:
             line_item = getattr(model.__class__, name)
-            _calculate_single_line_item(line_item, av, li, period)
+            value = _calculate_single_line_item(line_item, av, li, period)
+            li.set(name, period, value)
         
         # Then calculate formula items with dependency resolution
         remaining = formula_items.copy()
@@ -83,7 +84,8 @@ def calculate_line_items(
             for name in remaining:
                 line_item = getattr(model.__class__, name)
                 try:
-                    _calculate_single_line_item(line_item, av, li, period)
+                    value = _calculate_single_line_item(line_item, av, li, period)
+                    li.set(name, period, value)
                 except AttributeError:
                     # Failed due to missing dependency (line item not yet calculated)
                     # Keep in the list to try again
@@ -124,11 +126,14 @@ def _calculate_single_line_item(
     """
     Calculate the value of a single line item for a specific period.
 
+    This is a pure function that computes and returns a value without modifying
+    the LineItemValues container. The caller is responsible for storing the result.
+
     Args:
         line_item: The line item definition (FixedLine or FormulaLine).
             Must have a .name attribute set by __set_name__.
         av (AssumptionValues): Assumption values.
-        li (LineItemValues): Line item values container.
+        li (LineItemValues): Line item values container (read-only access).
         period (int): The period to calculate for.
 
     Returns:
@@ -136,33 +141,31 @@ def _calculate_single_line_item(
 
     Raises:
         ValueError: If calculation fails.
+        AttributeError: If a dependency is not yet calculated.
+        KeyError: If accessing a period not yet calculated.
     """
     # Import here to avoid circular imports
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
 
-    # Get the name from the line item itself
-    name = line_item.name
-
     # Handle FixedLine
     if isinstance(line_item, FixedLine):
         value = line_item.get_value(period)
         if value is None:
-            raise ValueError(f"No value defined for '{name}' in period {period}")
-        li.set(name, period, value)
+            raise ValueError(
+                f"No value defined for '{line_item.name}' in period {period}"
+            )
         return value
 
     # Handle FormulaLine
     if isinstance(line_item, FormulaLine):
         # Check for override value first
         if period in line_item.values:
-            value = line_item.values[period]
-            li.set(name, period, value)
-            return value
+            return line_item.values[period]
 
         # Evaluate the formula
         if line_item.formula is None:
-            raise ValueError(f"No formula defined for '{name}'")
+            raise ValueError(f"No formula defined for '{line_item.name}'")
 
         # Call formula with a, li, and t parameters
         try:
@@ -173,16 +176,15 @@ def _calculate_single_line_item(
             raise
         except Exception as e:
             raise ValueError(
-                f"Error evaluating formula for '{name}' in period {period}: {e}"
+                f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
             ) from e
 
-        # Handle the result
-        if isinstance(value, (int, float)):
-            li.set(name, period, float(value))
-            return float(value)
-        else:
+        # Validate the result type
+        if not isinstance(value, (int, float)):
             raise ValueError(
-                f"Formula for '{name}' returned invalid type: {type(value)}"
+                f"Formula for '{line_item.name}' returned invalid type: {type(value)}"
             )
 
-    raise ValueError(f"Unknown line item type for '{name}'")
+        return float(value)
+
+    raise ValueError(f"Unknown line item type for '{line_item.name}'")

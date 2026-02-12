@@ -205,6 +205,9 @@ class TestCalculateSingleLineItem:
         value = _calculate_single_line_item(TestModel.revenue, av, li, 2024)
 
         assert value == 100
+        # Since _calculate_single_line_item is now pure, it doesn't set values in li
+        # The caller is responsible for that
+        li.set("revenue", 2024, value)
         assert li.get("revenue", 2024) == 100
 
     def test_formula_line_calculation(self):
@@ -219,12 +222,15 @@ class TestCalculateSingleLineItem:
         li = LineItemValues(periods=[2024])
 
         # First calculate revenue
-        _calculate_single_line_item(TestModel.revenue, av, li, 2024)
+        revenue_value = _calculate_single_line_item(TestModel.revenue, av, li, 2024)
+        li.set("revenue", 2024, revenue_value)
 
         # Then calculate expenses
         value = _calculate_single_line_item(TestModel.expenses, av, li, 2024)
 
         assert value == 60.0
+        # Since _calculate_single_line_item is now pure, it doesn't set values in li
+        li.set("expenses", 2024, value)
         assert li.get("expenses", 2024) == 60.0
 
     def test_missing_line_item_raises_error(self):
