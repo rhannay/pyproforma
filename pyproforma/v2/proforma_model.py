@@ -8,7 +8,7 @@ line items as class attributes using FixedLine, FormulaLine, or Assumption.
 
 from pyproforma.v2.assumption import Assumption
 from pyproforma.v2.assumption_values import AssumptionValues
-from pyproforma.v2.calculation_engine import CalculationEngine
+from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
 from pyproforma.v2.line_item_values import LineItemValues
 
@@ -76,13 +76,11 @@ class ProformaModel:
         # Initialize assumption values
         self.av = self._initialize_assumptions()
 
-        # Initialize line item values (empty initially)
-        self.li = LineItemValues(periods=self.periods)
-
-        # Run calculation engine if periods are defined
+        # Calculate line item values
         if self.periods:
-            engine = CalculationEngine(self, self.av, self.li, self.periods)
-            engine.calculate()
+            self.li = calculate_line_items(self, self.av, self.periods)
+        else:
+            self.li = LineItemValues(periods=[])
 
     def _initialize_assumptions(self) -> AssumptionValues:
         """
