@@ -5,6 +5,7 @@ Version 2 provides a cleaner, Pydantic-inspired API for building financial model
 """
 
 from .assumption import Assumption
+from .assumption_result import AssumptionResult
 from .assumption_values import AssumptionValues
 from .fixed_line import FixedLine
 from .formula_line import FormulaLine
@@ -18,6 +19,7 @@ __all__ = [
     "FixedLine",
     "FormulaLine",
     "Assumption",
+    "AssumptionResult",
     "LineItem",
     "AssumptionValues",
     "LineItemValues",
