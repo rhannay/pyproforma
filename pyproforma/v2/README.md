@@ -90,6 +90,35 @@ print(MyModel._assumption_names)  # ['tax_rate']
 print(MyModel._line_item_names)   # ['revenue', 'profit']
 ```
 
+## Table Creation
+
+v2 models now support table creation through the `.tables` namespace and individual line item `.table()` methods.
+
+```python
+# Create model
+model = MyModel(periods=[2024, 2025, 2026])
+
+# Create a table with all line items
+table = model.tables.line_items()
+
+# Create a table with specific line items
+table = model.tables.line_items(
+    line_items=['revenue', 'profit'],
+    include_name=False,
+    include_label=True
+)
+
+# Create a table for a single line item
+revenue_result = model['revenue']
+revenue_table = revenue_result.table()
+
+# Export to HTML or Excel
+html = table.to_html()
+table.to_excel('output.xlsx')
+```
+
+See `examples/v2/tables_example.py` for more examples.
+
 ## Current Status
 
 **Implemented features:**
@@ -103,14 +132,17 @@ print(MyModel._line_item_names)   # ['revenue', 'profit']
 - ✅ Dependency tracking (sequential evaluation)
 - ✅ Time-offset lookback references (e.g., `revenue[-1]`)
 - ✅ AssumptionValues and LineItemValues containers
-- ✅ Comprehensive test suite (46 tests)
+- ✅ Comprehensive test suite (142 tests)
 - ✅ Example usage in `examples/v2/simple_model.py`
+- ✅ Tables namespace for table creation
+- ✅ LineItemResult.table() method for individual line item tables
 
 **Not yet implemented:**
 
-- ❌ Integration with existing PyProforma features (tables, charts)
+- ❌ Integration with charts
 - ❌ Advanced dependency tracking with topological sorting
 - ❌ Circular reference detection before execution
+- ❌ Full template-based table support (uses v1 infrastructure)
 
 The v2 API is functional for basic and intermediate financial models. Formulas can reference
 other line items, assumptions, and use time offsets for lookback calculations.
