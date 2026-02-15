@@ -7,9 +7,11 @@ line items as class attributes using FixedLine, FormulaLine, or Assumption.
 """
 
 from pyproforma.v2.assumption import Assumption
+from pyproforma.v2.assumption_result import AssumptionResult
 from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
+from pyproforma.v2.line_item_result import LineItemResult
 from pyproforma.v2.line_item_values import LineItemValues
 
 
@@ -121,6 +123,66 @@ class ProformaModel:
         # Use attribute access which raises proper errors
         line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
         return line_item[period]  # Raises KeyError if period doesn't exist
+
+    @property
+    def li(self) -> LineItemValues:
+        """
+        Access line item values.
+
+        Returns:
+            LineItemValues: Container with all calculated line item values.
+
+        Examples:
+            >>> model.li.revenue[2024]
+            100000
+        """
+        return self._li
+
+    def __getitem__(self, name: str) -> LineItemResult | AssumptionResult:
+        """
+        Get LineItemResult or AssumptionResult using dictionary-style access.
+
+        This enables convenient access to line items and assumptions using subscript
+        notation. Returns a LineItemResult for line items or an AssumptionResult for
+        assumptions, providing read-only access to values and metadata.
+
+        Args:
+            name (str): The name of the line item or assumption
+
+        Returns:
+            LineItemResult | AssumptionResult: Results object for the specified item
+
+        Raises:
+            TypeError: If name is not a string
+            AttributeError: If the name doesn't exist in line items or assumptions
+
+        Examples:
+            >>> revenue = model['revenue']  # LineItemResult
+            >>> revenue[2024]
+            100000
+            >>> inflation = model['inflation_rate']  # AssumptionResult
+            >>> inflation.value
+            0.03
+        """
+        if not isinstance(name, str):
+            raise TypeError(
+                f"Expected string for item name, got {type(name).__name__}"
+            )
+        
+        # Check if it's a line item
+        if name in self.line_item_names:
+            return LineItemResult(self, name)
+        
+        # Check if it's an assumption
+        if name in self.assumption_names:
+            return AssumptionResult(self, name)
+        
+        # Not found in either - raise descriptive error
+        raise AttributeError(
+            f"Item '{name}' not found in model. "
+            f"Available line items: {', '.join(sorted(self.line_item_names))}. "
+            f"Available assumptions: {', '.join(sorted(self.assumption_names))}"
+        )
 
     def __repr__(self):
         """Return a string representation of the model."""
