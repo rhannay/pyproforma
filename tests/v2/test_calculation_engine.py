@@ -492,3 +492,73 @@ class TestDependencyResolution:
         assert model.get_value("ebitda", 2024) == 40.0
         assert model.get_value("tax", 2024) == 8.4
         assert abs(model.get_value("net_income", 2024) - 31.6) < 0.0001
+
+
+class TestFormulaLineEval:
+    """Tests for the FormulaLine.eval() method."""
+
+    def test_eval_method_direct_call(self):
+        """Test calling eval() method directly on FormulaLine."""
+        # Create a FormulaLine instance
+        profit_line = FormulaLine(
+            formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+        )
+        profit_line.name = "profit"  # Normally set by __set_name__
+
+        # Create mock containers
+        av = AssumptionValues({})
+        li = LineItemValues(periods=[2024], names=["revenue", "expenses", "profit"])
+        li.set("revenue", 2024, 100.0)
+        li.set("expenses", 2024, 60.0)
+
+        # Call eval() directly
+        result = profit_line.eval(av, li, 2024)
+
+        assert result == 40.0
+
+    def test_eval_method_with_assumptions(self):
+        """Test eval() method using assumptions."""
+        # Create a FormulaLine that uses assumptions
+        expenses_line = FormulaLine(
+            formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+        )
+        expenses_line.name = "expenses"
+
+        # Create containers with assumption
+        av = AssumptionValues({"expense_ratio": 0.65})
+        li = LineItemValues(periods=[2024], names=["revenue", "expenses"])
+        li.set("revenue", 2024, 100.0)
+
+        # Call eval()
+        result = expenses_line.eval(av, li, 2024)
+
+        assert result == 65.0
+
+    def test_eval_method_no_formula_raises_error(self):
+        """Test that eval() raises ValueError when formula is None."""
+        profit_line = FormulaLine(formula=None)
+        profit_line.name = "profit"
+
+        av = AssumptionValues({})
+        li = LineItemValues(periods=[2024], names=["profit"])
+
+        with pytest.raises(ValueError, match="No formula defined for 'profit'"):
+            profit_line.eval(av, li, 2024)
+
+    def test_eval_method_parameters_documented(self):
+        """Test that eval() method signature clearly documents the three parameters."""
+        # This test verifies that the eval() method exists and has the right signature
+        import inspect
+
+        sig = inspect.signature(FormulaLine.eval)
+        params = list(sig.parameters.keys())
+
+        # Should have self, a, li, t parameters
+        assert params == ["self", "a", "li", "t"]
+
+        # Check annotations are present
+        annotations = FormulaLine.eval.__annotations__
+        assert "a" in annotations
+        assert "li" in annotations
+        assert "t" in annotations
+        assert "return" in annotations
