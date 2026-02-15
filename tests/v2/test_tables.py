@@ -28,9 +28,11 @@ def simple_model():
 
 
 def test_model_has_tables_namespace(simple_model):
-    """Test that model has a tables namespace."""
+    """Test that model has a tables namespace properly initialized."""
     assert hasattr(simple_model, "tables")
     assert simple_model.tables is not None
+    # Verify proper initialization with model reference
+    assert simple_model.tables._model is simple_model
 
 
 def test_tables_namespace_type(simple_model):

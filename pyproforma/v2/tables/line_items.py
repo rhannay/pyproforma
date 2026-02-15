@@ -50,16 +50,19 @@ def create_line_items_table(
     # Build header row
     header_cells = []
 
-    # Add label columns
-    if include_name:
-        header_cells.append(Cell(value="Name", bold=True, align="left"))
-    if include_label:
-        header_cells.append(Cell(value="Label", bold=True, align="left"))
+    # Determine what to show in the label column
+    show_name = include_name
+    show_label = include_label
 
-    # If no label columns, add a default one
-    if not include_name and not include_label:
-        header_cells.append(Cell(value="Item", bold=True, align="left"))
-        include_name = True  # Default to showing name
+    # If no label columns specified, default to showing name
+    if not show_name and not show_label:
+        show_name = True
+
+    # Add label columns
+    if show_name:
+        header_cells.append(Cell(value="Name", bold=True, align="left"))
+    if show_label:
+        header_cells.append(Cell(value="Label", bold=True, align="left"))
 
     # Add period headers
     for period in model.periods:
@@ -74,9 +77,9 @@ def create_line_items_table(
         item_result = model[item_name]
 
         # Add label columns
-        if include_name:
+        if show_name:
             row_cells.append(Cell(value=item_name, align="left"))
-        if include_label:
+        if show_label:
             label = item_result.label if item_result.label else item_name
             row_cells.append(Cell(value=label, align="left"))
 
