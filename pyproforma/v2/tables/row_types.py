@@ -36,6 +36,32 @@ class BaseRow(ABC):
 
 
 @dataclass
+class HeaderRow(BaseRow):
+    """Configuration for header row generation."""
+
+    col_labels: Union[str, list[str]] = "Name"
+
+    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+        """Create the header row with label columns and period columns."""
+        cells = []
+
+        # Add label column headers
+        if isinstance(self.col_labels, str):
+            cells.append(Cell(value=self.col_labels, bold=True, align="left"))
+        else:
+            for label in self.col_labels:
+                cells.append(Cell(value=label, bold=True, align="left"))
+
+        # Add period column headers
+        for period in model.periods:
+            cells.append(
+                Cell(value=period, bold=True, align="center", value_format=None)
+            )
+
+        return cells
+
+
+@dataclass
 class ItemRow(BaseRow):
     """Configuration for line item row generation."""
 
@@ -440,6 +466,7 @@ def dict_to_row_config(config: dict) -> BaseRow:
     del config_copy["row_type"]
 
     row_type_map = {
+        "header": HeaderRow,
         "item": ItemRow,
         "label": LabelRow,
         "blank": BlankRow,

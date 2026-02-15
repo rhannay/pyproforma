@@ -5,7 +5,13 @@ Tests for v2 from_template functionality.
 import pytest
 
 from pyproforma.v2 import FixedLine, FormulaLine, ProformaModel
-from pyproforma.v2.tables import BlankRow, ItemRow, LabelRow, LineItemsTotalRow
+from pyproforma.v2.tables import (
+    BlankRow,
+    HeaderRow,
+    ItemRow,
+    LabelRow,
+    LineItemsTotalRow,
+)
 
 
 class SimpleModel(ProformaModel):
@@ -31,6 +37,7 @@ def simple_model():
 def test_from_template_with_dict_config(simple_model):
     """Test from_template using dict configurations."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "label", "label": "Income Statement", "bold": True},
         {"row_type": "item", "name": "revenue"},
         {"row_type": "item", "name": "expenses"},
@@ -77,6 +84,7 @@ def test_from_template_with_dict_config(simple_model):
 def test_from_template_with_dataclass_config(simple_model):
     """Test from_template using dataclass configurations."""
     template = [
+        HeaderRow(col_labels="Name"),
         LabelRow(label="Income Statement", bold=True),
         ItemRow(name="revenue"),
         ItemRow(name="expenses"),
@@ -97,6 +105,7 @@ def test_from_template_with_dataclass_config(simple_model):
 def test_from_template_mixed_config(simple_model):
     """Test from_template with mixed dict and dataclass configurations."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "label", "label": "Income Statement"},
         ItemRow(name="revenue"),
         {"row_type": "item", "name": "expenses"},
@@ -111,10 +120,11 @@ def test_from_template_mixed_config(simple_model):
 def test_from_template_with_custom_col_labels_string(simple_model):
     """Test from_template with custom column label (string)."""
     template = [
+        {"row_type": "header", "col_labels": "Line Item"},
         {"row_type": "item", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template, col_labels="Line Item")
+    table = simple_model.tables.from_template(template)
 
     # Check header
     header = table.cells[0]
@@ -124,10 +134,11 @@ def test_from_template_with_custom_col_labels_string(simple_model):
 def test_from_template_with_custom_col_labels_list(simple_model):
     """Test from_template with custom column labels (list)."""
     template = [
+        {"row_type": "header", "col_labels": ["Name", "Label"]},
         {"row_type": "item", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template, col_labels=["Name", "Label"])
+    table = simple_model.tables.from_template(template)
 
     # Check header
     header = table.cells[0]
@@ -153,6 +164,7 @@ def test_from_template_no_periods_raises_error():
 def test_from_template_with_percent_change(simple_model):
     """Test from_template with percent change row."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "item", "name": "revenue"},
         {"row_type": "percent_change", "name": "revenue"},
     ]
@@ -172,6 +184,7 @@ def test_from_template_with_percent_change(simple_model):
 def test_from_template_with_cumulative_rows(simple_model):
     """Test from_template with cumulative change rows."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "item", "name": "revenue"},
         {"row_type": "cumulative_change", "name": "revenue"},
         {"row_type": "cumulative_percent_change", "name": "revenue"},
@@ -196,6 +209,7 @@ def test_from_template_with_cumulative_rows(simple_model):
 def test_from_template_comprehensive_example(simple_model):
     """Test comprehensive example with various row types."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "label", "label": "Income Statement", "bold": True},
         {"row_type": "blank"},
         {"row_type": "item", "name": "revenue"},

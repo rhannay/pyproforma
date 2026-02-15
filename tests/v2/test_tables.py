@@ -128,6 +128,7 @@ def test_tables_line_items_invalid_item(simple_model):
 def test_tables_from_template_works(simple_model):
     """Test that from_template now works for v2 models."""
     template = [
+        {"row_type": "header", "col_labels": "Name"},
         {"row_type": "item", "name": "revenue"},
         {"row_type": "item", "name": "expenses"},
     ]

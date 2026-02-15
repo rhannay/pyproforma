@@ -76,34 +76,37 @@ class Tables:
                 "Please add periods to the model before generating tables."
             )
 
-        # Determine label column count from col_labels
-        if col_labels is None:
-            # Default to single label column showing name
+        # Determine label column count
+        # First check if template has a HeaderRow to get col_labels from
+        header_col_labels = None
+        for config in template:
+            # Convert dict to dataclass if needed for checking
+            if isinstance(config, dict):
+                temp_config = dict_to_row_config(config)
+            else:
+                temp_config = config
+            
+            if isinstance(temp_config, rt.HeaderRow):
+                header_col_labels = temp_config.col_labels
+                break
+        
+        # Determine label_col_count from HeaderRow if present, otherwise from col_labels param
+        if header_col_labels is not None:
+            # Use HeaderRow's col_labels
+            if isinstance(header_col_labels, str):
+                label_col_count = 1
+            else:
+                label_col_count = len(header_col_labels)
+        elif col_labels is None:
+            # Default to single label column
             label_col_count = 1
-            col_labels = "Name"
         elif isinstance(col_labels, str):
             label_col_count = 1
         else:
             label_col_count = len(col_labels)
 
-        # Build header row
-        header_cells = []
-
-        # Add label column headers
-        if isinstance(col_labels, str):
-            header_cells.append(Cell(value=col_labels, bold=True, align="left"))
-        else:
-            for label in col_labels:
-                header_cells.append(Cell(value=label, bold=True, align="left"))
-
-        # Add period column headers
-        for period in self._model.periods:
-            header_cells.append(
-                Cell(value=period, bold=True, align="center", value_format=None)
-            )
-
-        # Create data rows
-        data_rows = []
+        # Process all rows in template
+        all_rows = []
         for config in template:
             # Convert dict to dataclass if needed
             if isinstance(config, dict):
@@ -113,13 +116,10 @@ class Tables:
             result = config.generate_row(self._model, label_col_count=label_col_count)
             if isinstance(result, list) and result and isinstance(result[0], list):
                 # Multiple rows returned
-                data_rows.extend(result)
+                all_rows.extend(result)
             else:
                 # Single row returned
-                data_rows.append(result)
-
-        # Combine header and data rows
-        all_rows = [header_cells] + data_rows
+                all_rows.append(result)
 
         return Table(cells=all_rows)
 
@@ -177,9 +177,11 @@ class Tables:
         if show_label:
             col_labels.append("Label")
 
-        # Build template using ItemRow for each line item
+        # Build template starting with HeaderRow
+        template = [rt.HeaderRow(col_labels=col_labels)]
+        
+        # Add ItemRow for each line item
         # When showing only name (not label), explicitly set label=name to override default behavior
-        template = []
         for item_name in items_to_include:
             if show_name and not show_label:
                 # Force ItemRow to show name instead of label
@@ -229,8 +231,11 @@ class Tables:
         else:
             col_labels = "Label"
 
-        # Build template with single ItemRow
-        template = [rt.ItemRow(name=name)]
+        # Build template with HeaderRow and single ItemRow
+        template = [
+            rt.HeaderRow(col_labels=col_labels),
+            rt.ItemRow(name=name),
+        ]
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)

@@ -10,6 +10,7 @@ from .row_types import (
     BlankRow,
     CumulativeChangeRow,
     CumulativePercentChangeRow,
+    HeaderRow,
     ItemRow,
     LabelRow,
     LineItemsTotalRow,
@@ -21,6 +22,7 @@ from .tables import Tables
 __all__ = [
     "Tables",
     "BaseRow",
+    "HeaderRow",
     "ItemRow",
     "LabelRow",
     "BlankRow",
