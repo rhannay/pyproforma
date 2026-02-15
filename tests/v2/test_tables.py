@@ -125,7 +125,15 @@ def test_tables_line_items_invalid_item(simple_model):
         simple_model.tables.line_items(line_items=["invalid"])
 
 
-def test_tables_from_template_not_implemented(simple_model):
-    """Test that from_template raises NotImplementedError for v2 models."""
-    with pytest.raises(NotImplementedError, match="Template-based table generation"):
-        simple_model.tables.from_template([])
+def test_tables_from_template_works(simple_model):
+    """Test that from_template now works for v2 models."""
+    template = [
+        {"row_type": "item", "name": "revenue"},
+        {"row_type": "item", "name": "expenses"},
+    ]
+    table = simple_model.tables.from_template(template)
+
+    # Should have header + 2 data rows
+    assert len(table.cells) == 3
+    assert table.cells[1][0].value == "Revenue"
+    assert table.cells[2][0].value == "Operating Expenses"

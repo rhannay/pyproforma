@@ -5,12 +5,12 @@ Provides table creation methods for v2 models, similar to the v1 API but
 adapted for v2's simpler structure.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
-from pyproforma.table import Table
-from pyproforma.tables.table_generator import generate_table_from_template
+from pyproforma.table import Cell, Table
 
 from .line_items import create_line_items_table
+from .row_types import BaseRow, dict_to_row_config
 
 if TYPE_CHECKING:
     from pyproforma.v2.proforma_model import ProformaModel
@@ -41,33 +41,87 @@ class Tables:
         self._model = model
 
     def from_template(
-        self, template: list[dict], col_labels: Optional[str | list[str]] = None
+        self,
+        template: list[Union[dict, BaseRow]],
+        col_labels: Optional[str | list[str]] = None,
     ) -> Table:
         """
         Generate a table from a template of row configurations.
 
-        Note: This method uses the v1 table generation infrastructure, which expects
-        a v1 Model. For full template support, consider using v1 models or implementing
-        v2-specific template handling.
-
         Args:
-            template (list[dict]): A list of row configuration dictionaries that define
-                the structure and content of the table.
+            template (list[Union[dict, BaseRow]]): A list of row configuration
+                dictionaries or BaseRow instances that define the structure and
+                content of the table.
             col_labels: String or list of strings for label columns. Defaults to None.
+                If None, defaults to "Name" for single column or ["Name", "Label"]
+                for two columns.
 
         Returns:
             Table: A Table object containing the rows and data as specified by the template.
 
-        Raises:
-            NotImplementedError: Template support requires v1-style metadata which v2
-                models don't currently provide.
+        Examples:
+            >>> template = [
+            ...     {"row_type": "label", "label": "Income Statement", "bold": True},
+            ...     {"row_type": "item", "name": "revenue"},
+            ...     {"row_type": "item", "name": "expenses"},
+            ...     {"row_type": "blank"},
+            ...     {"row_type": "line_items_total", "line_item_names": ["revenue", "expenses"]},
+            ... ]
+            >>> table = model.tables.from_template(template)
         """
-        # For now, this is a placeholder. Full implementation would require
-        # either converting v2 models to v1 format or creating v2-specific row types
-        raise NotImplementedError(
-            "Template-based table generation is not yet supported for v2 models. "
-            "Use the line_items() method or individual line item table() methods."
-        )
+        # Check if model has periods defined
+        if not self._model.periods:
+            raise ValueError(
+                "Cannot generate table: model has no periods defined. "
+                "Please add periods to the model before generating tables."
+            )
+
+        # Determine label column count from col_labels
+        if col_labels is None:
+            # Default to single label column showing name
+            label_col_count = 1
+            col_labels = "Name"
+        elif isinstance(col_labels, str):
+            label_col_count = 1
+        else:
+            label_col_count = len(col_labels)
+
+        # Build header row
+        header_cells = []
+
+        # Add label column headers
+        if isinstance(col_labels, str):
+            header_cells.append(Cell(value=col_labels, bold=True, align="left"))
+        else:
+            for label in col_labels:
+                header_cells.append(Cell(value=label, bold=True, align="left"))
+
+        # Add period column headers
+        for period in self._model.periods:
+            header_cells.append(
+                Cell(value=period, bold=True, align="center", value_format=None)
+            )
+
+        # Create data rows
+        data_rows = []
+        for config in template:
+            # Convert dict to dataclass if needed
+            if isinstance(config, dict):
+                config = dict_to_row_config(config)
+
+            # Generate row(s)
+            result = config.generate_row(self._model, label_col_count=label_col_count)
+            if isinstance(result, list) and result and isinstance(result[0], list):
+                # Multiple rows returned
+                data_rows.extend(result)
+            else:
+                # Single row returned
+                data_rows.append(result)
+
+        # Combine header and data rows
+        all_rows = [header_cells] + data_rows
+
+        return Table(cells=all_rows)
 
     def line_items(
         self,
