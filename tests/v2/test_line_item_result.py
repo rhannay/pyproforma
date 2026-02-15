@@ -31,7 +31,7 @@ class TestModelGetItemAccess:
 
         model = TestModel(periods=[2024])
 
-        with pytest.raises(AttributeError, match="Line item 'nonexistent' not found"):
+        with pytest.raises(AttributeError, match="Item 'nonexistent' not found"):
             model["nonexistent"]
 
     def test_getitem_with_non_string_key(self):
