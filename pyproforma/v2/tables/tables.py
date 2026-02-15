@@ -190,3 +190,47 @@ class Tables:
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)
+
+    def line_item(
+        self,
+        name: str,
+        include_name: bool = False,
+    ) -> Table:
+        """
+        Generate a table for a single line item.
+
+        Creates a table that displays a single line item with its values across all periods.
+
+        Args:
+            name (str): The name of the line item to display.
+            include_name (bool): Whether to include the name column. Defaults to False.
+                When False, only the label column is shown.
+
+        Returns:
+            Table: A Table object containing the line item.
+
+        Raises:
+            ValueError: If the line item name doesn't exist in the model.
+
+        Examples:
+            >>> table = model.tables.line_item('revenue')
+            >>> table = model.tables.line_item('revenue', include_name=True)
+        """
+        # Validate that the line item exists
+        if name not in self._model.line_item_names:
+            raise ValueError(
+                f"Line item '{name}' not found in model. "
+                f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
+            )
+
+        # Build col_labels parameter
+        if include_name:
+            col_labels = ["Name", "Label"]
+        else:
+            col_labels = "Label"
+
+        # Build template with single ItemRow
+        template = [rt.ItemRow(name=name)]
+
+        # Use from_template to generate the table
+        return self.from_template(template, col_labels=col_labels)

@@ -177,6 +177,4 @@ class LineItemResult:
             >>> table = result.table()
             >>> table = result.table(include_name=True)
         """
-        from pyproforma.v2.tables.line_items import create_line_item_table
-
-        return create_line_item_table(self._model, self._name, include_name=include_name)
+        return self._model.tables.line_item(self._name, include_name=include_name)
