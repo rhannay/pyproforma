@@ -166,6 +166,35 @@ class TestLineItemResultClass:
 
         assert result.name == "revenue"
 
+    def test_label_property_with_label(self):
+        """Test the label property when label is set."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, label="Total Revenue")
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * 0.6,
+                label="Operating Expenses"
+            )
+
+        model = TestModel(periods=[2024])
+        
+        revenue_result = model["revenue"]
+        expenses_result = model["expenses"]
+
+        assert revenue_result.label == "Total Revenue"
+        assert expenses_result.label == "Operating Expenses"
+
+    def test_label_property_without_label(self):
+        """Test the label property when label is not set."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel(periods=[2024])
+        result = model["revenue"]
+
+        assert result.label is None
+
     def test_values_property(self):
         """Test the values property returns all period values."""
 

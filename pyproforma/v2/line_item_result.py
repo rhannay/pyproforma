@@ -59,6 +59,9 @@ class LineItemResult:
                 f"Line item '{name}' not found in model. "
                 f"Available line items: {', '.join(sorted(model.line_item_names))}"
             )
+        
+        # Cache the line item specification for metadata access
+        self._line_item_spec = getattr(model.__class__, name, None)
 
     def __repr__(self) -> str:
         """Return a string representation of the LineItemResult."""
@@ -98,6 +101,26 @@ class LineItemResult:
             str: The line item name
         """
         return self._name
+
+    @property
+    def label(self) -> str | None:
+        """
+        Get the display label of the line item.
+
+        Returns the user-defined label if available, otherwise returns None.
+        This is a read-only property.
+
+        Returns:
+            str | None: The line item's display label, or None if not set
+
+        Examples:
+            >>> result = model['revenue']
+            >>> result.label
+            'Revenue'
+        """
+        if self._line_item_spec is not None and hasattr(self._line_item_spec, 'label'):
+            return self._line_item_spec.label
+        return None
 
     @property
     def values(self) -> dict[int, float]:
