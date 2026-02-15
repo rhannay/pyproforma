@@ -9,6 +9,7 @@ values and basic analysis methods.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pyproforma.table import Table
     from pyproforma.v2.proforma_model import ProformaModel
 
 
@@ -159,3 +160,23 @@ class LineItemResult:
             100000
         """
         return self._model.get_value(self._name, period)
+
+    def table(self, include_name: bool = False) -> "Table":
+        """
+        Generate a table for this line item showing its values across periods.
+
+        Args:
+            include_name (bool, optional): Whether to include the name column.
+                Defaults to False.
+
+        Returns:
+            Table: A formatted table with the line item's label and values
+
+        Examples:
+            >>> result = model['revenue']
+            >>> table = result.table()
+            >>> table = result.table(include_name=True)
+        """
+        from pyproforma.v2.tables.line_items import create_line_item_table
+
+        return create_line_item_table(self._model, self._name, include_name=include_name)

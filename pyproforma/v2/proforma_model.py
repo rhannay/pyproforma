@@ -13,6 +13,7 @@ from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
 from pyproforma.v2.line_item_result import LineItemResult
 from pyproforma.v2.line_item_values import LineItemValues
+from pyproforma.v2.tables import Tables
 
 
 class ProformaModel:
@@ -87,6 +88,9 @@ class ProformaModel:
             self._li = calculate_line_items(self, self.av, self.periods)
         else:
             self._li = LineItemValues(periods=[])
+
+        # Initialize tables namespace
+        self.tables = Tables(self)
 
     def _initialize_assumptions(self) -> AssumptionValues:
         """
