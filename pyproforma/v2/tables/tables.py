@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from pyproforma.table import Cell, Table
 
-from .line_items import create_line_items_table
+from . import row_types as rt
 from .row_types import BaseRow, dict_to_row_config
 
 if TYPE_CHECKING:
@@ -149,9 +149,44 @@ class Tables:
             >>> table = model.tables.line_items(line_items=['revenue', 'expenses'])
             >>> table = model.tables.line_items(include_name=False, include_label=True)
         """
-        return create_line_items_table(
-            self._model,
-            line_items=line_items,
-            include_name=include_name,
-            include_label=include_label,
-        )
+        # Determine which line items to include
+        if line_items is None:
+            items_to_include = self._model.line_item_names
+        else:
+            # Validate that all requested items exist
+            for item_name in line_items:
+                if item_name not in self._model.line_item_names:
+                    raise ValueError(
+                        f"Line item '{item_name}' not found in model. "
+                        f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
+                    )
+            items_to_include = line_items
+
+        # Determine what to show in the label columns
+        show_name = include_name
+        show_label = include_label
+
+        # If no label columns specified, default to showing name
+        if not show_name and not show_label:
+            show_name = True
+
+        # Build col_labels parameter
+        col_labels = []
+        if show_name:
+            col_labels.append("Name")
+        if show_label:
+            col_labels.append("Label")
+
+        # Build template using ItemRow for each line item
+        # When showing only name (not label), explicitly set label=name to override default behavior
+        template = []
+        for item_name in items_to_include:
+            if show_name and not show_label:
+                # Force ItemRow to show name instead of label
+                template.append(rt.ItemRow(name=item_name, label=item_name))
+            else:
+                # Let ItemRow use default label behavior
+                template.append(rt.ItemRow(name=item_name))
+
+        # Use from_template to generate the table
+        return self.from_template(template, col_labels=col_labels)
