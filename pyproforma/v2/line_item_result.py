@@ -161,20 +161,42 @@ class LineItemResult:
         """
         return self._model.get_value(self._name, period)
 
-    def table(self, include_name: bool = False) -> "Table":
+    def table(
+        self,
+        include_name: bool = False,
+        include_percent_change: bool = False,
+        include_cumulative_change: bool = False,
+        include_cumulative_percent_change: bool = False,
+    ) -> "Table":
         """
         Generate a table for this line item showing its values across periods.
 
         Args:
             include_name (bool, optional): Whether to include the name column.
                 Defaults to False.
+            include_percent_change (bool, optional): Whether to include a row showing 
+                period-over-period percent change. Defaults to False.
+            include_cumulative_change (bool, optional): Whether to include a row showing
+                cumulative change from the base period. Defaults to False.
+            include_cumulative_percent_change (bool, optional): Whether to include a row
+                showing cumulative percent change from the base period. Defaults to False.
 
         Returns:
-            Table: A formatted table with the line item's label and values
+            Table: A formatted table with the line item's label, values, and any requested
+                analysis rows
 
         Examples:
             >>> result = model['revenue']
             >>> table = result.table()
             >>> table = result.table(include_name=True)
+            >>> table = result.table(include_percent_change=True)
+            >>> table = result.table(include_cumulative_change=True,
+            ...                      include_cumulative_percent_change=True)
         """
-        return self._model.tables.line_item(self._name, include_name=include_name)
+        return self._model.tables.line_item(
+            self._name,
+            include_name=include_name,
+            include_percent_change=include_percent_change,
+            include_cumulative_change=include_cumulative_change,
+            include_cumulative_percent_change=include_cumulative_percent_change,
+        )

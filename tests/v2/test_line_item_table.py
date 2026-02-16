@@ -97,3 +97,94 @@ def test_line_item_result_table_no_label(simple_model):
     # Should use name as fallback when no label
     data_row = table.cells[1]
     assert data_row[0].value == "revenue"
+
+
+def test_line_item_result_table_with_percent_change(simple_model):
+    """Test table with percent change row."""
+    result = simple_model["revenue"]
+    table = result.table(include_percent_change=True)
+
+    # Should have header + data row + percent change row
+    assert len(table.cells) == 3
+
+    # Check data row
+    data_row = table.cells[1]
+    assert data_row[0].value == "Revenue"
+
+    # Check percent change row
+    pct_change_row = table.cells[2]
+    assert pct_change_row[0].value == "Revenue % Change"
+    assert pct_change_row[1].value is None  # First period has no previous
+    assert pct_change_row[2].value == 0.10  # 10% increase
+    assert pct_change_row[3].value == 0.10  # 10% increase
+
+
+def test_line_item_result_table_with_cumulative_change(simple_model):
+    """Test table with cumulative change row."""
+    result = simple_model["revenue"]
+    table = result.table(include_cumulative_change=True)
+
+    # Should have header + data row + cumulative change row
+    assert len(table.cells) == 3
+
+    # Check cumulative change row
+    cum_change_row = table.cells[2]
+    assert cum_change_row[0].value == "Revenue Cumulative Change"
+    assert cum_change_row[1].value == 0  # Base period
+    assert cum_change_row[2].value == 10000  # 110000 - 100000
+    assert cum_change_row[3].value == 21000  # 121000 - 100000
+
+
+def test_line_item_result_table_with_cumulative_percent_change(simple_model):
+    """Test table with cumulative percent change row."""
+    result = simple_model["revenue"]
+    table = result.table(include_cumulative_percent_change=True)
+
+    # Should have header + data row + cumulative percent change row
+    assert len(table.cells) == 3
+
+    # Check cumulative percent change row
+    cum_pct_change_row = table.cells[2]
+    assert cum_pct_change_row[0].value == "Revenue Cumulative % Change"
+    assert cum_pct_change_row[1].value == 0.0  # Base period
+    assert cum_pct_change_row[2].value == 0.10  # 10%
+    assert cum_pct_change_row[3].value == 0.21  # 21%
+
+
+def test_line_item_result_table_with_all_analysis_rows(simple_model):
+    """Test table with all analysis rows included."""
+    result = simple_model["revenue"]
+    table = result.table(
+        include_percent_change=True,
+        include_cumulative_change=True,
+        include_cumulative_percent_change=True,
+    )
+
+    # Should have header + data row + 3 analysis rows
+    assert len(table.cells) == 5
+
+    # Check that all analysis rows are present
+    assert "% Change" in table.cells[2][0].value
+    assert "Cumulative Change" in table.cells[3][0].value
+    assert "Cumulative % Change" in table.cells[4][0].value
+
+
+def test_line_item_result_table_with_name_and_analysis(simple_model):
+    """Test table with name column and analysis rows."""
+    result = simple_model["revenue"]
+    table = result.table(include_name=True, include_percent_change=True)
+
+    # Check header row has both Name and Label
+    header = table.cells[0]
+    assert header[0].value == "Name"
+    assert header[1].value == "Label"
+
+    # Check data row
+    data_row = table.cells[1]
+    assert data_row[0].value == "revenue"
+    assert data_row[1].value == "Revenue"
+
+    # Check percent change row has name
+    pct_change_row = table.cells[2]
+    assert pct_change_row[0].value == "revenue"
+    assert pct_change_row[1].value == "Revenue % Change"

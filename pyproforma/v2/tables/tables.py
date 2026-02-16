@@ -197,19 +197,29 @@ class Tables:
         self,
         name: str,
         include_name: bool = False,
+        include_percent_change: bool = False,
+        include_cumulative_change: bool = False,
+        include_cumulative_percent_change: bool = False,
     ) -> Table:
         """
         Generate a table for a single line item.
 
         Creates a table that displays a single line item with its values across all periods.
+        Optionally includes analysis rows showing changes over time.
 
         Args:
             name (str): The name of the line item to display.
             include_name (bool): Whether to include the name column. Defaults to False.
                 When False, only the label column is shown.
+            include_percent_change (bool): Whether to include a row showing period-over-period
+                percent change. Defaults to False.
+            include_cumulative_change (bool): Whether to include a row showing cumulative
+                change from the base period. Defaults to False.
+            include_cumulative_percent_change (bool): Whether to include a row showing
+                cumulative percent change from the base period. Defaults to False.
 
         Returns:
-            Table: A Table object containing the line item.
+            Table: A Table object containing the line item and any requested analysis rows.
 
         Raises:
             ValueError: If the line item name doesn't exist in the model.
@@ -217,6 +227,10 @@ class Tables:
         Examples:
             >>> table = model.tables.line_item('revenue')
             >>> table = model.tables.line_item('revenue', include_name=True)
+            >>> table = model.tables.line_item('revenue', include_percent_change=True)
+            >>> table = model.tables.line_item('revenue', 
+            ...                                 include_cumulative_change=True,
+            ...                                 include_cumulative_percent_change=True)
         """
         # Validate that the line item exists
         if name not in self._model.line_item_names:
@@ -236,6 +250,16 @@ class Tables:
             rt.HeaderRow(col_labels=col_labels),
             rt.ItemRow(name=name),
         ]
+
+        # Add analysis rows if requested
+        if include_percent_change:
+            template.append(rt.PercentChangeRow(name=name))
+        
+        if include_cumulative_change:
+            template.append(rt.CumulativeChangeRow(name=name))
+        
+        if include_cumulative_percent_change:
+            template.append(rt.CumulativePercentChangeRow(name=name))
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)
