@@ -134,7 +134,9 @@ class ProformaModel:
             KeyError: If the period hasn't been calculated.
         """
         # Use attribute access which raises proper errors
-        line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
+        line_item = getattr(
+            self._li, name
+        )  # Raises AttributeError if name doesn't exist
         return line_item[period]  # Raises KeyError if period doesn't exist
 
     @property
@@ -178,18 +180,16 @@ class ProformaModel:
             0.03
         """
         if not isinstance(name, str):
-            raise TypeError(
-                f"Expected string for item name, got {type(name).__name__}"
-            )
-        
+            raise TypeError(f"Expected string for item name, got {type(name).__name__}")
+
         # Check if it's a line item
         if name in self.line_item_names:
             return LineItemResult(self, name)
-        
+
         # Check if it's an assumption
         if name in self.assumption_names:
             return AssumptionResult(self, name)
-        
+
         # Not found in either - raise descriptive error
         raise AttributeError(
             f"Item '{name}' not found in model. "

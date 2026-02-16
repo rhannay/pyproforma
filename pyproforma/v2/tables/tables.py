@@ -7,7 +7,7 @@ adapted for v2's simpler structure.
 
 from typing import TYPE_CHECKING, Optional, Union
 
-from pyproforma.table import Cell, Table
+from pyproforma.table import Table
 
 from . import row_types as rt
 from .row_types import BaseRow, dict_to_row_config
@@ -85,11 +85,11 @@ class Tables:
                 temp_config = dict_to_row_config(config)
             else:
                 temp_config = config
-            
+
             if isinstance(temp_config, rt.HeaderRow):
                 header_col_labels = temp_config.col_labels
                 break
-        
+
         # Determine label_col_count from HeaderRow if present, otherwise from col_labels param
         if header_col_labels is not None:
             # Use HeaderRow's col_labels
@@ -179,7 +179,7 @@ class Tables:
 
         # Build template starting with HeaderRow
         template = [rt.HeaderRow(col_labels=col_labels)]
-        
+
         # Add ItemRow for each line item
         # When showing only name (not label), explicitly set label=name to override default behavior
         for item_name in items_to_include:
@@ -228,7 +228,7 @@ class Tables:
             >>> table = model.tables.line_item('revenue')
             >>> table = model.tables.line_item('revenue', include_name=True)
             >>> table = model.tables.line_item('revenue', include_percent_change=True)
-            >>> table = model.tables.line_item('revenue', 
+            >>> table = model.tables.line_item('revenue',
             ...                                 include_cumulative_change=True,
             ...                                 include_cumulative_percent_change=True)
         """
@@ -254,10 +254,10 @@ class Tables:
         # Add analysis rows if requested
         if include_percent_change:
             template.append(rt.PercentChangeRow(name=name))
-        
+
         if include_cumulative_change:
             template.append(rt.CumulativeChangeRow(name=name))
-        
+
         if include_cumulative_percent_change:
             template.append(rt.CumulativePercentChangeRow(name=name))
 

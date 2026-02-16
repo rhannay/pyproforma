@@ -58,7 +58,9 @@ class TestTypoDetection:
 
         class TestModel(ProformaModel):
             # Define profit before revenue to test dependency resolution
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
             revenue = FixedLine(values={2024: 100})
 

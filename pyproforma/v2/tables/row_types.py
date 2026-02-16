@@ -6,7 +6,7 @@ Each row type is a dataclass that can generate table rows from v2 ProformaModel 
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
@@ -23,11 +23,11 @@ class BaseRow(ABC):
         self, model: "ProformaModel", label_col_count: int = 1
     ) -> Union[list[Cell], list[list[Cell]]]:
         """Generate row(s) for this configuration.
-        
+
         Args:
             model: The v2 ProformaModel instance
             label_col_count: Number of label columns to include
-            
+
         Returns:
             Either a single list of Cell objects representing one row,
             or a list of lists of Cell objects representing multiple rows.
@@ -41,7 +41,9 @@ class HeaderRow(BaseRow):
 
     col_labels: Union[str, list[str]] = "Name"
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create the header row with label columns and period columns."""
         cells = []
 
@@ -72,7 +74,9 @@ class ItemRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row for a line item with its label and values across all periods."""
         # Get the line item result
         item_result = model[self.name]
@@ -154,7 +158,9 @@ class LabelRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row with just a label spanning label columns."""
         cells = []
 
@@ -184,7 +190,9 @@ class LabelRow(BaseRow):
 class BlankRow(BaseRow):
     """Configuration for blank row generation (for spacing)."""
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a completely blank row."""
         cells = []
 
@@ -208,7 +216,9 @@ class PercentChangeRow(BaseRow):
     value_format: Optional[Union[str, "NumberFormatSpec", dict]] = None
     bold: bool = False
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row showing percent change of a line item from period to period."""
         # Get the line item result
         item_result = model[self.name]
@@ -253,7 +263,9 @@ class PercentChangeRow(BaseRow):
                 else:
                     percent_change = (current_value - prev_value) / prev_value
 
-            cells.append(Cell(value=percent_change, bold=self.bold, value_format=value_format))
+            cells.append(
+                Cell(value=percent_change, bold=self.bold, value_format=value_format)
+            )
 
         return cells
 
@@ -267,7 +279,9 @@ class CumulativeChangeRow(BaseRow):
     value_format: Optional[Union[str, "NumberFormatSpec", dict]] = None
     bold: bool = False
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row showing cumulative change of a line item from the base period."""
         # Get the line item result
         item_result = model[self.name]
@@ -306,7 +320,11 @@ class CumulativeChangeRow(BaseRow):
                 current_value = item_result[period]
                 cumulative_change = current_value - base_value
                 cells.append(
-                    Cell(value=cumulative_change, bold=self.bold, value_format=value_format)
+                    Cell(
+                        value=cumulative_change,
+                        bold=self.bold,
+                        value_format=value_format,
+                    )
                 )
 
         return cells
@@ -321,7 +339,9 @@ class CumulativePercentChangeRow(BaseRow):
     value_format: Optional[Union[str, "NumberFormatSpec", dict]] = None
     bold: bool = False
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row showing cumulative percent change from the base period."""
         # Get the line item result
         item_result = model[self.name]
@@ -362,7 +382,9 @@ class CumulativePercentChangeRow(BaseRow):
                 if base_value == 0:
                     cumulative_percent_change = None
                 else:
-                    cumulative_percent_change = (current_value - base_value) / base_value
+                    cumulative_percent_change = (
+                        current_value - base_value
+                    ) / base_value
 
                 cells.append(
                     Cell(
@@ -386,7 +408,9 @@ class LineItemsTotalRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
 
-    def generate_row(self, model: "ProformaModel", label_col_count: int = 1) -> list[Cell]:
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
         """Create a row showing the total of specified line items."""
         # Default value format
         value_format = self.value_format or "no_decimals"
@@ -448,13 +472,13 @@ class LineItemsTotalRow(BaseRow):
 # Helper function to convert dict to row config (for backwards compatibility)
 def dict_to_row_config(config: dict) -> BaseRow:
     """Convert a dictionary configuration to a BaseRow instance.
-    
+
     Args:
         config: Dictionary with 'row_type' key and corresponding parameters
-        
+
     Returns:
         An instance of the appropriate BaseRow subclass
-        
+
     Raises:
         ValueError: If row_type is unknown or missing
     """

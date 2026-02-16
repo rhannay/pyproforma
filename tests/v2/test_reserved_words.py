@@ -58,10 +58,10 @@ class TestReservedWordsValidation:
         """Test that Python keywords are reserved."""
         with pytest.raises(ValueError, match="'class' is a reserved word"):
             validate_name("class")
-        
+
         with pytest.raises(ValueError, match="'def' is a reserved word"):
             validate_name("def")
-        
+
         with pytest.raises(ValueError, match="'return' is a reserved word"):
             validate_name("return")
 
@@ -148,7 +148,7 @@ class TestReservedWordsList:
             "def",
             "return",
         }
-        
+
         for word in expected_words:
             assert word in RESERVED_WORDS, f"'{word}' should be in RESERVED_WORDS"
 

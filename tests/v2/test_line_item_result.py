@@ -51,7 +51,9 @@ class TestModelGetItemAccess:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel(periods=[2024, 2025])
 
@@ -172,12 +174,11 @@ class TestLineItemResultClass:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100}, label="Total Revenue")
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.6,
-                label="Operating Expenses"
+                formula=lambda a, li, t: li.revenue[t] * 0.6, label="Operating Expenses"
             )
 
         model = TestModel(periods=[2024])
-        
+
         revenue_result = model["revenue"]
         expenses_result = model["expenses"]
 
@@ -254,7 +255,9 @@ class TestLineItemResultWithFormulas:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel(periods=[2024, 2025])
 
@@ -276,7 +279,9 @@ class TestLineItemResultWithFormulas:
         class TestModel(ProformaModel):
             expense_ratio = Assumption(value=0.6)
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+            )
 
         model = TestModel(periods=[2024])
         result = model["expenses"]

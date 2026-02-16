@@ -44,10 +44,10 @@ class TestLineItemResultTags:
             expenses = FixedLine(values={2024: 60}, tags=["expense", "operational"])
 
         model = TestModel(periods=[2024])
-        
+
         revenue_result = model["revenue"]
         assert revenue_result.tags == ["income", "operational"]
-        
+
         expenses_result = model["expenses"]
         assert expenses_result.tags == ["expense", "operational"]
 
@@ -58,7 +58,7 @@ class TestLineItemResultTags:
             revenue = FixedLine(values={2024: 100})
 
         model = TestModel(periods=[2024])
-        
+
         revenue_result = model["revenue"]
         assert revenue_result.tags == []
 
@@ -73,7 +73,7 @@ class TestTagsNamespace:
             revenue = FixedLine(values={2024: 100, 2025: 110}, tags=["income"])
 
         model = TestModel(periods=[2024, 2025])
-        
+
         assert model.li.tags["income"][2024] == 100
         assert model.li.tags["income"][2025] == 110
 
@@ -86,11 +86,11 @@ class TestTagsNamespace:
             expenses = FixedLine(values={2024: 60, 2025: 66}, tags=["expense"])
 
         model = TestModel(periods=[2024, 2025])
-        
+
         # Sum income items
         assert model.li.tags["income"][2024] == 105  # 100 + 5
         assert model.li.tags["income"][2025] == 116  # 110 + 6
-        
+
         # Sum expense items
         assert model.li.tags["expense"][2024] == 60
         assert model.li.tags["expense"][2025] == 66
@@ -106,7 +106,7 @@ class TestTagsNamespace:
             expenses = FixedLine(values={2024: 60}, tags=["expense"])
 
         model = TestModel(periods=[2024])
-        
+
         # Sum income items (fixed + formula)
         assert model.li.tags["income"][2024] == 105  # 100 + 5
         assert model.li.tags["expense"][2024] == 60
@@ -118,7 +118,7 @@ class TestTagsNamespace:
             revenue = FixedLine(values={2024: 100}, tags=["income"])
 
         model = TestModel(periods=[2024])
-        
+
         # No items with "expense" tag
         assert model.li.tags["expense"][2024] == 0
 
@@ -132,7 +132,7 @@ class TestTagsNamespace:
             interest = FixedLine(values={2024: 5}, tags=["income", "non-operational"])
 
         model = TestModel(periods=[2024])
-        
+
         # Revenue appears in all its tags
         assert model.li.tags["income"][2024] == 105  # Both items
         assert model.li.tags["operational"][2024] == 100  # Only revenue
@@ -146,7 +146,7 @@ class TestTagsNamespace:
             revenue = FixedLine(values={2024: 100}, tags=["income"])
 
         model = TestModel(periods=[2024])
-        
+
         with pytest.raises(KeyError, match="Period 2025 not found"):
             model.li.tags["income"][2025]
 
@@ -157,13 +157,13 @@ class TestTagsNamespace:
             revenue = FixedLine(values={2024: 100, 2025: 110}, tags=["income"])
             interest = FixedLine(values={2024: 5, 2025: 6}, tags=["income"])
             expenses = FixedLine(values={2024: 60, 2025: 66}, tags=["expense"])
-            
+
             # Calculate profit using tag sums
             profit = FormulaLine(
                 formula=lambda a, li, t: li.tags["income"][t] - li.tags["expense"][t]
             )
 
         model = TestModel(periods=[2024, 2025])
-        
+
         assert model.li.profit[2024] == 45  # 105 - 60
         assert model.li.profit[2025] == 50  # 116 - 66

@@ -156,6 +156,78 @@ table = model.tables.from_template(template)
 
 See `examples/v2/tables_example.py` and `examples/v2/from_template_example.py` for more examples.
 
+## Tags
+
+**New in v2**: Line items now support tags for flexible multi-dimensional categorization.
+
+### Basic Usage
+
+```python
+# Add tags to line items
+revenue = FixedLine(
+    values={2024: 100, 2025: 110},
+    tags=["income", "operational", "recurring"]
+)
+
+expenses = FormulaLine(
+    formula=lambda a, li, t: li.revenue[t] * 0.6,
+    tags=["expense", "operational"]
+)
+```
+
+### Tag-Based Summation
+
+Use `li.tags[tag_name][period]` to sum all line items with a specific tag:
+
+```python
+class MyModel(ProformaModel):
+    revenue = FixedLine(values={2024: 100}, tags=["income"])
+    interest = FixedLine(values={2024: 5}, tags=["income"])
+    expenses = FixedLine(values={2024: 60}, tags=["expense"])
+    
+    # Calculate totals using tags
+    total_income = FormulaLine(
+        formula=lambda a, li, t: li.tags["income"][t]  # Sums revenue + interest
+    )
+    
+    total_expense = FormulaLine(
+        formula=lambda a, li, t: li.tags["expense"][t]
+    )
+    
+    profit = FormulaLine(
+        formula=lambda a, li, t: li.tags["income"][t] - li.tags["expense"][t]
+    )
+
+model = MyModel(periods=[2024])
+print(model.li.tags["income"][2024])  # 105 (100 + 5)
+```
+
+### Accessing Tags
+
+Tags are accessible through `LineItemResult`:
+
+```python
+revenue_result = model["revenue"]
+print(revenue_result.tags)  # ["income", "operational", "recurring"]
+```
+
+### Reserved Words
+
+To prevent conflicts with internal namespaces and functionality, certain words cannot be used as line item or assumption names:
+
+**Namespace accessors**: `li`, `av`, `tags`, `tag`, `tables`  
+**Formula parameters**: `t`, `a`  
+**Model properties**: `periods`, `period`, `line_item_names`, `assumption_names`  
+**Python keywords**: `class`, `def`, `return`, `if`, `for`, `while`, etc.
+
+```python
+# This will raise a ValueError:
+class BadModel(ProformaModel):
+    tags = FixedLine(values={2024: 100})  # Error: 'tags' is reserved
+```
+
+See `examples/v2/tags_example.py` for a comprehensive demonstration.
+
 ## Current Status
 
 **Implemented features:**
@@ -169,12 +241,14 @@ See `examples/v2/tables_example.py` and `examples/v2/from_template_example.py` f
 - ✅ Dependency tracking (sequential evaluation)
 - ✅ Time-offset lookback references (e.g., `revenue[-1]`)
 - ✅ AssumptionValues and LineItemValues containers
-- ✅ Comprehensive test suite (166 tests)
+- ✅ Comprehensive test suite (206 tests)
 - ✅ Example usage in `examples/v2/simple_model.py`
 - ✅ Tables namespace for table creation
 - ✅ LineItemResult.table() method for individual line item tables
 - ✅ Row types (ItemRow, LabelRow, BlankRow, etc.)
 - ✅ Template-based table creation with from_template()
+- ✅ Tags for flexible line item categorization
+- ✅ Reserved words validation
 
 **Not yet implemented:**
 

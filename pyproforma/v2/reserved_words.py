@@ -13,18 +13,15 @@ RESERVED_WORDS = {
     "tags",  # Tags namespace accessor
     "tag",  # Singular form of tags
     "tables",  # Tables namespace
-    
     # Formula parameters
     "t",  # Period/time parameter in formulas
     "a",  # Assumption values parameter in formulas
-    
     # Model properties and methods
     "periods",  # Model periods list
     "period",  # Singular form
     "line_item_names",  # Model property
     "assumption_names",  # Model property
     "get_value",  # Model method
-    
     # Python/common reserved words to prevent confusion
     "self",
     "class",
