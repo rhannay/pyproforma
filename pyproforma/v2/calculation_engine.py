@@ -170,13 +170,10 @@ def _calculate_single_line_item(
         if period in line_item.values:
             return line_item.values[period]
 
-        # Evaluate the formula
-        if line_item.formula is None:
-            raise ValueError(f"No formula defined for '{line_item.name}'")
-
-        # Call formula with a, li, and t parameters
+        # Evaluate the formula using the explicit eval() method
+        # This makes it clear that formulas receive (a, li, t) parameters
         try:
-            value = line_item.formula(av, li, period)
+            value = line_item.eval(av, li, period)
         except (AttributeError, KeyError):
             # Re-raise these - indicate missing dependencies or periods
             # The caller will decide whether to retry or raise ValueError
