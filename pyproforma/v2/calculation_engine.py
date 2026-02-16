@@ -51,7 +51,7 @@ def calculate_line_items(
     from .formula_line import FormulaLine
 
     # Initialize line item values with registered names for validation
-    li = LineItemValues(periods=periods, names=model.line_item_names)
+    li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
 
     # Separate fixed and formula line items
     fixed_items = []

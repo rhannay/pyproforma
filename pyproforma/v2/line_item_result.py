@@ -124,6 +124,26 @@ class LineItemResult:
         return None
 
     @property
+    def tags(self) -> list[str]:
+        """
+        Get the tags assigned to the line item.
+
+        Returns the list of tags if available, otherwise returns an empty list.
+        This is a read-only property.
+
+        Returns:
+            list[str]: The line item's tags
+
+        Examples:
+            >>> result = model['revenue']
+            >>> result.tags
+            ['income', 'operational']
+        """
+        if self._line_item_spec is not None and hasattr(self._line_item_spec, 'tags'):
+            return self._line_item_spec.tags
+        return []
+
+    @property
     def values(self) -> dict[int, float]:
         """
         Get all period values for the line item.

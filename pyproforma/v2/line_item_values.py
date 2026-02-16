@@ -4,7 +4,12 @@ LineItemValues class for storing calculated line item values across periods.
 This class holds the calculated values for all line items across all periods in a model.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pyproforma.v2.proforma_model import ProformaModel
+
+from pyproforma.v2.tags_namespace import TagsNamespace
 
 
 class LineItemValues:
@@ -39,6 +44,7 @@ class LineItemValues:
         values: dict[str, dict[int, float]] | None = None,
         periods: list[int] | None = None,
         names: list[str] | None = None,
+        model: "ProformaModel | None" = None,
     ):
         """
         Initialize LineItemValues.
@@ -49,9 +55,12 @@ class LineItemValues:
             periods (list[int], optional): List of periods in the model. Defaults to None.
             names (list[str], optional): List of valid line item names to pre-register.
                 If provided, only these names can be accessed. Defaults to None.
+            model (ProformaModel, optional): Reference to the parent model for tag access.
+                Defaults to None.
         """
         self._periods = periods or []
         self._names = set(names) if names else None  # None means any name is valid
+        self._model = model
         
         # Pre-register all valid names if provided
         if self._names:
@@ -63,6 +72,9 @@ class LineItemValues:
                         self._values[name] = period_values
         else:
             self._values = values or {}
+        
+        # Initialize tags namespace
+        self._tags_namespace = TagsNamespace(model, self) if model else None
 
     def get(
         self, name: str, period: int | None = None
@@ -110,22 +122,32 @@ class LineItemValues:
             self._values[name] = {}
         self._values[name][period] = value
 
-    def __getattr__(self, name: str) -> "LineItemValue":
+    def __getattr__(self, name: str) -> "LineItemValue | TagsNamespace":
         """
         Get line item values via attribute access.
 
         Returns a LineItemValue object that supports subscript notation
-        for accessing period values.
+        for accessing period values. Special handling for 'tags' to return
+        the TagsNamespace.
 
         Args:
-            name (str): The name of the line item.
+            name (str): The name of the line item or 'tags' for tag namespace.
 
         Returns:
-            LineItemValue: Wrapper object supporting subscript access to period values.
+            LineItemValue | TagsNamespace: Wrapper object supporting subscript access.
 
         Raises:
             AttributeError: If the line item name is not registered or not found.
         """
+        # Special handling for tags namespace
+        if name == "tags":
+            if self._tags_namespace is None:
+                raise AttributeError(
+                    "Tags namespace is not available. "
+                    "LineItemValues was created without a model reference."
+                )
+            return self._tags_namespace
+        
         if name.startswith("_"):
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'"

@@ -419,10 +419,10 @@ class TestDependencyResolution:
         """Test that circular references are detected and raise an error."""
 
         class TestModel(ProformaModel):
-            # Create a circular reference: a -> b -> c -> a
-            a = FormulaLine(formula=lambda av, li, t: li.c[t] + 1)
-            b = FormulaLine(formula=lambda av, li, t: li.a[t] + 1)
-            c = FormulaLine(formula=lambda av, li, t: li.b[t] + 1)
+            # Create a circular reference: item_a -> item_b -> item_c -> item_a
+            item_a = FormulaLine(formula=lambda av, li, t: li.item_c[t] + 1)
+            item_b = FormulaLine(formula=lambda av, li, t: li.item_a[t] + 1)
+            item_c = FormulaLine(formula=lambda av, li, t: li.item_b[t] + 1)
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]

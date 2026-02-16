@@ -13,6 +13,7 @@ from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
 from pyproforma.v2.line_item_result import LineItemResult
 from pyproforma.v2.line_item_values import LineItemValues
+from pyproforma.v2.reserved_words import validate_name
 from pyproforma.v2.tables import Tables
 
 
@@ -45,10 +46,14 @@ class ProformaModel:
         Called when a subclass is created.
 
         This method automatically discovers and stores the names of all Assumption
-        and LineItem attributes defined on the subclass.
+        and LineItem attributes defined on the subclass. It also validates that
+        no reserved words are used as line item or assumption names.
 
         Args:
             **kwargs: Additional keyword arguments passed to super().__init_subclass__
+
+        Raises:
+            ValueError: If any line item or assumption name is a reserved word
         """
         super().__init_subclass__(**kwargs)
 
@@ -58,8 +63,12 @@ class ProformaModel:
 
         for name, value in cls.__dict__.items():
             if isinstance(value, Assumption):
+                # Validate name is not reserved
+                validate_name(name)
                 assumption_names.append(name)
             elif isinstance(value, LineItem):
+                # Validate name is not reserved
+                validate_name(name)
                 line_item_names.append(name)
 
         # Store as class attributes
