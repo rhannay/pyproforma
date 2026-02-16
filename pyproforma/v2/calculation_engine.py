@@ -44,23 +44,38 @@ def calculate_line_items(
         ValueError: If line items are not found or calculation fails.
     """
     # Import here to avoid circular imports
-    from .line_item_values import LineItemValues
-
     # Import here to avoid circular imports
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
+    from .generator_line import GeneratorLine
+    from .line_item_values import LineItemValues
 
-    # Initialize line item values with registered names for validation
-    li = LineItemValues(periods=periods, names=model.line_item_names)
+    # Collect all generated field names to register with LineItemValues
+    all_line_item_names = list(model.line_item_names)
+    generator_field_map = {}  # Maps generator_name -> list of field names
 
-    # Separate fixed and formula line items
+    for name in model.line_item_names:
+        line_item = getattr(model.__class__, name, None)
+        if isinstance(line_item, GeneratorLine):
+            # Add all generated field names
+            field_names = [f"{name}_{field}" for field in line_item.field_names]
+            all_line_item_names.extend(field_names)
+            generator_field_map[name] = field_names
+
+    # Initialize line item values with all names (including generated fields)
+    li = LineItemValues(periods=periods, names=all_line_item_names)
+
+    # Separate fixed, generator, and formula line items
     fixed_items = []
+    generator_items = []
     formula_items = []
-    
+
     for name in model.line_item_names:
         line_item = getattr(model.__class__, name, None)
         if isinstance(line_item, FixedLine):
             fixed_items.append(name)
+        elif isinstance(line_item, GeneratorLine):
+            generator_items.append(name)
         elif isinstance(line_item, FormulaLine):
             formula_items.append(name)
 
@@ -71,16 +86,38 @@ def calculate_line_items(
             line_item = getattr(model.__class__, name)
             value = _calculate_single_line_item(line_item, av, li, period)
             li.set(name, period, value)
-        
+
+        # Second, process generator line items (they generate multiple fields)
+        for name in generator_items:
+            line_item = getattr(model.__class__, name)
+            try:
+                # Generator produces a dict of field_name -> value
+                fields_dict = line_item.generate_fields(av, li, period)
+                # Store each generated field with prefix
+                for field_name, value in fields_dict.items():
+                    full_field_name = f"{name}_{field_name}"
+                    li.set(full_field_name, period, value)
+            except (AttributeError, KeyError):
+                # Generator dependencies not ready - this shouldn't happen
+                # since generators run after fixed items, but handle gracefully
+                raise ValueError(
+                    f"Error generating fields for '{name}' in period {period}: "
+                    f"Generator dependencies not met"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Error generating fields for '{name}' in period {period}: {e}"
+                ) from e
+
         # Then calculate formula items with dependency resolution
         remaining = formula_items.copy()
         max_iterations = len(formula_items) + 1
         iteration = 0
-        
+
         while remaining and iteration < max_iterations:
             iteration += 1
             still_pending = []
-            
+
             for name in remaining:
                 line_item = getattr(model.__class__, name)
                 try:
@@ -107,18 +144,19 @@ def calculate_line_items(
                         # Dependency not yet calculated for current period - retry
                         still_pending.append(name)
                     else:
-                        # Accessing a period outside the model - wrap in ValueError  
+                        # Accessing a period outside the model
                         raise ValueError(
-                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
+                            f"Error evaluating formula for "
+                            f"'{line_item.name}' in period {period}: {e}"
                         ) from e
-            
+
             # If we made no progress, we have a circular reference
             if len(still_pending) == len(remaining):
                 raise ValueError(
                     f"Circular reference detected for period {period}. "
                     f"Cannot calculate: {', '.join(still_pending)}"
                 )
-            
+
             remaining = still_pending
 
     return li
@@ -180,7 +218,8 @@ def _calculate_single_line_item(
             raise
         except Exception as e:
             raise ValueError(
-                f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
+                f"Error evaluating formula for '{line_item.name}' "
+                f"in period {period}: {e}"
             ) from e
 
         # Validate the result type
