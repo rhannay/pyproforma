@@ -90,6 +90,72 @@ print(MyModel._assumption_names)  # ['tax_rate']
 print(MyModel._line_item_names)   # ['revenue', 'profit']
 ```
 
+## Table Creation
+
+v2 models now support table creation through the `.tables` namespace and individual line item `.table()` methods.
+
+### Simple Table Creation
+
+```python
+# Create model
+model = MyModel(periods=[2024, 2025, 2026])
+
+# Create a table with all line items
+table = model.tables.line_items()
+
+# Create a table with specific line items
+table = model.tables.line_items(
+    line_items=['revenue', 'profit'],
+    include_name=False,
+    include_label=True
+)
+
+# Create a table for a single line item
+revenue_result = model['revenue']
+revenue_table = revenue_result.table()
+
+# Export to HTML or Excel
+html = table.to_html()
+table.to_excel('output.xlsx')
+```
+
+### Template-Based Table Creation
+
+v2 now includes row types and template-based table creation similar to v1:
+
+```python
+from pyproforma.v2.tables import ItemRow, LabelRow, BlankRow, PercentChangeRow
+
+# Using dict configurations
+template = [
+    {"row_type": "label", "label": "Income Statement", "bold": True},
+    {"row_type": "blank"},
+    {"row_type": "item", "name": "revenue"},
+    {"row_type": "percent_change", "name": "revenue"},
+]
+table = model.tables.from_template(template)
+
+# Or using dataclass configurations
+template = [
+    LabelRow(label="Income Statement", bold=True),
+    BlankRow(),
+    ItemRow(name="revenue"),
+    PercentChangeRow(name="revenue"),
+]
+table = model.tables.from_template(template)
+```
+
+**Available Row Types:**
+- `ItemRow`: Display a line item's values
+- `LabelRow`: Section headers
+- `BlankRow`: Spacing
+- `PercentChangeRow`: Period-over-period percent change
+- `CumulativeChangeRow`: Cumulative change from base period
+- `CumulativePercentChangeRow`: Cumulative percent change from base period
+- `LineItemsTotalRow`: Sum of multiple line items
+
+See `examples/v2/tables_example.py` and `examples/v2/from_template_example.py` for more examples.
+
 ## Current Status
 
 **Implemented features:**
@@ -103,12 +169,16 @@ print(MyModel._line_item_names)   # ['revenue', 'profit']
 - ✅ Dependency tracking (sequential evaluation)
 - ✅ Time-offset lookback references (e.g., `revenue[-1]`)
 - ✅ AssumptionValues and LineItemValues containers
-- ✅ Comprehensive test suite (46 tests)
+- ✅ Comprehensive test suite (166 tests)
 - ✅ Example usage in `examples/v2/simple_model.py`
+- ✅ Tables namespace for table creation
+- ✅ LineItemResult.table() method for individual line item tables
+- ✅ Row types (ItemRow, LabelRow, BlankRow, etc.)
+- ✅ Template-based table creation with from_template()
 
 **Not yet implemented:**
 
-- ❌ Integration with existing PyProforma features (tables, charts)
+- ❌ Integration with charts
 - ❌ Advanced dependency tracking with topological sorting
 - ❌ Circular reference detection before execution
 
