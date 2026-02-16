@@ -62,15 +62,53 @@ growth_rate = Assumption(value=0.1, label="Annual Growth Rate")
 ```
 
 ### LineItem (ABC)
-Abstract base class for all line items. Both `FixedLine` and `FormulaLine` inherit from this class.
+Abstract base class for all line items. `FixedLine`, `FormulaLine`, and `GeneratorLine` all inherit from this class.
 This allows for type checking and ensures consistency across different line item types.
 
 ```python
 from pyproforma.v2 import LineItem
 
 # Check if something is a line item
-isinstance(revenue, LineItem)  # True for FixedLine and FormulaLine
+isinstance(revenue, LineItem)  # True for FixedLine, FormulaLine, and GeneratorLine
 ```
+
+### GeneratorLine (ABC)
+Abstract base class for line items that produce multiple related fields from a single specification.
+Useful for modeling complex financial structures like debt, depreciation, or any scenario where
+one input generates multiple related outputs.
+
+Subclasses must implement:
+- `field_names` property: List of field names the generator produces
+- `generate_fields()` method: Calculate all field values for a given period
+
+Generated fields are named `{generator_name}_{field_name}` and can be accessed in formulas
+via `li.{generator_name}_{field_name}[t]`.
+
+```python
+# Example: DebtLine generates principal, interest, debt outstanding, and proceeds
+class MyModel(ProformaModel):
+    interest_rate = Assumption(value=0.05)
+    term = Assumption(value=10)
+    
+    par_amounts = FixedLine(values={2024: 1000000, 2025: 0, 2026: 500000})
+    
+    # DebtLine is a GeneratorLine subclass
+    debt = DebtLine(
+        par_amount_name="par_amounts",
+        interest_rate_name="interest_rate",
+        term_name="term"
+    )
+    
+    # Access generated fields in formulas
+    total_debt_service = FormulaLine(
+        formula=lambda a, li, t: li.debt_principal[t] + li.debt_interest[t]
+    )
+```
+
+**Available GeneratorLine Implementations:**
+- `DebtLine`: Generates `principal`, `interest`, `debt_outstanding`, and `proceeds` fields for debt financing
+
+See `examples/v2/debt_example.py` for a comprehensive example.
 
 ## Automatic Discovery
 
@@ -78,16 +116,18 @@ When you create a subclass of `ProformaModel`, the framework automatically disco
 all class attributes:
 
 - `_assumption_names`: List of all `Assumption` attribute names
-- `_line_item_names`: List of all `LineItem` (FixedLine/FormulaLine) attribute names
+- `_line_item_names`: List of all `LineItem` (FixedLine/FormulaLine/GeneratorLine) attribute names
 
 ```python
 class MyModel(ProformaModel):
     tax_rate = Assumption(value=0.21)
     revenue = FixedLine(values={2024: 100})
-    profit = FormulaLine(formula=lambda: revenue * 0.1)
+    profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.1)
+    debt = DebtLine(par_amount_name="revenue", interest_rate_name="tax_rate", term_name="tax_rate")
 
 print(MyModel._assumption_names)  # ['tax_rate']
-print(MyModel._line_item_names)   # ['revenue', 'profit']
+print(MyModel._line_item_names)   # ['revenue', 'profit', 'debt']
+# Note: Generated fields like debt_principal are added automatically during calculation
 ```
 
 ## Table Creation
@@ -169,12 +209,14 @@ See `examples/v2/tables_example.py` and `examples/v2/from_template_example.py` f
 - ✅ Dependency tracking (sequential evaluation)
 - ✅ Time-offset lookback references (e.g., `revenue[-1]`)
 - ✅ AssumptionValues and LineItemValues containers
-- ✅ Comprehensive test suite (166 tests)
+- ✅ Comprehensive test suite (179 tests)
 - ✅ Example usage in `examples/v2/simple_model.py`
 - ✅ Tables namespace for table creation
 - ✅ LineItemResult.table() method for individual line item tables
 - ✅ Row types (ItemRow, LabelRow, BlankRow, etc.)
 - ✅ Template-based table creation with from_template()
+- ✅ **GeneratorLine for multi-field line items**
+- ✅ **DebtLine generator for debt financing**
 
 **Not yet implemented:**
 
@@ -182,8 +224,9 @@ See `examples/v2/tables_example.py` and `examples/v2/from_template_example.py` f
 - ❌ Advanced dependency tracking with topological sorting
 - ❌ Circular reference detection before execution
 
-The v2 API is functional for basic and intermediate financial models. Formulas can reference
-other line items, assumptions, and use time offsets for lookback calculations.
+The v2 API is functional for basic and intermediate financial models, including complex debt
+financing scenarios. Formulas can reference other line items, assumptions, generated fields,
+and use time offsets for lookback calculations.
 
 ## Example
 

@@ -77,7 +77,8 @@ class DebtLine(GeneratorLine):
         self.term_name = term_name
 
         # Track debt service schedules by issue year
-        # Format: {issue_year: [{'year': int, 'principal': float, 'interest': float}, ...]}
+        # Format: {issue_year: [{'year': int, 'principal': float,
+        #                        'interest': float}, ...]}
         self._debt_schedules = {}
 
     @property
@@ -108,7 +109,8 @@ class DebtLine(GeneratorLine):
             dict[str, float]: Dictionary with keys 'principal', 'interest',
                 'debt_outstanding', and 'proceeds', all as float values.
         """
-        # Get parameters (interest rate and term are assumptions, constant across periods)
+        # Get parameters (interest rate and term are assumptions,
+        # constant across periods)
         interest_rate = getattr(a, self.interest_rate_name)
         term = int(getattr(a, self.term_name))
 
@@ -125,9 +127,7 @@ class DebtLine(GeneratorLine):
 
         # Add new debt issue if par_amount > 0
         if par_amount > 0 and t not in self._debt_schedules:
-            schedule = self._generate_debt_schedule(
-                par_amount, interest_rate, t, term
-            )
+            schedule = self._generate_debt_schedule(par_amount, interest_rate, t, term)
             self._debt_schedules[t] = schedule
 
         # Calculate totals for this period across all debt issues

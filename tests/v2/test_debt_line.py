@@ -50,7 +50,8 @@ class TestDebtLineBasic:
         # Interest in year 1 should be 5% of $1M = $50,000
         assert abs(interest_2024 - 50000) < 1
 
-        # Outstanding debt at end of 2024 should be close to $1M minus first principal payment
+        # Outstanding debt at end of 2024 should be close to
+        # $1M minus first principal payment
         debt_outstanding_2024 = model.li.debt_debt_outstanding[2024]
         expected_outstanding = 1000000 - principal_2024
         assert abs(debt_outstanding_2024 - expected_outstanding) < 1
@@ -62,9 +63,7 @@ class TestDebtLineBasic:
             interest_rate = Assumption(value=0.05)
             term = Assumption(value=5)
 
-            par_amounts = FixedLine(
-                values={2024: 100000, 2025: 0, 2026: 50000}
-            )
+            par_amounts = FixedLine(values={2024: 100000, 2025: 0, 2026: 50000})
 
             debt = DebtLine(
                 par_amount_name="par_amounts",

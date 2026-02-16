@@ -64,7 +64,7 @@ class FinancialModelWithDebt(ProformaModel):
     par_amounts = FixedLine(
         values={
             2024: 3000000,  # Initial bond issue of $3M
-            2025: 0,        # No new debt in 2025
+            2025: 0,  # No new debt in 2025
             2026: 1500000,  # Additional bond issue of $1.5M
             2027: 0,
             2028: 0,
@@ -128,8 +128,10 @@ if __name__ == "__main__":
     # Display Income Statement
     print("INCOME STATEMENT")
     print("-" * 80)
-    print(f"{'Year':<12} {'Revenue':>12} {'Expenses':>12} {'EBITDA':>12} "
-          f"{'Interest':>12} {'Net Income':>12}")
+    print(
+        f"{'Year':<12} {'Revenue':>12} {'Expenses':>12} {'EBITDA':>12} "
+        f"{'Interest':>12} {'Net Income':>12}"
+    )
     print("-" * 80)
     for year in model.periods:
         print(
@@ -145,8 +147,10 @@ if __name__ == "__main__":
     # Display Debt Schedule
     print("DEBT FINANCING")
     print("-" * 80)
-    print(f"{'Year':<12} {'New Issues':>12} {'Principal':>12} {'Interest':>12} "
-          f"{'Total DS':>12} {'Outstanding':>12}")
+    print(
+        f"{'Year':<12} {'New Issues':>12} {'Principal':>12} {'Interest':>12} "
+        f"{'Total DS':>12} {'Outstanding':>12}"
+    )
     print("-" * 80)
     for year in model.periods:
         print(
@@ -172,21 +176,28 @@ if __name__ == "__main__":
     # Summary insights
     print("KEY INSIGHTS")
     print("-" * 80)
-    print(f"Total debt issued: ${model.li.debt_proceeds[2024] + model.li.debt_proceeds[2026]:,.0f}")
-    print(f"Debt outstanding at end of 2028: ${model.li.debt_debt_outstanding[2028]:,.0f}")
-    print(
-        f"Average annual debt service (2024-2028): "
-        f"${sum(model.li.total_debt_service[y] for y in model.periods) / len(model.periods):,.0f}"
+    total_issued = model.li.debt_proceeds[2024] + model.li.debt_proceeds[2026]
+    print(f"Total debt issued: ${total_issued:,.0f}")
+    debt_out = model.li.debt_debt_outstanding[2028]
+    print(f"Debt outstanding at end of 2028: ${debt_out:,.0f}")
+    avg_ds = sum(model.li.total_debt_service[y] for y in model.periods) / len(
+        model.periods
     )
-    print(f"Minimum DSCR: {min(model.li.debt_service_coverage[y] for y in model.periods):.2f}x")
+    print(f"Average annual debt service (2024-2028): ${avg_ds:,.0f}")
+    min_dscr = min(model.li.debt_service_coverage[y] for y in model.periods)
+    print(f"Minimum DSCR: {min_dscr:.2f}x")
     print()
 
     # Example of accessing through different notations
     print("ACCESSING VALUES")
     print("-" * 80)
-    revenue_result = model["revenue"]  # Regular line items work with subscript
+    revenue_result = model["revenue"]  # Regular line items work
     print(f"Revenue in 2024 (via model['revenue'][2024]): ${revenue_result[2024]:,.0f}")
-    print(f"Debt principal in 2024 (via model.li.debt_principal[2024]): ${model.li.debt_principal[2024]:,.0f}")
+    debt_principal_2024 = model.li.debt_principal[2024]
+    print(
+        f"Debt principal in 2024 (via model.li.debt_principal[2024]): "
+        f"${debt_principal_2024:,.0f}"
+    )
     print()
 
     print("=" * 80)
