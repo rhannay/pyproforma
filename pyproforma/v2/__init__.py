@@ -13,6 +13,7 @@ from .line_item import LineItem
 from .line_item_result import LineItemResult
 from .line_item_values import LineItemValue, LineItemValues
 from .proforma_model import ProformaModel
+from .tables import Tables
 
 __all__ = [
     "ProformaModel",
@@ -25,4 +26,5 @@ __all__ = [
     "LineItemValues",
     "LineItemValue",
     "LineItemResult",
+    "Tables",
 ]
