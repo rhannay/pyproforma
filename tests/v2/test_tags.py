@@ -167,3 +167,73 @@ class TestTagNamespace:
 
         assert model.li.profit[2024] == 45  # 105 - 60
         assert model.li.profit[2025] == 50  # 116 - 66
+
+
+class TestModelTags:
+    """Tests for model.tags property."""
+
+    def test_model_tags_multiple_tags(self):
+        """Test getting all unique tags from model."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income", "operational"])
+            interest = FixedLine(values={2024: 5}, tags=["income", "financial"])
+            expenses = FixedLine(values={2024: 60}, tags=["expense", "operational"])
+
+        model = TestModel(periods=[2024])
+
+        tags = model.tags
+        assert tags == ["expense", "financial", "income", "operational"]
+
+    def test_model_tags_no_tags(self):
+        """Test model with no tags returns empty list."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FixedLine(values={2024: 60})
+
+        model = TestModel(periods=[2024])
+
+        assert model.tags == []
+
+    def test_model_tags_duplicate_tags(self):
+        """Test that duplicate tags are deduplicated."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income", "recurring"])
+            interest = FixedLine(values={2024: 5}, tags=["income"])
+            fees = FixedLine(values={2024: 2}, tags=["income", "recurring"])
+
+        model = TestModel(periods=[2024])
+
+        tags = model.tags
+        # Should have 2 unique tags, sorted
+        assert tags == ["income", "recurring"]
+
+    def test_model_tags_single_tag(self):
+        """Test model with single tag."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+
+        model = TestModel(periods=[2024])
+
+        assert model.tags == ["income"]
+
+    def test_model_tags_mixed_line_types(self):
+        """Test tags from both FixedLine and FormulaLine."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * 0.6, tags=["expense"]
+            )
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t],
+                tags=["income", "calculated"],
+            )
+
+        model = TestModel(periods=[2024])
+
+        tags = model.tags
+        assert tags == ["calculated", "expense", "income"]

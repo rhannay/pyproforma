@@ -153,6 +153,25 @@ class ProformaModel:
         """
         return self._li
 
+    @property
+    def tags(self) -> list[str]:
+        """
+        Get all unique tags used across line items.
+
+        Returns:
+            list[str]: Sorted list of unique tag strings.
+
+        Examples:
+            >>> model.tags
+            ['expense', 'income', 'operating']
+        """
+        all_tags = set()
+        for name in self.line_item_names:
+            line_item_spec = getattr(self.__class__, name)
+            if hasattr(line_item_spec, "tags"):
+                all_tags.update(line_item_spec.tags)
+        return sorted(all_tags)
+
     def __getitem__(self, name: str) -> LineItemResult | AssumptionResult:
         """
         Get LineItemResult or AssumptionResult using dictionary-style access.
