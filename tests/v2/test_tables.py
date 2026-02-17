@@ -46,8 +46,8 @@ def test_tables_line_items_all(simple_model):
     """Test generating a table with all line items."""
     table = simple_model.tables.line_items()
 
-    # Should have header + 3 data rows + blank row + total row (with include_total_row=True by default)
-    assert len(table.cells) == 6
+    # Should have header + 3 data rows + total row (with include_total_row=True by default)
+    assert len(table.cells) == 5
 
     # Check header row
     header = table.cells[0]
@@ -62,11 +62,8 @@ def test_tables_line_items_all(simple_model):
     assert "expenses" in row_names
     assert "profit" in row_names
 
-    # Check blank row
-    assert table.cells[4][0].value == ""
-
     # Check total row
-    total_row = table.cells[5]
+    total_row = table.cells[4]
     assert total_row[0].value == "Total"
     assert total_row[0].bold is True
     # Total for 2024: 100000 + 60000 + 40000 = 200000
@@ -99,8 +96,8 @@ def test_tables_line_items_specific(simple_model):
     """Test generating a table with specific line items."""
     table = simple_model.tables.line_items(line_items=["revenue", "profit"])
 
-    # Should have header + 2 data rows + blank row + total row
-    assert len(table.cells) == 5
+    # Should have header + 2 data rows + total row
+    assert len(table.cells) == 4
 
     # Check that only requested items are present (excluding blank and total rows)
     row_names = [row[0].value for row in table.cells[1:3]]
@@ -109,7 +106,7 @@ def test_tables_line_items_specific(simple_model):
     assert "expenses" not in row_names
 
     # Check total row
-    total_row = table.cells[4]
+    total_row = table.cells[3]
     assert total_row[0].value == "Total"
     # Total for 2024: 100000 (revenue) + 40000 (profit) = 140000
     assert total_row[1].value == 140000

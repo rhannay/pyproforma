@@ -341,8 +341,8 @@ class TestLineItemSelectionTable:
         table = selection.table()
         
         assert isinstance(table, Table)
-        # Header + 1 item row + blank row + total row (with include_total_row=True by default)
-        assert len(table.cells) == 4
+        # Header + 1 item row + total row (with include_total_row=True by default)
+        assert len(table.cells) == 3
 
     def test_table_multiple_items(self):
         """Test generating a table for multiple selected items."""
@@ -360,8 +360,8 @@ class TestLineItemSelectionTable:
         table = selection.table()
         
         assert isinstance(table, Table)
-        # Header + 3 item rows + blank row + total row (with include_total_row=True by default)
-        assert len(table.cells) == 6
+        # Header + 3 item rows + total row (with include_total_row=True by default)
+        assert len(table.cells) == 5
 
     def test_table_preserves_order(self):
         """Test that table preserves selection order."""
@@ -379,7 +379,7 @@ class TestLineItemSelectionTable:
         selection = model.select(["profit", "revenue", "expenses"])
         table = selection.table()
         
-        # Check order in table (skip header row, rows 1-3 are line items before total)
+        # Check order in table (skip header row, rows 1-3 are line items, row 4 is total)
         assert table.cells[1][0].value == "profit"
         assert table.cells[2][0].value == "revenue"
         assert table.cells[3][0].value == "expenses"
@@ -466,14 +466,11 @@ class TestLineItemSelectionTable:
         selection = model.select(["revenue", "expenses"])
         table = selection.table()
         
-        # Should have header + 2 items + blank + total = 5 rows
-        assert len(table.cells) == 5
-        
-        # Check blank row
-        assert table.cells[3][0].value == ""
+        # Should have header + 2 items + total = 4 rows
+        assert len(table.cells) == 4
         
         # Check total row
-        total_row = table.cells[4]
+        total_row = table.cells[3]
         assert total_row[0].value == "Total"
         assert total_row[0].bold is True
         # Total for 2024: 100 + 60 = 160
@@ -498,9 +495,6 @@ class TestLineItemSelectionTable:
         
         # Verify no "Total" row
         assert all(row[0].value != "Total" for row in table.cells)
-        
-        # Verify no blank row before what would be total
-        assert table.cells[2][0].value in ["revenue", "expenses"]
 
     def test_table_with_totals_explicit_true(self):
         """Test explicitly setting include_total_row=True."""
@@ -514,10 +508,10 @@ class TestLineItemSelectionTable:
         selection = model.select(["revenue", "expenses"])
         table = selection.table(include_total_row=True)
         
-        # Should have header + 2 items + blank + total = 5 rows
-        assert len(table.cells) == 5
+        # Should have header + 2 items + total = 4 rows
+        assert len(table.cells) == 4
         
         # Check total row
-        total_row = table.cells[4]
+        total_row = table.cells[3]
         assert total_row[0].value == "Total"
         assert total_row[1].value == 160  # 100 + 60

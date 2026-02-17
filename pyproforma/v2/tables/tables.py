@@ -196,7 +196,6 @@ class Tables:
 
         # Add total row if requested and there are items to include
         if include_total_row and items_to_include:
-            template.append(rt.BlankRow())
             template.append(
                 rt.LineItemsTotalRow(
                     line_item_names=items_to_include,

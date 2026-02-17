@@ -317,8 +317,8 @@ class TestModelTagSelection:
         income_selection = model.tag["income"]
         table = income_selection.table()
 
-        # Should have header + 2 items + blank + total (with include_total_row=True by default)
-        assert len(table.cells) == 5
+        # Should have header + 2 items + total (with include_total_row=True by default)
+        assert len(table.cells) == 4
 
     def test_tag_selection_can_get_values(self):
         """Test that tag selection can get values for a period."""
