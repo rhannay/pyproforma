@@ -235,6 +235,96 @@ class TestLineItemSelectionValue:
         assert result == {}
 
 
+class TestLineItemSelectionSum:
+    """Tests for selection.sum() method."""
+
+    def test_sum_single_item(self):
+        """Test summing a single selected item."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+            expenses = FixedLine(values={2024: 60, 2025: 66})
+
+        model = TestModel(periods=[2024, 2025])
+
+        selection = model.select(["revenue"])
+        assert selection.sum(2024) == 100
+        assert selection.sum(2025) == 110
+
+    def test_sum_multiple_items(self):
+        """Test summing multiple selected items."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+            expenses = FixedLine(values={2024: 60, 2025: 66})
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
+
+        model = TestModel(periods=[2024, 2025])
+
+        selection = model.select(["revenue", "expenses"])
+        assert selection.sum(2024) == 160  # 100 + 60
+        assert selection.sum(2025) == 176  # 110 + 66
+
+    def test_sum_with_tag_selection(self):
+        """Test summing items selected by tag."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110}, tags=["income"])
+            interest = FixedLine(values={2024: 5, 2025: 6}, tags=["income"])
+            expenses = FixedLine(values={2024: 60, 2025: 66}, tags=["expense"])
+
+        model = TestModel(periods=[2024, 2025])
+
+        # Sum income items
+        income_selection = model.tag["income"]
+        assert income_selection.sum(2024) == 105  # 100 + 5
+        assert income_selection.sum(2025) == 116  # 110 + 6
+
+        # Sum expense items
+        expense_selection = model.tag["expense"]
+        assert expense_selection.sum(2024) == 60
+        assert expense_selection.sum(2025) == 66
+
+    def test_sum_empty_selection(self):
+        """Test summing an empty selection."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel(periods=[2024])
+
+        selection = model.select([])
+        assert selection.sum(2024) == 0
+
+    def test_sum_invalid_period(self):
+        """Test that invalid period raises KeyError."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FixedLine(values={2024: 60})
+
+        model = TestModel(periods=[2024])
+
+        selection = model.select(["revenue", "expenses"])
+        with pytest.raises(KeyError, match="Period 2025 not found"):
+            selection.sum(2025)
+
+    def test_sum_with_negative_values(self):
+        """Test summing items with negative values."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FixedLine(values={2024: -60})  # Negative
+            adjustments = FixedLine(values={2024: -5})  # Negative
+
+        model = TestModel(periods=[2024])
+
+        selection = model.select(["revenue", "expenses", "adjustments"])
+        assert selection.sum(2024) == 35  # 100 + (-60) + (-5)
+
+
 class TestLineItemSelectionTable:
     """Tests for selection.table() method."""
 

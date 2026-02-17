@@ -90,6 +90,30 @@ class LineItemSelection:
             result[name] = line_item[period]
         return result
 
+    def sum(self, period: int) -> float:
+        """
+        Get the sum of all selected line items for a specific period.
+
+        Args:
+            period: The period to sum values for.
+
+        Returns:
+            float: The sum of all selected line item values for the period.
+
+        Raises:
+            KeyError: If the period is not found for any line item.
+
+        Examples:
+            >>> selection = model.select(['revenue', 'expenses'])
+            >>> selection.sum(2024)
+            160
+            >>> # Works great with tag-based selections
+            >>> model.tag["income"].sum(2024)
+            105
+        """
+        values = self.value(period)
+        return sum(values.values())
+
     def table(
         self,
         include_name: bool = True,
