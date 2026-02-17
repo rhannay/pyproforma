@@ -128,6 +128,7 @@ class Tables:
         line_items: Optional[list[str]] = None,
         include_name: bool = True,
         include_label: bool = False,
+        include_total_row: bool = True,
     ) -> Table:
         """
         Generate a table containing line items.
@@ -140,6 +141,8 @@ class Tables:
                 If None, includes all line items. Defaults to None.
             include_name (bool): Whether to include the name column. Defaults to True.
             include_label (bool): Whether to include the label column. Defaults to False.
+            include_total_row (bool): Whether to include a total row at the bottom.
+                Defaults to True.
 
         Returns:
             Table: A Table object containing the specified line items.
@@ -148,6 +151,7 @@ class Tables:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_items=['revenue', 'expenses'])
             >>> table = model.tables.line_items(include_name=False, include_label=True)
+            >>> table = model.tables.line_items(include_total_row=False)
         """
         # Determine which line items to include
         if line_items is None:
@@ -189,6 +193,18 @@ class Tables:
             else:
                 # Let ItemRow use default label behavior
                 template.append(rt.ItemRow(name=item_name))
+
+        # Add total row if requested and there are items to include
+        if include_total_row and items_to_include:
+            template.append(rt.BlankRow())
+            template.append(
+                rt.LineItemsTotalRow(
+                    line_item_names=items_to_include,
+                    label="Total",
+                    bold=True,
+                    top_border="single",
+                )
+            )
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)

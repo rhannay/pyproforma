@@ -118,6 +118,7 @@ class LineItemSelection:
         self,
         include_name: bool = True,
         include_label: bool = False,
+        include_total_row: bool = True,
     ) -> Table:
         """
         Generate a table containing the selected line items.
@@ -125,6 +126,7 @@ class LineItemSelection:
         Args:
             include_name: Whether to include the name column. Defaults to True.
             include_label: Whether to include the label column. Defaults to False.
+            include_total_row: Whether to include a total row at the bottom. Defaults to True.
 
         Returns:
             Table: A Table object containing the selected line items.
@@ -133,11 +135,13 @@ class LineItemSelection:
             >>> selection = model.select(['revenue', 'expenses', 'profit'])
             >>> table = selection.table()
             >>> table = selection.table(include_name=False, include_label=True)
+            >>> table = selection.table(include_total_row=False)
         """
         return self._model.tables.line_items(
             line_items=self._names,
             include_name=include_name,
             include_label=include_label,
+            include_total_row=include_total_row,
         )
 
     def __repr__(self):

@@ -341,7 +341,8 @@ class TestLineItemSelectionTable:
         table = selection.table()
         
         assert isinstance(table, Table)
-        assert len(table.cells) == 2  # Header + 1 item row
+        # Header + 1 item row + blank row + total row (with include_total_row=True by default)
+        assert len(table.cells) == 4
 
     def test_table_multiple_items(self):
         """Test generating a table for multiple selected items."""
@@ -359,7 +360,8 @@ class TestLineItemSelectionTable:
         table = selection.table()
         
         assert isinstance(table, Table)
-        assert len(table.cells) == 4  # Header + 3 item rows
+        # Header + 3 item rows + blank row + total row (with include_total_row=True by default)
+        assert len(table.cells) == 6
 
     def test_table_preserves_order(self):
         """Test that table preserves selection order."""
@@ -377,7 +379,7 @@ class TestLineItemSelectionTable:
         selection = model.select(["profit", "revenue", "expenses"])
         table = selection.table()
         
-        # Check order in table (skip header row)
+        # Check order in table (skip header row, rows 1-3 are line items before total)
         assert table.cells[1][0].value == "profit"
         assert table.cells[2][0].value == "revenue"
         assert table.cells[3][0].value == "expenses"
@@ -428,7 +430,8 @@ class TestLineItemSelectionTable:
         table = selection.table()
         
         assert isinstance(table, Table)
-        assert len(table.cells) == 1  # Only header row
+        # Only header row (no items, so no total row either)
+        assert len(table.cells) == 1
 
     def test_table_values_match(self):
         """Test that table values match the line item values."""
@@ -450,3 +453,71 @@ class TestLineItemSelectionTable:
         # Row 2 is expenses
         assert table.cells[2][1].value == 60   # 2024
         assert table.cells[2][2].value == 66   # 2025
+
+    def test_table_with_totals_default(self):
+        """Test that table includes totals by default."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+            expenses = FixedLine(values={2024: 60, 2025: 66})
+
+        model = TestModel(periods=[2024, 2025])
+
+        selection = model.select(["revenue", "expenses"])
+        table = selection.table()
+        
+        # Should have header + 2 items + blank + total = 5 rows
+        assert len(table.cells) == 5
+        
+        # Check blank row
+        assert table.cells[3][0].value == ""
+        
+        # Check total row
+        total_row = table.cells[4]
+        assert total_row[0].value == "Total"
+        assert total_row[0].bold is True
+        # Total for 2024: 100 + 60 = 160
+        assert total_row[1].value == 160
+        # Total for 2025: 110 + 66 = 176
+        assert total_row[2].value == 176
+
+    def test_table_without_totals(self):
+        """Test generating table without totals."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+            expenses = FixedLine(values={2024: 60, 2025: 66})
+
+        model = TestModel(periods=[2024, 2025])
+
+        selection = model.select(["revenue", "expenses"])
+        table = selection.table(include_total_row=False)
+        
+        # Should have header + 2 items only (no total row)
+        assert len(table.cells) == 3
+        
+        # Verify no "Total" row
+        assert all(row[0].value != "Total" for row in table.cells)
+        
+        # Verify no blank row before what would be total
+        assert table.cells[2][0].value in ["revenue", "expenses"]
+
+    def test_table_with_totals_explicit_true(self):
+        """Test explicitly setting include_total_row=True."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FixedLine(values={2024: 60})
+
+        model = TestModel(periods=[2024])
+
+        selection = model.select(["revenue", "expenses"])
+        table = selection.table(include_total_row=True)
+        
+        # Should have header + 2 items + blank + total = 5 rows
+        assert len(table.cells) == 5
+        
+        # Check total row
+        total_row = table.cells[4]
+        assert total_row[0].value == "Total"
+        assert total_row[1].value == 160  # 100 + 60
