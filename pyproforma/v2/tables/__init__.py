@@ -15,6 +15,7 @@ from .row_types import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    TagTotalRow,
     dict_to_row_config,
 )
 from .tables import Tables
@@ -30,5 +31,6 @@ __all__ = [
     "CumulativeChangeRow",
     "CumulativePercentChangeRow",
     "LineItemsTotalRow",
+    "TagTotalRow",
     "dict_to_row_config",
 ]

@@ -469,6 +469,85 @@ class LineItemsTotalRow(BaseRow):
         return cells
 
 
+@dataclass
+class TagTotalRow(BaseRow):
+    """Configuration for row showing the sum of all line items with a specific tag."""
+
+    tag: str
+    label: Optional[str] = None
+    value_format: Optional[Union[str, "NumberFormatSpec", dict]] = None
+    bold: bool = True
+    bottom_border: Optional[str] = None
+    top_border: Optional[str] = None
+
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
+        """Create a row showing the total of line items with the specified tag."""
+        # Default label to "Total {tag}"
+        if self.label is None:
+            label = f"Total {self.tag}"
+        else:
+            label = self.label
+
+        # Default value format
+        value_format = self.value_format or "no_decimals"
+
+        # Create cells for this row
+        cells = []
+
+        # Add label cell(s)
+        if label_col_count >= 2:
+            cells.append(
+                Cell(
+                    value="",
+                    bold=self.bold,
+                    align="left",
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+            cells.append(
+                Cell(
+                    value=label,
+                    bold=self.bold,
+                    align="left",
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+        else:
+            cells.append(
+                Cell(
+                    value=label,
+                    bold=self.bold,
+                    align="left",
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+
+        # Add blank cells for any additional label columns
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
+
+        # Calculate totals for each period using tag selection
+        tag_selection = model.tag[self.tag]
+        for period in model.periods:
+            total = tag_selection.sum(period)
+            cells.append(
+                Cell(
+                    value=total,
+                    bold=self.bold,
+                    value_format=value_format,
+                    bottom_border=self.bottom_border,
+                    top_border=self.top_border,
+                )
+            )
+
+        return cells
+
+
 # Helper function to convert dict to row config (for backwards compatibility)
 def dict_to_row_config(config: dict) -> BaseRow:
     """Convert a dictionary configuration to a BaseRow instance.
@@ -498,6 +577,7 @@ def dict_to_row_config(config: dict) -> BaseRow:
         "cumulative_change": CumulativeChangeRow,
         "cumulative_percent_change": CumulativePercentChangeRow,
         "line_items_total": LineItemsTotalRow,
+        "tag_total": TagTotalRow,
     }
 
     if row_type not in row_type_map:
