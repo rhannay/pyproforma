@@ -40,7 +40,9 @@ class TestGetValue:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel(periods=[2024])
 

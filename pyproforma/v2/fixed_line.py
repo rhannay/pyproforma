@@ -26,12 +26,14 @@ class FixedLine(LineItem):
     Attributes:
         values (dict[int, float]): Dictionary mapping periods to numeric values.
         label (str, optional): Human-readable label for display purposes.
+        tags (list[str]): List of tags for categorizing the line item.
     """
 
     def __init__(
         self,
         values: dict[int, float] | None = None,
         label: str | None = None,
+        tags: list[str] | None = None,
     ):
         """
         Initialize a FixedLine.
@@ -40,8 +42,10 @@ class FixedLine(LineItem):
             values (dict[int, float], optional): Dictionary mapping periods (years)
                 to numeric values. Defaults to None (empty dict).
             label (str, optional): Human-readable label. Defaults to None.
+            tags (list[str], optional): List of tags for categorizing the line item.
+                Defaults to None (empty list).
         """
-        super().__init__(label=label)
+        super().__init__(label=label, tags=tags)
         self.values = values or {}
 
     def get_value(self, period: int) -> float | None:

@@ -4,7 +4,12 @@ LineItemValues class for storing calculated line item values across periods.
 This class holds the calculated values for all line items across all periods in a model.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pyproforma.v2.proforma_model import ProformaModel
+
+from pyproforma.v2.tags_namespace import TagNamespace
 
 
 class LineItemValues:
@@ -39,6 +44,7 @@ class LineItemValues:
         values: dict[str, dict[int, float]] | None = None,
         periods: list[int] | None = None,
         names: list[str] | None = None,
+        model: "ProformaModel | None" = None,
     ):
         """
         Initialize LineItemValues.
@@ -49,10 +55,13 @@ class LineItemValues:
             periods (list[int], optional): List of periods in the model. Defaults to None.
             names (list[str], optional): List of valid line item names to pre-register.
                 If provided, only these names can be accessed. Defaults to None.
+            model (ProformaModel, optional): Reference to the parent model for tag access.
+                Defaults to None.
         """
         self._periods = periods or []
         self._names = set(names) if names else None  # None means any name is valid
-        
+        self._model = model
+
         # Pre-register all valid names if provided
         if self._names:
             self._values = {name: {} for name in self._names}
@@ -63,6 +72,30 @@ class LineItemValues:
                         self._values[name] = period_values
         else:
             self._values = values or {}
+
+        # Initialize tag namespace
+        self._tag_namespace = TagNamespace(model, self) if model else None
+
+    @property
+    def tag(self) -> TagNamespace:
+        """
+        Access line items by tags.
+
+        Returns:
+            TagNamespace: Namespace for accessing line items via their tags.
+
+        Raises:
+            AttributeError: If LineItemValues was created without a model reference.
+
+        Examples:
+            >>> model.line_items.tag.expense[2024]  # Sum of all items tagged 'expense'
+        """
+        if self._tag_namespace is None:
+            raise AttributeError(
+                "Tag namespace is not available. "
+                "LineItemValues was created without a model reference."
+            )
+        return self._tag_namespace
 
     def get(
         self, name: str, period: int | None = None
@@ -95,7 +128,7 @@ class LineItemValues:
             name (str): The name of the line item.
             period (int): The period to set the value for.
             value (float): The value to set.
-            
+
         Raises:
             ValueError: If name is not registered (when names were provided at init).
         """
@@ -105,7 +138,7 @@ class LineItemValues:
                 f"Cannot set value for unregistered line item '{name}'. "
                 f"Available line items: {', '.join(sorted(self._names))}"
             )
-        
+
         if name not in self._values:
             self._values[name] = {}
         self._values[name][period] = value
@@ -121,7 +154,7 @@ class LineItemValues:
             name (str): The name of the line item.
 
         Returns:
-            LineItemValue: Wrapper object supporting subscript access to period values.
+            LineItemValue: Wrapper object supporting subscript access.
 
         Raises:
             AttributeError: If the line item name is not registered or not found.
@@ -130,22 +163,22 @@ class LineItemValues:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
-        
+
         # If names were registered, check against the registry
         if self._names is not None and name not in self._names:
             raise AttributeError(
                 f"Line item '{name}' is not registered. "
                 f"Available line items: {', '.join(sorted(self._names))}"
             )
-        
+
         if name in self._values:
             return LineItemValue(name, self._values[name])
-        
+
         # If we get here with registered names, it means the name is valid but no values yet
         # This happens when accessing a line item before it's calculated for any period
         if self._names is not None:
             return LineItemValue(name, self._values[name])
-        
+
         raise AttributeError(f"Line item '{name}' not found")
 
     def __repr__(self):

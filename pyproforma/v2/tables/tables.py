@@ -7,7 +7,7 @@ adapted for v2's simpler structure.
 
 from typing import TYPE_CHECKING, Optional, Union
 
-from pyproforma.table import Cell, Table
+from pyproforma.table import Table
 
 from . import row_types as rt
 from .row_types import BaseRow, dict_to_row_config
@@ -85,11 +85,11 @@ class Tables:
                 temp_config = dict_to_row_config(config)
             else:
                 temp_config = config
-            
+
             if isinstance(temp_config, rt.HeaderRow):
                 header_col_labels = temp_config.col_labels
                 break
-        
+
         # Determine label_col_count from HeaderRow if present, otherwise from col_labels param
         if header_col_labels is not None:
             # Use HeaderRow's col_labels
@@ -128,6 +128,7 @@ class Tables:
         line_items: Optional[list[str]] = None,
         include_name: bool = True,
         include_label: bool = False,
+        include_total_row: bool = True,
     ) -> Table:
         """
         Generate a table containing line items.
@@ -140,6 +141,8 @@ class Tables:
                 If None, includes all line items. Defaults to None.
             include_name (bool): Whether to include the name column. Defaults to True.
             include_label (bool): Whether to include the label column. Defaults to False.
+            include_total_row (bool): Whether to include a total row at the bottom.
+                Defaults to True.
 
         Returns:
             Table: A Table object containing the specified line items.
@@ -148,6 +151,7 @@ class Tables:
             >>> table = model.tables.line_items()
             >>> table = model.tables.line_items(line_items=['revenue', 'expenses'])
             >>> table = model.tables.line_items(include_name=False, include_label=True)
+            >>> table = model.tables.line_items(include_total_row=False)
         """
         # Determine which line items to include
         if line_items is None:
@@ -179,7 +183,7 @@ class Tables:
 
         # Build template starting with HeaderRow
         template = [rt.HeaderRow(col_labels=col_labels)]
-        
+
         # Add ItemRow for each line item
         # When showing only name (not label), explicitly set label=name to override default behavior
         for item_name in items_to_include:
@@ -189,6 +193,17 @@ class Tables:
             else:
                 # Let ItemRow use default label behavior
                 template.append(rt.ItemRow(name=item_name))
+
+        # Add total row if requested and there are items to include
+        if include_total_row and items_to_include:
+            template.append(
+                rt.LineItemsTotalRow(
+                    line_item_names=items_to_include,
+                    label="Total",
+                    bold=True,
+                    top_border="single",
+                )
+            )
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)
@@ -228,7 +243,7 @@ class Tables:
             >>> table = model.tables.line_item('revenue')
             >>> table = model.tables.line_item('revenue', include_name=True)
             >>> table = model.tables.line_item('revenue', include_percent_change=True)
-            >>> table = model.tables.line_item('revenue', 
+            >>> table = model.tables.line_item('revenue',
             ...                                 include_cumulative_change=True,
             ...                                 include_cumulative_percent_change=True)
         """
@@ -254,10 +269,10 @@ class Tables:
         # Add analysis rows if requested
         if include_percent_change:
             template.append(rt.PercentChangeRow(name=name))
-        
+
         if include_cumulative_change:
             template.append(rt.CumulativeChangeRow(name=name))
-        
+
         if include_cumulative_percent_change:
             template.append(rt.CumulativePercentChangeRow(name=name))
 

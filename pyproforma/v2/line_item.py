@@ -18,17 +18,22 @@ class LineItem(ABC):
 
     Attributes:
         label (str, optional): Human-readable label for display purposes.
+        tags (list[str]): List of tags for categorizing the line item.
     """
 
-    def __init__(self, label: str | None = None):
+    def __init__(self, label: str | None = None, tags: list[str] | None = None):
         """
         Initialize a LineItem.
 
         Args:
             label (str, optional): Human-readable label. Defaults to None.
+            tags (list[str], optional): List of tags for categorizing the line item.
+                Tags enable flexible grouping and can be used to sum related items.
+                Defaults to None (empty list).
         """
         self.name: str | None = None  # Set by __set_name__ when assigned to class
         self.label = label
+        self.tags = tags or []
 
     def __set_name__(self, owner, name: str):
         """

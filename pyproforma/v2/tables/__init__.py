@@ -1,7 +1,7 @@
 """
 Tables namespace for PyProforma v2 API.
 
-This module provides table creation functionality for v2 models, 
+This module provides table creation functionality for v2 models,
 reusing the Table class from the main table module.
 """
 
@@ -15,6 +15,7 @@ from .row_types import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    TagTotalRow,
     dict_to_row_config,
 )
 from .tables import Tables
@@ -30,5 +31,6 @@ __all__ = [
     "CumulativeChangeRow",
     "CumulativePercentChangeRow",
     "LineItemsTotalRow",
+    "TagTotalRow",
     "dict_to_row_config",
 ]

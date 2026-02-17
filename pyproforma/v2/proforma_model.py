@@ -12,8 +12,11 @@ from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
 from pyproforma.v2.line_item_result import LineItemResult
+from pyproforma.v2.line_item_selection import LineItemSelection
 from pyproforma.v2.line_item_values import LineItemValues
+from pyproforma.v2.reserved_words import validate_name
 from pyproforma.v2.tables import Tables
+from pyproforma.v2.tags_namespace import ModelTagNamespace
 
 
 class ProformaModel:
@@ -45,10 +48,14 @@ class ProformaModel:
         Called when a subclass is created.
 
         This method automatically discovers and stores the names of all Assumption
-        and LineItem attributes defined on the subclass.
+        and LineItem attributes defined on the subclass. It also validates that
+        no reserved words are used as line item or assumption names.
 
         Args:
             **kwargs: Additional keyword arguments passed to super().__init_subclass__
+
+        Raises:
+            ValueError: If any line item or assumption name is a reserved word
         """
         super().__init_subclass__(**kwargs)
 
@@ -58,8 +65,12 @@ class ProformaModel:
 
         for name, value in cls.__dict__.items():
             if isinstance(value, Assumption):
+                # Validate name is not reserved
+                validate_name(name)
                 assumption_names.append(name)
             elif isinstance(value, LineItem):
+                # Validate name is not reserved
+                validate_name(name)
                 line_item_names.append(name)
 
         # Store as class attributes
@@ -91,6 +102,9 @@ class ProformaModel:
 
         # Initialize tables namespace
         self.tables = Tables(self)
+
+        # Initialize tag namespace
+        self._tag_namespace = ModelTagNamespace(self)
 
     def _initialize_assumptions(self) -> AssumptionValues:
         """
@@ -125,7 +139,9 @@ class ProformaModel:
             KeyError: If the period hasn't been calculated.
         """
         # Use attribute access which raises proper errors
-        line_item = getattr(self._li, name)  # Raises AttributeError if name doesn't exist
+        line_item = getattr(
+            self._li, name
+        )  # Raises AttributeError if name doesn't exist
         return line_item[period]  # Raises KeyError if period doesn't exist
 
     @property
@@ -141,6 +157,60 @@ class ProformaModel:
             100000
         """
         return self._li
+
+    @property
+    def tags(self) -> list[str]:
+        """
+        Get all unique tags used across line items.
+
+        Returns:
+            list[str]: Sorted list of unique tag strings.
+
+        Examples:
+            >>> model.tags
+            ['expense', 'income', 'operating']
+        """
+        all_tags = set()
+        for name in self.line_item_names:
+            line_item_spec = getattr(self.__class__, name)
+            if hasattr(line_item_spec, "tags"):
+                all_tags.update(line_item_spec.tags)
+        return sorted(all_tags)
+
+    @property
+    def tag(self) -> ModelTagNamespace:
+        """
+        Access line items by tags.
+
+        Returns:
+            ModelTagNamespace: Namespace for selecting line items by their tags.
+
+        Examples:
+            >>> income_selection = model.tag["income"]
+            >>> income_selection.names
+            ['revenue', 'interest']
+        """
+        return self._tag_namespace
+
+    def select(self, names: list[str]) -> LineItemSelection:
+        """
+        Create a selection of specific line items.
+
+        Args:
+            names: List of line item names to include in the selection.
+
+        Returns:
+            LineItemSelection: Selection object containing the specified line items.
+
+        Raises:
+            ValueError: If any name is not a valid line item in the model.
+
+        Examples:
+            >>> selection = model.select(['revenue', 'expenses', 'profit'])
+            >>> selection.names
+            ['revenue', 'expenses', 'profit']
+        """
+        return LineItemSelection(self, names)
 
     def __getitem__(self, name: str) -> LineItemResult | AssumptionResult:
         """
@@ -169,18 +239,16 @@ class ProformaModel:
             0.03
         """
         if not isinstance(name, str):
-            raise TypeError(
-                f"Expected string for item name, got {type(name).__name__}"
-            )
-        
+            raise TypeError(f"Expected string for item name, got {type(name).__name__}")
+
         # Check if it's a line item
         if name in self.line_item_names:
             return LineItemResult(self, name)
-        
+
         # Check if it's an assumption
         if name in self.assumption_names:
             return AssumptionResult(self, name)
-        
+
         # Not found in either - raise descriptive error
         raise AttributeError(
             f"Item '{name}' not found in model. "

@@ -11,9 +11,11 @@ from .fixed_line import FixedLine
 from .formula_line import FormulaLine
 from .line_item import LineItem
 from .line_item_result import LineItemResult
+from .line_item_selection import LineItemSelection
 from .line_item_values import LineItemValue, LineItemValues
 from .proforma_model import ProformaModel
 from .tables import Tables
+from .tags_namespace import ModelTagNamespace
 
 __all__ = [
     "ProformaModel",
@@ -26,5 +28,7 @@ __all__ = [
     "LineItemValues",
     "LineItemValue",
     "LineItemResult",
+    "LineItemSelection",
+    "ModelTagNamespace",
     "Tables",
 ]

@@ -77,11 +77,11 @@ def _generate_css() -> str:
         }
         .pyproforma-table {
             border-collapse: collapse;
-            border: 1px solid #d0d0d0;
+            border: 1px solid #e8e8e8;
             background-color: white;
         }
         .pyproforma-table td {
-            border: 1px solid #d0d0d0;
+            border: 1px solid #e8e8e8;
             padding: 6px 12px;
             color: #333;
             background-color: white;
@@ -117,16 +117,16 @@ def _generate_cell_html(cell) -> str:
     # Top border
     if cell.top_border:
         if cell.top_border == "single":
-            styles.append("border-top: 1px solid black")
+            styles.append("border-top: 2px solid black")
         elif cell.top_border == "double":
-            styles.append("border-top: 3px double black")
+            styles.append("border-top: 4px double black")
 
     # Bottom border
     if cell.bottom_border:
         if cell.bottom_border == "single":
-            styles.append("border-bottom: 1px solid black")
+            styles.append("border-bottom: 2px solid black")
         elif cell.bottom_border == "double":
-            styles.append("border-bottom: 3px double black")
+            styles.append("border-bottom: 4px double black")
 
     # Combine styles
     style_attr = "; ".join(styles)

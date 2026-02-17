@@ -199,7 +199,9 @@ class TestAssumptionResultWithModel:
         class TestModel(ProformaModel):
             expense_ratio = Assumption(value=0.6)
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+            )
 
         model = TestModel(periods=[2024])
 

@@ -60,7 +60,7 @@ class LineItemResult:
                 f"Line item '{name}' not found in model. "
                 f"Available line items: {', '.join(sorted(model.line_item_names))}"
             )
-        
+
         # Cache the line item specification for metadata access
         self._line_item_spec = getattr(model.__class__, name, None)
 
@@ -70,7 +70,9 @@ class LineItemResult:
 
     def __str__(self) -> str:
         """Return a string representation showing the item name and values."""
-        values_str = ", ".join(f"{period}: {value}" for period, value in self.values.items())
+        values_str = ", ".join(
+            f"{period}: {value}" for period, value in self.values.items()
+        )
         return f"{self._name}: {{{values_str}}}"
 
     def __getitem__(self, period: int) -> float:
@@ -119,9 +121,29 @@ class LineItemResult:
             >>> result.label
             'Revenue'
         """
-        if self._line_item_spec is not None and hasattr(self._line_item_spec, 'label'):
+        if self._line_item_spec is not None and hasattr(self._line_item_spec, "label"):
             return self._line_item_spec.label
         return None
+
+    @property
+    def tags(self) -> list[str]:
+        """
+        Get the tags assigned to the line item.
+
+        Returns the list of tags if available, otherwise returns an empty list.
+        This is a read-only property.
+
+        Returns:
+            list[str]: The line item's tags
+
+        Examples:
+            >>> result = model['revenue']
+            >>> result.tags
+            ['income', 'operational']
+        """
+        if self._line_item_spec is not None and hasattr(self._line_item_spec, "tags"):
+            return self._line_item_spec.tags
+        return []
 
     @property
     def values(self) -> dict[int, float]:
@@ -174,7 +196,7 @@ class LineItemResult:
         Args:
             include_name (bool, optional): Whether to include the name column.
                 Defaults to False.
-            include_percent_change (bool, optional): Whether to include a row showing 
+            include_percent_change (bool, optional): Whether to include a row showing
                 period-over-period percent change. Defaults to False.
             include_cumulative_change (bool, optional): Whether to include a row showing
                 cumulative change from the base period. Defaults to False.

@@ -13,6 +13,7 @@ from pyproforma.v2.tables import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    TagTotalRow,
     dict_to_row_config,
 )
 
@@ -216,3 +217,114 @@ def test_dict_to_row_config_missing_type():
     config = {"name": "revenue"}
     with pytest.raises(ValueError, match="must have 'row_type' key"):
         dict_to_row_config(config)
+
+
+class TestTagTotalRow:
+    """Tests for TagTotalRow."""
+
+    @pytest.fixture
+    def model_with_tags(self):
+        """Create a model with tagged line items."""
+
+        class TaggedModel(ProformaModel):
+            revenue = FixedLine(
+                values={2024: 100, 2025: 110}, label="Revenue", tags=["income"]
+            )
+            interest = FixedLine(
+                values={2024: 5, 2025: 6}, label="Interest", tags=["income"]
+            )
+            expenses = FixedLine(
+                values={2024: 60, 2025: 66}, label="Expenses", tags=["expense"]
+            )
+            taxes = FixedLine(
+                values={2024: 10, 2025: 12}, label="Taxes", tags=["expense"]
+            )
+
+        return TaggedModel(periods=[2024, 2025])
+
+    def test_tag_total_row_basic(self, model_with_tags):
+        """Test basic TagTotalRow generation."""
+        row_config = TagTotalRow(tag="income")
+        cells = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        # Should have 1 label cell + 2 period cells
+        assert len(cells) == 3
+        assert cells[0].value == "Total income"  # Default label
+        assert cells[0].bold is True
+
+        # 2024: revenue (100) + interest (5) = 105
+        assert cells[1].value == 105
+
+        # 2025: revenue (110) + interest (6) = 116
+        assert cells[2].value == 116
+
+    def test_tag_total_row_custom_label(self, model_with_tags):
+        """Test TagTotalRow with custom label."""
+        row_config = TagTotalRow(tag="income", label="Total Income")
+        cells = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert cells[0].value == "Total Income"
+
+    def test_tag_total_row_two_label_columns(self, model_with_tags):
+        """Test TagTotalRow with two label columns."""
+        row_config = TagTotalRow(tag="expense", label="Total Expenses")
+        cells = row_config.generate_row(model_with_tags, label_col_count=2)
+
+        # Should have 2 label cells + 2 period cells
+        assert len(cells) == 4
+        assert cells[0].value == ""  # First column empty
+        assert cells[1].value == "Total Expenses"  # Second column has label
+
+        # 2024: expenses (60) + taxes (10) = 70
+        assert cells[2].value == 70
+
+        # 2025: expenses (66) + taxes (12) = 78
+        assert cells[3].value == 78
+
+    def test_tag_total_row_with_formatting(self, model_with_tags):
+        """Test TagTotalRow with custom formatting."""
+        row_config = TagTotalRow(
+            tag="income",
+            label="Total Income",
+            bold=False,
+            bottom_border="double",
+            top_border="single",
+        )
+        cells = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        # Check label cell formatting
+        assert cells[0].bold is False
+        assert cells[0].bottom_border == "double"
+        assert cells[0].top_border == "single"
+
+        # Check value cells have same formatting
+        assert cells[1].bold is False
+        assert cells[1].bottom_border == "double"
+        assert cells[1].top_border == "single"
+
+    def test_tag_total_row_empty_tag(self, model_with_tags):
+        """Test TagTotalRow with a tag that has no items."""
+        row_config = TagTotalRow(tag="nonexistent")
+        cells = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert len(cells) == 3
+        assert cells[0].value == "Total nonexistent"
+
+        # Should be 0 for all periods when no items have the tag
+        assert cells[1].value == 0
+        assert cells[2].value == 0
+
+    def test_dict_to_row_config_tag_total(self):
+        """Test converting dict to TagTotalRow."""
+        config = {
+            "row_type": "tag_total",
+            "tag": "income",
+            "label": "Total Income Items",
+            "bold": True,
+        }
+        row = dict_to_row_config(config)
+
+        assert isinstance(row, TagTotalRow)
+        assert row.tag == "income"
+        assert row.label == "Total Income Items"
+        assert row.bold is True

@@ -44,19 +44,18 @@ def calculate_line_items(
         ValueError: If line items are not found or calculation fails.
     """
     # Import here to avoid circular imports
-    from .line_item_values import LineItemValues
-
     # Import here to avoid circular imports
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
+    from .line_item_values import LineItemValues
 
     # Initialize line item values with registered names for validation
-    li = LineItemValues(periods=periods, names=model.line_item_names)
+    li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
 
     # Separate fixed and formula line items
     fixed_items = []
     formula_items = []
-    
+
     for name in model.line_item_names:
         line_item = getattr(model.__class__, name, None)
         if isinstance(line_item, FixedLine):
@@ -71,16 +70,16 @@ def calculate_line_items(
             line_item = getattr(model.__class__, name)
             value = _calculate_single_line_item(line_item, av, li, period)
             li.set(name, period, value)
-        
+
         # Then calculate formula items with dependency resolution
         remaining = formula_items.copy()
         max_iterations = len(formula_items) + 1
         iteration = 0
-        
+
         while remaining and iteration < max_iterations:
             iteration += 1
             still_pending = []
-            
+
             for name in remaining:
                 line_item = getattr(model.__class__, name)
                 try:
@@ -107,18 +106,18 @@ def calculate_line_items(
                         # Dependency not yet calculated for current period - retry
                         still_pending.append(name)
                     else:
-                        # Accessing a period outside the model - wrap in ValueError  
+                        # Accessing a period outside the model - wrap in ValueError
                         raise ValueError(
                             f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
                         ) from e
-            
+
             # If we made no progress, we have a circular reference
             if len(still_pending) == len(remaining):
                 raise ValueError(
                     f"Circular reference detected for period {period}. "
                     f"Cannot calculate: {', '.join(still_pending)}"
                 )
-            
+
             remaining = still_pending
 
     return li

@@ -50,6 +50,7 @@ class FormulaLine(LineItem):
         formula (Callable): Function that calculates the line item values.
         values (dict[int, float], optional): Dictionary of value overrides for specific periods.
         label (str, optional): Human-readable label for display purposes.
+        tags (list[str]): List of tags for categorizing the line item.
     """
 
     def __init__(
@@ -57,6 +58,7 @@ class FormulaLine(LineItem):
         formula: "Callable[[AssumptionValues, LineItemValues, int], float] | None" = None,
         values: dict[int, float] | None = None,
         label: str | None = None,
+        tags: list[str] | None = None,
     ):
         """
         Initialize a FormulaLine.
@@ -71,8 +73,10 @@ class FormulaLine(LineItem):
             values (dict[int, float], optional): Dictionary of value overrides for
                 specific periods. These override calculated values. Defaults to None.
             label (str, optional): Human-readable label. Defaults to None.
+            tags (list[str], optional): List of tags for categorizing the line item.
+                Defaults to None (empty list).
         """
-        super().__init__(label=label)
+        super().__init__(label=label, tags=tags)
         self.formula = formula
         self.values = values or {}
 

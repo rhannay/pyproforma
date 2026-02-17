@@ -96,7 +96,9 @@ class TestCalculateLineItems:
         class TestModel(ProformaModel):
             expense_ratio = Assumption(value=0.65)
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+            )
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
@@ -114,7 +116,9 @@ class TestCalculateLineItems:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
@@ -135,7 +139,7 @@ class TestCalculateLineItems:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FormulaLine(
                 formula=lambda a, li, t: li.revenue[t] * 0.6,
-                values={2024: 50}  # Override for 2024
+                values={2024: 50},  # Override for 2024
             )
 
         model = TestModel.__new__(TestModel)
@@ -155,7 +159,9 @@ class TestCalculateLineItems:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024, 2025, 2026]
@@ -257,7 +263,9 @@ class TestCalculateSingleLineItem:
         av = AssumptionValues({})
         li = LineItemValues(periods=[2024, 2025], names=["revenue"])
 
-        with pytest.raises(ValueError, match="No value defined for 'revenue' in period 2025"):
+        with pytest.raises(
+            ValueError, match="No value defined for 'revenue' in period 2025"
+        ):
             _calculate_single_line_item(TestModel.revenue, av, li, 2025)
 
     def test_formula_error_raises_value_error(self):
@@ -265,13 +273,17 @@ class TestCalculateSingleLineItem:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            bad_formula = FormulaLine(formula=lambda a, li, t: 1 / 0)  # Division by zero
+            bad_formula = FormulaLine(
+                formula=lambda a, li, t: 1 / 0
+            )  # Division by zero
 
         model = TestModel.__new__(TestModel)
         av = AssumptionValues({})
         li = LineItemValues(periods=[2024], names=["revenue", "bad_formula"])
 
-        with pytest.raises(ValueError, match="Error evaluating formula for 'bad_formula'"):
+        with pytest.raises(
+            ValueError, match="Error evaluating formula for 'bad_formula'"
+        ):
             _calculate_single_line_item(TestModel.bad_formula, av, li, 2024)
 
     def test_formula_returns_non_numeric_raises_error(self):
@@ -326,8 +338,12 @@ class TestIntegrationWithProformaModel:
             tax_rate = Assumption(value=0.21)
 
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
-            ebitda = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            expenses = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+            )
+            ebitda = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
             tax = FormulaLine(formula=lambda a, li, t: li.ebitda[t] * a.tax_rate)
             net_income = FormulaLine(formula=lambda a, li, t: li.ebitda[t] - li.tax[t])
 
@@ -372,7 +388,9 @@ class TestDependencyResolution:
         class TestModel(ProformaModel):
             # Define in reverse order: profit depends on expenses and revenue,
             # expenses depends on revenue
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
             revenue = FixedLine(values={2024: 100})
 
@@ -398,7 +416,9 @@ class TestDependencyResolution:
             revenue = FixedLine(values={2024: 100})
             tax = FormulaLine(formula=lambda a, li, t: li.ebitda[t] * 0.21)
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-            ebitda = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            ebitda = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
@@ -419,10 +439,10 @@ class TestDependencyResolution:
         """Test that circular references are detected and raise an error."""
 
         class TestModel(ProformaModel):
-            # Create a circular reference: a -> b -> c -> a
-            a = FormulaLine(formula=lambda av, li, t: li.c[t] + 1)
-            b = FormulaLine(formula=lambda av, li, t: li.a[t] + 1)
-            c = FormulaLine(formula=lambda av, li, t: li.b[t] + 1)
+            # Create a circular reference: item_a -> item_b -> item_c -> item_a
+            item_a = FormulaLine(formula=lambda av, li, t: li.item_c[t] + 1)
+            item_b = FormulaLine(formula=lambda av, li, t: li.item_a[t] + 1)
+            item_c = FormulaLine(formula=lambda av, li, t: li.item_b[t] + 1)
 
         model = TestModel.__new__(TestModel)
         model.periods = [2024]
@@ -456,7 +476,9 @@ class TestDependencyResolution:
 
         class TestModel(ProformaModel):
             # Define in non-dependency order
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            profit = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
 
@@ -480,7 +502,9 @@ class TestDependencyResolution:
             # Define everything in reverse order
             net_income = FormulaLine(formula=lambda a, li, t: li.ebitda[t] - li.tax[t])
             tax = FormulaLine(formula=lambda a, li, t: li.ebitda[t] * 0.21)
-            ebitda = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+            ebitda = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+            )
             expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
             revenue = FixedLine(values={2024: 100})
 

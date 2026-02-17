@@ -47,11 +47,11 @@ class Cell:
         True
 
         >>> cell = Cell(value="Total", bottom_border='double')
-        >>> 'border-bottom: 3px double black' in cell.df_css
+        >>> 'border-bottom: 4px double black' in cell.df_css
         True
 
         >>> cell = Cell(value="Header", top_border='single')
-        >>> 'border-top: 1px solid black' in cell.df_css
+        >>> 'border-top: 2px solid black' in cell.df_css
         True
     """  # noqa: E501
 
@@ -105,9 +105,9 @@ class Cell:
             styles.append(f"color: {hex_color}")
         if self.bottom_border:
             if self.bottom_border == "single":
-                styles.append("border-bottom: 1px solid black")
+                styles.append("border-bottom: 2px solid black")
             elif self.bottom_border == "double":
-                styles.append("border-bottom: 3px double black")
+                styles.append("border-bottom: 4px double black")
             else:
                 raise ValueError(
                     (
@@ -117,9 +117,9 @@ class Cell:
                 )
         if self.top_border:
             if self.top_border == "single":
-                styles.append("border-top: 1px solid black")
+                styles.append("border-top: 2px solid black")
             elif self.top_border == "double":
-                styles.append("border-top: 3px double black")
+                styles.append("border-top: 4px double black")
             else:
                 raise ValueError(
                     (

@@ -122,6 +122,8 @@ class AssumptionResult:
             >>> result.label
             'Inflation Rate'
         """
-        if self._assumption_spec is not None and hasattr(self._assumption_spec, 'label'):
+        if self._assumption_spec is not None and hasattr(
+            self._assumption_spec, "label"
+        ):
             return self._assumption_spec.label
         return None
