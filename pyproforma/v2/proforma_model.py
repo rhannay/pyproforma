@@ -12,6 +12,7 @@ from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
 from pyproforma.v2.line_item import LineItem
 from pyproforma.v2.line_item_result import LineItemResult
+from pyproforma.v2.line_item_selection import LineItemSelection
 from pyproforma.v2.line_item_values import LineItemValues
 from pyproforma.v2.reserved_words import validate_name
 from pyproforma.v2.tables import Tables
@@ -171,6 +172,26 @@ class ProformaModel:
             if hasattr(line_item_spec, "tags"):
                 all_tags.update(line_item_spec.tags)
         return sorted(all_tags)
+
+    def select(self, names: list[str]) -> LineItemSelection:
+        """
+        Create a selection of specific line items.
+
+        Args:
+            names: List of line item names to include in the selection.
+
+        Returns:
+            LineItemSelection: Selection object containing the specified line items.
+
+        Raises:
+            ValueError: If any name is not a valid line item in the model.
+
+        Examples:
+            >>> selection = model.select(['revenue', 'expenses', 'profit'])
+            >>> selection.names
+            ['revenue', 'expenses', 'profit']
+        """
+        return LineItemSelection(self, names)
 
     def __getitem__(self, name: str) -> LineItemResult | AssumptionResult:
         """
