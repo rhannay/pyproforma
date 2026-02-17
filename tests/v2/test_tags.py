@@ -237,3 +237,115 @@ class TestModelTags:
 
         tags = model.tags
         assert tags == ["calculated", "expense", "income"]
+
+
+class TestModelTagSelection:
+    """Tests for model.tag property to select line items by tag."""
+
+    def test_tag_selection_single_tag(self):
+        """Test selecting line items by a single tag."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+            interest = FixedLine(values={2024: 5}, tags=["income"])
+            expenses = FixedLine(values={2024: 60}, tags=["expense"])
+
+        model = TestModel(periods=[2024])
+
+        income_selection = model.tag["income"]
+        assert income_selection.names == ["revenue", "interest"]
+
+        expense_selection = model.tag["expense"]
+        assert expense_selection.names == ["expenses"]
+
+    def test_tag_selection_empty(self):
+        """Test selecting line items with a tag that doesn't exist."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+
+        model = TestModel(periods=[2024])
+
+        # Tag doesn't exist
+        selection = model.tag["expense"]
+        assert selection.names == []
+
+    def test_tag_selection_multiple_tags_per_item(self):
+        """Test selecting when items have multiple tags."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(
+                values={2024: 100}, tags=["income", "operational", "recurring"]
+            )
+            interest = FixedLine(values={2024: 5}, tags=["income", "non-operational"])
+            expenses = FixedLine(values={2024: 60}, tags=["expense", "operational"])
+
+        model = TestModel(periods=[2024])
+
+        # Items with "income" tag
+        income_selection = model.tag["income"]
+        assert set(income_selection.names) == {"revenue", "interest"}
+
+        # Items with "operational" tag
+        operational_selection = model.tag["operational"]
+        assert set(operational_selection.names) == {"revenue", "expenses"}
+
+    def test_tag_selection_preserves_order(self):
+        """Test that tag selection preserves model order."""
+
+        class TestModel(ProformaModel):
+            expenses = FixedLine(values={2024: 60}, tags=["operational"])
+            revenue = FixedLine(values={2024: 100}, tags=["operational"])
+            interest = FixedLine(values={2024: 5}, tags=["operational"])
+
+        model = TestModel(periods=[2024])
+
+        selection = model.tag["operational"]
+        # Should preserve order from model.line_item_names
+        assert selection.names == ["expenses", "revenue", "interest"]
+
+    def test_tag_selection_can_generate_table(self):
+        """Test that tag selection can generate a table."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110}, tags=["income"])
+            interest = FixedLine(values={2024: 5, 2025: 6}, tags=["income"])
+            expenses = FixedLine(values={2024: 60, 2025: 66}, tags=["expense"])
+
+        model = TestModel(periods=[2024, 2025])
+
+        income_selection = model.tag["income"]
+        table = income_selection.table()
+
+        # Should have header + 2 items
+        assert len(table.cells) == 3
+
+    def test_tag_selection_can_get_values(self):
+        """Test that tag selection can get values for a period."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110}, tags=["income"])
+            interest = FixedLine(values={2024: 5, 2025: 6}, tags=["income"])
+            expenses = FixedLine(values={2024: 60, 2025: 66}, tags=["expense"])
+
+        model = TestModel(periods=[2024, 2025])
+
+        income_selection = model.tag["income"]
+        values_2024 = income_selection.value(2024)
+
+        assert values_2024 == {"revenue": 100, "interest": 5}
+
+    def test_tag_selection_mixed_line_types(self):
+        """Test tag selection with both FixedLine and FormulaLine."""
+
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+            interest = FormulaLine(
+                formula=lambda a, li, t: li.revenue[t] * 0.05, tags=["income"]
+            )
+            expenses = FixedLine(values={2024: 60}, tags=["expense"])
+
+        model = TestModel(periods=[2024])
+
+        income_selection = model.tag["income"]
+        assert set(income_selection.names) == {"revenue", "interest"}

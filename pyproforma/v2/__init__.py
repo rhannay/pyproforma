@@ -15,6 +15,7 @@ from .line_item_selection import LineItemSelection
 from .line_item_values import LineItemValue, LineItemValues
 from .proforma_model import ProformaModel
 from .tables import Tables
+from .tags_namespace import ModelTagNamespace
 
 __all__ = [
     "ProformaModel",
@@ -28,5 +29,6 @@ __all__ = [
     "LineItemValue",
     "LineItemResult",
     "LineItemSelection",
+    "ModelTagNamespace",
     "Tables",
 ]

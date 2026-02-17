@@ -1,13 +1,15 @@
 """
-TagNamespace class for summing line items by tag.
+TagNamespace classes for tag-based operations.
 
-This module provides tag-based summation functionality, allowing users to
-sum all line items with a specific tag across periods.
+This module provides tag-based functionality:
+- TagNamespace: For summing line items by tag (used in model.li.tag)
+- ModelTagNamespace: For selecting line items by tag (used in model.tag)
 """
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pyproforma.v2.line_item_selection import LineItemSelection
     from pyproforma.v2.line_item_values import LineItemValues
     from pyproforma.v2.proforma_model import ProformaModel
 
@@ -150,3 +152,69 @@ class TagSum:
     def __repr__(self):
         """Return a string representation of TagSum."""
         return f"TagSum(tag={self._tag!r})"
+
+
+class ModelTagNamespace:
+    """
+    Namespace for accessing line items by tag.
+
+    ModelTagNamespace provides a convenient interface for selecting line items
+    by tag. It supports subscript notation to get a LineItemSelection of all
+    line items with a specific tag.
+
+    Args:
+        model: The parent ProformaModel instance
+
+    Examples:
+        >>> # Define a model with tags
+        >>> class MyModel(ProformaModel):
+        ...     revenue = FixedLine(values={2024: 100}, tags=["income"])
+        ...     interest = FixedLine(values={2024: 5}, tags=["income"])
+        ...     expenses = FixedLine(values={2024: 60}, tags=["expense"])
+        ...
+        >>> model = MyModel(periods=[2024])
+        >>> income_selection = model.tag["income"]  # LineItemSelection
+        >>> income_selection.names
+        ['revenue', 'interest']
+    """
+
+    def __init__(self, model: "ProformaModel"):
+        """
+        Initialize ModelTagNamespace.
+
+        Args:
+            model: The parent ProformaModel instance
+        """
+        self._model = model
+
+    def __getitem__(self, tag: str) -> "LineItemSelection":
+        """
+        Get a LineItemSelection for all line items with a specific tag.
+
+        Args:
+            tag (str): The tag name to select
+
+        Returns:
+            LineItemSelection: Selection containing all line items with the tag
+
+        Examples:
+            >>> income_items = model.tag["income"]
+            >>> income_items.names
+            ['revenue', 'interest']
+        """
+        # Import here to avoid circular dependency
+        from pyproforma.v2.line_item_selection import LineItemSelection
+
+        # Find all line items with this tag
+        matching_names = []
+        for name in self._model.line_item_names:
+            line_item_spec = getattr(self._model.__class__, name)
+            if hasattr(line_item_spec, "tags") and tag in line_item_spec.tags:
+                matching_names.append(name)
+
+        # Return a LineItemSelection with the matching names
+        return LineItemSelection(self._model, matching_names)
+
+    def __repr__(self):
+        """Return a string representation of ModelTagNamespace."""
+        return f"ModelTagNamespace(model={self._model.__class__.__name__})"

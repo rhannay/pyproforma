@@ -16,6 +16,7 @@ from pyproforma.v2.line_item_selection import LineItemSelection
 from pyproforma.v2.line_item_values import LineItemValues
 from pyproforma.v2.reserved_words import validate_name
 from pyproforma.v2.tables import Tables
+from pyproforma.v2.tags_namespace import ModelTagNamespace
 
 
 class ProformaModel:
@@ -102,6 +103,9 @@ class ProformaModel:
         # Initialize tables namespace
         self.tables = Tables(self)
 
+        # Initialize tag namespace
+        self._tag_namespace = ModelTagNamespace(self)
+
     def _initialize_assumptions(self) -> AssumptionValues:
         """
         Initialize assumption values from class attributes.
@@ -172,6 +176,21 @@ class ProformaModel:
             if hasattr(line_item_spec, "tags"):
                 all_tags.update(line_item_spec.tags)
         return sorted(all_tags)
+
+    @property
+    def tag(self) -> ModelTagNamespace:
+        """
+        Access line items by tags.
+
+        Returns:
+            ModelTagNamespace: Namespace for selecting line items by their tags.
+
+        Examples:
+            >>> income_selection = model.tag["income"]
+            >>> income_selection.names
+            ['revenue', 'interest']
+        """
+        return self._tag_namespace
 
     def select(self, names: list[str]) -> LineItemSelection:
         """
