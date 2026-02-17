@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyproforma.v2.proforma_model import ProformaModel
-
+from pyproforma.table import Table
 
 class LineItemSelection:
     """
@@ -89,6 +89,32 @@ class LineItemSelection:
             line_item = getattr(self._model.li, name)
             result[name] = line_item[period]
         return result
+
+    def table(
+        self,
+        include_name: bool = True,
+        include_label: bool = False,
+    ) -> Table:
+        """
+        Generate a table containing the selected line items.
+
+        Args:
+            include_name: Whether to include the name column. Defaults to True.
+            include_label: Whether to include the label column. Defaults to False.
+
+        Returns:
+            Table: A Table object containing the selected line items.
+
+        Examples:
+            >>> selection = model.select(['revenue', 'expenses', 'profit'])
+            >>> table = selection.table()
+            >>> table = selection.table(include_name=False, include_label=True)
+        """
+        return self._model.tables.line_items(
+            line_items=self._names,
+            include_name=include_name,
+            include_label=include_label,
+        )
 
     def __repr__(self):
         """Return a string representation of LineItemSelection."""
