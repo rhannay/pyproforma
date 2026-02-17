@@ -81,11 +81,11 @@ class FinancialStatementWithTags(ProformaModel):
 
     # Calculated totals using tags
     total_income = FormulaLine(
-        formula=lambda a, li, t: li.tags["income"][t], label="Total Income"
+        formula=lambda a, li, t: li.tag["income"][t], label="Total Income"
     )
 
     total_expenses = FormulaLine(
-        formula=lambda a, li, t: li.tags["expense"][t], label="Total Expenses"
+        formula=lambda a, li, t: li.tag["expense"][t], label="Total Expenses"
     )
 
     # Operating profit (operational items only)
@@ -146,22 +146,22 @@ def main():
     print("Tag-Based Summations (2024):")
     print("-" * 80)
     print(
-        f"Total income (all 'income' tagged items):     ${model.li.tags['income'][2024]:>10,.0f}"
+        f"Total income (all 'income' tagged items):     ${model.li.tag['income'][2024]:>10,.0f}"
     )
     print(
-        f"Total expenses (all 'expense' tagged items):  ${model.li.tags['expense'][2024]:>10,.0f}"
+        f"Total expenses (all 'expense' tagged items):  ${model.li.tag['expense'][2024]:>10,.0f}"
     )
     print(
-        f"Operational items sum:                        ${model.li.tags['operational'][2024]:>10,.0f}"
+        f"Operational items sum:                        ${model.li.tag['operational'][2024]:>10,.0f}"
     )
     print(
-        f"Non-operational items sum:                    ${model.li.tags['non-operational'][2024]:>10,.0f}"
+        f"Non-operational items sum:                    ${model.li.tag['non-operational'][2024]:>10,.0f}"
     )
     print(
-        f"Recurring items sum:                          ${model.li.tags['recurring'][2024]:>10,.0f}"
+        f"Recurring items sum:                          ${model.li.tag['recurring'][2024]:>10,.0f}"
     )
     print(
-        f"Non-recurring items sum:                      ${model.li.tags['non-recurring'][2024]:>10,.0f}"
+        f"Non-recurring items sum:                      ${model.li.tag['non-recurring'][2024]:>10,.0f}"
     )
     print()
 
@@ -196,7 +196,7 @@ def main():
     print("-" * 80)
     print("1. Line items can have multiple tags for flexible categorization")
     print("2. Tags are accessible via LineItemResult.tags property")
-    print("3. Use li.tags['tag_name'][period] to sum all items with that tag")
+    print("3. Use li.tag['tag_name'][period] to sum all items with that tag")
     print("4. Tags can be used in formulas for dynamic calculations")
     print("5. Tags enable multi-dimensional analysis (operational, recurring, etc.)")
     print("=" * 80)

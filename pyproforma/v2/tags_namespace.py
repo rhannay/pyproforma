@@ -1,5 +1,5 @@
 """
-TagsNamespace class for summing line items by tag.
+TagNamespace class for summing line items by tag.
 
 This module provides tag-based summation functionality, allowing users to
 sum all line items with a specific tag across periods.
@@ -12,11 +12,11 @@ if TYPE_CHECKING:
     from pyproforma.v2.proforma_model import ProformaModel
 
 
-class TagsNamespace:
+class TagNamespace:
     """
     Namespace for accessing tag-based summations.
 
-    TagsNamespace provides a convenient interface for summing line items by tag.
+    TagNamespace provides a convenient interface for summing line items by tag.
     It supports subscript notation to get the sum of all line items with a specific
     tag for a given period.
 
@@ -32,15 +32,15 @@ class TagsNamespace:
         ...     expenses = FixedLine(values={2024: 60}, tags=["expense"])
         ...
         >>> model = MyModel(periods=[2024])
-        >>> model.li.tags["income"][2024]  # Sum of revenue + interest
+        >>> model.li.tag["income"][2024]  # Sum of revenue + interest
         105
-        >>> model.li.tags["expense"][2024]
+        >>> model.li.tag["expense"][2024]
         60
     """
 
     def __init__(self, model: "ProformaModel", li: "LineItemValues"):
         """
-        Initialize TagsNamespace.
+        Initialize TagNamespace.
 
         Args:
             model: The parent ProformaModel instance
@@ -60,15 +60,15 @@ class TagsNamespace:
             TagSum: Object that supports period subscripting to get tag sums
 
         Examples:
-            >>> income_sum = model.li.tags["income"]
+            >>> income_sum = model.li.tag["income"]
             >>> income_sum[2024]
             105
         """
         return TagSum(self._model, self._li, tag)
 
     def __repr__(self):
-        """Return a string representation of TagsNamespace."""
-        return f"TagsNamespace(model={self._model.__class__.__name__})"
+        """Return a string representation of TagNamespace."""
+        return f"TagNamespace(model={self._model.__class__.__name__})"
 
 
 class TagSum:

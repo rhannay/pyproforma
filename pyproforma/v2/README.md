@@ -177,7 +177,7 @@ expenses = FormulaLine(
 
 ### Tag-Based Summation
 
-Use `li.tags[tag_name][period]` to sum all line items with a specific tag:
+Use `li.tag[tag_name][period]` to sum all line items with a specific tag:
 
 ```python
 class MyModel(ProformaModel):
@@ -199,7 +199,7 @@ class MyModel(ProformaModel):
     )
 
 model = MyModel(periods=[2024])
-print(model.li.tags["income"][2024])  # 105 (100 + 5)
+print(model.li.tag["income"][2024])  # 105 (100 + 5)
 ```
 
 ### Accessing Tags

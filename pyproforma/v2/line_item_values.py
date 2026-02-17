@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pyproforma.v2.proforma_model import ProformaModel
 
-from pyproforma.v2.tags_namespace import TagsNamespace
+from pyproforma.v2.tags_namespace import TagNamespace
 
 
 class LineItemValues:
@@ -73,8 +73,29 @@ class LineItemValues:
         else:
             self._values = values or {}
 
-        # Initialize tags namespace
-        self._tags_namespace = TagsNamespace(model, self) if model else None
+        # Initialize tag namespace
+        self._tag_namespace = TagNamespace(model, self) if model else None
+
+    @property
+    def tag(self) -> TagNamespace:
+        """
+        Access line items by tags.
+
+        Returns:
+            TagNamespace: Namespace for accessing line items via their tags.
+
+        Raises:
+            AttributeError: If LineItemValues was created without a model reference.
+
+        Examples:
+            >>> model.line_items.tag.expense[2024]  # Sum of all items tagged 'expense'
+        """
+        if self._tag_namespace is None:
+            raise AttributeError(
+                "Tag namespace is not available. "
+                "LineItemValues was created without a model reference."
+            )
+        return self._tag_namespace
 
     def get(
         self, name: str, period: int | None = None
@@ -122,32 +143,22 @@ class LineItemValues:
             self._values[name] = {}
         self._values[name][period] = value
 
-    def __getattr__(self, name: str) -> "LineItemValue | TagsNamespace":
+    def __getattr__(self, name: str) -> "LineItemValue":
         """
         Get line item values via attribute access.
 
         Returns a LineItemValue object that supports subscript notation
-        for accessing period values. Special handling for 'tags' to return
-        the TagsNamespace.
+        for accessing period values.
 
         Args:
-            name (str): The name of the line item or 'tags' for tag namespace.
+            name (str): The name of the line item.
 
         Returns:
-            LineItemValue | TagsNamespace: Wrapper object supporting subscript access.
+            LineItemValue: Wrapper object supporting subscript access.
 
         Raises:
             AttributeError: If the line item name is not registered or not found.
         """
-        # Special handling for tags namespace
-        if name == "tags":
-            if self._tags_namespace is None:
-                raise AttributeError(
-                    "Tags namespace is not available. "
-                    "LineItemValues was created without a model reference."
-                )
-            return self._tags_namespace
-
         if name.startswith("_"):
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'"

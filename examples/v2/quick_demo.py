@@ -91,7 +91,7 @@ def main():
     print("=" * 70)
     print("\nNew features implemented:")
     print("  1. ✓ Tags for flexible categorization of line items")
-    print("  2. ✓ li.tags[tag_name][period] for summing by tag")
+    print("  2. ✓ li.tag[tag_name][period] for summing by tag")
     print("  3. ✓ Tags accessible via LineItemResult.tags")
     print("  4. ✓ Reserved words validation to prevent conflicts")
     print("  5. ✓ 206 tests passing, including 31 new tests")
