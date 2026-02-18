@@ -5,7 +5,9 @@ FormulaLine represents a line item whose values are calculated using a formula f
 Values can be overridden for specific periods using the values parameter.
 """
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Union
+
+from pyproforma.table import NumberFormatSpec
 
 from .line_item import LineItem
 
@@ -59,6 +61,7 @@ class FormulaLine(LineItem):
         values: dict[int, float] | None = None,
         label: str | None = None,
         tags: list[str] | None = None,
+        value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         """
         Initialize a FormulaLine.
@@ -75,8 +78,10 @@ class FormulaLine(LineItem):
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
+            value_format (str | NumberFormatSpec | dict, optional): Format specification
+                for displaying values. Defaults to None (inherits default 'no_decimals').
         """
-        super().__init__(label=label, tags=tags)
+        super().__init__(label=label, tags=tags, value_format=value_format)
         self.formula = formula
         self.values = values or {}
 

@@ -33,7 +33,9 @@ Example:
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
+
+from pyproforma.table import NumberFormatSpec
 
 from .line_item import LineItem
 
@@ -271,6 +273,7 @@ class DebtBase(LineItem):
         calculator: DebtCalculator,
         label: str | None = None,
         tags: list[str] | None = None,
+        value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         """
         Initialize a DebtBase line item.
@@ -280,8 +283,10 @@ class DebtBase(LineItem):
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
+            value_format (str | NumberFormatSpec | dict, optional): Format specification
+                for displaying values. Defaults to None (inherits default 'no_decimals').
         """
-        super().__init__(label=label, tags=tags)
+        super().__init__(label=label, tags=tags, value_format=value_format)
         self.calculator = calculator
 
     def eval(
@@ -449,6 +454,8 @@ def create_debt_lines(
     principal_label: str | None = None,
     interest_label: str | None = None,
     tags: list[str] | None = None,
+    principal_value_format: Union[str, NumberFormatSpec, dict, None] = None,
+    interest_value_format: Union[str, NumberFormatSpec, dict, None] = None,
 ) -> tuple[DebtPrincipalLine, DebtInterestLine]:
     """
     Factory function to create matched principal and interest debt lines.
@@ -469,6 +476,10 @@ def create_debt_lines(
             Defaults to None.
         tags (list[str], optional): Tags to apply to both line items.
             Defaults to None (empty list).
+        principal_value_format (str | NumberFormatSpec | dict, optional): Format 
+            specification for displaying principal values. Defaults to None.
+        interest_value_format (str | NumberFormatSpec | dict, optional): Format 
+            specification for displaying interest values. Defaults to None.
 
     Returns:
         tuple[DebtPrincipalLine, DebtInterestLine]: Matched principal and interest
@@ -481,7 +492,9 @@ def create_debt_lines(
         ...     term=10,
         ...     principal_label='Principal Payment',
         ...     interest_label='Interest Expense',
-        ...     tags=['debt_service']
+        ...     tags=['debt_service'],
+        ...     principal_value_format='currency',
+        ...     interest_value_format='currency'
         ... )
         >>>
         >>> class MyModel(ProformaModel):
@@ -504,12 +517,14 @@ def create_debt_lines(
         calculator=calculator,
         label=principal_label,
         tags=tags,
+        value_format=principal_value_format,
     )
 
     interest = DebtInterestLine(
         calculator=calculator,
         label=interest_label,
         tags=tags,
+        value_format=interest_value_format,
     )
 
     return principal, interest
