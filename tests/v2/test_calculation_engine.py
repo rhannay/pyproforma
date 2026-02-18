@@ -12,7 +12,7 @@ from pyproforma.v2.calculation_engine import (
     _calculate_single_line_item,
     calculate_line_items,
 )
-from pyproforma.v2.line_item_values import LineItemValues
+from pyproforma.v2.line_items.line_item_values import LineItemValues
 
 
 class TestCalculateLineItems:

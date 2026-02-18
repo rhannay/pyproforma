@@ -10,10 +10,10 @@ from pyproforma.v2.assumption import Assumption
 from pyproforma.v2.assumption_result import AssumptionResult
 from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
-from pyproforma.v2.line_item import LineItem
-from pyproforma.v2.line_item_result import LineItemResult
-from pyproforma.v2.line_item_selection import LineItemSelection
-from pyproforma.v2.line_item_values import LineItemValues
+from pyproforma.v2.line_items.line_item import LineItem
+from pyproforma.v2.line_items.line_item_result import LineItemResult
+from pyproforma.v2.line_items.line_item_selection import LineItemSelection
+from pyproforma.v2.line_items.line_item_values import LineItemValues
 from pyproforma.v2.reserved_words import validate_name
 from pyproforma.v2.tables import Tables
 from pyproforma.v2.tags_namespace import ModelTagNamespace
