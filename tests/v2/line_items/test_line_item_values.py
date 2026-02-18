@@ -4,7 +4,7 @@ Tests for LineItemValues class.
 
 import pytest
 
-from pyproforma.v2.line_item_values import LineItemValue, LineItemValues
+from pyproforma.v2.line_items.line_item_values import LineItemValue, LineItemValues
 
 
 class TestLineItemValues:

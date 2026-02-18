@@ -45,7 +45,7 @@ class TestModelGetItemAccessForAssumptions:
 
         model = TestModel(periods=[2024])
 
-        from pyproforma.v2.line_item_result import LineItemResult
+        from pyproforma.v2.line_items.line_item_result import LineItemResult
 
         tax_result = model["tax_rate"]
         revenue_result = model["revenue"]
@@ -232,7 +232,7 @@ class TestAssumptionResultWithModel:
         assert isinstance(inflation, AssumptionResult)
         assert isinstance(tax, AssumptionResult)
 
-        from pyproforma.v2.line_item_result import LineItemResult
+        from pyproforma.v2.line_items.line_item_result import LineItemResult
 
         assert isinstance(revenue, LineItemResult)
         assert isinstance(expenses, LineItemResult)

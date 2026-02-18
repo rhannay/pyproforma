@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .assumption_values import AssumptionValues
-    from .line_item_values import LineItemValues
+    from .line_items.line_item_values import LineItemValues
 
 
 def calculate_line_items(
@@ -45,10 +45,10 @@ def calculate_line_items(
     """
     # Import here to avoid circular imports
     # Import here to avoid circular imports
-    from .debt_line import DebtBase
-    from .fixed_line import FixedLine
-    from .formula_line import FormulaLine
-    from .line_item_values import LineItemValues
+    from .line_items.debt_line import DebtBase
+    from .line_items.fixed_line import FixedLine
+    from .line_items.formula_line import FormulaLine
+    from .line_items.line_item_values import LineItemValues
 
     # Initialize line item values with registered names for validation
     li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
@@ -152,9 +152,9 @@ def _calculate_single_line_item(
         KeyError: If accessing a period not yet calculated.
     """
     # Import here to avoid circular imports
-    from .debt_line import DebtBase
-    from .fixed_line import FixedLine
-    from .formula_line import FormulaLine
+    from .line_items.debt_line import DebtBase
+    from .line_items.fixed_line import FixedLine
+    from .line_items.formula_line import FormulaLine
 
     # Handle FixedLine
     if isinstance(line_item, FixedLine):

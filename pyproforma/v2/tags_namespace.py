@@ -9,8 +9,8 @@ This module provides tag-based functionality:
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma.v2.line_item_selection import LineItemSelection
-    from pyproforma.v2.line_item_values import LineItemValues
+    from pyproforma.v2.line_items.line_item_selection import LineItemSelection
+    from pyproforma.v2.line_items.line_item_values import LineItemValues
     from pyproforma.v2.proforma_model import ProformaModel
 
 
@@ -203,7 +203,7 @@ class ModelTagNamespace:
             ['revenue', 'interest']
         """
         # Import here to avoid circular dependency
-        from pyproforma.v2.line_item_selection import LineItemSelection
+        from pyproforma.v2.line_items.line_item_selection import LineItemSelection
 
         # Find all line items with this tag
         matching_names = []

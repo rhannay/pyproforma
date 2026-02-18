@@ -5,7 +5,7 @@ Tests for LineItemResult class and model['item'] access in v2.
 import pytest
 
 from pyproforma.v2 import Assumption, FixedLine, FormulaLine, ProformaModel
-from pyproforma.v2.line_item_result import LineItemResult
+from pyproforma.v2.line_items.line_item_result import LineItemResult
 
 
 class TestModelGetItemAccess:
@@ -302,7 +302,7 @@ class TestLiPropertyAccess:
         model = TestModel(periods=[2024])
 
         assert hasattr(model, "li")
-        from pyproforma.v2.line_item_values import LineItemValues
+        from pyproforma.v2.line_items.line_item_values import LineItemValues
 
         assert isinstance(model.li, LineItemValues)
 

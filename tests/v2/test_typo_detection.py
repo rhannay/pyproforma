@@ -96,7 +96,7 @@ class TestTypoDetection:
 
     def test_accessing_undefined_line_item_directly(self):
         """Test that accessing undefined line item on LineItemValues raises error."""
-        from pyproforma.v2.line_item_values import LineItemValues
+        from pyproforma.v2.line_items.line_item_values import LineItemValues
 
         li = LineItemValues(periods=[2024], names=["revenue", "expenses"])
 

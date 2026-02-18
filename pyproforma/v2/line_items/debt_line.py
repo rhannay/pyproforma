@@ -35,11 +35,11 @@ Example:
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from pyproforma.v2.line_item import LineItem
+from .line_item import LineItem
 
 if TYPE_CHECKING:
     from pyproforma.v2.assumption_values import AssumptionValues
-    from pyproforma.v2.line_item_values import LineItemValues
+    from .line_item_values import LineItemValues
 
 
 class DebtCalculator:
