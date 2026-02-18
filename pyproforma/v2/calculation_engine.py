@@ -45,6 +45,7 @@ def calculate_line_items(
     """
     # Import here to avoid circular imports
     # Import here to avoid circular imports
+    from .debt_line import DebtBase
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
     from .line_item_values import LineItemValues
@@ -60,7 +61,7 @@ def calculate_line_items(
         line_item = getattr(model.__class__, name, None)
         if isinstance(line_item, FixedLine):
             fixed_items.append(name)
-        elif isinstance(line_item, FormulaLine):
+        elif isinstance(line_item, (FormulaLine, DebtBase)):
             formula_items.append(name)
 
     # Calculate values for each period
@@ -151,6 +152,7 @@ def _calculate_single_line_item(
         KeyError: If accessing a period not yet calculated.
     """
     # Import here to avoid circular imports
+    from .debt_line import DebtBase
     from .fixed_line import FixedLine
     from .formula_line import FormulaLine
 
@@ -186,6 +188,28 @@ def _calculate_single_line_item(
         if not isinstance(value, (int, float)):
             raise ValueError(
                 f"Formula for '{line_item.name}' returned invalid type: {type(value)}"
+            )
+
+        return float(value)
+
+    # Handle DebtBase (DebtPrincipalLine, DebtInterestLine)
+    if isinstance(line_item, DebtBase):
+        # Debt lines use eval() pattern like FormulaLine
+        try:
+            value = line_item.eval(av, li, period)
+        except (AttributeError, KeyError):
+            # Re-raise these - indicate missing dependencies or periods
+            # The caller will decide whether to retry or raise ValueError
+            raise
+        except Exception as e:
+            raise ValueError(
+                f"Error evaluating debt line for '{line_item.name}' in period {period}: {e}"
+            ) from e
+
+        # Validate the result type
+        if not isinstance(value, (int, float)):
+            raise ValueError(
+                f"Debt line '{line_item.name}' returned invalid type: {type(value)}"
             )
 
         return float(value)
