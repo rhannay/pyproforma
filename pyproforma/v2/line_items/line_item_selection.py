@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from pyproforma.v2.proforma_model import ProformaModel
 from pyproforma.table import Table
 
+
 class LineItemSelection:
     """
     A selection of line items from a ProformaModel.
