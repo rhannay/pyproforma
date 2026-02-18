@@ -31,7 +31,7 @@ class LineItem(ABC):
         self,
         label: str | None = None,
         tags: list[str] | None = None,
-        value_format: Union[str, NumberFormatSpec, dict, None] = Format.NO_DECIMALS,
+        value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         """
         Initialize a LineItem.
@@ -44,13 +44,17 @@ class LineItem(ABC):
             value_format (str | NumberFormatSpec | dict, optional): Format specification
                 for displaying values. Can be a string format name like 'percent',
                 'currency', 'no_decimals', etc., a NumberFormatSpec instance for more
-                control, or a dict. Defaults to 'no_decimals'.
+                control, or a dict. Defaults to None (which uses 'no_decimals').
         """
         self.name: str | None = None  # Set by __set_name__ when assigned to class
         self.label = label
         self.tags = tags or []
-        # Normalize value_format to NumberFormatSpec
-        self.value_format = normalize_format(value_format)
+        # Normalize value_format to NumberFormatSpec, defaulting to NO_DECIMALS
+        self.value_format = (
+            normalize_format(value_format)
+            if value_format is not None
+            else Format.NO_DECIMALS
+        )
 
     def __set_name__(self, owner, name: str):
         """

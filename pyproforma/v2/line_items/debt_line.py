@@ -41,6 +41,7 @@ from .line_item import LineItem
 
 if TYPE_CHECKING:
     from pyproforma.v2.assumption_values import AssumptionValues
+
     from .line_item_values import LineItemValues
 
 
@@ -90,7 +91,7 @@ class DebtCalculator:
         self.term = term
 
         # Internal state: schedules for each bond issue
-        # Structure: {issue_year: {period: {'principal': float, 'interest': float, 'balance': float}}}
+        # Structure: {issue_year: {period: {'principal': float, ...}}}
         self._schedules: dict[int, dict[int, dict[str, float]]] = {}
 
         # Track the last period evaluated to detect non-sequential calls
@@ -169,7 +170,9 @@ class DebtCalculator:
             issue_year (int): Year the bond is issued.
         """
         # Calculate level annual payment
-        annual_payment = self._calculate_annual_payment(par, self.interest_rate, self.term)
+        annual_payment = self._calculate_annual_payment(
+            par, self.interest_rate, self.term
+        )
 
         # Build amortization schedule
         schedule = {}
@@ -283,8 +286,9 @@ class DebtBase(LineItem):
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
-            value_format (str | NumberFormatSpec | dict, optional): Format specification
-                for displaying values. Defaults to None (inherits default 'no_decimals').
+            value_format (str | NumberFormatSpec | dict, optional):
+                Format specification for displaying values.
+                Defaults to None (inherits default 'no_decimals').
         """
         super().__init__(label=label, tags=tags, value_format=value_format)
         self.calculator = calculator
@@ -476,9 +480,9 @@ def create_debt_lines(
             Defaults to None.
         tags (list[str], optional): Tags to apply to both line items.
             Defaults to None (empty list).
-        principal_value_format (str | NumberFormatSpec | dict, optional): Format 
+        principal_value_format (str | NumberFormatSpec | dict, optional): Format
             specification for displaying principal values. Defaults to None.
-        interest_value_format (str | NumberFormatSpec | dict, optional): Format 
+        interest_value_format (str | NumberFormatSpec | dict, optional): Format
             specification for displaying interest values. Defaults to None.
 
     Returns:

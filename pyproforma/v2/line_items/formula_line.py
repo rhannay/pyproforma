@@ -13,6 +13,7 @@ from .line_item import LineItem
 
 if TYPE_CHECKING:
     from pyproforma.v2.assumption_values import AssumptionValues
+
     from .line_item_values import LineItemValues
 
 
@@ -78,8 +79,9 @@ class FormulaLine(LineItem):
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
-            value_format (str | NumberFormatSpec | dict, optional): Format specification
-                for displaying values. Defaults to None (inherits default 'no_decimals').
+            value_format (str | NumberFormatSpec | dict, optional):
+                Format specification for displaying values.
+                Defaults to None (inherits default 'no_decimals').
         """
         super().__init__(label=label, tags=tags, value_format=value_format)
         self.formula = formula
