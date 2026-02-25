@@ -70,6 +70,59 @@ def test_item_row_two_label_columns(simple_model):
     assert cells[1].value == "Revenue"  # Label
 
 
+def test_item_row_inherits_value_format():
+    """Test that ItemRow uses line item's value_format when not specified."""
+    from pyproforma.table import Format
+
+    class ModelWithFormats(ProformaModel):
+        revenue = FixedLine(
+            values={2024: 100000, 2025: 110000}, 
+            label="Revenue",
+            value_format="currency"
+        )
+        margin = FixedLine(
+            values={2024: 0.25, 2025: 0.30},
+            label="Margin",
+            value_format="percent"
+        )
+
+    model = ModelWithFormats(periods=[2024, 2025])
+
+    # Test revenue row - should inherit currency format
+    revenue_row = ItemRow(name="revenue")
+    revenue_cells = revenue_row.generate_row(model, label_col_count=1)
+    assert revenue_cells[1].value_format == Format.CURRENCY
+    assert revenue_cells[2].value_format == Format.CURRENCY
+
+    # Test margin row - should inherit percent format
+    margin_row = ItemRow(name="margin")
+    margin_cells = margin_row.generate_row(model, label_col_count=1)
+    assert margin_cells[1].value_format == Format.PERCENT
+    assert margin_cells[2].value_format == Format.PERCENT
+
+
+def test_item_row_explicit_value_format_overrides():
+    """Test that explicit value_format on ItemRow overrides line item's format."""
+    from pyproforma.table import Format
+
+    class ModelWithFormats(ProformaModel):
+        revenue = FixedLine(
+            values={2024: 100000, 2025: 110000},
+            label="Revenue",
+            value_format="currency"
+        )
+
+    model = ModelWithFormats(periods=[2024, 2025])
+
+    # Explicitly specify a different format
+    row_config = ItemRow(name="revenue", value_format="no_decimals")
+    cells = row_config.generate_row(model, label_col_count=1)
+    
+    # Should use the explicitly specified format, not the line item's
+    assert cells[1].value_format == Format.NO_DECIMALS
+    assert cells[2].value_format == Format.NO_DECIMALS
+
+
 def test_label_row(simple_model):
     """Test LabelRow generation."""
     row_config = LabelRow(label="Income Statement")
