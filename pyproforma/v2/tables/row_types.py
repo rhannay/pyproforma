@@ -293,8 +293,8 @@ class CumulativeChangeRow(BaseRow):
         else:
             label = self.label
 
-        # Default to same format as original
-        value_format = self.value_format or "no_decimals"
+        # Get value format from item if not specified
+        value_format = self.value_format or item_result.value_format
 
         # Create cells for this row
         cells = []
