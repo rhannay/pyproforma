@@ -146,6 +146,28 @@ class LineItemResult:
         return []
 
     @property
+    def value_format(self):
+        """
+        Get the value format specification for the line item.
+
+        Returns the NumberFormatSpec instance that defines how values should be
+        displayed. This is a read-only property.
+
+        Returns:
+            NumberFormatSpec | None: The line item's value format specification
+
+        Examples:
+            >>> result = model['revenue']
+            >>> result.value_format
+            NumberFormatSpec(decimals=0, thousands=True, ...)
+        """
+        if self._line_item_spec is not None and hasattr(
+            self._line_item_spec, "value_format"
+        ):
+            return self._line_item_spec.value_format
+        return None
+
+    @property
     def values(self) -> dict[int, float]:
         """
         Get all period values for the line item.
