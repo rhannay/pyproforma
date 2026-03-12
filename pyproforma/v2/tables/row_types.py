@@ -73,6 +73,7 @@ class ItemRow(BaseRow):
     bold: bool = False
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
+    hardcoded_color: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -136,6 +137,11 @@ class ItemRow(BaseRow):
         # Add a cell for each period with the item's value for that period
         for period in model.periods:
             value = item_result[period]
+            font_color = (
+                self.hardcoded_color
+                if self.hardcoded_color and item_result.is_input(period)
+                else None
+            )
             cells.append(
                 Cell(
                     value=value,
@@ -143,6 +149,7 @@ class ItemRow(BaseRow):
                     value_format=value_format,
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    font_color=font_color,
                 )
             )
 
@@ -557,6 +564,7 @@ class TagItemsRow(BaseRow):
     total_row_label: Optional[str] = None
     bold: bool = False
     total_row_top_border: Optional[str] = "single"
+    hardcoded_color: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -571,7 +579,7 @@ class TagItemsRow(BaseRow):
         rows = []
         for name in names:
             rows.append(
-                ItemRow(name=name, bold=self.bold).generate_row(
+                ItemRow(name=name, bold=self.bold, hardcoded_color=self.hardcoded_color).generate_row(
                     model, label_col_count=label_col_count
                 )
             )

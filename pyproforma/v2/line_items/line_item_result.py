@@ -183,6 +183,32 @@ class LineItemResult:
         result = self._model._li.get(self._name, period=None)
         return result if result is not None else {}
 
+    def is_input(self, period: int) -> bool:
+        """
+        Check whether the value for a period is hardcoded (input) rather than calculated.
+
+        Returns True for:
+        - FixedLine: all periods are hardcoded
+        - InputLine: all periods are hardcoded (supplied at instantiation)
+        - FormulaLine: only periods that have an explicit override value
+
+        Args:
+            period (int): The period to check
+
+        Returns:
+            bool: True if the value is hardcoded/input, False if calculated
+        """
+        from pyproforma.v2.line_items.fixed_line import FixedLine
+        from pyproforma.v2.line_items.formula_line import FormulaLine
+        from pyproforma.v2.line_items.input_line import InputLine
+
+        spec = self._line_item_spec
+        if isinstance(spec, (FixedLine, InputLine)):
+            return True
+        if isinstance(spec, FormulaLine):
+            return period in spec.values
+        return False
+
     def value(self, period: int) -> float:
         """
         Get the value for a specific period.

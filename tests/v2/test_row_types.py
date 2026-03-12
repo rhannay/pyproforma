@@ -532,3 +532,71 @@ class TestTagItemsRow:
 
         rows = row_config.generate_row(model_with_tags, label_col_count=1)
         assert len(rows) == 3
+
+
+class TestHardcodedColor:
+    """Tests for hardcoded_color on ItemRow and TagItemsRow."""
+
+    @pytest.fixture
+    def model(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: 110})
+            expenses = FormulaLine(
+                formula=lambda li, t: li.revenue[t] * 0.6,
+                values={2024: 50},  # Override 2024
+            )
+            profit = FormulaLine(
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
+            )
+
+        return TestModel(periods=[2024, 2025])
+
+    def test_is_input_fixed_line(self, model):
+        result = model["revenue"]
+        assert result.is_input(2024) is True
+        assert result.is_input(2025) is True
+
+    def test_is_input_formula_line_no_override(self, model):
+        result = model["profit"]
+        assert result.is_input(2024) is False
+        assert result.is_input(2025) is False
+
+    def test_is_input_formula_line_with_override(self, model):
+        result = model["expenses"]
+        assert result.is_input(2024) is True   # override period
+        assert result.is_input(2025) is False  # calculated period
+
+    def test_item_row_hardcoded_color_fixed_line(self, model):
+        row = ItemRow(name="revenue", hardcoded_color="blue").generate_row(model)
+        # label cell + 2 period cells
+        assert row[1].font_color is not None  # 2024 — fixed, colored
+        assert row[2].font_color is not None  # 2025 — fixed, colored
+
+    def test_item_row_hardcoded_color_formula_override(self, model):
+        row = ItemRow(name="expenses", hardcoded_color="blue").generate_row(model)
+        assert row[1].font_color is not None  # 2024 — override, colored
+        assert row[2].font_color is None      # 2025 — calculated, no color
+
+    def test_item_row_hardcoded_color_formula_no_override(self, model):
+        row = ItemRow(name="profit", hardcoded_color="blue").generate_row(model)
+        assert row[1].font_color is None  # 2024 — calculated
+        assert row[2].font_color is None  # 2025 — calculated
+
+    def test_item_row_no_hardcoded_color(self, model):
+        row = ItemRow(name="revenue").generate_row(model)
+        assert row[1].font_color is None
+        assert row[2].font_color is None
+
+    def test_tag_items_row_propagates_hardcoded_color(self):
+        class TagModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100}, tags=["income"])
+            other = FormulaLine(
+                formula=lambda li, t: li.revenue[t] * 0.5, tags=["income"]
+            )
+
+        model = TagModel(periods=[2024])
+        rows = TagItemsRow(tag="income", hardcoded_color="blue").generate_row(model)
+        # revenue row: fixed — colored
+        assert rows[0][1].font_color is not None
+        # other row: formula — not colored
+        assert rows[1][1].font_color is None
