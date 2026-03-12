@@ -15,6 +15,7 @@ from .row_types import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    TagItemsRow,
     TagTotalRow,
     dict_to_row_config,
 )
@@ -32,5 +33,6 @@ __all__ = [
     "CumulativePercentChangeRow",
     "LineItemsTotalRow",
     "TagTotalRow",
+    "TagItemsRow",
     "dict_to_row_config",
 ]

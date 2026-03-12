@@ -13,6 +13,7 @@ from pyproforma.v2.tables import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    TagItemsRow,
     TagTotalRow,
     dict_to_row_config,
 )
@@ -425,3 +426,109 @@ class TestTagTotalRow:
         assert row.tag == "income"
         assert row.label == "Total Income Items"
         assert row.bold is True
+
+
+class TestTagItemsRow:
+    """Tests for TagItemsRow."""
+
+    @pytest.fixture
+    def model_with_tags(self):
+        class TaggedModel(ProformaModel):
+            revenue = FixedLine(
+                values={2024: 100, 2025: 110}, label="Revenue", tags=["income"]
+            )
+            interest = FixedLine(
+                values={2024: 5, 2025: 6}, label="Interest", tags=["income"]
+            )
+            expenses = FixedLine(
+                values={2024: 60, 2025: 66}, label="Expenses", tags=["expense"]
+            )
+
+        return TaggedModel(periods=[2024, 2025])
+
+    def test_produces_one_row_per_matching_item(self, model_with_tags):
+        """TagItemsRow with two matching items produces two rows."""
+        row_config = TagItemsRow(tag="income")
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert len(rows) == 2
+
+    def test_produces_extra_total_row_when_requested(self, model_with_tags):
+        """include_total_row=True adds one extra row."""
+        row_config = TagItemsRow(tag="income", include_total_row=True)
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert len(rows) == 3  # 2 items + 1 total
+
+    def test_item_rows_contain_correct_values(self, model_with_tags):
+        """Each item row carries the right values for each period."""
+        row_config = TagItemsRow(tag="income")
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        # rows[0] = revenue row: label, 2024 value, 2025 value
+        assert rows[0][0].value == "Revenue"
+        assert rows[0][1].value == 100
+        assert rows[0][2].value == 110
+
+        # rows[1] = interest row
+        assert rows[1][0].value == "Interest"
+        assert rows[1][1].value == 5
+        assert rows[1][2].value == 6
+
+    def test_total_row_sums_correctly(self, model_with_tags):
+        """The total row sums all matched items."""
+        row_config = TagItemsRow(tag="income", include_total_row=True)
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        total_row = rows[-1]
+        assert total_row[1].value == 105  # 100 + 5
+        assert total_row[2].value == 116  # 110 + 6
+
+    def test_default_total_row_label(self, model_with_tags):
+        """Default total label is derived from tag name."""
+        row_config = TagItemsRow(tag="income", include_total_row=True)
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert rows[-1][0].value == "Total Income"
+
+    def test_custom_total_row_label(self, model_with_tags):
+        """Custom total_row_label is used when provided."""
+        row_config = TagItemsRow(
+            tag="income", include_total_row=True, total_row_label="All Income"
+        )
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert rows[-1][0].value == "All Income"
+
+    def test_no_matching_items_returns_empty(self, model_with_tags):
+        """Tag with no matches produces zero rows (and no total row)."""
+        row_config = TagItemsRow(tag="nonexistent", include_total_row=True)
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert rows == []
+
+    def test_single_matching_item(self, model_with_tags):
+        """Tag matching exactly one item produces one row."""
+        row_config = TagItemsRow(tag="expense")
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+
+        assert len(rows) == 1
+        assert rows[0][0].value == "Expenses"
+
+    def test_dict_to_row_config_tag_items(self, model_with_tags):
+        """dict_to_row_config converts tag_items dicts correctly."""
+        config = {
+            "row_type": "tag_items",
+            "tag": "income",
+            "include_total_row": True,
+            "total_row_label": "Income Total",
+        }
+        row_config = dict_to_row_config(config)
+
+        assert isinstance(row_config, TagItemsRow)
+        assert row_config.tag == "income"
+        assert row_config.include_total_row is True
+        assert row_config.total_row_label == "Income Total"
+
+        rows = row_config.generate_row(model_with_tags, label_col_count=1)
+        assert len(rows) == 3
