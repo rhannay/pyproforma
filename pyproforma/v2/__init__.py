@@ -22,6 +22,7 @@ from .line_items import (
     LineItemValues,
     create_debt_lines,
 )
+from .compare import ModelComparison
 from .proforma_model import ProformaModel
 from .tables import Tables
 from .tags_namespace import ModelTagNamespace
@@ -46,4 +47,5 @@ __all__ = [
     "LineItemSelection",
     "ModelTagNamespace",
     "Tables",
+    "ModelComparison",
 ]

@@ -339,6 +339,27 @@ class ProformaModel:
             f"Available assumptions: {', '.join(sorted(self.assumption_names))}"
         )
 
+    def compare(self, *others, labels=None):
+        """
+        Compare this model against one or more other models.
+
+        This model is the baseline. See ModelComparison for full documentation.
+
+        Args:
+            *others: One or more ProformaModel instances to compare against.
+            labels: Optional display labels for all models (including this one).
+
+        Returns:
+            ModelComparison
+
+        Examples:
+            >>> cmp = base.compare(optimistic, labels=["Base", "Optimistic"])
+            >>> cmp.difference("revenue", 2024)
+        """
+        from pyproforma.v2.compare import ModelComparison
+
+        return ModelComparison(self, *others, labels=labels)
+
     def __repr__(self):
         """Return a string representation of the model."""
         line_item_count = len(self.line_item_names)
