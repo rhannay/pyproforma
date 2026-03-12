@@ -18,7 +18,7 @@ class TestLineItemSelection:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FixedLine(values={2024: 60, 2025: 66})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -33,7 +33,7 @@ class TestLineItemSelection:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FixedLine(values={2024: 60, 2025: 66})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -48,7 +48,7 @@ class TestLineItemSelection:
             revenue = FixedLine(values={2024: 100})
             expenses = FixedLine(values={2024: 60})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])
@@ -113,7 +113,7 @@ class TestLineItemSelection:
             revenue = FixedLine(values={2024: 100})
             expenses = FixedLine(values={2024: 60})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])
@@ -164,7 +164,7 @@ class TestLineItemSelectionValue:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FixedLine(values={2024: 60, 2025: 66})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -197,7 +197,7 @@ class TestLineItemSelectionValue:
             revenue = FixedLine(values={2024: 100})
             expenses = FixedLine(values={2024: 60})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])
@@ -258,7 +258,7 @@ class TestLineItemSelectionSum:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FixedLine(values={2024: 60, 2025: 66})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -351,7 +351,7 @@ class TestLineItemSelectionTable:
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FixedLine(values={2024: 60, 2025: 66})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -370,7 +370,7 @@ class TestLineItemSelectionTable:
             revenue = FixedLine(values={2024: 100})
             expenses = FixedLine(values={2024: 60})
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])

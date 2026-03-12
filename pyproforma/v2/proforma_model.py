@@ -80,6 +80,17 @@ class ProformaModel:
                 if isinstance(value, InputLine):
                     input_line_names.append(name)
 
+        # Validate no name is used for both a line item and an assumption.
+        # (Python prevents two attributes with the same name in one class, but a
+        # subclass could shadow an inherited name with a different type.)
+        overlap = set(assumption_names) & set(line_item_names)
+        if overlap:
+            raise ValueError(
+                f"Names used for both a line item and an assumption in "
+                f"{cls.__name__}: {', '.join(sorted(overlap))}. "
+                "Each name must be unique across all line items and assumptions."
+            )
+
         cls._assumption_names = assumption_names
         cls._line_item_names = line_item_names
         cls._input_line_names = input_line_names

@@ -106,7 +106,7 @@ class TestInputLineInstantiation:
     def test_input_line_usable_in_formula(self):
         class M(ProformaModel):
             revenue = InputLine()
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.4)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.4)
 
         model = M(periods=[2024], revenue={2024: 500_000})
         assert model.get_value("profit", 2024) == 200_000.0
@@ -126,7 +126,7 @@ class TestInputLineInstantiation:
             fixed_costs = FixedLine(values={2024: 50_000, 2025: 52_000})
             revenue = InputLine()
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.fixed_costs[t]
+                formula=lambda li, t: li.revenue[t] - li.fixed_costs[t]
             )
 
         model = M(
@@ -232,7 +232,7 @@ class TestInputAssumptionInstantiation:
             tax_rate = InputAssumption(default=0.21)
             revenue = FixedLine(values={2024: 100_000})
             after_tax = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * (1 - a.tax_rate)
+                formula=lambda li, t: li.revenue[t] * (1 - li.tax_rate)
             )
 
         base = M(periods=[2024])
@@ -263,10 +263,10 @@ class TestScenarioWorkflow:
             expense_ratio = InputAssumption(default=0.60, label="Expense Ratio")
             revenue = InputLine(label="Revenue")
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+                formula=lambda li, t: li.revenue[t] * li.expense_ratio
             )
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         base = IncomeModel(
@@ -292,7 +292,7 @@ class TestScenarioWorkflow:
             fixed_overhead = FixedLine(values={2024: 50_000})
             revenue = InputLine()
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.fixed_overhead[t]
+                formula=lambda li, t: li.revenue[t] - li.fixed_overhead[t]
             )
 
         s1 = M(periods=[2024], revenue={2024: 200_000})

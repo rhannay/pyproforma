@@ -12,9 +12,7 @@ from pyproforma.table import NumberFormatSpec
 from .line_item import LineItem
 
 if TYPE_CHECKING:
-    from pyproforma.v2.assumption_values import AssumptionValues
-
-    from .line_item_values import LineItemValues
+    from pyproforma.v2.model_namespace import ModelNamespace
 
 
 class FormulaLine(LineItem):
@@ -22,32 +20,34 @@ class FormulaLine(LineItem):
     A line item with values calculated from a formula.
 
     FormulaLine is used to define line items where values are calculated using a
-    formula function. The formula can reference other line items in the model.
-    Specific period values can be overridden using the values parameter.
+    formula function. The formula can reference other line items and assumptions
+    in the model through a single unified namespace.
 
-    The formula function receives three parameters:
-    - a (AssumptionValues): Access to assumption values (e.g., a.growth_rate)
-    - li (LineItemValues): Access to other line item values (e.g., li.revenue[t])
+    The formula function receives two parameters:
+    - li (ModelNamespace): Unified access to line items and assumptions.
+      Line items are period-indexed: li.revenue[t], li.revenue[t-1]
+      Assumptions are scalar: li.tax_rate, li.growth_rate
     - t (int): Current period being calculated
 
     Examples:
         >>> # Simple formula
-        >>> profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+        >>> profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
         >>>
-        >>> # Formula using assumptions
-        >>> expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * a.expense_ratio)
+        >>> # Formula using an assumption
+        >>> expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
         >>>
         >>> # Formula with overrides
         >>> adjusted_profit = FormulaLine(
-        ...     formula=lambda a, li, t: li.profit[t] * 0.9,
+        ...     formula=lambda li, t: li.profit[t] * 0.9,
         ...     values={2024: 50000}  # Override for 2024
         ... )
         >>>
         >>> # In a model definition
         >>> class MyModel(ProformaModel):
+        ...     expense_ratio = Assumption(value=0.6)
         ...     revenue = FixedLine(values={2024: 100, 2025: 110})
-        ...     expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
-        ...     profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] - li.expenses[t])
+        ...     expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
+        ...     profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
     Attributes:
         formula (Callable): Function that calculates the line item values.
@@ -58,7 +58,7 @@ class FormulaLine(LineItem):
 
     def __init__(
         self,
-        formula: "Callable[[AssumptionValues, LineItemValues, int], float] | None" = None,
+        formula: "Callable[[ModelNamespace, int], float] | None" = None,
         values: dict[int, float] | None = None,
         label: str | None = None,
         tags: list[str] | None = None,
@@ -69,9 +69,9 @@ class FormulaLine(LineItem):
 
         Args:
             formula (Callable, optional): Function that calculates values. Must accept
-                three parameters:
-                - a (AssumptionValues): Access to assumption values
-                - li (LineItemValues): Access to line item values
+                two parameters:
+                - li (ModelNamespace): Unified access to line items and assumptions.
+                  Use li.name[t] for line items, li.name for assumptions.
                 - t (int): Current period being calculated
                 The function should return a float value. Defaults to None.
             values (dict[int, float], optional): Dictionary of value overrides for
@@ -89,19 +89,15 @@ class FormulaLine(LineItem):
 
     def eval(
         self,
-        a: "AssumptionValues",
-        li: "LineItemValues",
+        ns: "ModelNamespace",
         t: int,
     ) -> float:
         """
         Evaluate the formula for a specific period.
 
-        This method provides explicit documentation of the three parameters
-        that formulas receive, making it clear what the formula function should expect.
-
         Args:
-            a (AssumptionValues): Container for accessing assumption values
-            li (LineItemValues): Container for accessing other line item values
+            ns (ModelNamespace): Unified namespace giving access to both line
+                items (period-indexed) and assumptions (scalar).
             t (int): Current period being calculated
 
         Returns:
@@ -112,7 +108,7 @@ class FormulaLine(LineItem):
         """
         if self.formula is None:
             raise ValueError(f"No formula defined for '{self.name}'")
-        return self.formula(a, li, t)
+        return self.formula(ns, t)
 
     def get_value(self, period: int) -> float | None:
         """

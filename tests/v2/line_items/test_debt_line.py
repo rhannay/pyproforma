@@ -395,7 +395,7 @@ class TestDebtLinesIntegration:
             principal_payment = principal
             interest_expense = interest
             debt_service = FormulaLine(
-                formula=lambda a, li, t: li.principal_payment[t] + li.interest_expense[t]
+                formula=lambda li, t: li.principal_payment[t] + li.interest_expense[t]
             )
 
         model = TestModel(periods=[2024, 2025, 2026, 2027, 2028])
@@ -439,7 +439,7 @@ class TestDebtLinesIntegration:
             interest_expense = interest
             # Reference prior period principal
             principal_change = FormulaLine(
-                formula=lambda a, li, t: li.principal_payment[t]
+                formula=lambda li, t: li.principal_payment[t]
                 - (li.principal_payment[t - 1] if t > 2024 else 0)
             )
 
@@ -469,7 +469,7 @@ class TestDebtLinesIntegration:
             principal_payment = principal
             interest_expense = interest
             total_debt_service = FormulaLine(
-                formula=lambda a, li, t: li.tag["debt_service"][t]
+                formula=lambda li, t: li.tag["debt_service"][t]
             )
 
         model = TestModel(periods=[2024, 2025, 2026, 2027, 2028])
@@ -495,7 +495,7 @@ class TestDebtLinesIntegration:
                 values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0, 2029: 0}
             )
             bond_proceeds = FormulaLine(
-                formula=lambda a, li, t: li.base_issuance[t]
+                formula=lambda li, t: li.base_issuance[t]
                 if t in li.base_issuance._values
                 else 0
             )

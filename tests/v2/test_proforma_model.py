@@ -46,9 +46,9 @@ class TestProformaModelBasic:
         class TestModel(ProformaModel):
             tax_rate = Assumption(value=0.21)
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])
@@ -142,7 +142,7 @@ class TestFormulaLineCalculation:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
 
         model = TestModel(periods=[2024])
         assert model.get_value("expenses", 2024) == 60.0
@@ -154,7 +154,7 @@ class TestFormulaLineCalculation:
             expense_ratio = Assumption(value=0.6)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio
+                formula=lambda li, t: li.revenue[t] * li.expense_ratio
             )
 
         model = TestModel(periods=[2024])
@@ -165,9 +165,9 @@ class TestFormulaLineCalculation:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024])
@@ -181,7 +181,7 @@ class TestFormulaLineCalculation:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.6,
+                formula=lambda li, t: li.revenue[t] * 0.6,
                 values={2024: 50},  # Override 2024
             )
 
@@ -194,9 +194,9 @@ class TestFormulaLineCalculation:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
 
         model = TestModel(periods=[2024, 2025, 2026])
@@ -218,11 +218,11 @@ class TestComplexModel:
                 label="Revenue",
             )
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * a.expense_ratio,
+                formula=lambda li, t: li.revenue[t] * li.expense_ratio,
                 label="Operating Expenses",
             )
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t],
+                formula=lambda li, t: li.revenue[t] - li.expenses[t],
                 label="Net Profit",
             )
 

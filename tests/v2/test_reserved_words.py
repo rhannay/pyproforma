@@ -88,7 +88,7 @@ class TestReservedWordsInModel:
         with pytest.raises(ValueError, match="'av' is a reserved word"):
 
             class TestModel(ProformaModel):
-                av = FormulaLine(formula=lambda a, li, t: 100)
+                av = FormulaLine(formula=lambda li, t: 100)
 
     def test_reserved_word_assumption_t(self):
         """Test that using 't' as assumption name raises error."""
@@ -119,7 +119,7 @@ class TestReservedWordsInModel:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(formula=lambda a, li, t: 60)
+            expenses = FormulaLine(formula=lambda li, t: 60)
             tax_rate = Assumption(value=0.21)
 
         model = TestModel(periods=[2024])
