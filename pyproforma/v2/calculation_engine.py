@@ -44,10 +44,10 @@ def calculate_line_items(
         ValueError: If line items are not found or calculation fails.
     """
     # Import here to avoid circular imports
-    # Import here to avoid circular imports
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
+    from .line_items.input_line import InputLine
     from .line_items.line_item_values import LineItemValues
 
     # Initialize line item values with registered names for validation
@@ -59,7 +59,7 @@ def calculate_line_items(
 
     for name in model.line_item_names:
         line_item = getattr(model.__class__, name, None)
-        if isinstance(line_item, FixedLine):
+        if isinstance(line_item, (FixedLine, InputLine)):
             fixed_items.append(name)
         elif isinstance(line_item, (FormulaLine, DebtBase)):
             formula_items.append(name)
@@ -69,7 +69,7 @@ def calculate_line_items(
         # First, calculate all fixed line items (they don't depend on other line items)
         for name in fixed_items:
             line_item = getattr(model.__class__, name)
-            value = _calculate_single_line_item(line_item, av, li, period)
+            value = _calculate_single_line_item(line_item, av, li, period, model)
             li.set(name, period, value)
 
         # Then calculate formula items with dependency resolution
@@ -84,7 +84,7 @@ def calculate_line_items(
             for name in remaining:
                 line_item = getattr(model.__class__, name)
                 try:
-                    value = _calculate_single_line_item(line_item, av, li, period)
+                    value = _calculate_single_line_item(line_item, av, li, period, model)
                     li.set(name, period, value)
                 except AttributeError as e:
                     # AttributeError means accessing unregistered line item (typo)
@@ -129,6 +129,7 @@ def _calculate_single_line_item(
     av: "AssumptionValues",
     li: "LineItemValues",
     period: int,
+    model: Any = None,
 ) -> float:
     """
     Calculate the value of a single line item for a specific period.
@@ -155,6 +156,18 @@ def _calculate_single_line_item(
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
+    from .line_items.input_line import InputLine
+
+    # Handle InputLine — values live on the model instance
+    if isinstance(line_item, InputLine):
+        input_values = getattr(model, "_input_line_values", {})
+        period_values = input_values.get(line_item.name, {})
+        value = period_values.get(period)
+        if value is None:
+            raise ValueError(
+                f"No input value for '{line_item.name}' in period {period}"
+            )
+        return float(value)
 
     # Handle FixedLine
     if isinstance(line_item, FixedLine):

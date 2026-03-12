@@ -7,12 +7,14 @@ Version 2 provides a cleaner, Pydantic-inspired API for building financial model
 from .assumption import Assumption
 from .assumption_result import AssumptionResult
 from .assumption_values import AssumptionValues
+from .input_assumption import InputAssumption
 from .line_items import (
     DebtCalculator,
     DebtInterestLine,
     DebtPrincipalLine,
     FixedLine,
     FormulaLine,
+    InputLine,
     LineItem,
     LineItemResult,
     LineItemSelection,
@@ -28,6 +30,8 @@ __all__ = [
     "ProformaModel",
     "FixedLine",
     "FormulaLine",
+    "InputLine",
+    "InputAssumption",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",

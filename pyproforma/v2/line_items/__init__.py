@@ -15,6 +15,7 @@ from .debt_line import (
 )
 from .fixed_line import FixedLine
 from .formula_line import FormulaLine
+from .input_line import InputLine
 from .line_item import LineItem
 from .line_item_result import LineItemResult
 from .line_item_selection import LineItemSelection
@@ -24,6 +25,7 @@ __all__ = [
     "LineItem",
     "FixedLine",
     "FormulaLine",
+    "InputLine",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",

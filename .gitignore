@@ -93,3 +93,6 @@ temp*
 
 # Examples folder - ignore hidden files (files starting with .)
 examples/.*
+
+# Claude Code context file (local only)
+CLAUDE.md
