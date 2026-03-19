@@ -164,7 +164,7 @@ class ProformaModel:
             self._li = LineItemValues(periods=[])
 
         # Initialize tables namespace
-        self.tables = Tables(self)
+        self.tables: Tables = Tables(self)
 
         # Initialize tag namespace
         self._tag_namespace = ModelTagNamespace(self)
