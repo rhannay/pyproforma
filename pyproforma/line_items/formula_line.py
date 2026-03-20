@@ -6,6 +6,7 @@ Values can be overridden for specific periods using the values parameter.
 """
 
 import dis
+import inspect
 from typing import TYPE_CHECKING, Callable, Union
 
 from pyproforma.table import NumberFormatSpec
@@ -120,6 +121,41 @@ class FormulaLine(LineItem):
                 seen.add(instr.argval)
                 result.append(instr.argval)
         return result
+
+    @property
+    def formula_source(self) -> str | None:
+        """Source code of the formula function.
+
+        For named functions, returns the full function definition. For lambdas,
+        extracts just the lambda expression from its enclosing line. Returns None
+        if no formula is set or if source is unavailable (e.g. defined in a REPL).
+
+        Examples:
+            >>> expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
+            >>> expenses.formula_source
+            'lambda li, t: li.revenue[t] * 0.6'
+
+            >>> def my_formula(li, t):
+            ...     return li.revenue[t] * 0.6
+            >>> expenses = FormulaLine(formula=my_formula)
+            >>> expenses.formula_source
+            'def my_formula(li, t):\\n    return li.revenue[t] * 0.6'
+        """
+        if self.formula is None:
+            return None
+        try:
+            source = inspect.getsource(self.formula).strip()
+        except OSError:
+            return None
+
+        if self.formula.__name__ == "<lambda>":
+            # Extract just the lambda expression from its enclosing line
+            idx = source.find("lambda")
+            if idx != -1:
+                source = source[idx:]
+                # Strip trailing ), comma, quote — common line endings after the lambda arg
+                source = source.rstrip(" ,)")
+        return source
 
     def eval(
         self,
