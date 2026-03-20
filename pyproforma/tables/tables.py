@@ -319,7 +319,7 @@ class Tables:
         if isinstance(line_item_def, FormulaLine) and line_item_def.precedents:
             precedent_names = [
                 p for p in line_item_def.precedents
-                if p in self._model.line_item_names
+                if p in self._model.line_item_names and p != name
             ]
             for i, precedent_name in enumerate(precedent_names):
                 is_last = i == len(precedent_names) - 1
