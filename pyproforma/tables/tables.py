@@ -15,6 +15,8 @@ from .row_types import BaseRow, dict_to_row_config
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
 
+from pyproforma.line_items.formula_line import FormulaLine
+
 
 class Tables:
     """
@@ -280,3 +282,53 @@ class Tables:
 
         # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)
+
+    def precedents(self, name: str, hardcoded_color: Optional[str] = None) -> Table:
+        """
+        Generate a table showing the precedents of a line item.
+
+        For FormulaLine items, shows each precedent line item followed by a
+        bottom border on the last precedent, then the calculated line item in
+        bold. For non-formula line items, shows just the single item in bold.
+
+        Only precedents that are themselves line items in the model are shown
+        (assumption references are excluded).
+
+        Args:
+            name (str): The name of the line item to show precedents for.
+
+        Returns:
+            Table: A Table object showing precedents and the calculated result.
+
+        Raises:
+            ValueError: If the line item name doesn't exist in the model.
+
+        Examples:
+            >>> table = model.tables.precedents('profit')
+            >>> table = model.tables.precedents('revenue')  # non-formula: item shown in bold
+        """
+        if name not in self._model.line_item_names:
+            raise ValueError(
+                f"Line item '{name}' not found in model. "
+                f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
+            )
+
+        line_item_def = getattr(self._model.__class__, name)
+        template = [rt.HeaderRow(col_labels="Label")]
+
+        if isinstance(line_item_def, FormulaLine) and line_item_def.precedents:
+            precedent_names = [
+                p for p in line_item_def.precedents
+                if p in self._model.line_item_names
+            ]
+            for i, precedent_name in enumerate(precedent_names):
+                is_last = i == len(precedent_names) - 1
+                template.append(rt.ItemRow(
+                    name=precedent_name,
+                    bottom_border="single" if is_last else None,
+                    hardcoded_color=hardcoded_color,
+                ))
+
+        template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
+
+        return self.from_template(template, col_labels="Label")
