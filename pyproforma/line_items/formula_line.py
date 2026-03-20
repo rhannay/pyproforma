@@ -5,6 +5,7 @@ FormulaLine represents a line item whose values are calculated using a formula f
 Values can be overridden for specific periods using the values parameter.
 """
 
+import dis
 from typing import TYPE_CHECKING, Callable, Union
 
 from pyproforma.table import NumberFormatSpec
@@ -86,6 +87,39 @@ class FormulaLine(LineItem):
         super().__init__(label=label, tags=tags, value_format=value_format)
         self.formula = formula
         self.values = values or {}
+
+    @property
+    def precedents(self) -> list[str] | None:
+        """Names of line items and assumptions referenced by this formula.
+
+        Inspects the formula's bytecode for attribute lookups (LOAD_ATTR instructions),
+        which correspond to accesses like li.revenue, li.tax_rate, etc. Returns names
+        in order of first appearance, deduplicated.
+
+        Returns None if no formula is set.
+
+        Note: tag-based references (li.tag["revenue"]) appear as "tag" rather than
+        the individual member names, since the tag name is a string literal, not an
+        attribute. Named functions and lambdas are handled identically.
+
+        Examples:
+            >>> profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
+            >>> profit.precedents
+            ['revenue', 'expenses']
+
+            >>> tax = FormulaLine(formula=lambda li, t: li.revenue[t] * li.tax_rate)
+            >>> tax.precedents
+            ['revenue', 'tax_rate']
+        """
+        if self.formula is None:
+            return None
+        seen = set()
+        result = []
+        for instr in dis.get_instructions(self.formula):
+            if instr.opname == "LOAD_ATTR" and instr.argval not in seen:
+                seen.add(instr.argval)
+                result.append(instr.argval)
+        return result
 
     def eval(
         self,
