@@ -184,6 +184,33 @@ class TestToExcelIntegration:
                 time.sleep(0.1)
                 os.unlink(tmp_name)
 
+    def test_to_excel_col_widths(self):
+        """Test that col_widths are applied to Excel column dimensions."""
+        import openpyxl
+
+        cells = [
+            [Cell("Name"), Cell("Value"), Cell("Notes")],
+            [Cell("Item"), Cell(100), Cell("ok")],
+        ]
+        table = Table(cells=cells, col_widths=[140, 70, None])
+
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp_file:
+            tmp_name = tmp_file.name
+
+        try:
+            to_excel(table, tmp_name)
+            wb = openpyxl.load_workbook(tmp_name)
+            ws = wb.active
+            assert abs(ws.column_dimensions["A"].width - 140 / 7) < 0.1
+            assert abs(ws.column_dimensions["B"].width - 70 / 7) < 0.1
+            # Column C has no explicit width — auto-sized, just check it's set
+            assert ws.column_dimensions["C"].width > 0
+            wb.close()
+        finally:
+            if os.path.exists(tmp_name):
+                time.sleep(0.1)
+                os.unlink(tmp_name)
+
     def test_to_excel_empty_table(self):
         """Test to_excel with an empty table."""
         cells = []

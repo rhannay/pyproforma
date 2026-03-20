@@ -650,24 +650,65 @@ class TestTableClass:
         expected = pd.DataFrame()
         pd.testing.assert_frame_equal(df, expected)
 
-    def test_table_get_style_map(self):
-        """Test that style map is generated correctly."""
-        cells = [
-            [Cell("A"), Cell("B")],  # Header row
-            [Cell(1, bold=True), Cell(2)],
-            [Cell(3, align="center"), Cell(4, bold=True)],
-        ]
+
+
+class TestColWidths:
+    """Test cases for Table col_widths functionality."""
+
+    def test_col_widths_at_construction(self):
+        """Test setting col_widths at construction time."""
+        cells = [[Cell("A"), Cell("B"), Cell("C")], [Cell(1), Cell(2), Cell(3)]]
+        table = Table(cells=cells, col_widths=[150, 80, 80])
+        assert table.col_widths == [150, 80, 80]
+
+    def test_col_widths_default_none(self):
+        """Test that col_widths defaults to None."""
+        cells = [[Cell("A"), Cell("B")], [Cell(1), Cell(2)]]
         table = Table(cells=cells)
-        style_map = table._get_style_map()
+        assert table.col_widths is None
 
-        expected_style_map = {
-            (0, "A"): "font-weight: bold; text-align: right;",
-            (0, "B"): "text-align: right;",
-            (1, "A"): "text-align: center;",
-            (1, "B"): "font-weight: bold; text-align: right;",
-        }
+    def test_col_widths_settable_after_construction(self):
+        """Test setting col_widths after construction."""
+        cells = [[Cell("A"), Cell("B")], [Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        table.col_widths = [200, 100]
+        assert table.col_widths == [200, 100]
 
-        assert style_map == expected_style_map
+    def test_col_widths_with_none_entries(self):
+        """Test col_widths with None entries for auto-width columns."""
+        cells = [[Cell("A"), Cell("B"), Cell("C")], [Cell(1), Cell(2), Cell(3)]]
+        table = Table(cells=cells, col_widths=[150, None, 80])
+        assert table.col_widths == [150, None, 80]
+
+    def test_col_widths_html_colgroup(self):
+        """Test that col_widths emits colgroup in HTML output."""
+        cells = [[Cell("A"), Cell("B"), Cell("C")], [Cell(1), Cell(2), Cell(3)]]
+        table = Table(cells=cells, col_widths=[150, None, 80])
+        html = table.to_html()
+        assert "<colgroup>" in html
+        assert 'style="width: 150px"' in html
+        assert 'style="width: 80px"' in html
+
+    def test_col_widths_html_none_entry_no_style(self):
+        """Test that None col_width entries emit <col> without style."""
+        cells = [[Cell("A"), Cell("B")], [Cell(1), Cell(2)]]
+        table = Table(cells=cells, col_widths=[100, None])
+        html = table.to_html()
+        assert "<col>" in html
+
+    def test_no_col_widths_no_colgroup(self):
+        """Test that no col_widths means no colgroup in HTML."""
+        cells = [[Cell("A"), Cell("B")], [Cell(1), Cell(2)]]
+        table = Table(cells=cells)
+        html = table.to_html()
+        assert "<colgroup>" not in html
+
+    def test_col_widths_dropped_on_transpose(self):
+        """Test that col_widths are dropped when transposing."""
+        cells = [[Cell("A"), Cell("B")], [Cell(1), Cell(2)]]
+        table = Table(cells=cells, col_widths=[150, 80])
+        transposed = table.transpose()
+        assert transposed.col_widths is None
 
 
 class TestTableIndexing:

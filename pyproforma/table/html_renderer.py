@@ -47,6 +47,16 @@ def to_html(table: "Table") -> str:
     html_parts = ['<div class="pyproforma-table-container">']
     html_parts.append('<table class="pyproforma-table">')
 
+    # Emit column widths if specified
+    if table.col_widths:
+        html_parts.append("<colgroup>")
+        for width in table.col_widths:
+            if width is not None:
+                html_parts.append(f'<col style="width: {width}px">')
+            else:
+                html_parts.append("<col>")
+        html_parts.append("</colgroup>")
+
     # Generate all rows (treat all rows equally, no special header row)
     if table.cells:
         html_parts.append("<tbody>")
