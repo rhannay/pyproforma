@@ -129,6 +129,7 @@ class Tables:
         include_name: bool = True,
         include_label: bool = False,
         include_total_row: bool = True,
+        hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
         Generate a table containing line items.
@@ -189,10 +190,10 @@ class Tables:
         for item_name in items_to_include:
             if show_name and not show_label:
                 # Force ItemRow to show name instead of label
-                template.append(rt.ItemRow(name=item_name, label=item_name))
+                template.append(rt.ItemRow(name=item_name, label=item_name, hardcoded_color=hardcoded_color))
             else:
                 # Let ItemRow use default label behavior
-                template.append(rt.ItemRow(name=item_name))
+                template.append(rt.ItemRow(name=item_name, hardcoded_color=hardcoded_color))
 
         # Add total row if requested and there are items to include
         if include_total_row and items_to_include:
@@ -215,6 +216,7 @@ class Tables:
         include_percent_change: bool = False,
         include_cumulative_change: bool = False,
         include_cumulative_percent_change: bool = False,
+        hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
         Generate a table for a single line item.
@@ -263,7 +265,7 @@ class Tables:
         # Build template with HeaderRow and single ItemRow
         template = [
             rt.HeaderRow(col_labels=col_labels),
-            rt.ItemRow(name=name),
+            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
         ]
 
         # Add analysis rows if requested

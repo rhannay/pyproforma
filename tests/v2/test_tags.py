@@ -23,13 +23,13 @@ class TestLineTags:
     def test_formula_line_with_tags(self):
         """Test that FormulaLine accepts and stores tags."""
         line = FormulaLine(
-            formula=lambda a, li, t: 100, tags=["expense", "operational"]
+            formula=lambda li, t: 100, tags=["expense", "operational"]
         )
         assert line.tags == ["expense", "operational"]
 
     def test_formula_line_without_tags(self):
         """Test that FormulaLine defaults to empty list when no tags provided."""
-        line = FormulaLine(formula=lambda a, li, t: 100)
+        line = FormulaLine(formula=lambda li, t: 100)
         assert line.tags == []
 
 
@@ -101,7 +101,7 @@ class TestTagNamespace:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100}, tags=["income"])
             interest = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.05, tags=["income"]
+                formula=lambda li, t: li.revenue[t] * 0.05, tags=["income"]
             )
             expenses = FixedLine(values={2024: 60}, tags=["expense"])
 
@@ -160,7 +160,7 @@ class TestTagNamespace:
 
             # Calculate profit using tag sums
             profit = FormulaLine(
-                formula=lambda a, li, t: li.tag["income"][t] - li.tag["expense"][t]
+                formula=lambda li, t: li.tag["income"][t] - li.tag["expense"][t]
             )
 
         model = TestModel(periods=[2024, 2025])
@@ -226,10 +226,10 @@ class TestModelTags:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100}, tags=["income"])
             expenses = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.6, tags=["expense"]
+                formula=lambda li, t: li.revenue[t] * 0.6, tags=["expense"]
             )
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t],
+                formula=lambda li, t: li.revenue[t] - li.expenses[t],
                 tags=["income", "calculated"],
             )
 
@@ -341,7 +341,7 @@ class TestModelTagSelection:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100}, tags=["income"])
             interest = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.05, tags=["income"]
+                formula=lambda li, t: li.revenue[t] * 0.05, tags=["income"]
             )
             expenses = FixedLine(values={2024: 60}, tags=["expense"])
 

@@ -10,6 +10,8 @@ from pyproforma.v2.assumption import Assumption
 from pyproforma.v2.assumption_result import AssumptionResult
 from pyproforma.v2.assumption_values import AssumptionValues
 from pyproforma.v2.calculation_engine import calculate_line_items
+from pyproforma.v2.input_assumption import InputAssumption
+from pyproforma.v2.line_items.input_line import InputLine
 from pyproforma.v2.line_items.line_item import LineItem
 from pyproforma.v2.line_items.line_item_result import LineItemResult
 from pyproforma.v2.line_items.line_item_selection import LineItemSelection
@@ -47,9 +49,9 @@ class ProformaModel:
         """
         Called when a subclass is created.
 
-        This method automatically discovers and stores the names of all Assumption
-        and LineItem attributes defined on the subclass. It also validates that
-        no reserved words are used as line item or assumption names.
+        This method automatically discovers and stores the names of all Assumption,
+        InputAssumption, LineItem, and InputLine attributes defined on the subclass.
+        It also validates that no reserved words are used as line item or assumption names.
 
         Args:
             **kwargs: Additional keyword arguments passed to super().__init_subclass__
@@ -59,37 +61,98 @@ class ProformaModel:
         """
         super().__init_subclass__(**kwargs)
 
-        # Discover assumption names from class attributes
         assumption_names = []
         line_item_names = []
+        input_line_names = []
+        input_assumption_names = []
 
         for name, value in cls.__dict__.items():
-            if isinstance(value, Assumption):
-                # Validate name is not reserved
+            if isinstance(value, InputAssumption):
+                validate_name(name)
+                assumption_names.append(name)
+                input_assumption_names.append(name)
+            elif isinstance(value, Assumption):
                 validate_name(name)
                 assumption_names.append(name)
             elif isinstance(value, LineItem):
-                # Validate name is not reserved
                 validate_name(name)
                 line_item_names.append(name)
+                if isinstance(value, InputLine):
+                    input_line_names.append(name)
 
-        # Store as class attributes
+        # Validate no name is used for both a line item and an assumption.
+        # (Python prevents two attributes with the same name in one class, but a
+        # subclass could shadow an inherited name with a different type.)
+        overlap = set(assumption_names) & set(line_item_names)
+        if overlap:
+            raise ValueError(
+                f"Names used for both a line item and an assumption in "
+                f"{cls.__name__}: {', '.join(sorted(overlap))}. "
+                "Each name must be unique across all line items and assumptions."
+            )
+
         cls._assumption_names = assumption_names
         cls._line_item_names = line_item_names
+        cls._input_line_names = input_line_names
+        cls._input_assumption_names = input_assumption_names
 
-    def __init__(self, periods: list[int] | None = None):
+    def __init__(self, periods: list[int] | None = None, **kwargs):
         """
         Initialize a ProformaModel instance.
+
+        Keyword arguments are used to supply values for any InputLine or
+        InputAssumption fields declared on the model class.
 
         Args:
             periods (list[int], optional): List of periods (years) for the model.
                 Defaults to None.
+            **kwargs: Values for InputLine (dict[int, float]) and InputAssumption
+                (float) fields declared on the model. Required inputs must be
+                provided; optional inputs with defaults may be omitted.
+
+        Raises:
+            TypeError: If unknown kwargs are provided or required inputs are missing.
         """
         self.periods = periods or []
 
         # Store instance copies of discovered names
         self.line_item_names = self.__class__._line_item_names
         self.assumption_names = self.__class__._assumption_names
+
+        input_line_names = self.__class__._input_line_names
+        input_assumption_names = self.__class__._input_assumption_names
+
+        # Validate kwargs — only InputLine and InputAssumption names are accepted
+        valid_input_names = set(input_line_names) | set(input_assumption_names)
+        unknown = set(kwargs) - valid_input_names
+        if unknown:
+            valid_str = ", ".join(sorted(valid_input_names)) or "none"
+            raise TypeError(
+                f"{self.__class__.__name__} received unexpected keyword arguments: "
+                f"{', '.join(sorted(unknown))}. "
+                f"Valid inputs: {valid_str}"
+            )
+
+        # Resolve and store input line values
+        self._input_line_values: dict[str, dict[int, float]] = {}
+        missing_lines = []
+        for name in input_line_names:
+            if name in kwargs:
+                self._input_line_values[name] = kwargs[name]
+            else:
+                missing_lines.append(name)
+        if missing_lines:
+            raise TypeError(
+                f"{self.__class__.__name__} requires input line values for: "
+                f"{', '.join(missing_lines)}"
+            )
+
+        # Resolve and store input assumption values (used by _initialize_assumptions)
+        self._input_assumption_kwargs: dict[str, float] = {
+            name: kwargs[name]
+            for name in input_assumption_names
+            if name in kwargs
+        }
 
         # Initialize assumption values
         self.av = self._initialize_assumptions()
@@ -101,7 +164,7 @@ class ProformaModel:
             self._li = LineItemValues(periods=[])
 
         # Initialize tables namespace
-        self.tables = Tables(self)
+        self.tables: Tables = Tables(self)
 
         # Initialize tag namespace
         self._tag_namespace = ModelTagNamespace(self)
@@ -110,16 +173,36 @@ class ProformaModel:
         """
         Initialize assumption values from class attributes.
 
+        For Assumption: uses the baked-in value.
+        For InputAssumption: uses the kwarg provided at instantiation, falling
+        back to the default if defined, or raising if neither is available.
+
         Returns:
             AssumptionValues: Container with all assumption values.
+
+        Raises:
+            TypeError: If a required InputAssumption has no value and no default.
         """
         assumption_values = {}
+        missing = []
 
-        # Extract values from each assumption
         for name in self.assumption_names:
-            assumption = getattr(self.__class__, name)
-            if isinstance(assumption, Assumption):
-                assumption_values[name] = assumption.value
+            attr = getattr(self.__class__, name)
+            if isinstance(attr, InputAssumption):
+                if name in self._input_assumption_kwargs:
+                    assumption_values[name] = self._input_assumption_kwargs[name]
+                elif attr.has_default:
+                    assumption_values[name] = attr.default
+                else:
+                    missing.append(name)
+            elif isinstance(attr, Assumption):
+                assumption_values[name] = attr.value
+
+        if missing:
+            raise TypeError(
+                f"{self.__class__.__name__} requires input assumption values for: "
+                f"{', '.join(missing)}"
+            )
 
         return AssumptionValues(assumption_values)
 
@@ -255,6 +338,27 @@ class ProformaModel:
             f"Available line items: {', '.join(sorted(self.line_item_names))}. "
             f"Available assumptions: {', '.join(sorted(self.assumption_names))}"
         )
+
+    def compare(self, *others, labels=None):
+        """
+        Compare this model against one or more other models.
+
+        This model is the baseline. See ModelComparison for full documentation.
+
+        Args:
+            *others: One or more ProformaModel instances to compare against.
+            labels: Optional display labels for all models (including this one).
+
+        Returns:
+            ModelComparison
+
+        Examples:
+            >>> cmp = base.compare(optimistic, labels=["Base", "Optimistic"])
+            >>> cmp.difference("revenue", 2024)
+        """
+        from pyproforma.v2.compare import ModelComparison
+
+        return ModelComparison(self, *others, labels=labels)
 
     def __repr__(self):
         """Return a string representation of the model."""

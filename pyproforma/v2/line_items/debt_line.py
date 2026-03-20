@@ -40,9 +40,7 @@ from pyproforma.table import NumberFormatSpec
 from .line_item import LineItem
 
 if TYPE_CHECKING:
-    from pyproforma.v2.assumption_values import AssumptionValues
-
-    from .line_item_values import LineItemValues
+    from pyproforma.v2.model_namespace import ModelNamespace
 
 
 class DebtCalculator:
@@ -99,8 +97,7 @@ class DebtCalculator:
 
     def eval(
         self,
-        a: "AssumptionValues",
-        li: "LineItemValues",
+        ns: "ModelNamespace",
         t: int,
     ) -> None:
         """
@@ -111,8 +108,7 @@ class DebtCalculator:
         period, a new amortization schedule is created and added to the tracker.
 
         Args:
-            a (AssumptionValues): Access to assumption values (not currently used).
-            li (LineItemValues): Access to line item values for checking par amounts.
+            ns (ModelNamespace): Unified namespace for accessing line items and assumptions.
             t (int): Current period being processed.
         """
         # Check if we're being called out of order (shouldn't happen in normal flow)
@@ -124,7 +120,7 @@ class DebtCalculator:
 
         # Look up par amount for this period
         try:
-            par_amount = getattr(li, self.par_amounts_line_item)[t]
+            par_amount = getattr(ns, self.par_amounts_line_item)[t]
         except (KeyError, AttributeError):
             # Line item doesn't exist or period not calculated yet
             # This can happen during dependency resolution - just skip
@@ -295,8 +291,7 @@ class DebtBase(LineItem):
 
     def eval(
         self,
-        a: "AssumptionValues",
-        li: "LineItemValues",
+        ns: "ModelNamespace",
         t: int,
     ) -> float:
         """
@@ -307,15 +302,14 @@ class DebtBase(LineItem):
         value (principal or interest) by calling the abstract _get_value() method.
 
         Args:
-            a (AssumptionValues): Access to assumption values.
-            li (LineItemValues): Access to line item values.
+            ns (ModelNamespace): Unified namespace for accessing line items and assumptions.
             t (int): Current period being calculated.
 
         Returns:
             float: Principal or interest value for the period.
         """
         # Let calculator process this period
-        self.calculator.eval(a, li, t)
+        self.calculator.eval(ns, t)
 
         # Return the appropriate value (principal or interest)
         return self._get_value(t)

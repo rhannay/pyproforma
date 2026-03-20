@@ -14,7 +14,7 @@ class SimpleModel(ProformaModel):
         values={2024: 100000, 2025: 110000, 2026: 121000}, label="Revenue"
     )
     expenses = FormulaLine(
-        formula=lambda a, li, t: li.revenue[t] * 0.6, label="Operating Expenses"
+        formula=lambda li, t: li.revenue[t] * 0.6, label="Operating Expenses"
     )
 
 

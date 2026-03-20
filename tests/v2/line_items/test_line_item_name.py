@@ -27,7 +27,7 @@ class TestLineItemName:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.4)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.4)
 
         assert TestModel.revenue.name == "revenue"
         assert TestModel.profit.name == "profit"
@@ -38,8 +38,8 @@ class TestLineItemName:
         class TestModel(ProformaModel):
             rev = FixedLine(values={2024: 100})
             cost = FixedLine(values={2024: 60})
-            profit = FormulaLine(formula=lambda a, li, t: li.rev[t] - li.cost[t])
-            margin = FormulaLine(formula=lambda a, li, t: li.profit[t] / li.rev[t])
+            profit = FormulaLine(formula=lambda li, t: li.rev[t] - li.cost[t])
+            margin = FormulaLine(formula=lambda li, t: li.profit[t] / li.rev[t])
 
         assert TestModel.rev.name == "rev"
         assert TestModel.cost.name == "cost"

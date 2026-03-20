@@ -100,7 +100,7 @@ class TestFormulaLineValueFormat:
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
-            profit = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.1)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.1)
 
         model = TestModel(periods=[2024])
         result = model["profit"]
@@ -114,7 +114,7 @@ class TestFormulaLineValueFormat:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
             growth = FormulaLine(
-                formula=lambda a, li, t: (
+                formula=lambda li, t: (
                     (li.revenue[t] - li.revenue[t - 1]) / li.revenue[t - 1]
                 ),
                 values={2024: 0.0},  # No prior value for first period
@@ -134,7 +134,7 @@ class TestFormulaLineValueFormat:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 1000})
             cost = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * 0.6,
+                formula=lambda li, t: li.revenue[t] * 0.6,
                 value_format=Format.CURRENCY_NO_DECIMALS,
             )
 
@@ -231,10 +231,10 @@ class TestValueFormatInheritance:
             )
             growth_rate = FixedLine(values={2024: 0.15}, value_format="percent")
             margin = FormulaLine(
-                formula=lambda a, li, t: 0.25, value_format="percent_two_decimals"
+                formula=lambda li, t: 0.25, value_format="percent_two_decimals"
             )
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * li.margin[t],
+                formula=lambda li, t: li.revenue[t] * li.margin[t],
                 value_format=Format.CURRENCY,
             )
 

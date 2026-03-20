@@ -20,7 +20,7 @@ class TestTypoDetection:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             # Typo: reveenue instead of revenue
-            expenses = FormulaLine(formula=lambda a, li, t: li.reveenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.reveenue[t] * 0.6)
 
         with pytest.raises(ValueError, match="is not registered"):
             TestModel(periods=[2024])
@@ -32,7 +32,7 @@ class TestTypoDetection:
             revenue = FixedLine(values={2024: 100})
             cost = FixedLine(values={2024: 60})
             # Typo: reveenue instead of revenue
-            profit = FormulaLine(formula=lambda a, li, t: li.reveenue[t] - li.cost[t])
+            profit = FormulaLine(formula=lambda li, t: li.reveenue[t] - li.cost[t])
 
         with pytest.raises(ValueError, match="Available line items"):
             TestModel(periods=[2024])
@@ -43,7 +43,7 @@ class TestTypoDetection:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
             # Typo that would eventually cause circular reference if not caught
-            expenses = FormulaLine(formula=lambda a, li, t: li.reveneu[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.reveneu[t] * 0.6)
 
         # Should raise ValueError about typo, not circular reference
         with pytest.raises(ValueError) as exc_info:
@@ -59,9 +59,9 @@ class TestTypoDetection:
         class TestModel(ProformaModel):
             # Define profit before revenue to test dependency resolution
             profit = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] - li.expenses[t]
+                formula=lambda li, t: li.revenue[t] - li.expenses[t]
             )
-            expenses = FormulaLine(formula=lambda a, li, t: li.revenue[t] * 0.6)
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
             revenue = FixedLine(values={2024: 100})
 
         # This should work - revenue and expenses are valid, just defined after profit
@@ -74,8 +74,8 @@ class TestTypoDetection:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             # Two typos, but we should catch the first one
-            bad1 = FormulaLine(formula=lambda a, li, t: li.reveenue[t] * 0.5)
-            bad2 = FormulaLine(formula=lambda a, li, t: li.reveneu[t] * 0.6)
+            bad1 = FormulaLine(formula=lambda li, t: li.reveenue[t] * 0.5)
+            bad2 = FormulaLine(formula=lambda li, t: li.reveneu[t] * 0.6)
 
         with pytest.raises(ValueError, match="is not registered"):
             TestModel(periods=[2024])
@@ -88,7 +88,7 @@ class TestTypoDetection:
             expenses = FixedLine(values={2024: 60})
             # Typo in second reference
             net = FormulaLine(
-                formula=lambda a, li, t: (li.revenue[t] - li.expnses[t]) * 0.9
+                formula=lambda li, t: (li.revenue[t] - li.expnses[t]) * 0.9
             )
 
         with pytest.raises(ValueError, match="expnses.*is not registered"):

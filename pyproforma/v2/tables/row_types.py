@@ -73,6 +73,7 @@ class ItemRow(BaseRow):
     bold: bool = False
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
+    hardcoded_color: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -136,6 +137,11 @@ class ItemRow(BaseRow):
         # Add a cell for each period with the item's value for that period
         for period in model.periods:
             value = item_result[period]
+            font_color = (
+                self.hardcoded_color
+                if self.hardcoded_color and item_result.is_input(period)
+                else None
+            )
             cells.append(
                 Cell(
                     value=value,
@@ -143,6 +149,7 @@ class ItemRow(BaseRow):
                     value_format=value_format,
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    font_color=font_color,
                 )
             )
 
@@ -548,6 +555,49 @@ class TagTotalRow(BaseRow):
         return cells
 
 
+@dataclass
+class TagItemsRow(BaseRow):
+    """Configuration for expanding all line items with a given tag into individual rows."""
+
+    tag: str
+    include_total_row: bool = False
+    total_row_label: Optional[str] = None
+    bold: bool = False
+    total_row_top_border: Optional[str] = "single"
+    hardcoded_color: Optional[str] = None
+
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[list[Cell]]:
+        """Create one ItemRow per line item matching the tag, plus an optional total row."""
+        names = [
+            name
+            for name in model.line_item_names
+            if self.tag in model[name].tags
+        ]
+
+        rows = []
+        for name in names:
+            rows.append(
+                ItemRow(name=name, bold=self.bold, hardcoded_color=self.hardcoded_color).generate_row(
+                    model, label_col_count=label_col_count
+                )
+            )
+
+        if self.include_total_row and names:
+            label = self.total_row_label or f"Total {self.tag.replace('_', ' ').title()}"
+            rows.append(
+                LineItemsTotalRow(
+                    line_item_names=names,
+                    label=label,
+                    bold=True,
+                    top_border=self.total_row_top_border,
+                ).generate_row(model, label_col_count=label_col_count)
+            )
+
+        return rows
+
+
 # Helper function to convert dict to row config (for backwards compatibility)
 def dict_to_row_config(config: dict) -> BaseRow:
     """Convert a dictionary configuration to a BaseRow instance.
@@ -578,6 +628,7 @@ def dict_to_row_config(config: dict) -> BaseRow:
         "cumulative_percent_change": CumulativePercentChangeRow,
         "line_items_total": LineItemsTotalRow,
         "tag_total": TagTotalRow,
+        "tag_items": TagItemsRow,
     }
 
     if row_type not in row_type_map:

@@ -17,7 +17,7 @@ class TestTimeOffsets:
             base = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             # For 2025+, reference previous period
             growth = FormulaLine(
-                formula=lambda a, li, t: li.base[t] - li.base[t - 1],
+                formula=lambda li, t: li.base[t] - li.base[t - 1],
                 values={2024: 0},  # First period has no previous value
             )
 
@@ -32,7 +32,7 @@ class TestTimeOffsets:
         class TestModel(ProformaModel):
             value = FixedLine(values={2024: 100, 2025: 110, 2026: 121, 2027: 133})
             two_period_change = FormulaLine(
-                formula=lambda a, li, t: li.value[t] - li.value[t - 2],
+                formula=lambda li, t: li.value[t] - li.value[t - 2],
                 values={
                     2024: 0,
                     2025: 0,
@@ -52,7 +52,7 @@ class TestTimeOffsets:
             growth_rate = Assumption(value=0.1)
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             next_revenue = FormulaLine(
-                formula=lambda a, li, t: li.revenue[t] * (1 + a.growth_rate),
+                formula=lambda li, t: li.revenue[t] * (1 + li.growth_rate),
                 # No override - this calculates based on current period revenue
             )
 
@@ -69,7 +69,7 @@ class TestTimeOffsets:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             # This should fail for 2024 - no period 2023
-            prev_revenue = FormulaLine(formula=lambda a, li, t: li.revenue[t - 1])
+            prev_revenue = FormulaLine(formula=lambda li, t: li.revenue[t - 1])
 
         with pytest.raises(ValueError, match="Error evaluating formula"):
             TestModel(periods=[2024])
@@ -79,9 +79,9 @@ class TestTimeOffsets:
 
         class TestModel(ProformaModel):
             base = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
-            derived = FormulaLine(formula=lambda a, li, t: li.base[t] * 2)
+            derived = FormulaLine(formula=lambda li, t: li.base[t] * 2)
             change = FormulaLine(
-                formula=lambda a, li, t: li.derived[t] - li.derived[t - 1],
+                formula=lambda li, t: li.derived[t] - li.derived[t - 1],
                 values={2024: 0},  # First period override
             )
 
