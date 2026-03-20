@@ -165,21 +165,27 @@ def to_excel(table: "Table", filename="table.xlsx"):
                 # Default header alignment to center if not specified
                 cell.alignment = Alignment(horizontal="center")
 
-    # Auto-adjust column widths
-    for column in worksheet.columns:
-        max_length = 0
+    # Set column widths
+    for col_idx, column in enumerate(worksheet.columns):
         column_letter = get_column_letter(column[0].column)
 
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except Exception:
-                pass
-
-        # Set column width with some padding
-        adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
-        worksheet.column_dimensions[column_letter].width = adjusted_width
+        if (
+            table.col_widths
+            and col_idx < len(table.col_widths)
+            and table.col_widths[col_idx] is not None
+        ):
+            # Convert pixels to Excel character units (~7px per unit)
+            worksheet.column_dimensions[column_letter].width = table.col_widths[col_idx] / 7
+        else:
+            # Auto-size based on content
+            max_length = 0
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except Exception:
+                    pass
+            worksheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
 
     # Save the workbook
     workbook.save(filename)

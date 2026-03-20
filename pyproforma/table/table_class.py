@@ -121,7 +121,11 @@ class Table:
         This is validated automatically during initialization.
     """  # noqa: E501
 
-    def __init__(self, cells: list[list[Cell] | list[Any]] | None = None):
+    def __init__(
+        self,
+        cells: list[list[Cell] | list[Any]] | None = None,
+        col_widths: Optional[list[Optional[int]]] = None,
+    ):
         """Initialize a Table with cells.
 
         Args:
@@ -129,6 +133,9 @@ class Table:
                 - A list of lists of Cell objects
                 - A list of lists of values (will be converted to Cells)
                 - None (creates an empty table)
+            col_widths: Optional list of column widths in pixels, indexed by column
+                position. Use None for a given column to leave it at its default width.
+                Length must match the number of columns if provided.
         """
         if cells is None:
             self.cells = []
@@ -136,6 +143,7 @@ class Table:
             # Convert to list of list of Cell if needed
             self.cells = self._normalize_cells(cells)
         self._check_grid_consistency()
+        self.col_widths = col_widths
 
     def _normalize_cells(self, cells: list[list[Any]]) -> list[list[Cell]]:
         """Convert input cells to list of list of Cell objects."""
@@ -1008,7 +1016,7 @@ class Table:
                 new_row.append(new_cell)
             transposed_cells.append(new_row)
 
-        return Table(cells=transposed_cells)
+        return Table(cells=transposed_cells, col_widths=None)
 
     # Display methods
     def _repr_html_(self) -> str:
