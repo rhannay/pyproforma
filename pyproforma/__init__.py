@@ -10,6 +10,14 @@ from .models.compare import compare_models as compare_models
 from .table import Table as Table
 from .tables import TableGenerationError as TableGenerationError
 
+# Tables and cells
+from .table import Table as Table
+from .table import Cell as Cell
+
+# Formatting
+from .table import Format as Format
+from .table import NumberFormatSpec as NumberFormatSpec
+
 # Bringing in row types for easy table generation
 from .tables import row_types as row_types
 
