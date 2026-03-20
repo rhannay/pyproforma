@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
 import pandas as pd
-from pandas.io.formats.style import Styler
 
 from .colors import color_to_hex
 from .excel import to_excel
@@ -42,17 +41,6 @@ class Cell:
         >>> cell.formatted_value
         '25%'
 
-        >>> cell = Cell(value=1000, font_color='blue', background_color='lightgray')
-        >>> 'color: blue' in cell.df_css
-        True
-
-        >>> cell = Cell(value="Total", bottom_border='double')
-        >>> 'border-bottom: 4px double black' in cell.df_css
-        True
-
-        >>> cell = Cell(value="Header", top_border='single')
-        >>> 'border-top: 2px solid black' in cell.df_css
-        True
     """  # noqa: E501
 
     value: Optional[Any] = None
@@ -88,46 +76,6 @@ class Cell:
                 f"Invalid top_border value: '{self.top_border}'. "
                 "Must be None, 'single', or 'double'."
             )
-
-    @property
-    def df_css(self) -> str:
-        """Return CSS style for DataFrame display."""
-        styles = []
-        if self.bold:
-            styles.append("font-weight: bold")
-        if self.align:
-            styles.append(f"text-align: {self.align}")
-        if self.background_color:
-            hex_color = color_to_hex(self.background_color)
-            styles.append(f"background-color: {hex_color}")
-        if self.font_color:
-            hex_color = color_to_hex(self.font_color)
-            styles.append(f"color: {hex_color}")
-        if self.bottom_border:
-            if self.bottom_border == "single":
-                styles.append("border-bottom: 2px solid black")
-            elif self.bottom_border == "double":
-                styles.append("border-bottom: 4px double black")
-            else:
-                raise ValueError(
-                    (
-                        f"Invalid bottom_border value: '{self.bottom_border}'. "
-                        "Must be None, 'single', or 'double'."
-                    )
-                )
-        if self.top_border:
-            if self.top_border == "single":
-                styles.append("border-top: 2px solid black")
-            elif self.top_border == "double":
-                styles.append("border-top: 4px double black")
-            else:
-                raise ValueError(
-                    (
-                        f"Invalid top_border value: '{self.top_border}'. "
-                        "Must be None, 'single', or 'double'."
-                    )
-                )
-        return "; ".join(styles) + (";" if styles else "")
 
     @property
     def formatted_value(self) -> Optional[str]:
@@ -902,8 +850,7 @@ class Table:
                          as column names and raw cell values as the data.
 
         Note:
-            This method extracts only the raw values from cells. For formatted values
-            or styling preservation, use to_styled_df() instead.
+            This method extracts only the raw values from cells.
             If the table is empty or has only one row, returns an empty DataFrame.
         """
         if not self.cells or len(self.cells) < 2:
@@ -919,42 +866,6 @@ class Table:
             data.append(row_data)
 
         return pd.DataFrame(data)
-
-    def to_styled_df(self) -> Styler:
-        """Convert the Table to a styled pandas DataFrame with formatting preserved.
-
-        Creates a pandas Styler object that includes all cell-level formatting from the Table,
-        including bold text, text alignment, background colors, and value formatting.
-        This is useful for rich display in Jupyter notebooks or HTML output.
-
-        Returns:
-            pd.io.formats.style.Styler: A styled DataFrame object with CSS formatting
-                                       applied based on the cell properties (bold, align,
-                                       background_color) and formatted values.
-
-        Note:
-            The returned Styler preserves all visual formatting from the original Table cells,
-            making it ideal for presentation purposes where formatting matters.
-            The first row is used as column headers.
-        """  # noqa: E501
-        # get a dataframe with formatted values
-        df = self._to_value_formatted_df()
-        style_map = self._get_style_map()
-
-        def apply_styles(df):
-            styled = pd.DataFrame("", index=df.index, columns=df.columns)
-            for row_idx in df.index:
-                for col_name in df.columns:
-                    styled.at[row_idx, col_name] = style_map.get(
-                        (row_idx, col_name), ""
-                    )
-            return styled
-
-        styled_df = df.style.apply(apply_styles, axis=None)
-
-        # Apply column header styles
-        styled_df = styled_df.set_table_styles(self._get_header_styles())
-        return styled_df
 
     def to_excel(self, filename="table.xlsx"):
         """Export the Table to an Excel file with formatting."""
@@ -1118,54 +1029,3 @@ class Table:
         """  # noqa: E501
         return _to_html(self)
 
-    # Private helper methods
-    def _to_value_formatted_df(self) -> pd.DataFrame:
-        """Create DataFrame with formatted values."""
-        if not self.cells or len(self.cells) < 2:
-            return pd.DataFrame()
-
-        # First row becomes column headers
-        headers = [cell.value for cell in self.cells[0]]
-
-        # Remaining rows become data with formatted values
-        data = []
-        for row in self.cells[1:]:
-            row_data = {
-                header: cell.formatted_value for header, cell in zip(headers, row)
-            }
-            data.append(row_data)
-
-        return pd.DataFrame(data)
-
-    def _get_style_map(self) -> dict:
-        """Create a mapping of (row_idx, col_name) -> CSS style string."""
-        if not self.cells or len(self.cells) < 2:
-            return {}
-
-        # First row becomes column headers
-        headers = [cell.value for cell in self.cells[0]]
-
-        style_map = {}
-        # Start from row 1 (skip header row which is cells[0])
-        for i, row in enumerate(self.cells[1:]):
-            for j, cell in enumerate(row):
-                col_name = headers[j]
-                style_map[(i, col_name)] = cell.df_css
-        return style_map
-
-    def _get_header_styles(self) -> list[dict]:
-        """Generate header styles based on first row cells."""
-        if not self.cells:
-            return []
-
-        styles = []
-        for i, cell in enumerate(self.cells[0]):
-            # Use the cell's alignment if set, otherwise default to center
-            align = cell.align if cell.align else "center"
-            styles.append(
-                {
-                    "selector": f"th.col_heading.level0.col{i}",
-                    "props": [("text-align", align)],
-                }
-            )
-        return styles

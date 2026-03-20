@@ -281,17 +281,6 @@ class TestColorRendering:
         assert '#FF0000' in html  # red background
         assert '#0000FF' in html  # blue font
 
-    def test_df_css_with_colors(self):
-        """Test that df_css property uses color_to_hex."""
-        from pyproforma.table import Cell
-        
-        cell = Cell(value="Test", background_color="lightgray", font_color="darkblue")
-        css = cell.df_css
-        
-        # Should have hex colors in CSS
-        assert '#D3D3D3' in css  # lightgray
-        assert '#00008B' in css  # darkblue
-
     def test_excel_export_with_colors(self):
         """Test that Excel export handles colors correctly."""
         from pyproforma.table import Cell, Table

@@ -650,24 +650,6 @@ class TestTableClass:
         expected = pd.DataFrame()
         pd.testing.assert_frame_equal(df, expected)
 
-    def test_table_get_style_map(self):
-        """Test that style map is generated correctly."""
-        cells = [
-            [Cell("A"), Cell("B")],  # Header row
-            [Cell(1, bold=True), Cell(2)],
-            [Cell(3, align="center"), Cell(4, bold=True)],
-        ]
-        table = Table(cells=cells)
-        style_map = table._get_style_map()
-
-        expected_style_map = {
-            (0, "A"): "font-weight: bold; text-align: right;",
-            (0, "B"): "text-align: right;",
-            (1, "A"): "text-align: center;",
-            (1, "B"): "font-weight: bold; text-align: right;",
-        }
-
-        assert style_map == expected_style_map
 
 
 class TestTableIndexing:
