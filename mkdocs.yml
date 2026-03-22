@@ -82,27 +82,4 @@ plugins:
 # Navigation structure
 nav:
   - Home: index.md
-  - User Guide:
-    - Installation: user-guide/installation.md
-    - Basic Usage: user-guide/basic-usage.md
-    - Working with Line Items: user-guide/working-with-line-items.md
-  - Examples:
-    - Basic Usage: examples/basic-usage.ipynb
-  - API Reference:
-    - Model:
-      - Model: api/model.md
-      - LineItem: api/line_item.md
-      - Category: api/category.md
-      - Constraint: api/constraint.md
-    - Results:
-      - LineItemResults: api/line_item_results.md
-      - CategoryResults: api/category_results.md
-      - ConstraintResults: api/constraint_results.md
-    - Tables:
-      - Tables: api/tables.md
-      - Table Class: api/table.md
-    - Charts:
-      - Charts: api/charts.md
-    - Model Comparisons:
-      - Compare: api/compare.md
-  
+
