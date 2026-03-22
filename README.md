@@ -78,7 +78,7 @@ from pyproforma import Format
 from pyproforma.tables import HeaderRow, LabelRow, ItemRow
 
 table = model.tables.from_template([
-    HeaderRow(),
+    HeaderRow(background_color="#dce6f1"),
     LabelRow(label="Income Statement"),
     ItemRow(name="revenue", value_format=Format.THOUSANDS_K),
     ItemRow(name="cogs",    value_format=Format.THOUSANDS_K, bottom_border="single"),

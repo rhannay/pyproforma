@@ -40,6 +40,7 @@ class HeaderRow(BaseRow):
     """Configuration for header row generation."""
 
     col_labels: Union[str, list[str]] = "Period"
+    background_color: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -49,15 +50,15 @@ class HeaderRow(BaseRow):
 
         # Add label column headers
         if isinstance(self.col_labels, str):
-            cells.append(Cell(value=self.col_labels, bold=True, align="left"))
+            cells.append(Cell(value=self.col_labels, bold=True, align="left", background_color=self.background_color))
         else:
             for label in self.col_labels:
-                cells.append(Cell(value=label, bold=True, align="left"))
+                cells.append(Cell(value=label, bold=True, align="left", background_color=self.background_color))
 
         # Add period column headers
         for period in model.periods:
             cells.append(
-                Cell(value=period, bold=True, align="center", value_format=None)
+                Cell(value=period, bold=True, align="center", value_format=None, background_color=self.background_color)
             )
 
         return cells
