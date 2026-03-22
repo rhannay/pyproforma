@@ -1,36 +1,54 @@
-# Exceptions
-from .charts import ChartGenerationError as ChartGenerationError
-from .models import Category as Category
-from .models import Constraint as Constraint
-from .models import LineItem as LineItem
-from .models import Model as Model
-from .models.compare import MultiModelCompare as MultiModelCompare
-from .models.compare import TwoModelCompare as TwoModelCompare
-from .models.compare import compare_models as compare_models
-from .table import Table as Table
-from .tables import TableGenerationError as TableGenerationError
+"""
+PyProforma v2 - Simplified modeling framework
 
-# Tables and cells
-from .table import Table as Table
-from .table import Cell as Cell
+Version 2 provides a cleaner, Pydantic-inspired API for building financial models.
+"""
 
-# Formatting
-from .table import Format as Format
-from .table import NumberFormatSpec as NumberFormatSpec
+from .assumption import Assumption
+from .assumption_result import AssumptionResult
+from .assumption_values import AssumptionValues
+from .input_assumption import InputAssumption
+from .line_items import (
+    DebtCalculator,
+    DebtInterestLine,
+    DebtPrincipalLine,
+    FixedLine,
+    FormulaLine,
+    InputLine,
+    LineItem,
+    LineItemResult,
+    LineItemSelection,
+    LineItemValue,
+    LineItemValues,
+    create_debt_lines,
+)
+from .table import Format, NumberFormatSpec
+from .compare import ModelComparison
+from .proforma_model import ProformaModel
+from .tables import Tables
+from .tags_namespace import ModelTagNamespace
 
-# Bringing in row types for easy table generation
-from .tables import row_types as row_types
-
-# Version information
-try:
-    from importlib.metadata import version
-
-    __version__ = version("pyproforma")
-except ImportError:
-    # Fallback for older Python versions
-    try:
-        from importlib_metadata import version
-
-        __version__ = version("pyproforma")
-    except ImportError:
-        __version__ = "unknown"
+__all__ = [
+    "ProformaModel",
+    "FixedLine",
+    "FormulaLine",
+    "InputLine",
+    "InputAssumption",
+    "DebtPrincipalLine",
+    "DebtInterestLine",
+    "DebtCalculator",
+    "create_debt_lines",
+    "Assumption",
+    "AssumptionResult",
+    "LineItem",
+    "AssumptionValues",
+    "LineItemValues",
+    "LineItemValue",
+    "LineItemResult",
+    "LineItemSelection",
+    "ModelTagNamespace",
+    "Tables",
+    "ModelComparison",
+    "Format",
+    "NumberFormatSpec",
+]

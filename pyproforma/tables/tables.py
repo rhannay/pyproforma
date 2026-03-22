@@ -1,417 +1,339 @@
+"""
+Tables class for PyProforma v2 API.
+
+Provides table creation methods for v2 models, similar to the v1 API but
+adapted for v2's simpler structure.
+"""
+
 from typing import TYPE_CHECKING, Optional, Union
 
-from ..constants import VALID_COLS
-from ..table import Table
+from pyproforma.table import Table
+
 from . import row_types as rt
-from .compare import compare_years as _compare_years
-from .table_generator import generate_table_from_template
+from .row_types import BaseRow, dict_to_row_config
 
 if TYPE_CHECKING:
-    from pyproforma import Model
+    from pyproforma.proforma_model import ProformaModel
+
+from pyproforma.line_items.formula_line import FormulaLine
 
 
 class Tables:
     """
-    A namespace for table creation methods within a Pyproforma model.
+    A namespace for table creation methods within a PyProforma v2 model.
 
-    The Tables class provides a comprehensive interface for generating various types
-    of tables from a Pyproforma Model. It serves as the primary entry point for
-    creating formatted tables that display model data, including line items,
-    categories, constraints, and custom templates.
+    The Tables class provides an interface for generating tables from v2 models.
+    It serves as the primary entry point for creating formatted tables that display
+    model data, including line items and custom templates.
 
-    This class is typically accessed through a Model instance's `tables` attribute
-    and provides methods to generate tables for different aspects of the financial
-    model, such as individual line items, category summaries, constraint analysis,
-    and comprehensive model overviews.
+    This class is accessed through a ProformaModel instance's `tables` attribute
+    and provides methods to generate tables for different aspects of the model.
 
     Attributes:
-        _model (Model): The underlying Pyproforma model containing the data
+        _model (ProformaModel): The underlying v2 model containing the data
             and definitions used for table generation.
 
     Examples:
-        >>> model = Model(...)  # Initialize with required parameters
-        >>> table = model.tables.category('revenue')
+        >>> model = MyModel(periods=[2024, 2025])
+        >>> table = model.tables.line_items()
     """
 
-    def __init__(self, model: "Model"):
-        """Initialize the main tables namespace with a Model."""
+    def __init__(self, model: "ProformaModel"):
+        """Initialize the tables namespace with a v2 ProformaModel."""
         self._model = model
 
     def from_template(
-        self, template: list[dict], col_labels: Union[str, list[str]] = "Years"
+        self,
+        template: list[Union[dict, BaseRow]],
+        col_labels: Optional[str | list[str]] = None,
     ) -> Table:
         """
         Generate a table from a template of row configurations.
 
         Args:
-            template (list[dict]): A list of row configuration dictionaries that define
-                the structure and content of the table. Each dictionary should specify
-                the row type and its parameters (e.g., ItemRow, LabelRow, etc.).
-            col_labels: String or list of strings for label columns. Defaults to "Years".
+            template (list[Union[dict, BaseRow]]): A list of row configuration
+                dictionaries or BaseRow instances that define the structure and
+                content of the table.
+            col_labels: String or list of strings for label columns. Defaults to None.
+                If None, defaults to "Name" for single column or ["Name", "Label"]
+                for two columns.
 
         Returns:
             Table: A Table object containing the rows and data as specified by the template.
 
         Examples:
             >>> template = [
-            ...     rt.LabelRow(label='Revenue', bold=True),
-            ...     rt.ItemRow(name='sales_revenue', included_cols=['label']),
-            ...     rt.ItemRow(name='other_revenue', included_cols=['label'])
+            ...     {"row_type": "label", "label": "Income Statement", "bold": True},
+            ...     {"row_type": "item", "name": "revenue"},
+            ...     {"row_type": "item", "name": "expenses"},
+            ...     {"row_type": "blank"},
+            ...     {"row_type": "line_items_total", "line_item_names": ["revenue", "expenses"]},
             ... ]
-            >>> table = tables.from_template(template, col_labels="Years")
-        """  # noqa: E501
-        table = generate_table_from_template(
-            self._model, template, col_labels=col_labels
-        )
-        return table
+            >>> table = model.tables.from_template(template)
+        """
+        # Check if model has periods defined
+        if not self._model.periods:
+            raise ValueError(
+                "Cannot generate table: model has no periods defined. "
+                "Please add periods to the model before generating tables."
+            )
+
+        # Determine label column count
+        # First check if template has a HeaderRow to get col_labels from
+        header_col_labels = None
+        for config in template:
+            # Convert dict to dataclass if needed for checking
+            if isinstance(config, dict):
+                temp_config = dict_to_row_config(config)
+            else:
+                temp_config = config
+
+            if isinstance(temp_config, rt.HeaderRow):
+                header_col_labels = temp_config.col_labels
+                break
+
+        # Determine label_col_count from HeaderRow if present, otherwise from col_labels param
+        if header_col_labels is not None:
+            # Use HeaderRow's col_labels
+            if isinstance(header_col_labels, str):
+                label_col_count = 1
+            else:
+                label_col_count = len(header_col_labels)
+        elif col_labels is None:
+            # Default to single label column
+            label_col_count = 1
+        elif isinstance(col_labels, str):
+            label_col_count = 1
+        else:
+            label_col_count = len(col_labels)
+
+        # Process all rows in template
+        all_rows = []
+        for config in template:
+            # Convert dict to dataclass if needed
+            if isinstance(config, dict):
+                config = dict_to_row_config(config)
+
+            # Generate row(s)
+            result = config.generate_row(self._model, label_col_count=label_col_count)
+            if isinstance(result, list) and result and isinstance(result[0], list):
+                # Multiple rows returned
+                all_rows.extend(result)
+            else:
+                # Single row returned
+                all_rows.append(result)
+
+        # Build default col_widths: 315px (≈45 Excel units) for label cols,
+        # 105px (≈15 Excel units) for each period col
+        n_periods = len(self._model.periods)
+        col_widths = [245] * label_col_count + [105] * n_periods
+
+        return Table(cells=all_rows, col_widths=col_widths)
 
     def line_items(
         self,
         line_items: Optional[list[str]] = None,
         include_name: bool = True,
         include_label: bool = False,
-        include_category: bool = False,
-        col_order: Optional[list[str]] = None,
-        col_labels: Optional[Union[str, list[str]]] = None,
-        group_by_category: bool = False,
-        include_percent_change: bool = False,
-        include_totals: bool = False,
+        include_total_row: bool = True,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table containing line items with optional category organization.
+        Generate a table containing line items.
 
         Creates a table that displays line items from the model. If no specific
-        line items are provided, includes all line items from the model. When
-        group_by_category is True, groups items by category with category
-        headers.
+        line items are provided, includes all line items from the model.
 
         Args:
             line_items (Optional[list[str]]): List of line item names to include.
-                                             If None, includes all line items. Defaults to None.
+                If None, includes all line items. Defaults to None.
             include_name (bool): Whether to include the name column. Defaults to True.
             include_label (bool): Whether to include the label column. Defaults to False.
-            include_category (bool): Whether to include the category column. Defaults to False.
-            col_order (Optional[list[str]]): Order of columns (name, label, category).
-                                            If provided, only columns in this list are included,
-                                            overriding include_name, include_label, and include_category.
-                                            Must only contain valid column names: 'name', 'label', 'category'.
-                                            Defaults to None.
-            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
-                                                   or list of strings. Defaults to None.
-            group_by_category (bool, optional): Whether to group line items by category
-                                                     and include category header rows. Defaults to False.
-            include_percent_change (bool, optional): Whether to include a percent change row
-                                                    after each item row. Defaults to False.
-            include_totals (bool, optional): Whether to include a totals row at the end
-                                           of the table. Defaults to False.
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
-                                           displayed in this color. Defaults to None.
+            include_total_row (bool): Whether to include a total row at the bottom.
+                Defaults to True.
 
         Returns:
             Table: A Table object containing the specified line items.
 
         Examples:
             >>> table = model.tables.line_items()
-            >>> table = model.tables.line_items(line_items=['revenue_sales', 'cost_of_goods'])
+            >>> table = model.tables.line_items(line_items=['revenue', 'expenses'])
             >>> table = model.tables.line_items(include_name=False, include_label=True)
-            >>> table = model.tables.line_items(col_order=['label', 'category'])
-            >>> table = model.tables.line_items(group_by_category=True)
-            >>> table = model.tables.line_items(include_percent_change=True)
-            >>> table = model.tables.line_items(include_totals=True)
-        """  # noqa: E501
-        # Determine which columns to include
-        if col_order is not None:
-            # Validate col_order entries
-            for col in col_order:
-                if col not in VALID_COLS:
-                    raise ValueError(
-                        f"Invalid column '{col}' in col_order. "
-                        f"Must be one of: {VALID_COLS}"
-                    )
-            included_cols = col_order
-        else:
-            # Build included_cols from individual flags
-            included_cols = []
-            if include_name:
-                included_cols.append("name")
-            if include_label:
-                included_cols.append("label")
-            if include_category:
-                included_cols.append("category")
-
-            # If no columns specified, default to just name
-            if not included_cols:
-                included_cols = ["name"]
-
-        # Set default col_labels if not provided
-        if col_labels is None:
-            col_labels = included_cols
-
-        # Get line items to include
+            >>> table = model.tables.line_items(include_total_row=False)
+        """
+        # Determine which line items to include
         if line_items is None:
-            # Get all line items in their existing order using metadata
-            items_metadata = self._model.line_item_metadata.copy()
+            items_to_include = self._model.line_item_names
         else:
-            # Filter metadata to only include specified items
-            items_metadata = [
-                item
-                for item in self._model.line_item_metadata
-                if item["name"] in line_items
-            ]
-
-        # Sort by category if we need category labels
-        if group_by_category:
-            # Create a mapping of category names to their order in the model
-            category_order = {
-                name: i for i, name in enumerate(self._model.category_names)
-            }
-            # Sort by category order, then by original order within category
-            items_metadata = sorted(
-                items_metadata,
-                key=lambda x: category_order.get(x["category"], float("inf")),
-            )
-
-        # Create template
-        template = []
-        current_category = None
-
-        for item in items_metadata:
-            # Add category label if needed and this is a new category
-            if group_by_category:
-                item_category = item["category"]
-                if item_category != current_category:
-                    # Get category label from model
-                    category_metadata = self._model._get_category_metadata(
-                        item_category
+            # Validate that all requested items exist
+            for item_name in line_items:
+                if item_name not in self._model.line_item_names:
+                    raise ValueError(
+                        f"Line item '{item_name}' not found in model. "
+                        f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
                     )
-                    category_label = category_metadata["label"]
+            items_to_include = line_items
 
-                    template.append(
-                        rt.LabelRow(
-                            label=category_label, bold=True, included_cols=included_cols
-                        )
-                    )
-                    current_category = item_category
+        # Determine what to show in the label columns
+        show_name = include_name
+        show_label = include_label
 
-            # Add the item row
-            template.append(
-                rt.ItemRow(
-                    name=item["name"],
-                    included_cols=included_cols,
-                    hardcoded_color=hardcoded_color,
-                )
-            )
+        # If no label columns specified, default to showing name
+        if not show_name and not show_label:
+            show_name = True
 
-            # Add percent change row if requested
-            if include_percent_change:
-                template.append(rt.PercentChangeRow(name=item["name"]))
+        # Build col_labels parameter
+        col_labels = []
+        if show_name:
+            col_labels.append("Name")
+        if show_label:
+            col_labels.append("Label")
 
-        # Add totals row if requested
-        if include_totals:
-            # Get the list of line item names for the total calculation
-            total_line_item_names = [item["name"] for item in items_metadata]
+        # Build template starting with HeaderRow
+        template = [rt.HeaderRow(col_labels=col_labels)]
+
+        # Add ItemRow for each line item
+        # When showing only name (not label), explicitly set label=name to override default behavior
+        for item_name in items_to_include:
+            if show_name and not show_label:
+                # Force ItemRow to show name instead of label
+                template.append(rt.ItemRow(name=item_name, label=item_name, hardcoded_color=hardcoded_color))
+            else:
+                # Let ItemRow use default label behavior
+                template.append(rt.ItemRow(name=item_name, hardcoded_color=hardcoded_color))
+
+        # Add total row if requested and there are items to include
+        if include_total_row and items_to_include:
             template.append(
                 rt.LineItemsTotalRow(
-                    line_item_names=total_line_item_names,
-                    included_cols=included_cols,
+                    line_item_names=items_to_include,
                     label="Total",
                     bold=True,
                     top_border="single",
                 )
             )
 
+        # Use from_template to generate the table
         return self.from_template(template, col_labels=col_labels)
-
-    def category(
-        self,
-        category_name: str,
-        include_name: bool = False,
-        include_label: bool = True,
-        col_order: Optional[list[str]] = None,
-        col_labels: Optional[Union[str, list[str]]] = None,
-        include_percent_change: bool = False,
-        include_totals: bool = True,
-        hardcoded_color: Optional[str] = None,
-    ) -> Table:
-        """
-        Generate a table for a specific category showing all line items in that category.
-
-        Args:
-            category_name (str): The name of the category to generate the table for.
-            include_name (bool): Whether to include the name column. Defaults to False.
-            include_label (bool): Whether to include the label column. Defaults to True.
-            col_order (Optional[list[str]]): Order of columns (name, label).
-                                            If provided, only columns in this list are included,
-                                            overriding include_name and include_label.
-                                            Must only contain valid column names: 'name', 'label'.
-                                            Note: 'category' is not valid for category tables.
-                                            Defaults to None.
-            col_labels (Optional[str | list[str]]): Label columns specification. Can be a string
-                                                   or list of strings. Defaults to None.
-            include_percent_change (bool, optional): Whether to include a percent change row
-                                                    after each item row. Defaults to False.
-            include_totals (bool, optional): Whether to include a totals row at the end
-                                           of the table. Defaults to True.
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
-                                           displayed in this color. Defaults to None.
-
-        Returns:
-            Table: A Table object containing all line items in the specified category.
-        """  # noqa: E501
-        # Get all line item names for this category
-        line_item_names = self._model.line_item_names_by_category(category_name)
-
-        # Use the line_items method with the parameters
-        return self.line_items(
-            line_items=line_item_names,
-            include_name=include_name,
-            include_label=include_label,
-            col_order=col_order,
-            col_labels=col_labels,
-            group_by_category=True,
-            include_percent_change=include_percent_change,
-            hardcoded_color=hardcoded_color,
-            include_totals=include_totals,
-        )
 
     def line_item(
         self,
         name: str,
         include_name: bool = False,
+        include_percent_change: bool = False,
+        include_cumulative_change: bool = False,
+        include_cumulative_percent_change: bool = False,
         hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
-        Generate a table for a specific line item showing its label and values by year.
+        Generate a table for a single line item.
+
+        Creates a table that displays a single line item with its values across all periods.
+        Optionally includes analysis rows showing changes over time.
 
         Args:
-            name (str): The name of the line item to generate the table for.
-            include_name (bool, optional): Whether to include the name column. Defaults to False.
-            hardcoded_color (Optional[str]): CSS color string to use for hardcoded values.
-                                           If provided, cells with hardcoded values will be
-                                           displayed in this color. Defaults to None.
+            name (str): The name of the line item to display.
+            include_name (bool): Whether to include the name column. Defaults to False.
+                When False, only the label column is shown.
+            include_percent_change (bool): Whether to include a row showing period-over-period
+                percent change. Defaults to False.
+            include_cumulative_change (bool): Whether to include a row showing cumulative
+                change from the base period. Defaults to False.
+            include_cumulative_percent_change (bool): Whether to include a row showing
+                cumulative percent change from the base period. Defaults to False.
 
         Returns:
-            Table: A Table object containing the line item's label and values across years.
-        """  # noqa: E501
-        # Determine columns to include based on include_name parameter
-        cols = ["name", "label"] if include_name else ["label"]
-
-        rows = [
-            rt.ItemRow(name=name, included_cols=cols, hardcoded_color=hardcoded_color),
-            rt.PercentChangeRow(name=name, label="% Change"),
-            rt.CumulativeChangeRow(name=name, label="Cumulative Change"),
-            rt.CumulativePercentChangeRow(name=name, label="Cumulative % Change"),
-        ]
-        return self.from_template(rows)
-
-    def constraint(self, constraint_name: str, color_code: bool = True) -> Table:
-        """
-        Generate a table for a specific constraint showing its line item, target, variance, and pass/fail status.
-
-        Args:
-            constraint_name (str): The name of the constraint to generate the table for.
-            color_code (bool, optional): Whether to apply color coding to the table. Defaults to True.
-
-        Returns:
-            Table: A Table object containing the constraint's line item, target, variance, and pass/fail rows.
-        """  # noqa: E501
-        constraint_results = self._model.constraint(constraint_name)
-        rows = [
-            rt.LabelRow(label=constraint_results.label, bold=True),
-            rt.ItemRow(name=constraint_results.line_item_name, included_cols=["label"]),
-            rt.ConstraintTargetRow(constraint_name=constraint_name, label="Target"),
-            rt.ConstraintVarianceRow(constraint_name=constraint_name, label="Variance"),
-            rt.ConstraintPassRow(
-                constraint_name=constraint_name,
-                label="Pass/Fail",
-                color_code=color_code,
-            ),
-        ]
-        return self.from_template(rows)
-
-    def compare_years(
-        self,
-        year1: int,
-        year2: int,
-        names: Optional[list[str]] = None,
-        include_change: bool = True,
-        include_percent_change: bool = True,
-        sort_by: Optional[str] = None,
-    ) -> Table:
-        """
-        Create a comparison table between two years.
-
-        Args:
-            year1 (int): The first year to compare
-            year2 (int): The second year to compare
-            names (Optional[list[str]]): List of line item names to include.
-                                       If None, includes all line items. Defaults to None.
-            include_change (bool): Whether to include the Change column. Defaults to True.
-            include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
-            sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
-                                     None keeps the original order. Defaults to None.
-
-        Returns:
-            Table: A table with columns for year1, year2, and optional change columns
+            Table: A Table object containing the line item and any requested analysis rows.
 
         Raises:
-            ValueError: If year1 or year2 are not in the model's years, or if sort_by is invalid
+            ValueError: If the line item name doesn't exist in the model.
 
         Examples:
-            >>> table = model.tables.compare_years(2023, 2024, ['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.compare_years(2023, 2024, ['revenue_sales'], sort_by='change')
-            >>> table = model.tables.compare_years(2023, 2024)  # Uses all line items
-        """  # noqa: E501
-        return _compare_years(
-            self._model,
-            year1,
-            year2,
-            names,
-            include_change=include_change,
-            include_percent_change=include_percent_change,
-            sort_by=sort_by,
-        )
-
-    def year_over_year(
-        self,
-        year: int,
-        names: Optional[list[str]] = None,
-        include_change: bool = True,
-        include_percent_change: bool = True,
-        sort_by: Optional[str] = None,
-    ) -> Table:
+            >>> table = model.tables.line_item('revenue')
+            >>> table = model.tables.line_item('revenue', include_name=True)
+            >>> table = model.tables.line_item('revenue', include_percent_change=True)
+            >>> table = model.tables.line_item('revenue',
+            ...                                 include_cumulative_change=True,
+            ...                                 include_cumulative_percent_change=True)
         """
-        Create a year-over-year comparison table.
+        # Validate that the line item exists
+        if name not in self._model.line_item_names:
+            raise ValueError(
+                f"Line item '{name}' not found in model. "
+                f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
+            )
+
+        # Build col_labels parameter
+        if include_name:
+            col_labels = ["Name", "Label"]
+        else:
+            col_labels = "Label"
+
+        # Build template with HeaderRow and single ItemRow
+        template = [
+            rt.HeaderRow(col_labels=col_labels),
+            rt.ItemRow(name=name, hardcoded_color=hardcoded_color),
+        ]
+
+        # Add analysis rows if requested
+        if include_percent_change:
+            template.append(rt.PercentChangeRow(name=name))
+
+        if include_cumulative_change:
+            template.append(rt.CumulativeChangeRow(name=name))
+
+        if include_cumulative_percent_change:
+            template.append(rt.CumulativePercentChangeRow(name=name))
+
+        # Use from_template to generate the table
+        return self.from_template(template, col_labels=col_labels)
+
+    def precedents(self, name: str, hardcoded_color: Optional[str] = None) -> Table:
+        """
+        Generate a table showing the precedents of a line item.
+
+        For FormulaLine items, shows each precedent line item followed by a
+        bottom border on the last precedent, then the calculated line item in
+        bold. For non-formula line items, shows just the single item in bold.
+
+        Only precedents that are themselves line items in the model are shown
+        (assumption references are excluded).
 
         Args:
-            year (int): The year to compare (will compare year-1 to year)
-            names (Optional[list[str]]): List of line item names to include.
-                                       If None, includes all line items. Defaults to None.
-            include_change (bool): Whether to include the Change column. Defaults to True.
-            include_percent_change (bool): Whether to include the Percent Change column. Defaults to True.
-            sort_by (Optional[str]): How to sort the items. Options: None, 'value', 'change', 'percent_change'.
-                                     None keeps the original order. Defaults to None.
+            name (str): The name of the line item to show precedents for.
 
         Returns:
-            Table: A table with columns for previous year, current year, and optional change columns
+            Table: A Table object showing precedents and the calculated result.
 
         Raises:
-            ValueError: If year or year-1 are not in the model's years, or if sort_by is invalid
+            ValueError: If the line item name doesn't exist in the model.
 
         Examples:
-            >>> table = model.tables.year_over_year(2024, ['revenue_sales', 'cost_of_goods'])
-            >>> table = model.tables.year_over_year(2024, ['revenue_sales'], sort_by='change')
-            >>> table = model.tables.year_over_year(2024)  # Uses all line items
-        """  # noqa: E501
-        return _compare_years(
-            self._model,
-            year - 1,
-            year,
-            names,
-            include_change=include_change,
-            include_percent_change=include_percent_change,
-            sort_by=sort_by,
-        )
+            >>> table = model.tables.precedents('profit')
+            >>> table = model.tables.precedents('revenue')  # non-formula: item shown in bold
+        """
+        if name not in self._model.line_item_names:
+            raise ValueError(
+                f"Line item '{name}' not found in model. "
+                f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
+            )
+
+        line_item_def = getattr(self._model.__class__, name)
+        template = [rt.HeaderRow(col_labels="Label")]
+
+        if isinstance(line_item_def, FormulaLine) and line_item_def.precedents:
+            precedent_names = [
+                p for p in line_item_def.precedents
+                if p in self._model.line_item_names and p != name
+            ]
+            for i, precedent_name in enumerate(precedent_names):
+                is_last = i == len(precedent_names) - 1
+                template.append(rt.ItemRow(
+                    name=precedent_name,
+                    bottom_border="single" if is_last else None,
+                    hardcoded_color=hardcoded_color,
+                ))
+
+        template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
+
+        return self.from_template(template, col_labels="Label")

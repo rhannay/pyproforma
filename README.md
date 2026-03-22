@@ -1,169 +1,204 @@
-# Pyproforma
+# pyproforma
 
-A Python package for financial modeling and reporting that provides a flexible framework for building financial models with line items, formulas, constraints, and rich output formatting.
-
-## Installation
-
-Install from PyPI:
+A Python library for building financial models — a code-first alternative to Excel for pro formas, projections, and structured financial tables.
 
 ```bash
 pip install pyproforma
 ```
 
-For local development:
+---
 
-```bash
-pip install -e .
-```
+## Why
 
-## Quick Start
+Spreadsheets are the default tool for financial modeling, but they have real problems: no version control, no testing, formulas hidden inside cells, and no easy way to generate the same model for multiple scenarios. pyproforma is designed for analysts who want the benefits of code — reproducibility, testability, version history — without giving up the tabular output that finance people actually use.
 
-```python
-from pyproforma import Model, LineItem, Category
+---
 
-# Create line items
-revenue = LineItem(
-    name="revenue",
-    category="income",
-    label="Total Revenue",
-    values={2024: 100000, 2025: 120000, 2026: 150000}
-)
+## How it works
 
-expenses = LineItem(
-    name="expenses", 
-    category="income",
-    label="Total Expenses",
-    formula="revenue * 0.6"  # 60% of revenue
-)
-
-# Create a model
-model = Model(
-    line_items=[revenue, expenses],
-    years=[2024, 2025, 2026]
-)
-
-# Calculate results
-results = model.calculate()
-print(results.to_dataframe())
-```
-
-## Key Features
-
-### 📊 **Financial Modeling**
-- Create line items with explicit values or formulas
-- Organize items into categories with automatic totals
-- Support for complex financial calculations using Python's AST
-
-### 📈 **Interactive Charts**
-- Built-in Plotly integration for data visualization
-- Line charts, bar charts, and mixed chart types
-- Cumulative change and percent change charts
-
-### 📋 **Flexible Tables**
-- Generate formatted tables for financial statements
-- Export to Excel with styling and formatting
-- Configurable row types and table structures
-
-### 🔧 **Advanced Features**
-- Constraint validation for model integrity
-- YAML/JSON serialization for model persistence
-- Debt and financing generators
-- Rich HTML output for Jupyter notebooks
-
-## Usage Examples
-
-### Working with Formulas
+Define a model by subclassing `ProformaModel` and declaring line items as class attributes. Instantiate it with a list of periods and the library calculates everything.
 
 ```python
-# Line items can reference other line items in formulas
-profit = LineItem(
-    name="profit",
-    category="income", 
-    formula="revenue - expenses"
-)
+from pyproforma import ProformaModel, FixedLine, FormulaLine, Assumption
 
-# Support for complex expressions
-margin = LineItem(
-    name="margin",
-    category="ratios",
-    formula="profit / revenue",
-    value_format="percent"
-)
+class IncomeStatement(ProformaModel):
+    growth_rate = Assumption(value=0.10)
+
+    revenue = FixedLine(
+        values={2024: 500_000, 2025: 550_000, 2026: 605_000},
+        label="Revenue",
+        tags=["operating"],
+    )
+    cogs = FormulaLine(
+        formula=lambda li, t: li.revenue[t] * 0.55,
+        label="Cost of Goods Sold",
+        tags=["operating"],
+    )
+    gross_profit = FormulaLine(
+        formula=lambda li, t: li.revenue[t] - li.cogs[t],
+        label="Gross Profit",
+    )
+    tax_expense = FormulaLine(
+        formula=lambda li, t: li.gross_profit[t] * 0.21,
+        label="Tax Expense",
+    )
+    net_income = FormulaLine(
+        formula=lambda li, t: li.gross_profit[t] - li.tax_expense[t],
+        label="Net Income",
+    )
+
+model = IncomeStatement(periods=[2024, 2025, 2026])
 ```
 
-### Creating Categories
+Access results directly:
 
 ```python
-from pyproforma import Category
-
-# Categories automatically calculate totals
-revenue_category = Category(
-    name="revenue",
-    label="Revenue Sources",
-    include_total=True
-)
-
-model.add.category(revenue_category)
+model["net_income"][2025]   # 218_130.0
+model["gross_profit"][2024] # 225_000.0
 ```
 
-### Generating Reports
+---
+
+## Tables
+
+Generate formatted tables for display or export. Tables are the primary output — they render to HTML (for Jupyter notebooks), Excel, or a pandas DataFrame.
 
 ```python
-# Create formatted tables
-table = model.tables.generate_table([
-    {"type": "category", "name": "income"},
-    {"type": "line_item", "name": "revenue"},
-    {"type": "line_item", "name": "expenses"},
-    {"type": "total", "category": "income"}
+# All line items
+model.tables.line_items().show()
+
+# Single item with period-over-period analysis
+model.tables.line_item("net_income", include_percent_change=True).show()
+
+# Show what feeds into a calculated line item
+model.tables.precedents("net_income").show()
+
+# Custom layout using a template
+from pyproforma import Format
+from pyproforma.tables import HeaderRow, LabelRow, ItemRow
+
+table = model.tables.from_template([
+    HeaderRow(background_color="lightblue"),
+    LabelRow(label="Income Statement"),
+    ItemRow(name="revenue", value_format=Format.THOUSANDS_K),
+    ItemRow(name="cogs",    value_format=Format.THOUSANDS_K, bottom_border="single"),
+    ItemRow(name="gross_profit", bold=True, value_format=Format.THOUSANDS_K),
 ])
-
-# Export to Excel
-table.to_excel("financial_report.xlsx")
-
-# Create interactive charts
-chart = model.charts.line_item("revenue", chart_type="line")
-chart.show()
+table.show()
 ```
 
-### Model Persistence
+![Example table](docs/images/table_example.png)
+
+Export to Excel with formatting preserved:
 
 ```python
-# Save model to YAML
-model.save_yaml("model.yaml")
-
-# Load model from YAML
-model = Model.load_yaml("model.yaml")
+model.tables.line_items().to_excel("income_statement.xlsx")
 ```
 
-## Development
+---
 
-Install in development mode with testing dependencies:
+## Scenarios and comparisons
+
+A model is just a class — create multiple instances with different inputs to compare scenarios.
+
+```python
+class FlexModel(ProformaModel):
+    cogs_rate = Assumption(value=0.55)
+    revenue = FixedLine(values={2024: 500_000, 2025: 550_000})
+    cogs = FormulaLine(formula=lambda li, t: li.revenue[t] * li.cogs_rate)
+    gross_profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.cogs[t])
+
+base = FlexModel(periods=[2024, 2025])
+# InputAssumption lets callers override at instantiation time — coming soon
+```
+
+Use `ModelComparison` to diff two model instances:
+
+```python
+from pyproforma import ModelComparison
+
+# (requires two separately instantiated models with different inputs)
+comparison = ModelComparison(base, upside)
+comparison.diff("gross_profit")
+```
+
+---
+
+## Time-series formulas
+
+Formulas receive the full model namespace and the current period `t`. Reference prior periods with `t-1`:
+
+```python
+# Compound growth from a seeded base year
+revenue = FormulaLine(
+    formula=lambda li, t: li.revenue[t-1] * (1 + li.growth_rate),
+    values={2024: 500_000},  # seed value for first period
+    label="Revenue",
+)
+```
+
+---
+
+## Tags
+
+Tag line items to group them flexibly without fixed categories:
+
+```python
+revenue = FixedLine(values={...}, tags=["operating", "top_line"])
+other_income = FixedLine(values={...}, tags=["operating"])
+
+# Sum all items tagged "operating" in a formula
+ebit = FormulaLine(formula=lambda li, t: li.tag["operating"][t])
+
+# Or in a table
+from pyproforma.tables import TagTotalRow
+table = model.tables.from_template([
+    HeaderRow(),
+    ItemRow(name="revenue"),
+    ItemRow(name="other_income"),
+    TagTotalRow(tag="operating", label="Total Operating"),
+])
+```
+
+---
+
+## Number formatting
+
+A `Format` class provides named format constants that flow through to both HTML and Excel output:
+
+```python
+from pyproforma import Format
+
+ItemRow(name="revenue",    value_format=Format.THOUSANDS_K)   # 500K
+ItemRow(name="margin",     value_format=Format.PERCENT_ONE_DECIMAL)  # 45.0%
+ItemRow(name="net_income", value_format=Format.CURRENCY_NO_DECIMALS) # $218,130
+```
+
+Custom formats via `NumberFormatSpec`:
+
+```python
+from pyproforma import NumberFormatSpec
+
+fmt = NumberFormatSpec(decimals=1, scale="millions", suffix="M")
+# 500_000 → "0.5M"
+```
+
+---
+
+## Installation
 
 ```bash
-pip install -e .[dev]
+pip install pyproforma
 ```
 
-Run tests:
+Requires Python 3.9+. Dependencies: pandas, openpyxl.
 
-```bash
-pytest
-```
+---
 
-Run tests with coverage:
+## Status
 
-```bash
-pytest --cov=pyproforma
-```
-
-## Requirements
-
-- Python 3.9+
-- pandas >= 1.3.0
-- openpyxl >= 3.0.0
-- jinja2 >= 3.0.0
-- plotly >= 5.0.0
-- PyYAML >= 6.0.0
+This project is in active development. The core modeling and table export features are stable. Charts, extended documentation, and additional row types are on the roadmap. Feedback welcome — open an issue or reach out directly.
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT

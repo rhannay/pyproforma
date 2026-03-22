@@ -142,11 +142,12 @@ def _generate_cell_html(cell) -> str:
     style_attr = "; ".join(styles)
     style_str = f' style="{style_attr}"' if style_attr else ""
 
-    # Get formatted value
+    # Get formatted value — use &nbsp; for empty cells so blank rows match row height
     formatted_value = cell.formatted_value if cell.formatted_value is not None else ""
+    cell_content = _escape_html(str(formatted_value)) if formatted_value != "" else "&nbsp;"
 
     # Return the cell HTML
-    return f"<td{style_str}>{_escape_html(str(formatted_value))}</td>"
+    return f"<td{style_str}>{cell_content}</td>"
 
 
 def _escape_html(text: str) -> str:
