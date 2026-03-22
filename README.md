@@ -87,6 +87,8 @@ table = model.tables.from_template([
 table.show()
 ```
 
+![Example table](docs/images/table_example.png)
+
 Export to Excel with formatting preserved:
 
 ```python

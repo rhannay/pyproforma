@@ -123,7 +123,12 @@ class Tables:
                 # Single row returned
                 all_rows.append(result)
 
-        return Table(cells=all_rows)
+        # Build default col_widths: 315px (≈45 Excel units) for label cols,
+        # 105px (≈15 Excel units) for each period col
+        n_periods = len(self._model.periods)
+        col_widths = [245] * label_col_count + [105] * n_periods
+
+        return Table(cells=all_rows, col_widths=col_widths)
 
     def line_items(
         self,
