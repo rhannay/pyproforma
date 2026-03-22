@@ -22,6 +22,7 @@ from .line_items import (
     LineItemValues,
     create_debt_lines,
 )
+from .table import Format, NumberFormatSpec
 from .compare import ModelComparison
 from .proforma_model import ProformaModel
 from .tables import Tables
@@ -48,4 +49,6 @@ __all__ = [
     "ModelTagNamespace",
     "Tables",
     "ModelComparison",
+    "Format",
+    "NumberFormatSpec",
 ]

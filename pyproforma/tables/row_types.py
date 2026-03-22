@@ -39,7 +39,7 @@ class BaseRow(ABC):
 class HeaderRow(BaseRow):
     """Configuration for header row generation."""
 
-    col_labels: Union[str, list[str]] = "Name"
+    col_labels: Union[str, list[str]] = "Period"
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1

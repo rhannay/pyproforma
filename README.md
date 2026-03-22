@@ -75,14 +75,13 @@ model.tables.precedents("net_income").show()
 
 # Custom layout using a template
 from pyproforma import Format
-from pyproforma.tables import HeaderRow, LabelRow, ItemRow, LineItemsTotalRow, BlankRow
+from pyproforma.tables import HeaderRow, LabelRow, ItemRow
 
 table = model.tables.from_template([
     HeaderRow(),
     LabelRow(label="Income Statement"),
     ItemRow(name="revenue", value_format=Format.THOUSANDS_K),
-    ItemRow(name="cogs",    value_format=Format.THOUSANDS_K),
-    BlankRow(),
+    ItemRow(name="cogs",    value_format=Format.THOUSANDS_K, bottom_border="single"),
     ItemRow(name="gross_profit", bold=True, value_format=Format.THOUSANDS_K),
 ])
 table.show()
