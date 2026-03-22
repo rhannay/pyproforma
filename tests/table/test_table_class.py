@@ -1710,3 +1710,42 @@ class TestTableShow:
             # The HTML data should match what to_html() generates
             expected_html = table.to_html()
             assert html_obj.data == expected_html
+
+
+class TestCellHref:
+    """Test cases for Cell href (hyperlink) functionality."""
+
+    def test_cell_href_default_is_none(self):
+        """Test that href defaults to None."""
+        cell = Cell(value="hello")
+        assert cell.href is None
+
+    def test_cell_href_set(self):
+        """Test that href can be set on a Cell."""
+        cell = Cell(value="Revenue", href="/line_item/revenue")
+        assert cell.href == "/line_item/revenue"
+
+    def test_to_html_renders_link(self):
+        """Test that a cell with href renders an <a> tag in HTML output."""
+        table = Table(cells=[[Cell("Revenue", href="/line_item/revenue")]])
+        html = table.to_html()
+        assert '<a href="/line_item/revenue">Revenue</a>' in html
+
+    def test_to_html_no_link_when_href_none(self):
+        """Test that a cell without href renders no <a> tag."""
+        table = Table(cells=[[Cell("Revenue")]])
+        html = table.to_html()
+        assert "<a href" not in html
+
+    def test_to_html_href_escapes_special_chars(self):
+        """Test that href values are HTML-escaped to prevent XSS."""
+        table = Table(cells=[[Cell("Click", href='/path?a=1&b=2"')]])
+        html = table.to_html()
+        assert "&amp;" in html
+        assert "&quot;" in html
+
+    def test_to_html_empty_cell_no_link(self):
+        """Test that an empty cell with href set does not render a link."""
+        table = Table(cells=[[Cell(None, href="/line_item/revenue")]])
+        html = table.to_html()
+        assert "<a href" not in html

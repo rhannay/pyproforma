@@ -146,6 +146,10 @@ def _generate_cell_html(cell) -> str:
     formatted_value = cell.formatted_value if cell.formatted_value is not None else ""
     cell_content = _escape_html(str(formatted_value)) if formatted_value != "" else "&nbsp;"
 
+    # Wrap in a link if href is set
+    if cell.href and formatted_value != "":
+        cell_content = f'<a href="{_escape_html(cell.href)}">{cell_content}</a>'
+
     # Return the cell HTML
     return f"<td{style_str}>{cell_content}</td>"
 

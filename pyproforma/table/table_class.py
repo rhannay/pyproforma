@@ -31,6 +31,7 @@ class Cell:
         font_color (Optional[str]): CSS color string for font color.
         bottom_border (Optional[str]): Bottom border style. Can be None, 'single', or 'double'.
         top_border (Optional[str]): Top border style. Can be None, 'single', or 'double'.
+        href (Optional[str]): URL to make the cell value a hyperlink.
 
     Examples:
         >>> cell = Cell(value=1000, bold=True, value_format='no_decimals')
@@ -51,6 +52,7 @@ class Cell:
     font_color: Optional[str] = None
     bottom_border: Optional[BorderStyle] = None
     top_border: Optional[BorderStyle] = None
+    href: Optional[str] = None
 
     def __post_init__(self):
         """Validate color values and border styles after initialization."""
