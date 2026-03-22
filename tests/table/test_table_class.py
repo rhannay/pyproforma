@@ -1749,3 +1749,69 @@ class TestCellHref:
         table = Table(cells=[[Cell(None, href="/line_item/revenue")]])
         html = table.to_html()
         assert "<a href" not in html
+
+
+class TestBootstrapHtmlRenderer:
+    """Test cases for Table.to_bootstrap_html()."""
+
+    def test_outputs_bootstrap_table_classes(self):
+        """Test that Bootstrap table classes are present."""
+        table = Table(cells=[[Cell("A"), Cell("B")]])
+        html = table.to_bootstrap_html()
+        assert 'class="table table-bordered table-hover mb-0"' in html
+
+    def test_outputs_table_responsive_wrapper(self):
+        """Test that output is wrapped in table-responsive div."""
+        table = Table(cells=[[Cell("A")]])
+        html = table.to_bootstrap_html()
+        assert '<div class="table-responsive">' in html
+
+    def test_bold_uses_fw_bold_class(self):
+        """Test that bold cells use fw-bold Bootstrap class, not inline style."""
+        table = Table(cells=[[Cell("Total", bold=True)]])
+        html = table.to_bootstrap_html()
+        assert "fw-bold" in html
+        assert "font-weight" not in html
+
+    def test_align_right_uses_text_end(self):
+        """Test that right-aligned cells use text-end Bootstrap class."""
+        table = Table(cells=[[Cell(100, align="right")]])
+        html = table.to_bootstrap_html()
+        assert "text-end" in html
+
+    def test_align_left_uses_text_start(self):
+        """Test that left-aligned cells use text-start Bootstrap class."""
+        table = Table(cells=[[Cell("Label", align="left")]])
+        html = table.to_bootstrap_html()
+        assert "text-start" in html
+
+    def test_align_center_uses_text_center(self):
+        """Test that center-aligned cells use text-center Bootstrap class."""
+        table = Table(cells=[[Cell("Header", align="center")]])
+        html = table.to_bootstrap_html()
+        assert "text-center" in html
+
+    def test_background_color_uses_inline_style(self):
+        """Test that background color is still rendered as inline style."""
+        table = Table(cells=[[Cell("Header", background_color="lightblue")]])
+        html = table.to_bootstrap_html()
+        assert "background-color:" in html
+
+    def test_no_style_block_injected(self):
+        """Test that no <style> block is emitted."""
+        table = Table(cells=[[Cell("A"), Cell(100)]])
+        html = table.to_bootstrap_html()
+        assert "<style>" not in html
+
+    def test_href_renders_link(self):
+        """Test that href renders an <a> tag in Bootstrap output."""
+        table = Table(cells=[[Cell("Revenue", href="/line_item/revenue")]])
+        html = table.to_bootstrap_html()
+        assert '<a href="/line_item/revenue">Revenue</a>' in html
+
+    def test_col_widths_emits_colgroup(self):
+        """Test that col_widths emits colgroup in Bootstrap output."""
+        table = Table(cells=[[Cell("A"), Cell("B")]], col_widths=[200, None])
+        html = table.to_bootstrap_html()
+        assert "<colgroup>" in html
+        assert 'style="width: 200px"' in html

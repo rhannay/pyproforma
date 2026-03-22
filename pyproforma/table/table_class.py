@@ -6,6 +6,7 @@ import pandas as pd
 from .colors import color_to_hex
 from .excel import to_excel
 from .format_value import NumberFormatSpec, format_value, normalize_format
+from .bootstrap_html_renderer import to_bootstrap_html as _to_bootstrap_html
 from .html_renderer import to_html as _to_html
 
 # Define a type alias for border styles
@@ -860,6 +861,21 @@ class Table:
             the HTML output or prefer not to depend on pandas styling.
         """
         return _to_html(self)
+
+    def to_bootstrap_html(self) -> str:
+        """Generate Bootstrap-compatible HTML for embedding in Flask/Jinja2 templates.
+
+        Uses Bootstrap utility classes (fw-bold, text-end, etc.) instead of
+        inline CSS. No <style> block is emitted — the page must include Bootstrap CSS.
+
+        Returns:
+            str: HTML fragment ready to embed in a Bootstrap page.
+
+        Examples:
+            >>> html = table.to_bootstrap_html()
+            >>> # In a Jinja2 template: {{ table | safe }}
+        """
+        return _to_bootstrap_html(self)
 
     def show(self) -> None:
         """Display the table in HTML format within a notebook environment.
