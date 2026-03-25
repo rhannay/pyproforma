@@ -82,11 +82,16 @@ def create_app(model):
 
         values_table = model.tables.line_item(name).to_bootstrap_html()
 
+        precedents_table = None
+        if isinstance(item_def, FormulaLine) and item_def.precedents:
+            precedents_table = model.tables.precedents(name).to_bootstrap_html()
+
         return render_template(
             "line_item.html",
             model=model,
             info=info,
             values_table=values_table,
+            precedents_table=precedents_table,
         )
 
     return app
