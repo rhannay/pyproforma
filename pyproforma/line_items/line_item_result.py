@@ -9,6 +9,7 @@ values and basic analysis methods.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pyproforma.chart.chart_spec import ChartSpec, ChartType
     from pyproforma.table import Table
     from pyproforma.proforma_model import ProformaModel
 
@@ -270,3 +271,24 @@ class LineItemResult:
             include_cumulative_change=include_cumulative_change,
             include_cumulative_percent_change=include_cumulative_percent_change,
         )
+
+    def chart(
+        self,
+        chart_type: "ChartType" = "line",
+        title: str | None = None,
+    ) -> "ChartSpec":
+        """
+        Build a chart for this line item.
+
+        Args:
+            chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
+            title: Chart title. Defaults to the line item's label (or name).
+
+        Returns:
+            ChartSpec — call .show() to display or .figure() to get the Figure.
+
+        Examples:
+            >>> model["revenue"].chart().show()
+            >>> model["revenue"].chart(chart_type="bar").figure()
+        """
+        return self._model.charts.line_item(self._name, chart_type=chart_type, title=title)

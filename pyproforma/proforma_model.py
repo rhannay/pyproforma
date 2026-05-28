@@ -16,6 +16,7 @@ from pyproforma.line_items.line_item import LineItem
 from pyproforma.line_items.line_item_result import LineItemResult
 from pyproforma.line_items.line_item_selection import LineItemSelection
 from pyproforma.line_items.line_item_values import LineItemValues
+from pyproforma.charts import Charts
 from pyproforma.reserved_words import validate_name
 from pyproforma.tables import Tables
 from pyproforma.tags_namespace import ModelTagNamespace
@@ -165,6 +166,9 @@ class ProformaModel:
 
         # Initialize tables namespace
         self.tables: Tables = Tables(self)
+
+        # Initialize charts namespace
+        self.charts: Charts = Charts(self)
 
         # Initialize tag namespace
         self._tag_namespace = ModelTagNamespace(self)
