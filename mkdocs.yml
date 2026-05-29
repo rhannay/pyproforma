@@ -82,4 +82,8 @@ plugins:
 # Navigation structure
 nav:
   - Home: index.md
+  - Getting Started: getting-started.md
+  - Line Items & Data Access: line-items.md
+  - Tables: tables.md
+  - Charts: charts.md
 
