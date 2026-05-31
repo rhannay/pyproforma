@@ -6,7 +6,7 @@
 import sys
 from pathlib import Path
 
-# Project root is two levels up; needed for pyproforma and flask_pyproforma.
+# Project root is two levels up; needed for pyproforma and explorer.
 _root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_root))
 
@@ -14,7 +14,7 @@ sys.path.insert(0, str(_root))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from model import model
-from flask_pyproforma import create_app
+from explorer import create_app
 
 if __name__ == "__main__":
     app = create_app(model)

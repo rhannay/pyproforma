@@ -21,7 +21,7 @@ def create_app(model):
 
     Usage:
         from pyproforma import ProformaModel, FixedLine
-        from flask_pyproforma import create_app
+        from explorer import create_app
 
         class MyModel(ProformaModel):
             revenue = FixedLine(values={2024: 100_000, 2025: 110_000})

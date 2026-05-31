@@ -1,6 +1,6 @@
 """Run this file to launch the pyproforma explorer with an example model.
 
-    python flask_pyproforma/example.py
+    python explorer/example.py
 """
 
 import sys
@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from pyproforma import Assumption, FixedLine, FormulaLine, ProformaModel
-from flask_pyproforma import create_app
+from explorer import create_app
 
 
 class IncomeStatement(ProformaModel):
