@@ -54,6 +54,31 @@ class TestInputLineClassLevel:
     def test_repr_without_label(self):
         assert repr(InputLine()) == "InputLine()"
 
+    def test_has_default_true(self):
+        line = InputLine(default={2024: 0.05, 2025: 0.04})
+        assert line.has_default is True
+
+    def test_has_default_false(self):
+        assert InputLine().has_default is False
+
+    def test_default_property_returns_dict(self):
+        d = {2024: 0.05, 2025: 0.04}
+        line = InputLine(default=d)
+        assert line.default == d
+
+    def test_default_property_raises_when_missing(self):
+        with pytest.raises(AttributeError, match="has no default value"):
+            InputLine().default
+
+    def test_repr_with_default(self):
+        line = InputLine(default={2024: 100}, label="Revenue")
+        r = repr(line)
+        assert "2024" in r
+        assert "Revenue" in r
+
+    def test_repr_without_default_or_label(self):
+        assert repr(InputLine()) == "InputLine()"
+
 
 # ---------------------------------------------------------------------------
 # InputLine — instantiation and value resolution
@@ -145,6 +170,48 @@ class TestInputLineInstantiation:
 
         with pytest.raises(ValueError, match="No input value for 'revenue' in period 2025"):
             M(periods=[2024, 2025], revenue={2024: 100_000})
+
+    def test_default_used_when_kwarg_omitted(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: 0.05, 2025: 0.06})
+
+        model = M(periods=[2024, 2025])
+        assert model.get_value("rate", 2024) == 0.05
+        assert model.get_value("rate", 2025) == 0.06
+
+    def test_kwarg_overrides_default(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: 0.05, 2025: 0.06})
+
+        model = M(periods=[2024, 2025], rate={2024: 0.08, 2025: 0.08})
+        assert model.get_value("rate", 2024) == 0.08
+        assert model.get_value("rate", 2025) == 0.08
+
+    def test_required_input_still_raises_without_kwarg(self):
+        class M(ProformaModel):
+            revenue = InputLine()
+
+        with pytest.raises(TypeError, match="requires input line values for: revenue"):
+            M(periods=[2024])
+
+    def test_default_input_line_usable_in_formula(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: 0.10, 2025: 0.10})
+            revenue = FixedLine(values={2024: 1_000_000, 2025: 1_100_000})
+            income = FormulaLine(formula=lambda li, t: li.revenue[t] * li.rate[t])
+
+        model = M(periods=[2024, 2025])
+        assert model.get_value("income", 2024) == 100_000.0
+        assert model.get_value("income", 2025) == 110_000.0
+
+    def test_default_and_required_inputs_coexist(self):
+        class M(ProformaModel):
+            revenue = InputLine()
+            rate = InputLine(default={2024: 0.05})
+
+        model = M(periods=[2024], revenue={2024: 200_000})
+        assert model.get_value("revenue", 2024) == 200_000
+        assert model.get_value("rate", 2024) == 0.05
 
 
 # ---------------------------------------------------------------------------

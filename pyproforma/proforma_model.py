@@ -141,7 +141,11 @@ class ProformaModel:
             if name in kwargs:
                 self._input_line_values[name] = kwargs[name]
             else:
-                missing_lines.append(name)
+                attr = getattr(self.__class__, name)
+                if attr.has_default:
+                    self._input_line_values[name] = attr.default
+                else:
+                    missing_lines.append(name)
         if missing_lines:
             raise TypeError(
                 f"{self.__class__.__name__} requires input line values for: "
