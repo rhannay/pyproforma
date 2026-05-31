@@ -4,8 +4,9 @@ Tests for AssumptionResult class and model['assumption'] access in v2.
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine, ProformaModel
+from pyproforma import Assumption, FixedLine, FormulaLine, InputAssumption, ProformaModel
 from pyproforma.assumption_result import AssumptionResult
+from pyproforma.table import Format, NumberFormatSpec
 
 
 class TestModelGetItemAccessForAssumptions:
@@ -188,6 +189,63 @@ class TestAssumptionResultClass:
         result = model["inflation_rate"]
 
         assert result.label is None
+
+    def test_value_format_property_default(self):
+        """Test that value_format defaults to NO_DECIMALS."""
+
+        class TestModel(ProformaModel):
+            inflation_rate = Assumption(value=0.03)
+
+        model = TestModel(periods=[2024])
+        result = model["inflation_rate"]
+
+        assert result.value_format == Format.NO_DECIMALS
+
+    def test_value_format_property_with_string(self):
+        """Test value_format set via string name."""
+
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21, value_format="percent")
+
+        model = TestModel(periods=[2024])
+        result = model["tax_rate"]
+
+        assert result.value_format == Format.PERCENT
+
+    def test_value_format_property_with_format_constant(self):
+        """Test value_format set via Format constant."""
+
+        class TestModel(ProformaModel):
+            revenue = Assumption(value=1_000_000, value_format=Format.CURRENCY)
+
+        model = TestModel(periods=[2024])
+        result = model["revenue"]
+
+        assert result.value_format == Format.CURRENCY
+
+    def test_value_format_property_with_number_format_spec(self):
+        """Test value_format set via NumberFormatSpec instance."""
+
+        custom_fmt = NumberFormatSpec(decimals=3, thousands=True)
+
+        class TestModel(ProformaModel):
+            rate = Assumption(value=0.005, value_format=custom_fmt)
+
+        model = TestModel(periods=[2024])
+        result = model["rate"]
+
+        assert result.value_format == custom_fmt
+
+    def test_value_format_on_input_assumption(self):
+        """Test that value_format on InputAssumption is surfaced via AssumptionResult."""
+
+        class TestModel(ProformaModel):
+            tax_rate = InputAssumption(default=0.21, value_format=Format.PERCENT)
+
+        model = TestModel(periods=[2024])
+        result = model["tax_rate"]
+
+        assert result.value_format == Format.PERCENT
 
 
 class TestAssumptionResultWithModel:

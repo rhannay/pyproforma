@@ -12,6 +12,7 @@ from pyproforma import (
     InputLine,
     ProformaModel,
 )
+from pyproforma.table import Format, NumberFormatSpec
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +188,23 @@ class TestInputAssumptionClassLevel:
             tax_rate = InputAssumption(default=0.21)
 
         assert M.tax_rate.name == "tax_rate"
+
+    def test_value_format_default(self):
+        a = InputAssumption(default=0.21)
+        assert a.value_format == Format.NO_DECIMALS
+
+    def test_value_format_with_string(self):
+        a = InputAssumption(default=0.21, value_format="percent")
+        assert a.value_format == Format.PERCENT
+
+    def test_value_format_with_format_constant(self):
+        a = InputAssumption(default=1_000_000, value_format=Format.CURRENCY)
+        assert a.value_format == Format.CURRENCY
+
+    def test_value_format_with_number_format_spec(self):
+        custom_fmt = NumberFormatSpec(decimals=4, thousands=False)
+        a = InputAssumption(default=0.1234, value_format=custom_fmt)
+        assert a.value_format == custom_fmt
 
 
 # ---------------------------------------------------------------------------

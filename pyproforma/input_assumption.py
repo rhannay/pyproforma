@@ -7,6 +7,10 @@ optional default can be provided for assumptions that are usually stable but
 occasionally varied across scenarios.
 """
 
+from typing import Union
+
+from pyproforma.table import Format, NumberFormatSpec, normalize_format
+
 # Sentinel to distinguish "no default provided" from default=None
 _MISSING = object()
 
@@ -42,6 +46,7 @@ class InputAssumption:
     Attributes:
         default: The default value, or absent if no default is set.
         label (str, optional): Human-readable label for display purposes.
+        value_format (NumberFormatSpec): Format specification for displaying the value.
         name (str): Set automatically when the class attribute is assigned.
     """
 
@@ -49,6 +54,7 @@ class InputAssumption:
         self,
         default=_MISSING,
         label: str | None = None,
+        value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         """
         Initialize an InputAssumption.
@@ -57,9 +63,14 @@ class InputAssumption:
             default: Default scalar value used when none is provided at
                 instantiation. Omit to make this assumption required.
             label (str, optional): Human-readable label. Defaults to None.
+            value_format (str | NumberFormatSpec | dict, optional): Format for
+                displaying the value. Defaults to NO_DECIMALS.
         """
         self._default = default
         self.label = label
+        self.value_format = (
+            normalize_format(value_format) if value_format is not None else Format.NO_DECIMALS
+        )
         self.name: str | None = None  # Set by __set_name__
 
     @property

@@ -127,3 +127,18 @@ class AssumptionResult:
         ):
             return self._assumption_spec.label
         return None
+
+    @property
+    def value_format(self):
+        """
+        Get the value format of the assumption.
+
+        Returns:
+            NumberFormatSpec: The assumption's value format spec
+        """
+        if self._assumption_spec is not None and hasattr(
+            self._assumption_spec, "value_format"
+        ):
+            return self._assumption_spec.value_format
+        from pyproforma.table import Format
+        return Format.NO_DECIMALS

@@ -6,6 +6,10 @@ This is a simplified version of FixedLine for common assumptions like growth rat
 tax rates, or other constant values.
 """
 
+from typing import Union
+
+from pyproforma.table import Format, NumberFormatSpec, normalize_format
+
 
 class Assumption:
     """
@@ -31,12 +35,14 @@ class Assumption:
     Attributes:
         value (float): Scalar value that applies to all periods.
         label (str, optional): Human-readable label for display purposes.
+        value_format (NumberFormatSpec): Format specification for displaying the value.
     """
 
     def __init__(
         self,
         value: float,
         label: str | None = None,
+        value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         """
         Initialize an Assumption.
@@ -44,9 +50,14 @@ class Assumption:
         Args:
             value (float): Scalar value for all periods.
             label (str, optional): Human-readable label. Defaults to None.
+            value_format (str | NumberFormatSpec | dict, optional): Format for
+                displaying the value. Defaults to NO_DECIMALS.
         """
         self.value = value
         self.label = label
+        self.value_format = (
+            normalize_format(value_format) if value_format is not None else Format.NO_DECIMALS
+        )
 
     def get_value(self, period: int | None = None) -> float:
         """
@@ -68,3 +79,5 @@ class Assumption:
         if self.label:
             return f"Assumption(value={self.value}, label={self.label!r})"
         return f"Assumption(value={self.value})"
+
+
