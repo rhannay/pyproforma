@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>{% block title %}pyproforma{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css" rel="stylesheet"/>
+</head>
+<body class="antialiased">
+  <div class="wrapper">
+
+    <header class="navbar navbar-expand-md d-print-none" data-bs-theme="dark">
+      <div class="container-xl">
+        <a href="/" class="navbar-brand">pyproforma</a>
+        <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
+      </div>
+    </header>
+
+    <div class="page-wrapper">
+      <div class="page-body">
+        <div class="container-xl">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js"></script>
+</body>
+</html>

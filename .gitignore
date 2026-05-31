@@ -90,6 +90,7 @@ settings.py
 # Temporary files
 .temp/
 temp*
+!explorer/templates/
 
 # Examples folder - ignore hidden files (files starting with .)
 examples/.*
