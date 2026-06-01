@@ -1,8 +1,8 @@
 """
-FixedLine class for line items with explicit period values.
+FixedLine class for line items with explicit period values or a scalar constant.
 
-FixedLine represents a line item with fixed values specified for each period.
-Values are provided as a dictionary mapping periods (years) to numeric values.
+FixedLine represents a line item whose values are either specified per-period
+as a dict, or as a single scalar constant that applies to every period.
 """
 
 from typing import Union
@@ -14,23 +14,25 @@ from .line_item import LineItem
 
 class FixedLine(LineItem):
     """
-    A line item with fixed values for each period.
+    A line item with fixed values for each period, or a scalar constant.
 
-    FixedLine is used to define line items where values are explicitly provided
-    for each period in a period-value dictionary. This is the simplest way to
-    define line items when you know the exact values for each period.
+    Use ``values`` to specify a per-period dict, or ``value`` to specify a
+    scalar constant that is the same for every period. Specifying both raises
+    a ValueError at class definition time.
+
+    Scalar FixedLines are accessed in formulas without ``[t]``::
+
+        tax_rate = FixedLine(value=0.21)
+        # formula: lambda li, t: li.revenue[t] * li.tax_rate
+
+    Period-indexed FixedLines require ``[t]``::
+
+        revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
+        # formula: lambda li, t: li.revenue[t] * 0.9
 
     Examples:
-        >>> revenue = FixedLine(values={2024: 100000, 2025: 110000, 2026: 121000})
-        >>> growth_rate = FixedLine(values={2024: 0.1, 2025: 0.1, 2026: 0.1})
-        >>> # Can also use in a model definition
-        >>> class MyModel(ProformaModel):
-        ...     revenue = FixedLine(values={2024: 100, 2025: 110})
-
-    Attributes:
-        values (dict[int, float]): Dictionary mapping periods to numeric values.
-        label (str, optional): Human-readable label for display purposes.
-        tags (list[str]): List of tags for categorizing the line item.
+        >>> revenue = FixedLine(values={2024: 100000, 2025: 110000})
+        >>> tax_rate = FixedLine(value=0.21, label="Tax Rate")
     """
 
     def __init__(
@@ -39,37 +41,32 @@ class FixedLine(LineItem):
         label: str | None = None,
         tags: list[str] | None = None,
         value_format: Union[str, NumberFormatSpec, dict, None] = None,
+        value: float | None = None,
     ):
-        """
-        Initialize a FixedLine.
-
-        Args:
-            values (dict[int, float], optional): Dictionary mapping periods (years)
-                to numeric values. Defaults to None (empty dict).
-            label (str, optional): Human-readable label. Defaults to None.
-            tags (list[str], optional): List of tags for categorizing the line item.
-                Defaults to None (empty list).
-            value_format (str | NumberFormatSpec | dict, optional):
-                Format specification for displaying values.
-                Defaults to None (inherits default 'no_decimals').
-        """
+        if value is not None and values is not None:
+            raise ValueError(
+                "FixedLine cannot have both 'value' (scalar) and 'values' (dict). "
+                "Use one or the other."
+            )
         super().__init__(label=label, tags=tags, value_format=value_format)
+        self._scalar_value = value
         self.values = values or {}
 
+    @property
+    def is_scalar(self) -> bool:
+        """True if this FixedLine was defined with a scalar value."""
+        return self._scalar_value is not None
+
     def get_value(self, period: int) -> float | None:
-        """
-        Get the value for a specific period.
-
-        Args:
-            period (int): The period (year) to get the value for.
-
-        Returns:
-            float | None: The value for the specified period, or None if not defined.
-        """
+        if self.is_scalar:
+            return self._scalar_value
         return self.values.get(period)
 
     def __repr__(self):
-        """Return a string representation of the FixedLine."""
+        if self.is_scalar:
+            if self.label:
+                return f"FixedLine(value={self._scalar_value}, label={self.label!r})"
+            return f"FixedLine(value={self._scalar_value})"
         if self.label:
             return f"FixedLine(values={self.values}, label={self.label!r})"
         return f"FixedLine(values={self.values})"

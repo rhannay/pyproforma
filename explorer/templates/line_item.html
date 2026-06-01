@@ -69,6 +69,18 @@
     {% endif %}
     {% endif %}
 
+    {% if info.scalar_value is defined %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Scalar Value</h3>
+      </div>
+      <div class="card-body">
+        <span class="font-monospace fs-3">{{ info.scalar_value }}</span>
+        <div class="text-muted small mt-1">Same value for every period.</div>
+      </div>
+    </div>
+    {% endif %}
+
     {% if info.fixed_values is defined %}
     <div class="card mb-3">
       <div class="card-header">
@@ -110,6 +122,7 @@
   </div>
 </div>
 
+{% if values_table %}
 <div class="card mt-3">
   <div class="card-header">
     <h3 class="card-title">Values</h3>
@@ -118,6 +131,7 @@
     {{ values_table | safe }}
   </div>
 </div>
+{% endif %}
 
 {% if precedents_table %}
 <div class="card mt-3">

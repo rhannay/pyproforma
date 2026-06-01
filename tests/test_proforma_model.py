@@ -4,27 +4,23 @@ Tests for ProformaModel and calculation engine.
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, ProformaModel
 
 
 class TestProformaModelBasic:
     """Basic tests for ProformaModel."""
 
     def test_model_discovery(self):
-        """Test that model discovers line items and assumptions."""
-
         class TestModel(ProformaModel):
-            tax_rate = Assumption(value=0.21)
+            tax_rate = FixedLine(value=0.21)
             revenue = FixedLine(values={2024: 100})
-            profit = FormulaLine(formula=lambda: revenue * 0.5)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.5)
 
-        assert "tax_rate" in TestModel._assumption_names
+        assert "tax_rate" in TestModel._line_item_names
         assert "revenue" in TestModel._line_item_names
         assert "profit" in TestModel._line_item_names
 
     def test_model_initialization_no_periods(self):
-        """Test creating a model without periods."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
 
@@ -32,8 +28,6 @@ class TestProformaModelBasic:
         assert model.periods == []
 
     def test_model_initialization_with_periods(self):
-        """Test creating a model with periods."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
 
@@ -41,72 +35,65 @@ class TestProformaModelBasic:
         assert model.periods == [2024, 2025]
 
     def test_stores_line_item_names_on_instance(self):
-        """Test that line item names are stored on the instance."""
-
         class TestModel(ProformaModel):
-            tax_rate = Assumption(value=0.21)
+            tax_rate = FixedLine(value=0.21)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.expenses[t]
-            )
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
         model = TestModel(periods=[2024])
 
         assert hasattr(model, "line_item_names")
         assert isinstance(model.line_item_names, list)
+        assert "tax_rate" in model.line_item_names
         assert "revenue" in model.line_item_names
         assert "expenses" in model.line_item_names
         assert "profit" in model.line_item_names
-        assert len(model.line_item_names) == 3
 
-    def test_stores_assumption_names_on_instance(self):
-        """Test that assumption names are stored on the instance."""
 
+class TestScalarFixedLine:
+    """Tests for scalar FixedLine (replaces Assumption)."""
+
+    def test_scalar_stored_in_scalars(self):
         class TestModel(ProformaModel):
-            tax_rate = Assumption(value=0.21)
-            growth_rate = Assumption(value=0.1)
+            tax_rate = FixedLine(value=0.21)
+
+        model = TestModel(periods=[2024])
+        assert model._scalars["tax_rate"] == 0.21
+
+    def test_scalar_accessible_in_formula_without_t(self):
+        class TestModel(ProformaModel):
+            expense_ratio = FixedLine(value=0.6)
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
+
+        model = TestModel(periods=[2024])
+        assert model.get_value("expenses", 2024) == 60.0
+
+    def test_multiple_scalars(self):
+        class TestModel(ProformaModel):
+            tax_rate = FixedLine(value=0.21)
+            growth_rate = FixedLine(value=0.1)
             revenue = FixedLine(values={2024: 100})
 
         model = TestModel(periods=[2024])
+        assert model._scalars["tax_rate"] == 0.21
+        assert model._scalars["growth_rate"] == 0.1
 
-        assert hasattr(model, "assumption_names")
-        assert isinstance(model.assumption_names, list)
-        assert "tax_rate" in model.assumption_names
-        assert "growth_rate" in model.assumption_names
-        assert len(model.assumption_names) == 2
-
-
-class TestAssumptionCalculation:
-    """Tests for assumption value calculation."""
-
-    def test_single_assumption(self):
-        """Test that a single assumption is correctly loaded."""
-
+    def test_scalar_getitem_returns_same_value_for_all_periods(self):
         class TestModel(ProformaModel):
-            tax_rate = Assumption(value=0.21)
+            rate = FixedLine(value=0.05)
 
-        model = TestModel(periods=[2024])
-        assert model.av.tax_rate == 0.21
-
-    def test_multiple_assumptions(self):
-        """Test that multiple assumptions are correctly loaded."""
-
-        class TestModel(ProformaModel):
-            tax_rate = Assumption(value=0.21)
-            growth_rate = Assumption(value=0.1)
-
-        model = TestModel(periods=[2024])
-        assert model.av.tax_rate == 0.21
-        assert model.av.growth_rate == 0.1
+        model = TestModel(periods=[2024, 2025, 2026])
+        assert model["rate"][2024] == 0.05
+        assert model["rate"][2025] == 0.05
+        assert model["rate"][2026] == 0.05
 
 
 class TestFixedLineCalculation:
     """Tests for FixedLine calculation."""
 
     def test_single_period(self):
-        """Test FixedLine with a single period."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
 
@@ -114,8 +101,6 @@ class TestFixedLineCalculation:
         assert model.get_value("revenue", 2024) == 100
 
     def test_multiple_periods(self):
-        """Test FixedLine with multiple periods."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
 
@@ -125,21 +110,21 @@ class TestFixedLineCalculation:
         assert model.get_value("revenue", 2026) == 121
 
     def test_missing_value_raises_error(self):
-        """Test that missing value for a period raises an error."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
 
         with pytest.raises(ValueError, match="No value defined"):
             TestModel(periods=[2024, 2025])
 
+    def test_value_and_values_raises(self):
+        with pytest.raises(ValueError, match="cannot have both"):
+            FixedLine(value=0.21, values={2024: 100})
+
 
 class TestFormulaLineCalculation:
     """Tests for FormulaLine calculation."""
 
     def test_simple_formula(self):
-        """Test a simple formula referencing a FixedLine."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
@@ -147,57 +132,38 @@ class TestFormulaLineCalculation:
         model = TestModel(periods=[2024])
         assert model.get_value("expenses", 2024) == 60.0
 
-    def test_formula_with_assumption(self):
-        """Test formula using an assumption."""
-
+    def test_formula_with_scalar(self):
         class TestModel(ProformaModel):
-            expense_ratio = Assumption(value=0.6)
+            expense_ratio = FixedLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
-            expenses = FormulaLine(
-                formula=lambda li, t: li.revenue[t] * li.expense_ratio
-            )
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
 
         model = TestModel(periods=[2024])
         assert model.get_value("expenses", 2024) == 60.0
 
     def test_formula_referencing_formula(self):
-        """Test formula referencing another formula line."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.expenses[t]
-            )
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
         model = TestModel(periods=[2024])
-        assert model.get_value("revenue", 2024) == 100
-        assert model.get_value("expenses", 2024) == 60.0
         assert model.get_value("profit", 2024) == 40.0
 
     def test_formula_with_override(self):
-        """Test formula with value override."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
-            expenses = FormulaLine(
-                formula=lambda li, t: li.revenue[t] * 0.6,
-                values={2024: 50},  # Override 2024
-            )
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6, values={2024: 50})
 
         model = TestModel(periods=[2024, 2025])
-        assert model.get_value("expenses", 2024) == 50  # Override value
-        assert model.get_value("expenses", 2025) == 66.0  # Calculated value
+        assert model.get_value("expenses", 2024) == 50
+        assert model.get_value("expenses", 2025) == 66.0
 
     def test_multiple_periods(self):
-        """Test formula calculation across multiple periods."""
-
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.expenses[t]
-            )
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
         model = TestModel(periods=[2024, 2025, 2026])
         assert model.get_value("profit", 2024) == 40.0
@@ -209,39 +175,17 @@ class TestComplexModel:
     """Tests for more complex model scenarios."""
 
     def test_example_model(self):
-        """Test the example model from simple_model.py."""
-
         class SimpleFinancialModel(ProformaModel):
-            expense_ratio = Assumption(value=0.6, label="Expense Ratio")
-            revenue = FixedLine(
-                values={2024: 100000, 2025: 110000, 2026: 121000},
-                label="Revenue",
-            )
-            expenses = FormulaLine(
-                formula=lambda li, t: li.revenue[t] * li.expense_ratio,
-                label="Operating Expenses",
-            )
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.expenses[t],
-                label="Net Profit",
-            )
+            expense_ratio = FixedLine(value=0.6, label="Expense Ratio")
+            revenue = FixedLine(values={2024: 100000, 2025: 110000, 2026: 121000}, label="Revenue")
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio, label="Operating Expenses")
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t], label="Net Profit")
 
         model = SimpleFinancialModel(periods=[2024, 2025, 2026])
 
-        # Check assumptions
-        assert model.av.expense_ratio == 0.6
-
-        # Check revenue
+        assert model._scalars["expense_ratio"] == 0.6
         assert model.get_value("revenue", 2024) == 100000
-        assert model.get_value("revenue", 2025) == 110000
-        assert model.get_value("revenue", 2026) == 121000
-
-        # Check expenses
         assert model.get_value("expenses", 2024) == 60000.0
-        assert model.get_value("expenses", 2025) == 66000.0
-        assert model.get_value("expenses", 2026) == 72600.0
-
-        # Check profit
         assert model.get_value("profit", 2024) == 40000.0
         assert model.get_value("profit", 2025) == 44000.0
         assert model.get_value("profit", 2026) == 48400.0

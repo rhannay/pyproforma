@@ -7,8 +7,6 @@ from flask import Flask, abort, render_template
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.debt_line import DebtBase
-from pyproforma.assumption import Assumption
-from pyproforma.input_assumption import InputAssumption
 
 
 def create_app(model):
@@ -37,24 +35,16 @@ def create_app(model):
     def index():
         items = []
         for name in model.line_item_names:
-            li = model[name]
             item_def = getattr(type(model), name)
             items.append({
                 "name": name,
                 "label": item_def.label or name,
                 "type": type(item_def).__name__,
                 "tags": item_def.tags,
+                "scalar": isinstance(item_def, FixedLine) and item_def.is_scalar,
+                "value": model[name].formatted_value(model.periods[0]) if (isinstance(item_def, FixedLine) and item_def.is_scalar and model.periods) else None,
             })
-        assumptions = []
-        for name in model.assumption_names:
-            a = model[name]
-            item_def = getattr(type(model), name)
-            assumptions.append({
-                "name": name,
-                "label": item_def.label or name,
-                "value": a.formatted_value,
-            })
-        return render_template("index.html", model=model, items=items, assumptions=assumptions)
+        return render_template("index.html", model=model, items=items)
 
     @app.route("/line_item/<name>")
     def line_item(name):
@@ -75,13 +65,18 @@ def create_app(model):
             info["formula_source"] = item_def.formula_source
             info["dependencies"] = item_def.precedents or []
         elif isinstance(item_def, FixedLine):
-            info["fixed_values"] = item_def.values or {}
+            if item_def.is_scalar:
+                info["scalar_value"] = result.formatted_value(model.periods[0]) if model.periods else str(item_def._scalar_value)
+            else:
+                info["fixed_values"] = item_def.values or {}
         elif isinstance(item_def, DebtBase):
             info["principal"] = item_def.principal
             info["rate"] = item_def.rate
             info["term"] = item_def.term
 
-        values_table = model.tables.line_item(name).to_bootstrap_html()
+        values_table = None
+        if not (isinstance(item_def, FixedLine) and item_def.is_scalar):
+            values_table = model.tables.line_item(name).to_bootstrap_html()
 
         precedents_table = None
         if isinstance(item_def, FormulaLine) and item_def.precedents:
@@ -93,46 +88,6 @@ def create_app(model):
             info=info,
             values_table=values_table,
             precedents_table=precedents_table,
-        )
-
-    @app.route("/assumption/<name>")
-    def assumption(name):
-        if name not in model.assumption_names:
-            abort(404)
-        item_def = getattr(type(model), name)
-        result = model[name]
-
-        info = {
-            "name": name,
-            "label": item_def.label or name,
-            "value": result.value,
-            "formatted_value": result.formatted_value,
-            "value_format": str(item_def.value_format),
-            "type": type(item_def).__name__,
-        }
-
-        if isinstance(item_def, InputAssumption):
-            info["is_input"] = True
-            info["has_default"] = item_def.has_default
-            if item_def.has_default:
-                from pyproforma.table import format_value
-                info["default"] = format_value(item_def.default, item_def.value_format)
-        else:
-            info["is_input"] = False
-
-        used_by = []
-        for li_name in model.line_item_names:
-            li_def = getattr(type(model), li_name)
-            if isinstance(li_def, FormulaLine):
-                precedents = li_def.precedents or []
-                if name in precedents:
-                    used_by.append(li_name)
-
-        return render_template(
-            "assumption.html",
-            model=model,
-            info=info,
-            used_by=used_by,
         )
 
     return app

@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine
+from pyproforma import FixedLine, FormulaLine
 
 
 class TestFormulaLinePrecedents:

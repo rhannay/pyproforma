@@ -1,5 +1,4 @@
 from pyproforma import (
-    Assumption,
     FixedLine,
     FormulaLine,
     Format,
@@ -35,12 +34,12 @@ class WaterUtilityModel(ProformaModel):
     """
 
     # ── Scalar assumptions ────────────────────────────────────────────────────
-    inflation_rate = Assumption(
+    inflation_rate = FixedLine(
         value=0.030,
         label="CPI Inflation Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
-    om_growth_rate = Assumption(
+    om_growth_rate = FixedLine(
         value=0.040,
         label="O&M Growth Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
