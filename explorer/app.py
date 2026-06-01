@@ -8,6 +8,7 @@ from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.debt_line import DebtBase
 from pyproforma.assumption import Assumption
+from pyproforma.input_assumption import InputAssumption
 
 
 def create_app(model):
@@ -92,6 +93,44 @@ def create_app(model):
             info=info,
             values_table=values_table,
             precedents_table=precedents_table,
+        )
+
+    @app.route("/assumption/<name>")
+    def assumption(name):
+        if name not in model.assumption_names:
+            abort(404)
+        item_def = getattr(type(model), name)
+        result = model[name]
+
+        info = {
+            "name": name,
+            "label": item_def.label or name,
+            "value": result.value,
+            "value_format": str(item_def.value_format),
+            "type": type(item_def).__name__,
+        }
+
+        if isinstance(item_def, InputAssumption):
+            info["is_input"] = True
+            info["has_default"] = item_def.has_default
+            if item_def.has_default:
+                info["default"] = item_def.default
+        else:
+            info["is_input"] = False
+
+        used_by = []
+        for li_name in model.line_item_names:
+            li_def = getattr(type(model), li_name)
+            if isinstance(li_def, FormulaLine):
+                precedents = li_def.precedents or []
+                if name in precedents:
+                    used_by.append(li_name)
+
+        return render_template(
+            "assumption.html",
+            model=model,
+            info=info,
+            used_by=used_by,
         )
 
     return app

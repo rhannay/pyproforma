@@ -59,7 +59,7 @@
       <tbody>
         {% for a in assumptions %}
         <tr>
-          <td>{{ a.label }}</td>
+          <td><a href="{{ url_for('assumption', name=a.name) }}">{{ a.label }}</a></td>
           <td class="text-secondary font-monospace small">{{ a.name }}</td>
           <td class="text-end">{{ a.value }}</td>
         </tr>
