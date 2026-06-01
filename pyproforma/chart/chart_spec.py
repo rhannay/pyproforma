@@ -76,6 +76,23 @@ class ChartSpec:
     # Web / serialisation
     # ------------------------------------------------------------------
 
+    def to_apexcharts(self) -> dict:
+        """Return a dict of ApexCharts options ready for JSON serialization.
+
+        Pass the result through json.dumps() and inject into a template.
+        The ``yaxis_format`` field mirrors NumberFormatSpec.to_dict() and is
+        intended to drive a JS formatter that replicates Python formatting logic.
+        """
+        return {
+            "series": [
+                {"name": s.label, "data": s.y_values}
+                for s in self.series
+            ],
+            "categories": self.series[0].x_values if self.series else [],
+            "title": self.title or "",
+            "yaxis_format": self.value_format.to_dict() if self.value_format else None,
+        }
+
     def to_dict(self) -> dict:
         """Serialise this ChartSpec to a plain dict suitable for JSON / web renderers."""
         return {

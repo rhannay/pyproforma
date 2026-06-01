@@ -1,5 +1,6 @@
 """Flask app factory for exploring a ProformaModel in a web browser."""
 
+import json
 import os
 
 from flask import Flask, abort, render_template
@@ -104,12 +105,15 @@ def create_app(model):
         if isinstance(item_def, FormulaLine) and item_def.precedents:
             precedents_table = model.tables.precedents(name).to_bootstrap_html()
 
+        chart_data = json.dumps(model.charts.line_item(name).to_apexcharts()) if model.periods else None
+
         return render_template(
             "line_item.html",
             model=model,
             info=info,
             values_table=values_table,
             precedents_table=precedents_table,
+            chart_data=chart_data,
         )
 
     return app
