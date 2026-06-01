@@ -31,20 +31,42 @@ def create_app(model):
     """
     app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
 
-    @app.route("/")
-    def index():
+    def _build_items(names):
         items = []
-        for name in model.line_item_names:
+        for name in names:
             item_def = getattr(type(model), name)
+            is_scalar = isinstance(item_def, FixedLine) and item_def.is_scalar
             items.append({
                 "name": name,
                 "label": item_def.label or name,
                 "type": type(item_def).__name__,
                 "tags": item_def.tags,
-                "scalar": isinstance(item_def, FixedLine) and item_def.is_scalar,
-                "value": model[name].formatted_value(model.periods[0]) if (isinstance(item_def, FixedLine) and item_def.is_scalar and model.periods) else None,
+                "scalar": is_scalar,
+                "value": model[name].formatted_value(model.periods[0]) if (is_scalar and model.periods) else None,
             })
-        return render_template("index.html", model=model, items=items)
+        return items
+
+    @app.route("/")
+    def index():
+        return render_template(
+            "index.html",
+            model=model,
+            items=_build_items(model.line_item_names),
+            title=model.__class__.__name__,
+        )
+
+    @app.route("/tag/<tag_name>")
+    def tag_view(tag_name):
+        names = [n for n in model.line_item_names if tag_name in getattr(type(model), n).tags]
+        if not names:
+            abort(404)
+        return render_template(
+            "index.html",
+            model=model,
+            items=_build_items(names),
+            title=f"Tag: {tag_name}",
+            back_link=True,
+        )
 
     @app.route("/line_item/<name>")
     def line_item(name):

@@ -30,7 +30,7 @@
           <dd class="col-7">
             {% if info.tags %}
               {% for tag in info.tags %}
-              <span class="badge bg-azure-lt text-azure">{{ tag }}</span>
+              <a href="{{ url_for('tag_view', tag_name=tag) }}" class="badge bg-azure-lt text-azure text-decoration-none">{{ tag }}</a>
               {% endfor %}
             {% else %}
               <span class="text-muted">none</span>
