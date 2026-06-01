@@ -142,3 +142,42 @@ class AssumptionResult:
             return self._assumption_spec.value_format
         from pyproforma.table import Format
         return Format.NO_DECIMALS
+
+    def __getitem__(self, period: int) -> float:
+        """
+        Get the assumption value for a specific period.
+
+        The value is the same for every period, but the period must exist in
+        the model — this validates against typos and out-of-range periods.
+
+        Args:
+            period (int): Must be a period defined in the model.
+
+        Returns:
+            float: The scalar assumption value.
+
+        Raises:
+            KeyError: If the period is not in the model.
+        """
+        if period not in self._model.periods:
+            raise KeyError(
+                f"Period {period!r} not found in model. "
+                f"Available periods: {self._model.periods}"
+            )
+        return self._value
+
+    def is_input(self, period: int) -> bool:
+        """
+        Return True if the assumption value is hardcoded rather than calculated.
+
+        Always True for Assumption (value baked into the class definition) and
+        InputAssumption (value supplied at instantiation). The period argument
+        is accepted for API consistency with LineItemResult but is ignored.
+
+        Args:
+            period (int): Ignored — assumptions are scalar, not period-specific.
+
+        Returns:
+            bool: Always True.
+        """
+        return True

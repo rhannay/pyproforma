@@ -248,6 +248,73 @@ class TestAssumptionResultClass:
         assert result.value_format == Format.PERCENT
 
 
+class TestAssumptionResultGetItem:
+    """Tests for AssumptionResult.__getitem__ (period-indexed access)."""
+
+    def test_getitem_returns_scalar_value(self):
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21)
+
+        model = TestModel(periods=[2024, 2025])
+        result = model["tax_rate"]
+
+        assert result[2024] == 0.21
+        assert result[2025] == 0.21
+
+    def test_getitem_raises_on_invalid_period(self):
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21)
+
+        model = TestModel(periods=[2024, 2025])
+        result = model["tax_rate"]
+
+        with pytest.raises(KeyError):
+            result[2055]
+
+    def test_getitem_works_for_input_assumption(self):
+        class TestModel(ProformaModel):
+            tax_rate = InputAssumption(default=0.21)
+
+        model = TestModel(periods=[2024, 2025])
+        result = model["tax_rate"]
+
+        assert result[2024] == 0.21
+        assert result[2025] == 0.21
+
+    def test_getitem_input_assumption_raises_on_invalid_period(self):
+        class TestModel(ProformaModel):
+            tax_rate = InputAssumption(default=0.21)
+
+        model = TestModel(periods=[2024])
+        result = model["tax_rate"]
+
+        with pytest.raises(KeyError):
+            result[2099]
+
+
+class TestAssumptionResultIsInput:
+    """Tests for AssumptionResult.is_input()."""
+
+    def test_is_input_true_for_assumption(self):
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21)
+
+        model = TestModel(periods=[2024, 2025])
+        result = model["tax_rate"]
+
+        assert result.is_input(2024) is True
+        assert result.is_input(2025) is True
+
+    def test_is_input_true_for_input_assumption(self):
+        class TestModel(ProformaModel):
+            tax_rate = InputAssumption(default=0.21)
+
+        model = TestModel(periods=[2024])
+        result = model["tax_rate"]
+
+        assert result.is_input(2024) is True
+
+
 class TestAssumptionResultWithModel:
     """Tests for AssumptionResult in realistic model contexts."""
 
