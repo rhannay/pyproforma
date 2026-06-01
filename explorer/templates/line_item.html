@@ -55,7 +55,7 @@
         <pre class="mb-0"><code>{{ info.formula_source }}</code></pre>
       </div>
     </div>
-    {% if info.dependencies is defined and info.dependencies %}
+    {% if (info.dependencies is defined and info.dependencies) or (info.tag_dependencies is defined and info.tag_dependencies) %}
     <div class="card mb-3">
       <div class="card-header">
         <h3 class="card-title">Precedents</h3>
@@ -63,6 +63,12 @@
       <div class="card-body">
         {% for dep in info.dependencies %}
         <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        {% endfor %}
+        {% for tag, members in info.tag_dependencies.items() %}
+        <div class="mt-2 small text-muted">via tag: <a href="{{ url_for('tag_view', tag_name=tag) }}" class="text-decoration-none">{{ tag }}</a></div>
+        {% for name in members %}
+        <a href="{{ url_for('line_item', name=name) }}" class="badge bg-azure-lt text-azure me-1 text-decoration-none">{{ name }}</a>
+        {% endfor %}
         {% endfor %}
       </div>
     </div>

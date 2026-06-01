@@ -1,11 +1,7 @@
 """
 FormulaLine class for calculated line items.
-
-FormulaLine represents a line item whose values are calculated using a formula function.
-Values can be overridden for specific periods using the values parameter.
 """
 
-import dis
 import inspect
 from typing import TYPE_CHECKING, Callable, Union
 
@@ -17,45 +13,108 @@ if TYPE_CHECKING:
     from pyproforma.model_namespace import ModelNamespace
 
 
+# ---------------------------------------------------------------------------
+# Precedent recording infrastructure
+# ---------------------------------------------------------------------------
+
+class _DummyValue:
+    """Numeric mock that survives any operation a formula might perform."""
+
+    def __getitem__(self, key): return self
+    def __add__(self, other): return self
+    def __radd__(self, other): return self
+    def __sub__(self, other): return self
+    def __rsub__(self, other): return self
+    def __mul__(self, other): return self
+    def __rmul__(self, other): return self
+    def __truediv__(self, other): return self
+    def __rtruediv__(self, other): return self
+    def __floordiv__(self, other): return self
+    def __rfloordiv__(self, other): return self
+    def __pow__(self, other): return self
+    def __neg__(self): return self
+    def __pos__(self): return self
+    def __abs__(self): return self
+    def __float__(self): return 1.0
+    def __int__(self): return 1
+    def __bool__(self): return True
+    def __gt__(self, other): return True
+    def __lt__(self, other): return False
+    def __ge__(self, other): return True
+    def __le__(self, other): return False
+    def __eq__(self, other): return False
+    def __ne__(self, other): return True
+
+
+class _TagRecorder:
+    """Returned by recorder.tag — captures the tag name from the subscript."""
+
+    def __init__(self, seen: set, refs: list):
+        self._seen = seen
+        self._refs = refs
+
+    def __getitem__(self, tag_name):
+        if isinstance(tag_name, str) and tag_name not in self._seen:
+            self._seen.add(tag_name)
+            self._refs.append(tag_name)
+        return _DummyValue()
+
+
+class _PrecedentRecorder:
+    """
+    Drop-in replacement for ModelNamespace that records which names are accessed.
+
+    Pass as the `li` argument when calling a formula with a dummy period value.
+    After the call, read ._items for direct line item refs and ._tags for tag refs.
+
+    Limitation: formulas that branch on the period value (e.g. `if t > 2025`)
+    will only trace the branch taken with t=0.
+    """
+
+    def __init__(self):
+        self._items: list[str] = []
+        self._items_seen: set[str] = set()
+        self._tags: list[str] = []
+        self._tags_seen: set[str] = set()
+
+    def __getattr__(self, name: str):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if name == "tag":
+            return _TagRecorder(self._tags_seen, self._tags)
+        if name not in self._items_seen:
+            self._items_seen.add(name)
+            self._items.append(name)
+        return _DummyValue()
+
+
+def _trace_formula(formula: Callable) -> tuple[list[str], list[str]]:
+    """Run formula with a recording proxy and return (line_item_refs, tag_refs)."""
+    recorder = _PrecedentRecorder()
+    try:
+        formula(recorder, 0)
+    except Exception:
+        pass
+    return recorder._items, recorder._tags
+
+
+# ---------------------------------------------------------------------------
+# FormulaLine
+# ---------------------------------------------------------------------------
+
 class FormulaLine(LineItem):
     """
     A line item with values calculated from a formula.
 
-    FormulaLine is used to define line items where values are calculated using a
-    formula function. The formula can reference other line items and assumptions
-    in the model through a single unified namespace.
-
-    The formula function receives two parameters:
-    - li (ModelNamespace): Unified access to line items and assumptions.
-      Line items are period-indexed: li.revenue[t], li.revenue[t-1]
-      Assumptions are scalar: li.tax_rate, li.growth_rate
-    - t (int): Current period being calculated
+    The formula receives two parameters:
+    - li (ModelNamespace): Unified access to line items (li.revenue[t]) and
+      scalar constants (li.tax_rate).
+    - t (int): Current period being calculated.
 
     Examples:
-        >>> # Simple formula
         >>> profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
-        >>>
-        >>> # Formula using an assumption
         >>> expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
-        >>>
-        >>> # Formula with overrides
-        >>> adjusted_profit = FormulaLine(
-        ...     formula=lambda li, t: li.profit[t] * 0.9,
-        ...     values={2024: 50000}  # Override for 2024
-        ... )
-        >>>
-        >>> # In a model definition
-        >>> class MyModel(ProformaModel):
-        ...     expense_ratio = Assumption(value=0.6)
-        ...     revenue = FixedLine(values={2024: 100, 2025: 110})
-        ...     expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
-        ...     profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
-
-    Attributes:
-        formula (Callable): Function that calculates the line item values.
-        values (dict[int, float], optional): Dictionary of value overrides for specific periods.
-        label (str, optional): Human-readable label for display purposes.
-        tags (list[str]): List of tags for categorizing the line item.
+        >>> total = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
     """
 
     def __init__(
@@ -66,81 +125,55 @@ class FormulaLine(LineItem):
         tags: list[str] | None = None,
         value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
-        """
-        Initialize a FormulaLine.
-
-        Args:
-            formula (Callable, optional): Function that calculates values. Must accept
-                two parameters:
-                - li (ModelNamespace): Unified access to line items and assumptions.
-                  Use li.name[t] for line items, li.name for assumptions.
-                - t (int): Current period being calculated
-                The function should return a float value. Defaults to None.
-            values (dict[int, float], optional): Dictionary of value overrides for
-                specific periods. These override calculated values. Defaults to None.
-            label (str, optional): Human-readable label. Defaults to None.
-            tags (list[str], optional): List of tags for categorizing the line item.
-                Defaults to None (empty list).
-            value_format (str | NumberFormatSpec | dict, optional):
-                Format specification for displaying values.
-                Defaults to None (inherits default 'no_decimals').
-        """
         super().__init__(label=label, tags=tags, value_format=value_format)
         self.formula = formula
         self.values = values or {}
 
     @property
     def precedents(self) -> list[str] | None:
-        """Names of line items and assumptions referenced by this formula.
+        """Names of line items and scalars directly referenced by this formula.
 
-        Inspects the formula's bytecode for attribute lookups (LOAD_ATTR instructions),
-        which correspond to accesses like li.revenue, li.tax_rate, etc. Returns names
-        in order of first appearance, deduplicated.
+        Uses a recording proxy rather than bytecode inspection, so it works
+        across Python versions and correctly excludes tag references.
+        Tag-based references are available via tag_references.
 
         Returns None if no formula is set.
-
-        Note: tag-based references (li.tag["revenue"]) appear as "tag" rather than
-        the individual member names, since the tag name is a string literal, not an
-        attribute. Named functions and lambdas are handled identically.
 
         Examples:
             >>> profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
             >>> profit.precedents
             ['revenue', 'expenses']
 
-            >>> tax = FormulaLine(formula=lambda li, t: li.revenue[t] * li.tax_rate)
-            >>> tax.precedents
-            ['revenue', 'tax_rate']
+            >>> total = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
+            >>> total.precedents
+            []
+            >>> total.tag_references
+            ['revenue']
         """
         if self.formula is None:
             return None
-        seen = set()
-        result = []
-        for instr in dis.get_instructions(self.formula):
-            if instr.opname == "LOAD_ATTR" and instr.argval not in seen:
-                seen.add(instr.argval)
-                result.append(instr.argval)
-        return result
+        items, _ = _trace_formula(self.formula)
+        return items
+
+    @property
+    def tag_references(self) -> list[str] | None:
+        """Tag names used in this formula via li.tag["name"][t].
+
+        Returns None if no formula is set, empty list if formula uses no tags.
+
+        Examples:
+            >>> total = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
+            >>> total.tag_references
+            ['revenue']
+        """
+        if self.formula is None:
+            return None
+        _, tags = _trace_formula(self.formula)
+        return tags
 
     @property
     def formula_source(self) -> str | None:
-        """Source code of the formula function.
-
-        For named functions, returns the full function definition. For lambdas,
-        extracts just the lambda expression from its enclosing line. Returns None
-        if no formula is set or if source is unavailable (e.g. defined in a REPL).
-
-        Examples:
-            >>> expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
-            >>> expenses.formula_source
-            'lambda li, t: li.revenue[t] * 0.6'
-
-            >>> def my_formula(li, t):
-            ...     return li.revenue[t] * 0.6
-            >>> expenses = FormulaLine(formula=my_formula)
-            >>> expenses.formula_source
-            'def my_formula(li, t):\\n    return li.revenue[t] * 0.6'
-        """
+        """Source code of the formula function, or None if unavailable."""
         if self.formula is None:
             return None
         try:
@@ -149,59 +182,24 @@ class FormulaLine(LineItem):
             return None
 
         if self.formula.__name__ == "<lambda>":
-            # Extract just the lambda expression from its enclosing line
             idx = source.find("lambda")
             if idx != -1:
                 source = source[idx:]
-                # Strip trailing ), comma, quote — common line endings after the lambda arg
                 source = source.rstrip(" ,)")
         return source
 
-    def eval(
-        self,
-        ns: "ModelNamespace",
-        t: int,
-    ) -> float:
-        """
-        Evaluate the formula for a specific period.
-
-        Args:
-            ns (ModelNamespace): Unified namespace giving access to both line
-                items (period-indexed) and assumptions (scalar).
-            t (int): Current period being calculated
-
-        Returns:
-            float: Calculated value for the period
-
-        Raises:
-            ValueError: If formula is None or returns invalid type
-        """
+    def eval(self, ns: "ModelNamespace", t: int) -> float:
+        """Evaluate the formula for a specific period."""
         if self.formula is None:
             raise ValueError(f"No formula defined for '{self.name}'")
         return self.formula(ns, t)
 
     def get_value(self, period: int) -> float | None:
-        """
-        Get the value for a specific period.
-
-        If the period has an override value, return that. Otherwise,
-        calculate the value using the formula.
-
-        Args:
-            period (int): The period (year) to get the value for.
-
-        Returns:
-            float | None: The value for the specified period.
-        """
-        # Check for override first
         if period in self.values:
             return self.values[period]
-
-        # Scaffolding: Actual implementation would calculate from formula
         return None
 
     def __repr__(self):
-        """Return a string representation of the FormulaLine."""
         parts = [f"formula={self.formula!r}"]
         if self.values:
             parts.append(f"values={self.values}")

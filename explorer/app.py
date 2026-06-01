@@ -87,6 +87,10 @@ def create_app(model):
         if isinstance(item_def, FormulaLine):
             info["formula_source"] = item_def.formula_source
             info["dependencies"] = item_def.precedents or []
+            info["tag_dependencies"] = {
+                tag: model.tag[tag].names
+                for tag in (item_def.tag_references or [])
+            }
         elif isinstance(item_def, FixedLine):
             if item_def.is_scalar:
                 info["scalar_value"] = result.formatted_value(model.periods[0]) if model.periods else str(item_def._scalar_value)
