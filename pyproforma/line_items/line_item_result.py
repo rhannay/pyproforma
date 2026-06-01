@@ -210,6 +210,26 @@ class LineItemResult:
             return period in spec.values
         return False
 
+    def formatted_value(self, period: int) -> str:
+        """
+        Get the formatted string value for a specific period.
+
+        Args:
+            period (int): The period to format the value for.
+
+        Returns:
+            str: The value formatted according to the line item's value_format.
+
+        Raises:
+            KeyError: If the period doesn't exist.
+
+        Examples:
+            >>> model["revenue"].formatted_value(2024)
+            '$1,000,000'
+        """
+        from pyproforma.table import format_value
+        return format_value(self[period], self.value_format)
+
     def value(self, period: int) -> float:
         """
         Get the value for a specific period.

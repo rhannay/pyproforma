@@ -52,7 +52,7 @@ def create_app(model):
             assumptions.append({
                 "name": name,
                 "label": item_def.label or name,
-                "value": a.value,
+                "value": a.formatted_value,
             })
         return render_template("index.html", model=model, items=items, assumptions=assumptions)
 
@@ -106,6 +106,7 @@ def create_app(model):
             "name": name,
             "label": item_def.label or name,
             "value": result.value,
+            "formatted_value": result.formatted_value,
             "value_format": str(item_def.value_format),
             "type": type(item_def).__name__,
         }
@@ -114,7 +115,8 @@ def create_app(model):
             info["is_input"] = True
             info["has_default"] = item_def.has_default
             if item_def.has_default:
-                info["default"] = item_def.default
+                from pyproforma.table import format_value
+                info["default"] = format_value(item_def.default, item_def.value_format)
         else:
             info["is_input"] = False
 

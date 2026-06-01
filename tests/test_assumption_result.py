@@ -248,6 +248,38 @@ class TestAssumptionResultClass:
         assert result.value_format == Format.PERCENT
 
 
+class TestAssumptionResultFormattedValue:
+    """Tests for AssumptionResult.formatted_value property."""
+
+    def test_formatted_value_percent(self):
+        class TestModel(ProformaModel):
+            tax_rate = Assumption(value=0.21, value_format=Format.PERCENT)
+
+        model = TestModel(periods=[2024])
+        assert model["tax_rate"].formatted_value == "21%"
+
+    def test_formatted_value_percent_one_decimal(self):
+        class TestModel(ProformaModel):
+            cogs_rate = Assumption(value=0.354, value_format=Format.PERCENT_ONE_DECIMAL)
+
+        model = TestModel(periods=[2024])
+        assert model["cogs_rate"].formatted_value == "35.4%"
+
+    def test_formatted_value_default_format(self):
+        class TestModel(ProformaModel):
+            count = Assumption(value=42)
+
+        model = TestModel(periods=[2024])
+        assert model["count"].formatted_value == "42"
+
+    def test_formatted_value_input_assumption(self):
+        class TestModel(ProformaModel):
+            growth = InputAssumption(default=0.05, value_format=Format.PERCENT_ONE_DECIMAL)
+
+        model = TestModel(periods=[2024])
+        assert model["growth"].formatted_value == "5.0%"
+
+
 class TestAssumptionResultGetItem:
     """Tests for AssumptionResult.__getitem__ (period-indexed access)."""
 

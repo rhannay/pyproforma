@@ -143,6 +143,21 @@ class AssumptionResult:
         from pyproforma.table import Format
         return Format.NO_DECIMALS
 
+    @property
+    def formatted_value(self) -> str:
+        """
+        Get the assumption value formatted as a string.
+
+        Returns:
+            str: The value formatted according to the assumption's value_format.
+
+        Examples:
+            >>> model["tax_rate"].formatted_value
+            '21%'
+        """
+        from pyproforma.table import format_value
+        return format_value(self._value, self.value_format)
+
     def __getitem__(self, period: int) -> float:
         """
         Get the assumption value for a specific period.

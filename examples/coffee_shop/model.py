@@ -29,8 +29,8 @@ class CoffeeShopModel(ProformaModel):
     )
 
     # --- COGS assumptions ---
-    coffee_cogs_rate = Assumption(value=0.35, label="Coffee COGS Rate")
-    food_cogs_rate = Assumption(value=0.45, label="Food COGS Rate")
+    coffee_cogs_rate = Assumption(value=0.35, label="Coffee COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL)
+    food_cogs_rate = Assumption(value=0.45, label="Food COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL)
 
     # --- Cost of Goods Sold ---
     coffee_cogs = FormulaLine(
