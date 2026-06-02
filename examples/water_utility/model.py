@@ -35,8 +35,8 @@ class WaterUtilityModel(ProformaModel):
     """
 
     # ── Scalar assumptions ────────────────────────────────────────────────────
-    inflation_rate = FixedLine(
-        value=0.030,
+    inflation_rate = InputLine(
+        default=0.030,
         label="CPI Inflation Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
