@@ -17,10 +17,28 @@
     <header class="navbar navbar-expand-md d-print-none" data-bs-theme="dark">
       <div class="container-xl">
         <a href="/" class="navbar-brand">pyproforma</a>
-        <span class="navbar-text text-muted small me-3">{{ model.__class__.__name__ }}</span>
-        {% if model.__class__._input_line_names %}
-        <a href="{{ url_for('inputs') }}" class="nav-link text-white">Inputs</a>
-        {% endif %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-menu">
+          <ul class="navbar-nav me-auto ms-auto-sm">
+            <li class="nav-item">
+              <a href="{{ url_for('index') }}" class="nav-link">All Items</a>
+            </li>
+            {% if model.__class__._input_line_names %}
+            <li class="nav-item">
+              <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
+            </li>
+            {% endif %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
+              <div class="dropdown-menu">
+                <span class="dropdown-item text-muted fst-italic small">No tables configured</span>
+              </div>
+            </li>
+          </ul>
+          <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
+        </div>
       </div>
     </header>
 
