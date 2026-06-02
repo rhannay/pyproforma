@@ -49,6 +49,7 @@
           <input type="number" step="any" name="{{ inp.name }}"
                  value="{{ inp.value }}"
                  class="form-control">
+          <div class="text-muted small mt-1 font-monospace">Current: {{ inp.formatted_values[0] }}</div>
         </div>
         {% endfor %}
       </div>
@@ -88,6 +89,12 @@
                      class="form-control form-control-sm text-end"
                      style="min-width: 100px;">
             </td>
+            {% endfor %}
+          </tr>
+          <tr class="text-muted small">
+            <td class="ps-2">Current</td>
+            {% for fv in inp.formatted_values %}
+            <td class="text-end font-monospace">{{ fv }}</td>
             {% endfor %}
           </tr>
           {% endfor %}

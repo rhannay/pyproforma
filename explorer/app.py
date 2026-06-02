@@ -93,11 +93,16 @@ def create_app(model, tables=None):
         for name in state.model_class._input_line_names:
             spec = getattr(state.model_class, name)
             is_scalar = name in m._scalars
+            if is_scalar:
+                formatted = [m[name].formatted_value(p) for p in state.periods[:1]]
+            else:
+                formatted = [m[name].formatted_value(p) for p in state.periods]
             inputs.append({
                 "name": name,
                 "label": spec.label or name,
                 "is_scalar": is_scalar,
                 "value": m._scalars[name] if is_scalar else m._input_line_values.get(name, {}),
+                "formatted_values": formatted,
             })
         return inputs
 
