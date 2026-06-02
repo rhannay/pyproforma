@@ -12,7 +12,6 @@ from pyproforma.tables.row_types import ItemRow, TagItemsRow
 from pyproforma.table import Format
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
-from pyproforma.line_items.debt_line import DebtBase
 
 
 def create_app(model, tables=None):
@@ -157,10 +156,6 @@ def create_app(model, tables=None):
             else:
                 info["input_values"] = m._input_line_values.get(name, {})
             info["is_input"] = True
-        elif isinstance(item_def, DebtBase):
-            info["principal"] = item_def.principal
-            info["rate"] = item_def.rate
-            info["term"] = item_def.term
 
         values_table = None
         scalar_input = isinstance(item_def, InputLine) and name in m._scalars
