@@ -44,7 +44,7 @@
         <div class="col-sm-6 col-md-4 col-lg-3">
           <label class="form-label">
             {{ inp.label }}
-            <span class="text-muted small font-monospace ms-1">{{ inp.name }}</span>
+            <a href="{{ url_for('line_item', name=inp.name) }}" class="text-muted small font-monospace ms-1">{{ inp.name }}</a>
           </label>
           <input type="number" step="any" name="{{ inp.name }}"
                  value="{{ inp.value }}"
@@ -79,7 +79,7 @@
           <tr>
             <td>
               <div>{{ inp.label }}</div>
-              <div class="text-muted small font-monospace">{{ inp.name }}</div>
+              <a href="{{ url_for('line_item', name=inp.name) }}" class="text-muted small font-monospace">{{ inp.name }}</a>
             </td>
             {% for period in model.periods %}
             <td>
