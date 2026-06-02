@@ -401,7 +401,7 @@ def test_chart_def_from_dict_defaults():
 def test_from_template_with_chart_def():
     from pyproforma import ChartDef
     model = SimpleModel(periods=[2024, 2025, 2026])
-    spec = model.charts.from_template(ChartDef(names=["revenue", "expenses"]))
+    spec = model.charts.build(ChartDef(names=["revenue", "expenses"]))
     assert isinstance(spec, ChartSpec)
     assert len(spec.series) == 2
     assert spec.chart_type == "line"
@@ -409,7 +409,7 @@ def test_from_template_with_chart_def():
 
 def test_from_template_with_dict():
     model = SimpleModel(periods=[2024, 2025, 2026])
-    spec = model.charts.from_template({"names": ["revenue"], "chart_type": "bar"})
+    spec = model.charts.build({"names": ["revenue"], "chart_type": "bar"})
     assert isinstance(spec, ChartSpec)
     assert spec.chart_type == "bar"
 
@@ -417,14 +417,14 @@ def test_from_template_with_dict():
 def test_from_template_chart_type_passed_through():
     from pyproforma import ChartDef
     model = SimpleModel(periods=[2024, 2025, 2026])
-    spec = model.charts.from_template(ChartDef(names=["revenue"], chart_type="stacked_bar"))
+    spec = model.charts.build(ChartDef(names=["revenue"], chart_type="stacked_bar"))
     assert spec.chart_type == "stacked_bar"
 
 
 def test_from_template_title_passed_through():
     from pyproforma import ChartDef
     model = SimpleModel(periods=[2024, 2025, 2026])
-    spec = model.charts.from_template(ChartDef(names=["revenue"], title="My Chart"))
+    spec = model.charts.build(ChartDef(names=["revenue"], title="My Chart"))
     assert spec.title == "My Chart"
 
 

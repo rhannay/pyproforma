@@ -36,7 +36,7 @@
     {% elif comp.type == "table" %}
     <div class="card h-100">
       <div class="card-header">
-        <h3 class="card-title">{{ comp.ref }}</h3>
+        <h3 class="card-title">{{ comp.table_title }}</h3>
       </div>
       <div class="card-body p-0">
         {{ comp.html | safe }}

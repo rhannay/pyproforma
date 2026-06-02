@@ -49,7 +49,7 @@ def test_from_template_with_dict_config(simple_model):
         },
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 5 data rows
     assert len(table.cells) == 6
@@ -92,7 +92,7 @@ def test_from_template_with_dataclass_config(simple_model):
         LineItemsTotalRow(line_item_names=["revenue", "expenses"], label="Total"),
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 5 data rows
     assert len(table.cells) == 6
@@ -111,7 +111,7 @@ def test_from_template_mixed_config(simple_model):
         {"row_type": "item", "name": "expenses"},
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 3 data rows
     assert len(table.cells) == 4
@@ -124,7 +124,7 @@ def test_from_template_with_custom_col_labels_string(simple_model):
         {"row_type": "item", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Check header
     header = table.cells[0]
@@ -138,7 +138,7 @@ def test_from_template_with_custom_col_labels_list(simple_model):
         {"row_type": "item", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Check header
     header = table.cells[0]
@@ -158,7 +158,7 @@ def test_from_template_no_periods_raises_error():
     template = [{"row_type": "item", "name": "revenue"}]
 
     with pytest.raises(ValueError, match="model has no periods defined"):
-        model.tables.from_template(template)
+        model.tables.build(template)
 
 
 def test_from_template_with_percent_change(simple_model):
@@ -169,7 +169,7 @@ def test_from_template_with_percent_change(simple_model):
         {"row_type": "percent_change", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 2 data rows
     assert len(table.cells) == 3
@@ -190,7 +190,7 @@ def test_from_template_with_cumulative_rows(simple_model):
         {"row_type": "cumulative_percent_change", "name": "revenue"},
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 3 data rows
     assert len(table.cells) == 4
@@ -226,7 +226,7 @@ def test_from_template_comprehensive_example(simple_model):
         },
     ]
 
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 10 data rows
     assert len(table.cells) == 11

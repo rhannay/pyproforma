@@ -122,7 +122,7 @@ class Charts:
             title=title,
         )
 
-    def from_template(self, template: "ChartDef | dict") -> ChartSpec:
+    def build(self, template: "ChartDef | dict") -> ChartSpec:
         """
         Build a ChartSpec from a ChartDef or equivalent dict.
 

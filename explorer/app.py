@@ -9,6 +9,7 @@ from flask import Flask, abort, flash, redirect, render_template, request, url_f
 
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.tables.row_types import ItemRow, TagItemsRow
+from pyproforma.tables.table_def import TableDef
 from pyproforma.table import Format
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
@@ -46,11 +47,11 @@ def create_app(model, tables=None, charts=None, views=None):
     state.periods = model.periods
     state.error = None
     from pyproforma.tables.row_types import HeaderRow, ItemRow
-    all_items_template = [
-        HeaderRow(),
-        *[ItemRow(name=n) for n in model.line_item_names],
-    ]
-    state.tables = {"All Line Items": all_items_template, **(tables or {})}
+    all_items_def = TableDef(
+        rows=[HeaderRow(), *[ItemRow(name=n) for n in model.line_item_names]],
+        title="All Line Items",
+    )
+    state.tables = {"All Line Items": all_items_def, **(tables or {})}
     state.charts = charts or {}
     state.views = views or {}
 
@@ -137,7 +138,7 @@ def create_app(model, tables=None, charts=None, views=None):
             TagItemsRow(tag=tag_name, include_total_row=True,
                         total_row_label=f"Total {tag_name}"),
         ]
-        tag_table_html = m.tables.from_template(_add_hrefs(tag_template)).to_bootstrap_html()
+        tag_table_html = m.tables.build(_add_hrefs(tag_template)).to_bootstrap_html()
         tag_chart_data = json.dumps(
             m.charts.line_items(names, chart_type="stacked_bar", title=tag_name).to_apexcharts()
         ) if m.periods else None
@@ -211,9 +212,10 @@ def create_app(model, tables=None, charts=None, views=None):
             dependents=dependents,
         )
 
-    def _add_hrefs(template):
+    def _add_hrefs(definition):
+        rows = definition.rows if isinstance(definition, TableDef) else definition
         result = []
-        for row in template:
+        for row in rows:
             if isinstance(row, ItemRow):
                 result.append(dataclasses.replace(row, href=url_for("line_item", name=row.name)))
             elif isinstance(row, TagItemsRow):
@@ -224,6 +226,8 @@ def create_app(model, tables=None, charts=None, views=None):
                                           href=url_for("line_item", name=name)))
             else:
                 result.append(row)
+        if isinstance(definition, TableDef):
+            return TableDef(rows=result, title=definition.title)
         return result
 
     @app.route("/table/<int:idx>")
@@ -232,13 +236,13 @@ def create_app(model, tables=None, charts=None, views=None):
         if idx >= len(labels):
             abort(404)
         label = labels[idx]
-        template = state.tables[label]
-        table_html = state.model.tables.from_template(_add_hrefs(template)).to_bootstrap_html()
+        definition = state.tables[label]
+        table = state.model.tables.build(_add_hrefs(definition))
         return render_template(
             "table_view.html",
             model=state.model,
-            title=label,
-            table_html=table_html,
+            title=table.title or label,
+            table_html=table.to_bootstrap_html(),
         )
 
     @app.route("/chart/<int:idx>")
@@ -249,7 +253,7 @@ def create_app(model, tables=None, charts=None, views=None):
         label = labels[idx]
         spec = state.charts[label]
         chart_data = json.dumps(
-            state.model.charts.from_template(spec).to_apexcharts()
+            state.model.charts.build(spec).to_apexcharts()
         )
         return render_template(
             "chart_view.html",
@@ -293,14 +297,14 @@ def create_app(model, tables=None, charts=None, views=None):
                 elif comp["type"] == "chart":
                     chart_def = state.charts[comp["ref"]]
                     c["chart_data"] = json.dumps(
-                        state.model.charts.from_template(chart_def).to_apexcharts()
+                        state.model.charts.build(chart_def).to_apexcharts()
                     )
                     c["chart_id"] = f"view-chart-{row_idx}-{col_idx}"
                 elif comp["type"] == "table":
                     table_def = state.tables[comp["ref"]]
-                    c["html"] = state.model.tables.from_template(
-                        _add_hrefs(table_def)
-                    ).to_bootstrap_html()
+                    built = state.model.tables.build(_add_hrefs(table_def))
+                    c["html"] = built.to_bootstrap_html()
+                    c["table_title"] = built.title or comp["ref"]
                 processed.append(c)
             rows.append(processed)
 

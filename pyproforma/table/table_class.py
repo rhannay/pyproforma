@@ -128,6 +128,7 @@ class Table:
         self,
         cells: list[list[Cell] | list[Any]] | None = None,
         col_widths: Optional[list[Optional[int]]] = None,
+        title: Optional[str] = None,
     ):
         """Initialize a Table with cells.
 
@@ -147,6 +148,7 @@ class Table:
             self.cells = self._normalize_cells(cells)
         self._check_grid_consistency()
         self.col_widths = col_widths
+        self.title = title
 
     def _normalize_cells(self, cells: list[list[Any]]) -> list[list[Cell]]:
         """Convert input cells to list of list of Cell objects."""
@@ -921,9 +923,11 @@ class Table:
                 "and display it manually."
             ) from e
 
-        # Get the HTML representation and display it
-        html_content = self.to_html()
-        display(HTML(html_content))
+        html = ""
+        if self.title:
+            html += f"<h4 style='margin-bottom:8px'>{self.title}</h4>"
+        html += self.to_html()
+        display(HTML(html))
 
     def transpose(self, remove_borders: bool = False) -> "Table":
         """Return a new Table with rows and columns transposed.
