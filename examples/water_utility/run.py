@@ -28,6 +28,23 @@ charts = {
     "Key Ratios": ChartDef(names=["dscr", "days_cash_on_hand"]),
 }
 
+views = {
+    "Financial Summary": [
+        [
+            {"type": "stat", "name": "dscr",             "label": "Min DSCR",          "aggregation": "min"},
+            {"type": "stat", "name": "ending_cash",       "label": "Ending Cash",       "aggregation": "latest"},
+            {"type": "stat", "name": "days_cash_on_hand", "label": "Days Cash on Hand", "aggregation": "latest"},
+        ],
+        [
+            {"type": "chart", "ref": "Revenue"},
+            {"type": "chart", "ref": "O&M Breakdown"},
+        ],
+        [
+            {"type": "table", "ref": "Debt Service Coverage"},
+        ],
+    ],
+}
+
 if __name__ == "__main__":
-    app = create_app(model, tables=tables, charts=charts)
+    app = create_app(model, tables=tables, charts=charts, views=views)
     app.run(debug=True)

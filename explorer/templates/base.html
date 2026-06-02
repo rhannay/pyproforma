@@ -41,6 +41,16 @@
               </div>
             </li>
             {% endif %}
+            {% if nav_views %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Views</a>
+              <div class="dropdown-menu">
+                {% for idx, label in nav_views %}
+                <a class="dropdown-item" href="{{ url_for('view_page', idx=idx) }}">{{ label }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %}
             {% if nav_charts %}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Charts</a>

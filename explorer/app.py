@@ -14,7 +14,7 @@ from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
 
 
-def create_app(model, tables=None, charts=None):
+def create_app(model, tables=None, charts=None, views=None):
     """Create a Flask app for exploring a ProformaModel.
 
     Args:
@@ -52,6 +52,7 @@ def create_app(model, tables=None, charts=None):
     ]
     state.tables = {"All Line Items": all_items_template, **(tables or {})}
     state.charts = charts or {}
+    state.views = views or {}
 
     # ------------------------------------------------------------------
     # Helpers
@@ -62,6 +63,7 @@ def create_app(model, tables=None, charts=None):
         return {
             "nav_tables": list(enumerate(state.tables.keys())),
             "nav_charts": list(enumerate(state.charts.keys())),
+            "nav_views": list(enumerate(state.views.keys())),
             "nav_tags": state.model.tags,
         }
 
@@ -254,6 +256,59 @@ def create_app(model, tables=None, charts=None):
             model=state.model,
             title=label,
             chart_data=chart_data,
+        )
+
+    def _compute_stat(name, aggregation):
+        m = state.model
+        values = m[name].values
+        if not values:
+            return "—"
+        if aggregation == "min":
+            period = min(values, key=values.__getitem__)
+        elif aggregation == "max":
+            period = max(values, key=values.__getitem__)
+        elif aggregation == "first":
+            period = min(values)
+        else:  # latest
+            period = max(values)
+        return m[name].formatted_value(period)
+
+    @app.route("/view/<int:idx>")
+    def view_page(idx):
+        labels = list(state.views.keys())
+        if idx >= len(labels):
+            abort(404)
+        label = labels[idx]
+        view_def = state.views[label]
+
+        rows = []
+        for row_idx, row in enumerate(view_def):
+            col_width = 12 // len(row)
+            processed = []
+            for col_idx, comp in enumerate(row):
+                c = dict(comp)
+                c["col_width"] = col_width
+                if comp["type"] == "stat":
+                    c["value"] = _compute_stat(comp["name"], comp.get("aggregation", "latest"))
+                elif comp["type"] == "chart":
+                    chart_def = state.charts[comp["ref"]]
+                    c["chart_data"] = json.dumps(
+                        state.model.charts.from_template(chart_def).to_apexcharts()
+                    )
+                    c["chart_id"] = f"view-chart-{row_idx}-{col_idx}"
+                elif comp["type"] == "table":
+                    table_def = state.tables[comp["ref"]]
+                    c["html"] = state.model.tables.from_template(
+                        _add_hrefs(table_def)
+                    ).to_bootstrap_html()
+                processed.append(c)
+            rows.append(processed)
+
+        return render_template(
+            "view.html",
+            model=state.model,
+            title=label,
+            rows=rows,
         )
 
     @app.route("/inputs", methods=["GET"])
