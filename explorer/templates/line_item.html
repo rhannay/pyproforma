@@ -87,6 +87,19 @@
     </div>
     {% endif %}
 
+    {% if dependents %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Dependents</h3>
+      </div>
+      <div class="card-body">
+        {% for dep in dependents %}
+        <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if info.fixed_values is defined %}
     <div class="card mb-3">
       <div class="card-header">
@@ -143,6 +156,7 @@
   </div>
 </div>
 {% endif %}
+
 
 {% endblock %}
 

@@ -155,6 +155,27 @@ class ProformaModel:
             f"Available line items: {', '.join(sorted(self.line_item_names))}"
         )
 
+    def dependents(self, name: str) -> list[str]:
+        """Return names of line items whose formulas directly reference the given name.
+
+        Args:
+            name: A line item name to find dependents for.
+
+        Returns:
+            List of line item names that directly reference this item in their formula.
+
+        Examples:
+            >>> model.dependents("revenue")
+            ['expenses', 'profit']
+        """
+        from pyproforma.line_items.formula_line import FormulaLine
+        return [
+            n for n in self.line_item_names
+            if n != name
+            and isinstance(getattr(self.__class__, n), FormulaLine)
+            and name in (getattr(self.__class__, n).precedents or [])
+        ]
+
     def compare(self, *others, labels=None):
         from pyproforma.compare import ModelComparison
         return ModelComparison(self, *others, labels=labels)

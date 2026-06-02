@@ -171,6 +171,51 @@ class TestFormulaLineCalculation:
         assert abs(model.get_value("profit", 2026) - 48.4) < 0.0001
 
 
+class TestDependents:
+    """Tests for ProformaModel.dependents()."""
+
+    def test_single_dependent(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
+
+        model = TestModel(periods=[2024])
+        assert model.dependents("revenue") == ["expenses"]
+
+    def test_multiple_dependents(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
+
+        model = TestModel(periods=[2024])
+        assert model.dependents("revenue") == ["expenses", "profit"]
+
+    def test_scalar_dependents(self):
+        class TestModel(ProformaModel):
+            rate = FixedLine(value=0.6)
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.rate)
+
+        model = TestModel(periods=[2024])
+        assert model.dependents("rate") == ["expenses"]
+
+    def test_no_dependents(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
+
+        model = TestModel(periods=[2024])
+        assert model.dependents("expenses") == []
+
+    def test_fixed_line_has_no_dependents_detected(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel(periods=[2024])
+        assert model.dependents("revenue") == []
+
+
 class TestComplexModel:
     """Tests for more complex model scenarios."""
 

@@ -195,6 +195,7 @@ def create_app(model, tables=None):
             precedents_table = m.tables.precedents(name).to_bootstrap_html()
 
         chart_data = json.dumps(m.charts.line_item(name).to_apexcharts()) if m.periods else None
+        dependents = m.dependents(name)
 
         return render_template(
             "line_item.html",
@@ -203,6 +204,7 @@ def create_app(model, tables=None):
             values_table=values_table,
             precedents_table=precedents_table,
             chart_data=chart_data,
+            dependents=dependents,
         )
 
     def _add_hrefs(template):
