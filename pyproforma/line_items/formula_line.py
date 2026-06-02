@@ -185,7 +185,9 @@ class FormulaLine(LineItem):
             idx = source.find("lambda")
             if idx != -1:
                 source = source[idx:]
-                source = source.rstrip(" ,)")
+                source = source.rstrip(" ,")
+                while source.endswith(")") and source.count("(") < source.count(")"):
+                    source = source[:-1].rstrip(" ,")
         return source
 
     def eval(self, ns: "ModelNamespace", t: int) -> float:
