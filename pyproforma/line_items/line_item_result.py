@@ -8,6 +8,8 @@ values and basic analysis methods.
 
 from typing import TYPE_CHECKING
 
+from pyproforma.table import format_value
+
 if TYPE_CHECKING:
     from pyproforma.chart.chart_spec import ChartSpec, ChartType
     from pyproforma.table import Table
@@ -227,7 +229,6 @@ class LineItemResult:
             >>> model["revenue"].formatted_value(2024)
             '$1,000,000'
         """
-        from pyproforma.table import format_value
         return format_value(self[period], self.value_format)
 
     def value(self, period: int) -> float:
