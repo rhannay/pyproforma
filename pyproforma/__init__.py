@@ -2,6 +2,7 @@
 PyProforma - A lightweight financial modeling framework.
 """
 
+from .charts.chart_def import ChartDef
 from .line_items import (
     DebtCalculator,
     DebtInterestLine,
@@ -24,6 +25,7 @@ from .tags_namespace import ModelTagNamespace
 
 __all__ = [
     "ProformaModel",
+    "ChartDef",
     "FixedLine",
     "FormulaLine",
     "InputLine",

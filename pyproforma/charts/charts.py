@@ -122,6 +122,35 @@ class Charts:
             title=title,
         )
 
+    def from_template(self, template: "ChartDef | dict") -> ChartSpec:
+        """
+        Build a ChartSpec from a ChartDef or equivalent dict.
+
+        Accepts either the ChartDef dataclass (for Python code with IDE support)
+        or a plain dict (for JSON-serializable configs). Both produce identical results.
+
+        Args:
+            template: A ChartDef instance or a dict with keys:
+                - names (list[str]): Line item names to include as series.
+                - chart_type (str, optional): "line", "bar", or "stacked_bar". Defaults to "line".
+                - title (str, optional): Chart title.
+
+        Returns:
+            ChartSpec ready for rendering.
+
+        Examples:
+            >>> model.charts.from_template(ChartDef(names=["revenue", "expenses"]))
+            >>> model.charts.from_template({"names": ["revenue"], "chart_type": "bar"})
+        """
+        from pyproforma.charts.chart_def import ChartDef
+        if isinstance(template, dict):
+            template = ChartDef.from_dict(template)
+        return self.line_items(
+            names=template.names,
+            chart_type=template.chart_type,
+            title=template.title,
+        )
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------

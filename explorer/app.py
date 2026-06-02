@@ -246,11 +246,8 @@ def create_app(model, tables=None, charts=None):
             abort(404)
         label = labels[idx]
         spec = state.charts[label]
-        names = spec["names"]
-        chart_type = spec.get("chart_type", "line")
-        title = spec.get("title", label)
         chart_data = json.dumps(
-            state.model.charts.line_items(names, chart_type=chart_type, title=title).to_apexcharts()
+            state.model.charts.from_template(spec).to_apexcharts()
         )
         return render_template(
             "chart_view.html",

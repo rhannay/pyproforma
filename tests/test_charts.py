@@ -371,6 +371,63 @@ def test_show_calls_pyplot_show(model):
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# ChartDef and from_template
+# ---------------------------------------------------------------------------
+
+
+def test_chart_def_defaults():
+    from pyproforma import ChartDef
+    d = ChartDef(names=["revenue"])
+    assert d.chart_type == "line"
+    assert d.title is None
+
+
+def test_chart_def_from_dict():
+    from pyproforma import ChartDef
+    d = ChartDef.from_dict({"names": ["revenue", "expenses"], "chart_type": "bar", "title": "Rev"})
+    assert d.names == ["revenue", "expenses"]
+    assert d.chart_type == "bar"
+    assert d.title == "Rev"
+
+
+def test_chart_def_from_dict_defaults():
+    from pyproforma import ChartDef
+    d = ChartDef.from_dict({"names": ["revenue"]})
+    assert d.chart_type == "line"
+    assert d.title is None
+
+
+def test_from_template_with_chart_def():
+    from pyproforma import ChartDef
+    model = SimpleModel(periods=[2024, 2025, 2026])
+    spec = model.charts.from_template(ChartDef(names=["revenue", "expenses"]))
+    assert isinstance(spec, ChartSpec)
+    assert len(spec.series) == 2
+    assert spec.chart_type == "line"
+
+
+def test_from_template_with_dict():
+    model = SimpleModel(periods=[2024, 2025, 2026])
+    spec = model.charts.from_template({"names": ["revenue"], "chart_type": "bar"})
+    assert isinstance(spec, ChartSpec)
+    assert spec.chart_type == "bar"
+
+
+def test_from_template_chart_type_passed_through():
+    from pyproforma import ChartDef
+    model = SimpleModel(periods=[2024, 2025, 2026])
+    spec = model.charts.from_template(ChartDef(names=["revenue"], chart_type="stacked_bar"))
+    assert spec.chart_type == "stacked_bar"
+
+
+def test_from_template_title_passed_through():
+    from pyproforma import ChartDef
+    model = SimpleModel(periods=[2024, 2025, 2026])
+    spec = model.charts.from_template(ChartDef(names=["revenue"], title="My Chart"))
+    assert spec.title == "My Chart"
+
+
 def test_charts_is_in_reserved_words():
     from pyproforma.reserved_words import RESERVED_WORDS
 
