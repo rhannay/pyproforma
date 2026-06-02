@@ -33,7 +33,13 @@
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
               <div class="dropdown-menu">
-                <span class="dropdown-item text-muted fst-italic small">No tables configured</span>
+                {% if nav_tables %}
+                  {% for idx, label in nav_tables %}
+                  <a class="dropdown-item" href="{{ url_for('table_view', idx=idx) }}">{{ label }}</a>
+                  {% endfor %}
+                {% else %}
+                  <span class="dropdown-item text-muted fst-italic small">No tables configured</span>
+                {% endif %}
               </div>
             </li>
           </ul>

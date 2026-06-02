@@ -12,7 +12,7 @@ from pyproforma.line_items.input_line import InputLine
 from pyproforma.line_items.debt_line import DebtBase
 
 
-def create_app(model):
+def create_app(model, tables=None):
     """Create a Flask app for exploring a ProformaModel.
 
     Args:
@@ -43,10 +43,15 @@ def create_app(model):
     state.model_class = type(model)
     state.periods = model.periods
     state.error = None
+    state.tables = tables or {}  # {label: template}
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    @app.context_processor
+    def inject_nav():
+        return {"nav_tables": list(enumerate(state.tables.keys()))}
 
     def _format_name(spec):
         if spec is None:
@@ -173,6 +178,21 @@ def create_app(model):
             values_table=values_table,
             precedents_table=precedents_table,
             chart_data=chart_data,
+        )
+
+    @app.route("/table/<int:idx>")
+    def table_view(idx):
+        labels = list(state.tables.keys())
+        if idx >= len(labels):
+            abort(404)
+        label = labels[idx]
+        template = state.tables[label]
+        table_html = state.model.tables.from_template(template).to_bootstrap_html()
+        return render_template(
+            "table_view.html",
+            model=state.model,
+            title=label,
+            table_html=table_html,
         )
 
     @app.route("/inputs", methods=["GET"])
