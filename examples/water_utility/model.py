@@ -10,6 +10,12 @@ from pyproforma import (
 PERIODS = list(range(2025, 2031))
 
 
+def calc_dscr(li, t):
+    if li.total_debt_service[t] > 0:
+        return li.net_revenue[t] / li.total_debt_service[t]
+    return 0.0
+
+
 class WaterUtilityModel(ProformaModel):
     period_label = "Fiscal Year"
     """
@@ -294,10 +300,7 @@ class WaterUtilityModel(ProformaModel):
 
     # ── Key Metrics ───────────────────────────────────────────────────────────
     dscr = FormulaLine(
-        formula=lambda li, t: (
-            li.net_revenue[t] / li.total_debt_service[t]
-            if li.total_debt_service[t] > 0 else 0.0
-        ),
+        formula=calc_dscr,
         label="Debt Service Coverage Ratio",
         value_format=Format.TWO_DECIMALS,
     )
