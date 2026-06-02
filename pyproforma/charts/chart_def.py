@@ -18,14 +18,16 @@ class ChartDef:
     Examples:
         >>> ChartDef(names=["revenue", "expenses"])
         >>> ChartDef(names=["revenue"], chart_type="bar", title="Revenue")
+        >>> ChartDef(names=["revenue", "expenses"], colors=["#206bc4", "#d63939"])
 
     The dict form is equivalent:
-        >>> {"names": ["revenue"], "chart_type": "bar"}
+        >>> {"names": ["revenue"], "chart_type": "bar", "colors": ["#206bc4"]}
     """
 
     names: list[str]
     chart_type: ChartType = "line"
     title: str | None = None
+    colors: list[str] | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "ChartDef":
@@ -33,4 +35,5 @@ class ChartDef:
             names=data["names"],
             chart_type=data.get("chart_type", "line"),
             title=data.get("title"),
+            colors=data.get("colors"),
         )

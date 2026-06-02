@@ -90,6 +90,42 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.min.js"></script>
+  <script>
+  function formatApexValue(val, fmt) {
+    if (!fmt) return val.toLocaleString();
+    var v = val * (fmt.multiplier || 1);
+    var scaleMap = { thousands: 1e3, millions: 1e6, billions: 1e9, trillions: 1e12 };
+    if (fmt.scale && scaleMap[fmt.scale]) v = v / scaleMap[fmt.scale];
+    var str;
+    if (fmt.thousands) {
+      str = v.toLocaleString('en-US', { minimumFractionDigits: fmt.decimals, maximumFractionDigits: fmt.decimals });
+    } else {
+      str = v.toFixed(fmt.decimals);
+    }
+    return (fmt.prefix || '') + str + (fmt.suffix || '');
+  }
+  function apexOptionsFromSpec(spec, height) {
+    var isStacked = spec.chart_type === 'stacked_bar';
+    return {
+      chart: {
+        type: spec.chart_type === 'line' ? 'line' : 'bar',
+        stacked: isStacked,
+        height: height || 280,
+        toolbar: { show: false },
+        zoom: { enabled: false },
+      },
+      series: spec.series,
+      xaxis: { categories: spec.categories },
+      colors: spec.colors || undefined,
+      yaxis: { labels: { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } },
+      stroke: spec.chart_type === 'line' ? { curve: 'straight', width: 2 } : {},
+      markers: spec.chart_type === 'line' ? { size: 4 } : {},
+      dataLabels: isStacked ? { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } : { enabled: false },
+      tooltip: { y: { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } },
+      grid: { borderColor: '#e5e7eb' },
+    };
+  }
+  </script>
   <script>document.addEventListener('focusin', function(e) { if (e.target.type === 'number') e.target.select(); });</script>
   {% block scripts %}{% endblock %}
 </body>

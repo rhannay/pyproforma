@@ -145,11 +145,15 @@ class Charts:
         from pyproforma.charts.chart_def import ChartDef
         if isinstance(template, dict):
             template = ChartDef.from_dict(template)
-        return self.line_items(
+        chart_spec = self.line_items(
             names=template.names,
             chart_type=template.chart_type,
             title=template.title,
         )
+        if template.colors:
+            for series, color in zip(chart_spec.series, template.colors):
+                series.color = color
+        return chart_spec
 
     # ------------------------------------------------------------------
     # Internal helpers

@@ -83,7 +83,7 @@ class ChartSpec:
         The ``yaxis_format`` field mirrors NumberFormatSpec.to_dict() and is
         intended to drive a JS formatter that replicates Python formatting logic.
         """
-        return {
+        result = {
             "series": [
                 {"name": s.label, "data": s.y_values}
                 for s in self.series
@@ -93,6 +93,10 @@ class ChartSpec:
             "chart_type": self.chart_type,
             "yaxis_format": self.value_format.to_dict() if self.value_format else None,
         }
+        colors = [s.color for s in self.series]
+        if any(c is not None for c in colors):
+            result["colors"] = colors
+        return result
 
     def to_dict(self) -> dict:
         """Serialise this ChartSpec to a plain dict suitable for JSON / web renderers."""

@@ -164,34 +164,8 @@
 {% if chart_data %}
 <script>
 (function () {
-  function formatApexValue(val, fmt) {
-    if (!fmt) return val.toLocaleString();
-    var v = val * (fmt.multiplier || 1);
-    var scaleMap = { thousands: 1e3, millions: 1e6, billions: 1e9, trillions: 1e12 };
-    if (fmt.scale && scaleMap[fmt.scale]) v = v / scaleMap[fmt.scale];
-    var str;
-    if (fmt.thousands) {
-      str = v.toLocaleString('en-US', {
-        minimumFractionDigits: fmt.decimals,
-        maximumFractionDigits: fmt.decimals
-      });
-    } else {
-      str = v.toFixed(fmt.decimals);
-    }
-    return (fmt.prefix || '') + str + (fmt.suffix || '');
-  }
-
   var spec = {{ chart_data | safe }};
-  var options = {
-    chart: { type: 'line', height: 260, toolbar: { show: false }, zoom: { enabled: false } },
-    series: spec.series,
-    xaxis: { categories: spec.categories },
-    yaxis: { labels: { formatter: function (val) { return formatApexValue(val, spec.yaxis_format); } } },
-    stroke: { curve: 'straight', width: 2 },
-    markers: { size: 4 },
-    grid: { borderColor: '#e5e7eb' },
-    tooltip: { y: { formatter: function (val) { return formatApexValue(val, spec.yaxis_format); } } },
-  };
+  var options = apexOptionsFromSpec(spec, 260);
   new ApexCharts(document.querySelector('#line-item-chart'), options).render();
 }());
 </script>
