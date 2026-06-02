@@ -21,6 +21,7 @@ tables = {
 
 charts = {
     "Revenue": ChartDef(names=["water_sales_revenue", "power_sales"]),
+    "Revenue & O&M": ChartDef(names=["total_revenue", "total_om"]),
     "O&M Breakdown": ChartDef(
         names=["labor_and_benefits", "power_and_chemicals", "maintenance_and_repairs", "general_and_admin"],
         chart_type="stacked_bar",
@@ -36,7 +37,7 @@ views = {
             {"type": "stat", "name": "days_cash_on_hand", "label": "Days Cash on Hand", "aggregation": "latest"},
         ],
         [
-            {"type": "chart", "ref": "Revenue"},
+            {"type": "chart", "ref": "Revenue & O&M"},
             {"type": "chart", "ref": "O&M Breakdown"},
         ],
         [
