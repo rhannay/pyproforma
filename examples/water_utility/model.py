@@ -107,12 +107,23 @@ class WaterUtilityModel(ProformaModel):
         value_format=Format.CURRENCY_NO_DECIMALS,
     )
 
+    # ── New bond parameters ────────────────────────────────────────────────────
+    new_bond_rate = InputLine(
+        default=0.045,
+        label="Series B Interest Rate",
+        value_format=Format.PERCENT_TWO_DECIMALS,
+    )
+    new_bond_term = FixedLine(
+        value=20,
+        label="Series B Term (Years)",
+    )
+
     # ── New bond debt service (2027 Series B Revenue Bonds) ───────────────────
-    # 4.50%, 20-year; annual DS ~$769K beginning 2027.
+    # Annual DS ~$769K beginning 2027.
     new_bond_principal, new_bond_interest = create_debt_lines(
-        par_amounts_line_item="new_bond_par",
-        interest_rate=0.045,
-        term=20,
+        par_amounts="new_bond_par",
+        interest_rate="new_bond_rate",
+        term="new_bond_term",
         principal_label="2027 Series B — Principal",
         interest_label="2027 Series B — Interest",
         tags=["new_ds"],
