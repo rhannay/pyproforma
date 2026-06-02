@@ -213,7 +213,7 @@ class Tables:
                 )
             )
 
-        # Use from_template to generate the table
+        # Use build() to generate the table
         return self.build(template, col_labels=col_labels)
 
     def line_item(
@@ -285,7 +285,7 @@ class Tables:
         if include_cumulative_percent_change:
             template.append(rt.CumulativePercentChangeRow(name=name))
 
-        # Use from_template to generate the table
+        # Use build() to generate the table
         return self.build(template, col_labels=col_labels)
 
     def precedents(self, name: str, hardcoded_color: Optional[str] = None) -> Table:
@@ -336,4 +336,4 @@ class Tables:
 
         template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
 
-        return self.from_template(template, col_labels="Label")
+        return self.build(template, col_labels="Label")
