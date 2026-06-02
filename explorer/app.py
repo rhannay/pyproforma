@@ -14,7 +14,7 @@ from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
 
 
-def create_app(model, tables=None):
+def create_app(model, tables=None, charts=None):
     """Create a Flask app for exploring a ProformaModel.
 
     Args:
@@ -51,6 +51,7 @@ def create_app(model, tables=None):
         *[ItemRow(name=n) for n in model.line_item_names],
     ]
     state.tables = {"All Line Items": all_items_template, **(tables or {})}
+    state.charts = charts or {}
 
     # ------------------------------------------------------------------
     # Helpers
@@ -60,6 +61,7 @@ def create_app(model, tables=None):
     def inject_nav():
         return {
             "nav_tables": list(enumerate(state.tables.keys())),
+            "nav_charts": list(enumerate(state.charts.keys())),
             "nav_tags": state.model.tags,
         }
 
@@ -235,6 +237,26 @@ def create_app(model, tables=None):
             model=state.model,
             title=label,
             table_html=table_html,
+        )
+
+    @app.route("/chart/<int:idx>")
+    def chart_view(idx):
+        labels = list(state.charts.keys())
+        if idx >= len(labels):
+            abort(404)
+        label = labels[idx]
+        spec = state.charts[label]
+        names = spec["names"]
+        chart_type = spec.get("chart_type", "line")
+        title = spec.get("title", label)
+        chart_data = json.dumps(
+            state.model.charts.line_items(names, chart_type=chart_type, title=title).to_apexcharts()
+        )
+        return render_template(
+            "chart_view.html",
+            model=state.model,
+            title=label,
+            chart_data=chart_data,
         )
 
     @app.route("/inputs", methods=["GET"])

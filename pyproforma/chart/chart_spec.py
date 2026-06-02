@@ -90,6 +90,7 @@ class ChartSpec:
             ],
             "categories": self.series[0].x_values if self.series else [],
             "title": self.title or "",
+            "chart_type": self.chart_type,
             "yaxis_format": self.value_format.to_dict() if self.value_format else None,
         }
 
