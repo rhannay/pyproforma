@@ -45,7 +45,12 @@ def create_app(model, tables=None):
     state.model_class = type(model)
     state.periods = model.periods
     state.error = None
-    state.tables = tables or {}  # {label: template}
+    from pyproforma.tables.row_types import HeaderRow, ItemRow
+    all_items_template = [
+        HeaderRow(col_labels=""),
+        *[ItemRow(name=n) for n in model.line_item_names],
+    ]
+    state.tables = {"All Line Items": all_items_template, **(tables or {})}
 
     # ------------------------------------------------------------------
     # Helpers
