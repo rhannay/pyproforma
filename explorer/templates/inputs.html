@@ -67,7 +67,7 @@
       <table class="table table-vcenter card-table">
         <thead>
           <tr>
-            <th>Input</th>
+            <th>{{ model.__class__.period_label or "Input" }}</th>
             {% for period in model.periods %}
             <th class="text-end">{{ period }}</th>
             {% endfor %}
