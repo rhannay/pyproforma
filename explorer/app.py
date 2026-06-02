@@ -6,6 +6,7 @@ import os
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 from pyproforma.line_items.fixed_line import FixedLine
+from pyproforma.table import Format
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
 from pyproforma.line_items.debt_line import DebtBase
@@ -46,6 +47,14 @@ def create_app(model):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _format_name(spec):
+        if spec is None:
+            return "—"
+        for name, standard in Format._STRING_MAP.items():
+            if spec == standard:
+                return name.upper()
+        return str(spec)
 
     def _build_items(names):
         m = state.model
@@ -118,7 +127,7 @@ def create_app(model):
             "label": item_def.label or name,
             "type": type(item_def).__name__,
             "tags": item_def.tags,
-            "value_format": str(item_def.value_format),
+            "value_format": _format_name(item_def.value_format),
         }
 
         if isinstance(item_def, FormulaLine):
