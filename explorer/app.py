@@ -53,7 +53,10 @@ def create_app(model, tables=None):
 
     @app.context_processor
     def inject_nav():
-        return {"nav_tables": list(enumerate(state.tables.keys()))}
+        return {
+            "nav_tables": list(enumerate(state.tables.keys())),
+            "nav_tags": state.model.tags,
+        }
 
     def _format_name(spec):
         if spec is None:

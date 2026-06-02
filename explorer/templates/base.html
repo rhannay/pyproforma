@@ -30,6 +30,16 @@
               <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
             </li>
             {% endif %}
+            {% if nav_tags %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tags</a>
+              <div class="dropdown-menu">
+                {% for tag in nav_tags %}
+                <a class="dropdown-item" href="{{ url_for('tag_view', tag_name=tag) }}">{{ tag }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
               <div class="dropdown-menu">
