@@ -39,7 +39,7 @@ class BaseRow(ABC):
 class HeaderRow(BaseRow):
     """Configuration for header row generation."""
 
-    col_labels: Union[str, list[str]] = "Period"
+    col_labels: Union[str, list[str], None] = None
     background_color: Optional[str] = None
 
     def generate_row(
@@ -49,10 +49,11 @@ class HeaderRow(BaseRow):
         cells = []
 
         # Add label column headers
-        if isinstance(self.col_labels, str):
-            cells.append(Cell(value=self.col_labels, bold=True, align="left", background_color=self.background_color))
+        col_labels = self.col_labels if self.col_labels is not None else model.period_label
+        if isinstance(col_labels, str):
+            cells.append(Cell(value=col_labels, bold=True, align="left", background_color=self.background_color))
         else:
-            for label in self.col_labels:
+            for label in col_labels:
                 cells.append(Cell(value=label, bold=True, align="left", background_color=self.background_color))
 
         # Add period column headers

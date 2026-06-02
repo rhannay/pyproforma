@@ -11,6 +11,7 @@ PERIODS = list(range(2025, 2031))
 
 
 class WaterUtilityModel(ProformaModel):
+    period_label = "Fiscal Year"
     """
     Six-year financial plan for a municipal water utility.
 

@@ -7,6 +7,7 @@ from pyproforma import (
 
 
 class CoffeeShopModel(ProformaModel):
+    period_label = "Year"
     # --- Revenue ---
     coffee_sales = FixedLine(
         values={2024: 280_000, 2025: 308_000, 2026: 339_000},

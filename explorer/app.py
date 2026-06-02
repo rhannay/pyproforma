@@ -47,7 +47,7 @@ def create_app(model, tables=None):
     state.error = None
     from pyproforma.tables.row_types import HeaderRow, ItemRow
     all_items_template = [
-        HeaderRow(col_labels=""),
+        HeaderRow(),
         *[ItemRow(name=n) for n in model.line_item_names],
     ]
     state.tables = {"All Line Items": all_items_template, **(tables or {})}
@@ -124,7 +124,7 @@ def create_app(model, tables=None):
 
         from pyproforma.tables.row_types import HeaderRow, TagItemsRow
         tag_template = [
-            HeaderRow(col_labels=""),
+            HeaderRow(),
             TagItemsRow(tag=tag_name, include_total_row=True,
                         total_row_label=f"Total {tag_name}"),
         ]

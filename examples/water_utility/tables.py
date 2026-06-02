@@ -9,7 +9,7 @@ from pyproforma.tables.row_types import (
 )
 
 dscr_table = [
-    HeaderRow(col_labels=""),
+    HeaderRow(),
     LabelRow(label="Revenue"),
     TagItemsRow(tag="revenue"),
     ItemRow(name="total_revenue", bold=True, top_border="single"),

@@ -19,6 +19,7 @@ from pyproforma.tags_namespace import ModelTagNamespace
 
 
 class ProformaModel:
+    period_label: str = ""
     """
     Base class for user-defined financial models.
 
