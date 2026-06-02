@@ -116,12 +116,26 @@ def create_app(model, tables=None):
         names = [n for n in m.line_item_names if tag_name in getattr(type(m), n).tags]
         if not names:
             abort(404)
+
+        from pyproforma.tables.row_types import HeaderRow, TagItemsRow
+        tag_template = [
+            HeaderRow(col_labels=""),
+            TagItemsRow(tag=tag_name, include_total_row=True,
+                        total_row_label=f"Total {tag_name}"),
+        ]
+        tag_table_html = m.tables.from_template(_add_hrefs(tag_template)).to_bootstrap_html()
+        tag_chart_data = json.dumps(
+            m.charts.line_items(names, chart_type="stacked_bar", title=tag_name).to_apexcharts()
+        ) if m.periods else None
+
         return render_template(
             "index.html",
             model=m,
             items=_build_items(names),
             title=f"Tag: {tag_name}",
             back_link=True,
+            tag_table_html=tag_table_html,
+            tag_chart_data=tag_chart_data,
         )
 
     @app.route("/line_item/<name>")

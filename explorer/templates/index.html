@@ -49,4 +49,57 @@
   </div>
 </div>
 
+{% if tag_chart_data %}
+<div class="card mt-3">
+  <div class="card-body">
+    <div id="tag-chart"></div>
+  </div>
+</div>
+{% endif %}
+
+{% if tag_table_html %}
+<div class="card mt-3">
+  <div class="card-body p-0">
+    {{ tag_table_html | safe }}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if tag_chart_data %}
+<script>
+(function () {
+  function formatApexValue(val, fmt) {
+    if (!fmt) return val.toLocaleString();
+    var v = val * (fmt.multiplier || 1);
+    var scaleMap = { thousands: 1e3, millions: 1e6, billions: 1e9, trillions: 1e12 };
+    if (fmt.scale && scaleMap[fmt.scale]) v = v / scaleMap[fmt.scale];
+    var str;
+    if (fmt.thousands) {
+      str = v.toLocaleString('en-US', {
+        minimumFractionDigits: fmt.decimals,
+        maximumFractionDigits: fmt.decimals
+      });
+    } else {
+      str = v.toFixed(fmt.decimals);
+    }
+    return (fmt.prefix || '') + str + (fmt.suffix || '');
+  }
+
+  var spec = {{ tag_chart_data | safe }};
+  var options = {
+    chart: { type: 'bar', stacked: true, height: 300, toolbar: { show: false } },
+    series: spec.series,
+    xaxis: { categories: spec.categories },
+    yaxis: { labels: { formatter: function (val) { return formatApexValue(val, spec.yaxis_format); } } },
+    dataLabels: { formatter: function (val) { return formatApexValue(val, spec.yaxis_format); } },
+    tooltip: { y: { formatter: function (val) { return formatApexValue(val, spec.yaxis_format); } } },
+    grid: { borderColor: '#e5e7eb' },
+  };
+  new ApexCharts(document.querySelector('#tag-chart'), options).render();
+}());
+</script>
+{% endif %}
 {% endblock %}
