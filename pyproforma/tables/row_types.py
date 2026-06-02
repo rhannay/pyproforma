@@ -75,6 +75,7 @@ class ItemRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
     hardcoded_color: Optional[str] = None
+    href: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -99,7 +100,6 @@ class ItemRow(BaseRow):
 
         # Add label cell(s)
         if label_col_count >= 2:
-            # First column: name
             cells.append(
                 Cell(
                     value=self.name,
@@ -109,7 +109,6 @@ class ItemRow(BaseRow):
                     top_border=self.top_border,
                 )
             )
-            # Second column: label
             cells.append(
                 Cell(
                     value=label,
@@ -117,10 +116,10 @@ class ItemRow(BaseRow):
                     align="left",
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    href=self.href,
                 )
             )
         else:
-            # Single label column
             cells.append(
                 Cell(
                     value=label,
@@ -128,6 +127,7 @@ class ItemRow(BaseRow):
                     align="left",
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    href=self.href,
                 )
             )
 

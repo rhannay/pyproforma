@@ -3,9 +3,12 @@
 import json
 import os
 
+import dataclasses
+
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 from pyproforma.line_items.fixed_line import FixedLine
+from pyproforma.tables.row_types import ItemRow, TagItemsRow
 from pyproforma.table import Format
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
@@ -180,6 +183,21 @@ def create_app(model, tables=None):
             chart_data=chart_data,
         )
 
+    def _add_hrefs(template):
+        result = []
+        for row in template:
+            if isinstance(row, ItemRow):
+                result.append(dataclasses.replace(row, href=url_for("line_item", name=row.name)))
+            elif isinstance(row, TagItemsRow):
+                names = [n for n in state.model.line_item_names
+                         if row.tag in getattr(type(state.model), n).tags]
+                for name in names:
+                    result.append(ItemRow(name=name, bold=row.bold,
+                                          href=url_for("line_item", name=name)))
+            else:
+                result.append(row)
+        return result
+
     @app.route("/table/<int:idx>")
     def table_view(idx):
         labels = list(state.tables.keys())
@@ -187,7 +205,7 @@ def create_app(model, tables=None):
             abort(404)
         label = labels[idx]
         template = state.tables[label]
-        table_html = state.model.tables.from_template(template).to_bootstrap_html()
+        table_html = state.model.tables.from_template(_add_hrefs(template)).to_bootstrap_html()
         return render_template(
             "table_view.html",
             model=state.model,
