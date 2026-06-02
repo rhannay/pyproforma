@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>{% block title %}pyproforma{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+  </style>
 </head>
 <body class="antialiased">
   <div class="wrapper">
@@ -12,7 +17,10 @@
     <header class="navbar navbar-expand-md d-print-none" data-bs-theme="dark">
       <div class="container-xl">
         <a href="/" class="navbar-brand">pyproforma</a>
-        <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
+        <span class="navbar-text text-muted small me-3">{{ model.__class__.__name__ }}</span>
+        {% if model.__class__._input_line_names %}
+        <a href="{{ url_for('inputs') }}" class="nav-link text-white">Inputs</a>
+        {% endif %}
       </div>
     </header>
 

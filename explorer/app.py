@@ -3,10 +3,11 @@
 import json
 import os
 
-from flask import Flask, abort, render_template
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.formula_line import FormulaLine
+from pyproforma.line_items.input_line import InputLine
 from pyproforma.line_items.debt_line import DebtBase
 
 
@@ -31,11 +32,26 @@ def create_app(model):
         app.run(debug=True)
     """
     app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
+    app.secret_key = "pyproforma-explorer"
+
+    class _State:
+        pass
+
+    state = _State()
+    state.model = model
+    state.model_class = type(model)
+    state.periods = model.periods
+    state.error = None
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
     def _build_items(names):
+        m = state.model
         items = []
         for name in names:
-            item_def = getattr(type(model), name)
+            item_def = getattr(type(m), name)
             is_scalar = isinstance(item_def, FixedLine) and item_def.is_scalar
             items.append({
                 "name": name,
@@ -43,27 +59,47 @@ def create_app(model):
                 "type": type(item_def).__name__,
                 "tags": item_def.tags,
                 "scalar": is_scalar,
-                "value": model[name].formatted_value(model.periods[0]) if (is_scalar and model.periods) else None,
+                "value": m[name].formatted_value(m.periods[0]) if (is_scalar and m.periods) else None,
             })
         return items
 
+    def _build_inputs():
+        m = state.model
+        inputs = []
+        for name in state.model_class._input_line_names:
+            spec = getattr(state.model_class, name)
+            is_scalar = name in m._scalars
+            inputs.append({
+                "name": name,
+                "label": spec.label or name,
+                "is_scalar": is_scalar,
+                "value": m._scalars[name] if is_scalar else m._input_line_values.get(name, {}),
+            })
+        return inputs
+
+    # ------------------------------------------------------------------
+    # Routes
+    # ------------------------------------------------------------------
+
     @app.route("/")
     def index():
+        m = state.model
         return render_template(
             "index.html",
-            model=model,
-            items=_build_items(model.line_item_names),
-            title=model.__class__.__name__,
+            model=m,
+            items=_build_items(m.line_item_names),
+            title=m.__class__.__name__,
         )
 
     @app.route("/tag/<tag_name>")
     def tag_view(tag_name):
-        names = [n for n in model.line_item_names if tag_name in getattr(type(model), n).tags]
+        m = state.model
+        names = [n for n in m.line_item_names if tag_name in getattr(type(m), n).tags]
         if not names:
             abort(404)
         return render_template(
             "index.html",
-            model=model,
+            model=m,
             items=_build_items(names),
             title=f"Tag: {tag_name}",
             back_link=True,
@@ -71,10 +107,11 @@ def create_app(model):
 
     @app.route("/line_item/<name>")
     def line_item(name):
-        if name not in model.line_item_names:
+        m = state.model
+        if name not in m.line_item_names:
             abort(404)
-        item_def = getattr(type(model), name)
-        result = model[name]
+        item_def = getattr(type(m), name)
+        result = m[name]
 
         info = {
             "name": name,
@@ -88,36 +125,78 @@ def create_app(model):
             info["formula_source"] = item_def.formula_source
             info["dependencies"] = item_def.precedents or []
             info["tag_dependencies"] = {
-                tag: model.tag[tag].names
+                tag: m.tag[tag].names
                 for tag in (item_def.tag_references or [])
             }
         elif isinstance(item_def, FixedLine):
             if item_def.is_scalar:
-                info["scalar_value"] = result.formatted_value(model.periods[0]) if model.periods else str(item_def._scalar_value)
+                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(item_def._scalar_value)
             else:
                 info["fixed_values"] = item_def.values or {}
+        elif isinstance(item_def, InputLine):
+            is_scalar = name in m._scalars
+            if is_scalar:
+                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(m._scalars[name])
+            else:
+                info["input_values"] = m._input_line_values.get(name, {})
+            info["is_input"] = True
         elif isinstance(item_def, DebtBase):
             info["principal"] = item_def.principal
             info["rate"] = item_def.rate
             info["term"] = item_def.term
 
         values_table = None
-        if not (isinstance(item_def, FixedLine) and item_def.is_scalar):
-            values_table = model.tables.line_item(name).to_bootstrap_html()
+        scalar_input = isinstance(item_def, InputLine) and name in m._scalars
+        scalar_fixed = isinstance(item_def, FixedLine) and item_def.is_scalar
+        if not (scalar_input or scalar_fixed):
+            values_table = m.tables.line_item(name).to_bootstrap_html()
 
         precedents_table = None
         if isinstance(item_def, FormulaLine) and item_def.precedents:
-            precedents_table = model.tables.precedents(name).to_bootstrap_html()
+            precedents_table = m.tables.precedents(name).to_bootstrap_html()
 
-        chart_data = json.dumps(model.charts.line_item(name).to_apexcharts()) if model.periods else None
+        chart_data = json.dumps(m.charts.line_item(name).to_apexcharts()) if m.periods else None
 
         return render_template(
             "line_item.html",
-            model=model,
+            model=m,
             info=info,
             values_table=values_table,
             precedents_table=precedents_table,
             chart_data=chart_data,
         )
+
+    @app.route("/inputs", methods=["GET"])
+    def inputs():
+        m = state.model
+        error = state.error
+        state.error = None
+        return render_template(
+            "inputs.html",
+            model=m,
+            inputs=_build_inputs(),
+            error=error,
+        )
+
+    @app.route("/inputs", methods=["POST"])
+    def update_inputs():
+        m = state.model
+        kwargs = {}
+        try:
+            for name in state.model_class._input_line_names:
+                is_scalar = name in m._scalars
+                if is_scalar:
+                    kwargs[name] = float(request.form[name])
+                else:
+                    kwargs[name] = {
+                        period: float(request.form[f"{name}_{period}"])
+                        for period in state.periods
+                    }
+            state.model = state.model_class(periods=state.periods, **kwargs)
+            state.error = None
+            flash("Model updated.")
+        except Exception as e:
+            state.error = str(e)
+        return redirect(url_for("inputs"))
 
     return app
