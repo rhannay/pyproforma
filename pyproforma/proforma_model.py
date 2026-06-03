@@ -64,7 +64,9 @@ class ProformaModel:
         Raises:
             TypeError: If unknown kwargs or missing required inputs.
         """
-        self.periods = periods or []
+        if periods is None:
+            periods = getattr(self.__class__, "default_periods", [])
+        self.periods = list(periods)
         self.line_item_names = self.__class__._line_item_names
         input_line_names = self.__class__._input_line_names
 

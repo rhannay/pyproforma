@@ -17,6 +17,7 @@ def calc_dscr(li, t):
 
 
 class WaterUtilityModel(ProformaModel):
+    default_periods = list(range(2025, 2031))
     period_label = "Fiscal Year"
     """
     Six-year financial plan for a municipal water utility.
@@ -331,4 +332,4 @@ class WaterUtilityModel(ProformaModel):
     )
 
 
-model = WaterUtilityModel(periods=PERIODS)
+model = WaterUtilityModel()
