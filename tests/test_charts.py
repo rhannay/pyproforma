@@ -194,6 +194,26 @@ def test_line_items_custom_title(model):
     assert model.charts.line_items(["revenue", "profit"], title="P&L").title == "P&L"
 
 
+def test_line_items_shared_format_propagated():
+    class M(ProformaModel):
+        revenue = FixedLine(values={2024: 100_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+        expenses = FixedLine(values={2024: 60_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+
+    m = M(periods=[2024])
+    spec = m.charts.line_items(["revenue", "expenses"])
+    assert spec.value_format == Format.CURRENCY_NO_DECIMALS
+
+
+def test_line_items_mixed_formats_value_format_is_none():
+    class M(ProformaModel):
+        revenue = FixedLine(values={2024: 100_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+        margin = FixedLine(values={2024: 0.4}, value_format=Format.PERCENT_ONE_DECIMAL)
+
+    m = M(periods=[2024])
+    spec = m.charts.line_items(["revenue", "margin"])
+    assert spec.value_format is None
+
+
 def test_line_items_default_title_is_none(model):
     assert model.charts.line_items(["revenue", "profit"]).title is None
 

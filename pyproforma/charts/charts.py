@@ -120,10 +120,14 @@ class Charts:
                 )
             )
 
+        formats = [self._model[n].value_format for n in names]
+        value_format = formats[0] if len(set(formats)) == 1 else None
+
         return Chart(
             series=series,
             chart_type=chart_type,
             title=title,
+            value_format=value_format,
         )
 
     def build(self, template: "ChartDef | dict") -> Chart:
