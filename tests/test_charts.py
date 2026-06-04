@@ -1,5 +1,5 @@
 """
-Tests for the chart system: ChartSpec data layer, Charts namespace, and LineItemResult.chart().
+Tests for the chart system: Chart data layer, Charts namespace, and LineItemResult.chart().
 """
 
 import json
@@ -12,7 +12,7 @@ matplotlib.use("Agg")  # headless backend — must precede any pyplot import
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, ProformaModel
-from pyproforma.chart.chart_spec import ChartSeries, ChartSpec
+from pyproforma.chart.chart import Chart, ChartSeries
 from pyproforma.charts import Charts
 from pyproforma.table.format_value import Format
 
@@ -81,12 +81,12 @@ def test_charts_namespace_has_model_reference(model):
 
 
 # ---------------------------------------------------------------------------
-# Charts.line_item() — ChartSpec structure
+# Charts.line_item() — Chart structure
 # ---------------------------------------------------------------------------
 
 
 def test_line_item_returns_chart_spec(model):
-    assert isinstance(model.charts.line_item("revenue"), ChartSpec)
+    assert isinstance(model.charts.line_item("revenue"), Chart)
 
 
 def test_line_item_has_one_series(model):
@@ -165,7 +165,7 @@ def test_line_item_value_format_defaults_to_no_decimals_when_not_explicit(model)
 
 
 def test_line_items_returns_chart_spec(model):
-    assert isinstance(model.charts.line_items(["revenue", "profit"]), ChartSpec)
+    assert isinstance(model.charts.line_items(["revenue", "profit"]), Chart)
 
 
 def test_line_items_series_count_matches_input(model):
@@ -221,7 +221,7 @@ def test_line_item_result_has_chart_method(model):
 
 
 def test_line_item_result_chart_returns_chart_spec(model):
-    assert isinstance(model["revenue"].chart(), ChartSpec)
+    assert isinstance(model["revenue"].chart(), Chart)
 
 
 def test_line_item_result_chart_values_match_direct_call(model):
@@ -241,7 +241,7 @@ def test_line_item_result_chart_title_parameter(model):
 
 
 # ---------------------------------------------------------------------------
-# ChartSpec.to_dict()
+# Chart.to_dict()
 # ---------------------------------------------------------------------------
 
 
@@ -402,7 +402,7 @@ def test_from_template_with_chart_def():
     from pyproforma import ChartDef
     model = SimpleModel(periods=[2024, 2025, 2026])
     spec = model.charts.build(ChartDef(names=["revenue", "expenses"]))
-    assert isinstance(spec, ChartSpec)
+    assert isinstance(spec, Chart)
     assert len(spec.series) == 2
     assert spec.chart_type == "line"
 
@@ -410,7 +410,7 @@ def test_from_template_with_chart_def():
 def test_from_template_with_dict():
     model = SimpleModel(periods=[2024, 2025, 2026])
     spec = model.charts.build({"names": ["revenue"], "chart_type": "bar"})
-    assert isinstance(spec, ChartSpec)
+    assert isinstance(spec, Chart)
     assert spec.chart_type == "bar"
 
 

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from pyproforma.table import format_value
 
 if TYPE_CHECKING:
-    from pyproforma.chart.chart_spec import ChartSpec, ChartType
+    from pyproforma.chart.chart import Chart, ChartType
     from pyproforma.table import Table
     from pyproforma.proforma_model import ProformaModel
 
@@ -297,7 +297,7 @@ class LineItemResult:
         self,
         chart_type: "ChartType" = "line",
         title: str | None = None,
-    ) -> "ChartSpec":
+    ) -> "Chart":
         """
         Build a chart for this line item.
 
@@ -306,7 +306,7 @@ class LineItemResult:
             title: Chart title. Defaults to the line item's label (or name).
 
         Returns:
-            ChartSpec — call .show() to display or .figure() to get the Figure.
+            Chart — call .show() to display or .figure() to get the Figure.
 
         Examples:
             >>> model["revenue"].chart().show()

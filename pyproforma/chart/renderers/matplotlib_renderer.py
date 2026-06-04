@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pyproforma.chart.renderers.base import ChartRenderer
-from pyproforma.chart.chart_spec import ChartSpec
+from pyproforma.chart.chart import Chart as ChartSpec
 
 
 class MatplotlibRenderer(ChartRenderer):

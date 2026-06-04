@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyproforma.chart.chart_spec import ChartSeries, ChartSpec, ChartType
+from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
@@ -18,7 +18,7 @@ class Charts:
     """
     Namespace for chart creation methods on a ProformaModel.
 
-    Accessed via model.charts. Each method returns a ChartSpec — the
+    Accessed via model.charts. Each method returns a Chart — the
     intermediate data representation — which can then be rendered via
     .show() (matplotlib) or .to_dict() (web / JSON).
 
@@ -42,7 +42,7 @@ class Charts:
         name: str,
         chart_type: ChartType = "line",
         title: str | None = None,
-    ) -> ChartSpec:
+    ) -> Chart:
         """
         Build a chart for a single line item.
 
@@ -52,7 +52,7 @@ class Charts:
             title: Chart title. Defaults to the line item's label (or name).
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Raises:
             ValueError: If the line item doesn't exist in the model.
@@ -71,7 +71,7 @@ class Charts:
             y_values=[result[p] for p in self._model.periods],
         )
 
-        return ChartSpec(
+        return Chart(
             series=[series],
             chart_type=chart_type,
             title=title if title is not None else label,
@@ -83,7 +83,7 @@ class Charts:
         names: list[str],
         chart_type: ChartType = "line",
         title: str | None = None,
-    ) -> ChartSpec:
+    ) -> Chart:
         """
         Build a chart with one series per line item.
 
@@ -93,7 +93,7 @@ class Charts:
             title: Chart title. Defaults to None (no title).
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Raises:
             ValueError: If any line item doesn't exist in the model.
@@ -116,15 +116,15 @@ class Charts:
                 )
             )
 
-        return ChartSpec(
+        return Chart(
             series=series,
             chart_type=chart_type,
             title=title,
         )
 
-    def build(self, template: "ChartDef | dict") -> ChartSpec:
+    def build(self, template: "ChartDef | dict") -> Chart:
         """
-        Build a ChartSpec from a ChartDef or equivalent dict.
+        Build a Chart from a ChartDef or equivalent dict.
 
         Accepts either the ChartDef dataclass (for Python code with IDE support)
         or a plain dict (for JSON-serializable configs). Both produce identical results.
@@ -136,7 +136,7 @@ class Charts:
                 - title (str, optional): Chart title.
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Examples:
             >>> model.charts.from_template(ChartDef(names=["revenue", "expenses"]))

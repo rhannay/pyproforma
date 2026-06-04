@@ -1,3 +1,3 @@
-from .chart_spec import ChartSeries, ChartSpec, ChartType
+from .chart import Chart, ChartSeries, ChartSpec, ChartType
 
-__all__ = ["ChartSpec", "ChartSeries", "ChartType"]
+__all__ = ["Chart", "ChartSeries", "ChartSpec", "ChartType"]

@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Union
 
-from pyproforma.chart.chart_spec import ChartType
+from pyproforma.chart.chart import ChartType
 
 
 @dataclass

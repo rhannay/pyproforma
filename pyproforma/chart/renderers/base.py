@@ -2,12 +2,12 @@
 
 from abc import ABC, abstractmethod
 
-from pyproforma.chart.chart_spec import ChartSpec
+from pyproforma.chart.chart import Chart
 
 
 class ChartRenderer(ABC):
-    """Base class for rendering a ChartSpec to a specific backend."""
+    """Base class for rendering a Chart to a specific backend."""
 
     @abstractmethod
-    def render(self, spec: ChartSpec, **kwargs):
-        """Render the ChartSpec and return the backend's figure/output object."""
+    def render(self, chart: Chart, **kwargs):
+        """Render the Chart and return the backend's figure/output object."""
