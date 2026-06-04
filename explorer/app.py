@@ -7,6 +7,7 @@ import dataclasses
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
+from explorer.components import StatCard
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.tables.row_types import ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
@@ -262,21 +263,6 @@ def create_app(model, tables=None, charts=None, views=None):
             chart_data=chart_data,
         )
 
-    def _compute_stat(name, aggregation):
-        m = state.model
-        values = m[name].values
-        if not values:
-            return "—"
-        if aggregation == "min":
-            period = min(values, key=values.__getitem__)
-        elif aggregation == "max":
-            period = max(values, key=values.__getitem__)
-        elif aggregation == "first":
-            period = min(values)
-        else:  # latest
-            period = max(values)
-        return m[name].formatted_value(period)
-
     @app.route("/view/<int:idx>")
     def view_page(idx):
         labels = list(state.views.keys())
@@ -290,12 +276,20 @@ def create_app(model, tables=None, charts=None, views=None):
             col_width = 12 // len(row)
             processed = []
             for col_idx, comp in enumerate(row):
-                c = dict(comp)
-                c["col_width"] = col_width
-                if comp["type"] == "stat":
-                    c["value"] = _compute_stat(comp["name"], comp.get("aggregation", "latest"))
+                if isinstance(comp, StatCard):
+                    c = comp.build(state.model)
+                    c["col_width"] = col_width
+                elif isinstance(comp, dict) and comp.get("type") == "stat":
+                    c = StatCard(
+                        name=comp["name"],
+                        label=comp.get("label"),
+                        aggregation=comp.get("aggregation", "latest"),
+                    ).build(state.model)
+                    c["col_width"] = col_width
                 elif comp["type"] == "chart":
                     chart_def = state.charts[comp["ref"]]
+                    c = dict(comp)
+                    c["col_width"] = col_width
                     c["chart_data"] = json.dumps(
                         state.model.charts.build(chart_def).to_apexcharts()
                     )
@@ -303,6 +297,8 @@ def create_app(model, tables=None, charts=None, views=None):
                 elif comp["type"] == "table":
                     table_def = state.tables[comp["ref"]]
                     built = state.model.tables.build(_add_hrefs(table_def))
+                    c = dict(comp)
+                    c["col_width"] = col_width
                     c["html"] = built.to_bootstrap_html()
                     c["table_title"] = built.title or comp["ref"]
                 processed.append(c)

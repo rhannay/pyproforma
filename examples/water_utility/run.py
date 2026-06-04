@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from model import model
 from tables import dscr_table
 from explorer import create_app
+from explorer.components import StatCard
 from pyproforma import ChartDef
 
 tables = {
@@ -32,9 +33,9 @@ charts = {
 views = {
     "Financial Summary": [
         [
-            {"type": "stat", "name": "dscr",             "label": "Min DSCR",          "aggregation": "min"},
-            {"type": "stat", "name": "ending_cash",       "label": "Ending Cash",       "aggregation": "latest"},
-            {"type": "stat", "name": "days_cash_on_hand", "label": "Days Cash on Hand", "aggregation": "latest"},
+            StatCard("dscr",             "Min DSCR",          aggregation="min"),
+            StatCard("ending_cash",      "Ending Cash"),
+            StatCard("days_cash_on_hand","Days Cash on Hand"),
         ],
         [
             {"type": "chart", "ref": "Revenue & O&M"},
