@@ -87,6 +87,7 @@ class Charts:
         names: list[str],
         chart_type: ChartType = "line",
         title: str | None = None,
+        value_format=None,
     ) -> Chart:
         """
         Build a chart with one series per line item.
@@ -120,8 +121,9 @@ class Charts:
                 )
             )
 
-        formats = [self._model[n].value_format for n in names]
-        value_format = formats[0] if len(set(formats)) == 1 else None
+        if value_format is None:
+            formats = [self._model[n].value_format for n in names]
+            value_format = formats[0] if len(set(formats)) == 1 else None
 
         return Chart(
             series=series,

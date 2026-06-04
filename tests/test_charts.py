@@ -204,6 +204,16 @@ def test_line_items_shared_format_propagated():
     assert spec.value_format == Format.CURRENCY_NO_DECIMALS
 
 
+def test_line_items_value_format_override():
+    class M(ProformaModel):
+        revenue = FixedLine(values={2024: 100_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+        expenses = FixedLine(values={2024: 60_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+
+    m = M(periods=[2024])
+    spec = m.charts.line_items(["revenue", "expenses"], value_format=Format.THOUSANDS_K)
+    assert spec.value_format == Format.THOUSANDS_K
+
+
 def test_line_items_mixed_formats_value_format_is_none():
     class M(ProformaModel):
         revenue = FixedLine(values={2024: 100_000}, value_format=Format.CURRENCY_NO_DECIMALS)
