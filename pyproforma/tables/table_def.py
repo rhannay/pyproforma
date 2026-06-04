@@ -1,4 +1,11 @@
-"""TableDef — declarative definition of a model table."""
+"""
+TableDef — declarative definition of a table to build from a model.
+
+Used with model.tables.build() to produce a Table. Holds the row configurations
+and optional metadata (title, and future: subtitle, footnotes). Accepts either
+the dataclass form (IDE autocomplete, validation) or a plain list of row
+configurations passed directly to build().
+"""
 
 from dataclasses import dataclass, field
 from typing import Union

@@ -1,4 +1,9 @@
-"""Matplotlib rendering backend for ChartSpec."""
+"""
+MatplotlibRenderer — renders a Chart to a matplotlib Figure.
+
+Called by Chart.show() and Chart.figure(). Supports line, bar, and stacked_bar
+chart types. Applies NumberFormatSpec to y-axis tick labels when set.
+"""
 
 from __future__ import annotations
 

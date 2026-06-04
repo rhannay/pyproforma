@@ -1,7 +1,11 @@
 """
-Charts namespace for PyProforma v2 models.
+Charts — model-aware namespace for building Chart objects.
 
-Accessed via model.charts. Mirrors the model.tables namespace pattern.
+Accessed via model.charts. Takes model data and builds Chart instances
+via convenience methods (line_item, line_items) or the general build()
+method which accepts a ChartDef or plain dict.
+
+This layer knows about ProformaModel; the Chart class beneath it does not.
 """
 
 from __future__ import annotations

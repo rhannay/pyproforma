@@ -1,4 +1,8 @@
-"""Abstract base class for chart renderers."""
+"""
+ChartRenderer — abstract base for rendering a Chart to a specific backend.
+
+Implement render(chart, **kwargs) to add a new backend (plotly, charts.js, etc.).
+"""
 
 from abc import ABC, abstractmethod
 

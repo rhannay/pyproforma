@@ -1,8 +1,13 @@
 """
-Chart data layer for PyProforma.
+Chart — generic chart data class, rendering-backend agnostic.
 
-Chart and ChartSeries are the intermediate representation between model data
-and any rendering backend (matplotlib, charts.js, plotly, etc.).
+Chart and ChartSeries are the intermediate representation between any data
+source and a rendering backend. They are not specific to ProformaModel —
+anything that can populate a list of ChartSeries can produce a Chart.
+
+Rendering backends:
+  - MatplotlibRenderer  → .show() / .figure() for Jupyter and scripts
+  - .to_apexcharts()    → JSON-ready dict for ApexCharts in web apps
 """
 
 from __future__ import annotations
