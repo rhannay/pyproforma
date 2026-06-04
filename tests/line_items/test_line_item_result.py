@@ -359,3 +359,67 @@ class TestLiPropertyAccess:
         model = TestModel(periods=[2024])
 
         assert model.li is model._li
+
+
+class TestLineItemResultAggregations:
+    """Tests for min, max, first, latest and their formatted variants."""
+
+    def _model(self):
+        class M(ProformaModel):
+            revenue = FixedLine(
+                values={2024: 100_000, 2025: 110_000, 2026: 80_000},
+                value_format=Format.CURRENCY_NO_DECIMALS,
+            )
+        return M(periods=[2024, 2025, 2026])
+
+    def test_min(self):
+        assert self._model()["revenue"].min() == 80_000
+
+    def test_max(self):
+        assert self._model()["revenue"].max() == 110_000
+
+    def test_first(self):
+        assert self._model()["revenue"].first() == 100_000
+
+    def test_latest(self):
+        assert self._model()["revenue"].latest() == 80_000
+
+    def test_min_returns_none_when_no_periods(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={})
+        assert M()["revenue"].min() is None
+
+    def test_max_returns_none_when_no_periods(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={})
+        assert M()["revenue"].max() is None
+
+    def test_first_returns_none_when_no_periods(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={})
+        assert M()["revenue"].first() is None
+
+    def test_latest_returns_none_when_no_periods(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={})
+        assert M()["revenue"].latest() is None
+
+    def test_formatted_min(self):
+        assert self._model()["revenue"].formatted_min() == "$80,000"
+
+    def test_formatted_max(self):
+        assert self._model()["revenue"].formatted_max() == "$110,000"
+
+    def test_formatted_first(self):
+        assert self._model()["revenue"].formatted_first() == "$100,000"
+
+    def test_formatted_latest(self):
+        assert self._model()["revenue"].formatted_latest() == "$80,000"
+
+    def test_formatted_min_override_format(self):
+        assert self._model()["revenue"].formatted_min(Format.THOUSANDS_K) == "80.0K"
+
+    def test_formatted_returns_empty_string_when_none(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={})
+        assert M()["revenue"].formatted_min() == ""
