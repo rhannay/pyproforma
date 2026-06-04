@@ -39,7 +39,7 @@ class BaseRow(ABC):
 class HeaderRow(BaseRow):
     """Configuration for header row generation."""
 
-    col_labels: Union[str, list[str]] = "Period"
+    col_labels: Union[str, list[str], None] = None
     background_color: Optional[str] = None
 
     def generate_row(
@@ -49,10 +49,11 @@ class HeaderRow(BaseRow):
         cells = []
 
         # Add label column headers
-        if isinstance(self.col_labels, str):
-            cells.append(Cell(value=self.col_labels, bold=True, align="left", background_color=self.background_color))
+        col_labels = self.col_labels if self.col_labels is not None else model.period_label
+        if isinstance(col_labels, str):
+            cells.append(Cell(value=col_labels, bold=True, align="left", background_color=self.background_color))
         else:
-            for label in self.col_labels:
+            for label in col_labels:
                 cells.append(Cell(value=label, bold=True, align="left", background_color=self.background_color))
 
         # Add period column headers
@@ -75,6 +76,7 @@ class ItemRow(BaseRow):
     bottom_border: Optional[str] = None
     top_border: Optional[str] = None
     hardcoded_color: Optional[str] = None
+    href: Optional[str] = None
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -99,7 +101,6 @@ class ItemRow(BaseRow):
 
         # Add label cell(s)
         if label_col_count >= 2:
-            # First column: name
             cells.append(
                 Cell(
                     value=self.name,
@@ -109,7 +110,6 @@ class ItemRow(BaseRow):
                     top_border=self.top_border,
                 )
             )
-            # Second column: label
             cells.append(
                 Cell(
                     value=label,
@@ -117,10 +117,10 @@ class ItemRow(BaseRow):
                     align="left",
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    href=self.href,
                 )
             )
         else:
-            # Single label column
             cells.append(
                 Cell(
                     value=label,
@@ -128,6 +128,7 @@ class ItemRow(BaseRow):
                     align="left",
                     bottom_border=self.bottom_border,
                     top_border=self.top_border,
+                    href=self.href,
                 )
             )
 

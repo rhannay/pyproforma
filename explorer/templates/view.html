@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — {{ model.__class__.__name__ }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mt-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">{{ title }}</h2>
+    </div>
+  </div>
+</div>
+
+{% for row in rows %}
+<div class="row g-3 mt-2">
+  {% for comp in row %}
+  <div class="col-md-{{ comp.col_width }}">
+
+    {% if comp.type == "stat" %}
+    <div class="card text-center h-100">
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="display-6 fw-bold font-monospace">{{ comp.value }}</div>
+        <div class="text-muted mt-1">{{ comp.label }}</div>
+      </div>
+    </div>
+
+    {% elif comp.type == "chart" %}
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">{{ comp.ref }}</h3>
+      </div>
+      <div class="card-body">
+        <div id="{{ comp.chart_id }}"></div>
+      </div>
+    </div>
+
+    {% elif comp.type == "table" %}
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">{{ comp.table_title }}</h3>
+      </div>
+      <div class="card-body p-0">
+        {{ comp.html | safe }}
+      </div>
+    </div>
+
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% for row in rows %}{% for comp in row %}{% if comp.type == "chart" %}
+(function () {
+  var spec = {{ comp.chart_data | safe }};
+  var options = apexOptionsFromSpec(spec, 280);
+  new ApexCharts(document.querySelector('#{{ comp.chart_id }}'), options).render();
+}());
+{% endif %}{% endfor %}{% endfor %}
+</script>
+{% endblock %}

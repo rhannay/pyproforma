@@ -12,32 +12,40 @@ from pyproforma.table import NumberFormatSpec
 
 from .line_item import LineItem
 
+# Sentinel distinguishing "no default supplied" from default=None
+_MISSING = object()
+
 
 class InputLine(LineItem):
     """
     A line item whose values are provided at model instantiation.
 
     InputLine is declared in the model class body with metadata only (label,
-    tags, value_format). Values are supplied as keyword arguments when
-    instantiating the model, making scenario inputs explicit and required.
+    tags, value_format) and an optional default period-value dict. Values are
+    supplied as keyword arguments when instantiating the model. If a default is
+    provided, the kwarg may be omitted and the default is used instead.
 
     Unlike FixedLine (values baked into the class), InputLine values vary
     per model instance — they are the "knobs" of the model.
 
     Examples:
         >>> class MyModel(ProformaModel):
-        ...     # Structural assumption — fixed, not a scenario input
-        ...     fixed_costs = FixedLine(values={2024: 50000, 2025: 52000})
-        ...
-        ...     # Scenario inputs — must be provided at instantiation
+        ...     # Required input — no default, must be provided at instantiation
         ...     revenue = InputLine(label="Revenue", value_format=Format.CURRENCY)
         ...
-        ...     profit = FormulaLine(
-        ...         formula=lambda a, li, t: li.revenue[t] - li.fixed_costs[t]
+        ...     # Optional input — has a default schedule, can be overridden
+        ...     rate_increase = InputLine(
+        ...         default={2024: 0.05, 2025: 0.04},
+        ...         label="Rate Increase",
+        ...         value_format=Format.PERCENT,
         ...     )
         ...
         >>> base = MyModel(periods=[2024, 2025], revenue={2024: 1_000_000, 2025: 1_100_000})
-        >>> bull = MyModel(periods=[2024, 2025], revenue={2024: 1_400_000, 2025: 1_600_000})
+        >>> high_rate = MyModel(
+        ...     periods=[2024, 2025],
+        ...     revenue={2024: 1_000_000, 2025: 1_100_000},
+        ...     rate_increase={2024: 0.08, 2025: 0.08},
+        ... )
 
     Attributes:
         label (str, optional): Human-readable label for display purposes.
@@ -47,6 +55,7 @@ class InputLine(LineItem):
 
     def __init__(
         self,
+        default: dict | None = _MISSING,
         label: str | None = None,
         tags: list[str] | None = None,
         value_format: Union[str, NumberFormatSpec, dict, None] = None,
@@ -55,6 +64,9 @@ class InputLine(LineItem):
         Initialize an InputLine.
 
         Args:
+            default (dict[int, float], optional): Default period-value mapping used
+                when no value is supplied at instantiation. Omit to make the input
+                required.
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
@@ -63,6 +75,21 @@ class InputLine(LineItem):
                 Defaults to None (inherits default 'no_decimals').
         """
         super().__init__(label=label, tags=tags, value_format=value_format)
+        self._default = default
+
+    @property
+    def has_default(self) -> bool:
+        """True if a default period-value dict was provided."""
+        return self._default is not _MISSING
+
+    @property
+    def default(self) -> dict:
+        """The default period-value dict, or raises AttributeError if none was set."""
+        if self._default is _MISSING:
+            raise AttributeError(
+                f"InputLine '{self.name}' has no default value."
+            )
+        return self._default
 
     def get_value(self, period: int) -> float | None:
         """
@@ -81,6 +108,9 @@ class InputLine(LineItem):
 
     def __repr__(self):
         """Return a string representation of the InputLine."""
+        parts = []
+        if self.has_default:
+            parts.append(f"default={self._default!r}")
         if self.label:
-            return f"InputLine(label={self.label!r})"
-        return "InputLine()"
+            parts.append(f"label={self.label!r}")
+        return f"InputLine({', '.join(parts)})"

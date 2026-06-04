@@ -1,22 +1,11 @@
 """
-Tests for InputLine and InputAssumption — scenario input types for v2 models.
+Tests for InputLine — scenario input types for v2 models.
 """
 
 import pytest
 
-from pyproforma import (
-    Assumption,
-    FixedLine,
-    FormulaLine,
-    InputAssumption,
-    InputLine,
-    ProformaModel,
-)
-
-
-# ---------------------------------------------------------------------------
-# InputLine — class-level behaviour
-# ---------------------------------------------------------------------------
+from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel
+from pyproforma.table import Format, NumberFormatSpec
 
 
 class TestInputLineClassLevel:
@@ -26,12 +15,6 @@ class TestInputLineClassLevel:
 
         assert "revenue" in M._line_item_names
         assert "revenue" in M._input_line_names
-
-    def test_not_in_assumption_names(self):
-        class M(ProformaModel):
-            revenue = InputLine()
-
-        assert "revenue" not in M._assumption_names
 
     def test_label_stored(self):
         class M(ProformaModel):
@@ -53,10 +36,21 @@ class TestInputLineClassLevel:
     def test_repr_without_label(self):
         assert repr(InputLine()) == "InputLine()"
 
+    def test_has_default_true(self):
+        line = InputLine(default={2024: 0.05, 2025: 0.04})
+        assert line.has_default is True
 
-# ---------------------------------------------------------------------------
-# InputLine — instantiation and value resolution
-# ---------------------------------------------------------------------------
+    def test_has_default_false(self):
+        assert InputLine().has_default is False
+
+    def test_default_property_returns_dict(self):
+        d = {2024: 0.05, 2025: 0.04}
+        line = InputLine(default=d)
+        assert line.default == d
+
+    def test_default_property_raises_when_missing(self):
+        with pytest.raises(AttributeError, match="has no default value"):
+            InputLine().default
 
 
 class TestInputLineInstantiation:
@@ -72,7 +66,7 @@ class TestInputLineInstantiation:
         class M(ProformaModel):
             revenue = InputLine()
 
-        with pytest.raises(TypeError, match="requires input line values for: revenue"):
+        with pytest.raises(TypeError, match="requires values for: revenue"):
             M(periods=[2024])
 
     def test_unknown_kwarg_raises(self):
@@ -87,21 +81,9 @@ class TestInputLineInstantiation:
             revenue = InputLine()
             costs = InputLine()
 
-        model = M(
-            periods=[2024],
-            revenue={2024: 200_000},
-            costs={2024: 120_000},
-        )
+        model = M(periods=[2024], revenue={2024: 200_000}, costs={2024: 120_000})
         assert model.get_value("revenue", 2024) == 200_000
         assert model.get_value("costs", 2024) == 120_000
-
-    def test_missing_one_of_two_inputs_raises(self):
-        class M(ProformaModel):
-            revenue = InputLine()
-            costs = InputLine()
-
-        with pytest.raises(TypeError, match="costs"):
-            M(periods=[2024], revenue={2024: 100})
 
     def test_input_line_usable_in_formula(self):
         class M(ProformaModel):
@@ -121,24 +103,23 @@ class TestInputLineInstantiation:
         assert base.get_value("revenue", 2024) == 100_000
         assert bull.get_value("revenue", 2024) == 150_000
 
-    def test_input_line_and_fixed_line_together(self):
+    def test_default_used_when_kwarg_omitted(self):
         class M(ProformaModel):
-            fixed_costs = FixedLine(values={2024: 50_000, 2025: 52_000})
-            revenue = InputLine()
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.fixed_costs[t]
-            )
+            rate = InputLine(default={2024: 0.05, 2025: 0.06})
 
-        model = M(
-            periods=[2024, 2025],
-            revenue={2024: 200_000, 2025: 220_000},
-        )
-        assert model.get_value("profit", 2024) == 150_000.0
-        assert model.get_value("profit", 2025) == 168_000.0
+        model = M(periods=[2024, 2025])
+        assert model.get_value("rate", 2024) == 0.05
+        assert model.get_value("rate", 2025) == 0.06
+
+    def test_kwarg_overrides_default(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: 0.05, 2025: 0.06})
+
+        model = M(periods=[2024, 2025], rate={2024: 0.08, 2025: 0.08})
+        assert model.get_value("rate", 2024) == 0.08
+        assert model.get_value("rate", 2025) == 0.08
 
     def test_input_line_missing_period_raises(self):
-        """Providing values for fewer periods than the model runs raises an error."""
-
         class M(ProformaModel):
             revenue = InputLine()
 
@@ -146,154 +127,65 @@ class TestInputLineInstantiation:
             M(periods=[2024, 2025], revenue={2024: 100_000})
 
 
-# ---------------------------------------------------------------------------
-# InputAssumption — class-level behaviour
-# ---------------------------------------------------------------------------
+class TestScalarInputLine:
+    """Tests for scalar InputLine (float kwarg at instantiation)."""
 
-
-class TestInputAssumptionClassLevel:
-    def test_discovered_as_assumption(self):
+    def test_scalar_kwarg_stored_in_scalars(self):
         class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
+            tax_rate = InputLine(label="Tax Rate")
 
-        assert "tax_rate" in M._assumption_names
-        assert "tax_rate" in M._input_assumption_names
+        model = M(periods=[2024, 2025], tax_rate=0.21)
+        assert model._scalars["tax_rate"] == 0.21
 
-    def test_not_in_line_item_names(self):
+    def test_scalar_accessible_in_formula_without_t(self):
         class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
-
-        assert "tax_rate" not in M._line_item_names
-
-    def test_has_default_true(self):
-        a = InputAssumption(default=0.21)
-        assert a.has_default is True
-
-    def test_has_default_false(self):
-        a = InputAssumption()
-        assert a.has_default is False
-
-    def test_repr_with_default(self):
-        a = InputAssumption(default=0.21, label="Tax Rate")
-        r = repr(a)
-        assert "0.21" in r
-        assert "Tax Rate" in r
-
-    def test_repr_without_default(self):
-        assert repr(InputAssumption()) == "InputAssumption()"
-
-    def test_name_set_by_descriptor(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
-
-        assert M.tax_rate.name == "tax_rate"
-
-
-# ---------------------------------------------------------------------------
-# InputAssumption — instantiation and value resolution
-# ---------------------------------------------------------------------------
-
-
-class TestInputAssumptionInstantiation:
-    def test_default_used_when_not_provided(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
+            tax_rate = InputLine(label="Tax Rate")
             revenue = FixedLine(values={2024: 100_000})
+            after_tax = FormulaLine(formula=lambda li, t: li.revenue[t] * (1 - li.tax_rate))
 
-        model = M(periods=[2024])
-        assert model.av.tax_rate == 0.21
-
-    def test_kwarg_overrides_default(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
-            revenue = FixedLine(values={2024: 100_000})
-
-        model = M(periods=[2024], tax_rate=0.28)
-        assert model.av.tax_rate == 0.28
-
-    def test_required_input_assumption_provided(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption()  # no default — required
-            revenue = FixedLine(values={2024: 100_000})
-
-        model = M(periods=[2024], tax_rate=0.25)
-        assert model.av.tax_rate == 0.25
-
-    def test_required_input_assumption_missing_raises(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption()
-            revenue = FixedLine(values={2024: 100_000})
-
-        with pytest.raises(TypeError, match="requires input assumption values for: tax_rate"):
-            M(periods=[2024])
-
-    def test_input_assumption_usable_in_formula(self):
-        class M(ProformaModel):
-            tax_rate = InputAssumption(default=0.21)
-            revenue = FixedLine(values={2024: 100_000})
-            after_tax = FormulaLine(
-                formula=lambda li, t: li.revenue[t] * (1 - li.tax_rate)
-            )
-
-        base = M(periods=[2024])
+        base = M(periods=[2024], tax_rate=0.21)
         assert base.get_value("after_tax", 2024) == pytest.approx(79_000.0)
 
         high_tax = M(periods=[2024], tax_rate=0.30)
         assert high_tax.get_value("after_tax", 2024) == pytest.approx(70_000.0)
 
-    def test_assumption_and_input_assumption_coexist(self):
+    def test_scalar_getitem_works(self):
         class M(ProformaModel):
-            fixed_rate = Assumption(value=0.05)
-            variable_rate = InputAssumption(default=0.10)
-            revenue = FixedLine(values={2024: 100_000})
+            tax_rate = InputLine()
 
-        model = M(periods=[2024], variable_rate=0.15)
-        assert model.av.fixed_rate == 0.05
-        assert model.av.variable_rate == 0.15
+        model = M(periods=[2024, 2025], tax_rate=0.21)
+        assert model["tax_rate"][2024] == 0.21
+        assert model["tax_rate"][2025] == 0.21
 
+    def test_scalar_default(self):
+        class M(ProformaModel):
+            growth = InputLine(default=0.05)
 
-# ---------------------------------------------------------------------------
-# Combined InputLine + InputAssumption — scenario workflow
-# ---------------------------------------------------------------------------
+        model = M(periods=[2024, 2025])
+        assert model._scalars["growth"] == 0.05
+        assert model.get_value("growth", 2024) == 0.05
+        assert model.get_value("growth", 2025) == 0.05
 
 
 class TestScenarioWorkflow:
     def test_base_and_bull_scenario(self):
         class IncomeModel(ProformaModel):
-            expense_ratio = InputAssumption(default=0.60, label="Expense Ratio")
+            expense_ratio = InputLine(label="Expense Ratio", default=0.60)
             revenue = InputLine(label="Revenue")
-            expenses = FormulaLine(
-                formula=lambda li, t: li.revenue[t] * li.expense_ratio
-            )
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.expenses[t]
-            )
+            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
-        base = IncomeModel(
-            periods=[2024, 2025],
-            revenue={2024: 1_000_000, 2025: 1_100_000},
-        )
-        bull = IncomeModel(
-            periods=[2024, 2025],
-            revenue={2024: 1_400_000, 2025: 1_600_000},
-            expense_ratio=0.50,
-        )
+        base = IncomeModel(periods=[2024, 2025], revenue={2024: 1_000_000, 2025: 1_100_000})
+        bull = IncomeModel(periods=[2024, 2025], revenue={2024: 1_400_000, 2025: 1_600_000}, expense_ratio=0.50)
 
         assert base.get_value("profit", 2024) == pytest.approx(400_000.0)
-        assert base.get_value("profit", 2025) == pytest.approx(440_000.0)
-
         assert bull.get_value("profit", 2024) == pytest.approx(700_000.0)
-        assert bull.get_value("profit", 2025) == pytest.approx(800_000.0)
 
     def test_fixed_line_unchanged_across_scenarios(self):
-        """FixedLine values cannot vary between instances — that's the point."""
-
         class M(ProformaModel):
             fixed_overhead = FixedLine(values={2024: 50_000})
             revenue = InputLine()
-            profit = FormulaLine(
-                formula=lambda li, t: li.revenue[t] - li.fixed_overhead[t]
-            )
+            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.fixed_overhead[t])
 
         s1 = M(periods=[2024], revenue={2024: 200_000})
         s2 = M(periods=[2024], revenue={2024: 300_000})

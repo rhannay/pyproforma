@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mt-3">
+  <div class="row align-items-center">
+    <div class="col">
+      {% if back_link %}
+      <div class="page-pretitle"><a href="/">Line Items</a></div>
+      {% endif %}
+      <h2 class="page-title">{{ title }}</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">Line Items</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-vcenter table-hover card-table">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Tags</th>
+          <th class="text-end">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><a href="{{ url_for('line_item', name=item.name) }}">{{ item.label }}</a></td>
+          <td class="text-secondary font-monospace small">{{ item.name }}</td>
+          <td class="text-secondary">{{ item.type }}</td>
+          <td>
+            {% for tag in item.tags %}
+            <a href="{{ url_for('tag_view', tag_name=tag) }}" class="badge bg-azure-lt text-azure text-decoration-none">{{ tag }}</a>
+            {% endfor %}
+          </td>
+          <td class="text-end font-monospace">
+            {% if item.scalar %}{{ item.value }}{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if tag_chart_data %}
+<div class="card mt-3">
+  <div class="card-body">
+    <div id="tag-chart"></div>
+  </div>
+</div>
+{% endif %}
+
+{% if tag_table_html %}
+<div class="card mt-3">
+  <div class="card-body p-0">
+    {{ tag_table_html | safe }}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if tag_chart_data %}
+<script>
+(function () {
+  var spec = {{ tag_chart_data | safe }};
+  var options = apexOptionsFromSpec(spec, 300);
+  new ApexCharts(document.querySelector('#tag-chart'), options).render();
+}());
+</script>
+{% endif %}
+{% endblock %}

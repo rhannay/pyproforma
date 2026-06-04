@@ -42,35 +42,35 @@ class Tables:
         """Initialize the tables namespace with a v2 ProformaModel."""
         self._model = model
 
-    def from_template(
+    def build(
         self,
-        template: list[Union[dict, BaseRow]],
+        definition: "Union[TableDef, list[Union[dict, BaseRow]]]",
         col_labels: Optional[str | list[str]] = None,
     ) -> Table:
         """
-        Generate a table from a template of row configurations.
+        Build a table from a TableDef or a bare list of row configurations.
 
         Args:
-            template (list[Union[dict, BaseRow]]): A list of row configuration
-                dictionaries or BaseRow instances that define the structure and
-                content of the table.
+            definition: Either a TableDef instance or a plain list of row
+                configurations (BaseRow instances or equivalent dicts).
             col_labels: String or list of strings for label columns. Defaults to None.
-                If None, defaults to "Name" for single column or ["Name", "Label"]
-                for two columns.
 
         Returns:
-            Table: A Table object containing the rows and data as specified by the template.
+            Table with title populated from TableDef.title when provided.
 
         Examples:
-            >>> template = [
-            ...     {"row_type": "label", "label": "Income Statement", "bold": True},
-            ...     {"row_type": "item", "name": "revenue"},
-            ...     {"row_type": "item", "name": "expenses"},
-            ...     {"row_type": "blank"},
-            ...     {"row_type": "line_items_total", "line_item_names": ["revenue", "expenses"]},
-            ... ]
-            >>> table = model.tables.from_template(template)
+            >>> model.tables.build(TableDef(rows=[HeaderRow(), ItemRow(name="revenue")],
+            ...                             title="Revenue"))
+            >>> model.tables.build([HeaderRow(), ItemRow(name="revenue")])
         """
+        from pyproforma.tables.table_def import TableDef as _TableDef
+        if isinstance(definition, _TableDef):
+            title = definition.title
+            template = definition.rows
+        else:
+            title = None
+            template = definition
+
         # Check if model has periods defined
         if not self._model.periods:
             raise ValueError(
@@ -128,7 +128,7 @@ class Tables:
         n_periods = len(self._model.periods)
         col_widths = [245] * label_col_count + [105] * n_periods
 
-        return Table(cells=all_rows, col_widths=col_widths)
+        return Table(cells=all_rows, col_widths=col_widths, title=title)
 
     def line_items(
         self,
@@ -213,8 +213,8 @@ class Tables:
                 )
             )
 
-        # Use from_template to generate the table
-        return self.from_template(template, col_labels=col_labels)
+        # Use build() to generate the table
+        return self.build(template, col_labels=col_labels)
 
     def line_item(
         self,
@@ -285,8 +285,8 @@ class Tables:
         if include_cumulative_percent_change:
             template.append(rt.CumulativePercentChangeRow(name=name))
 
-        # Use from_template to generate the table
-        return self.from_template(template, col_labels=col_labels)
+        # Use build() to generate the table
+        return self.build(template, col_labels=col_labels)
 
     def precedents(self, name: str, hardcoded_color: Optional[str] = None) -> Table:
         """
@@ -336,4 +336,4 @@ class Tables:
 
         template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
 
-        return self.from_template(template, col_labels="Label")
+        return self.build(template, col_labels="Label")

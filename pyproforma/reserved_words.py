@@ -13,6 +13,7 @@ RESERVED_WORDS = {
     "tags",  # Tags namespace accessor
     "tag",  # Singular form of tags
     "tables",  # Tables namespace
+    "charts",  # Charts namespace
     # Formula parameters
     "t",  # Period/time parameter in formulas
     "a",  # Assumption values parameter in formulas

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — {{ model.__class__.__name__ }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mt-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">{{ title }}</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <div id="chart-view"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var spec = {{ chart_data | safe }};
+  var options = apexOptionsFromSpec(spec, 400);
+  new ApexCharts(document.querySelector('#chart-view'), options).render();
+}());
+</script>
+{% endblock %}

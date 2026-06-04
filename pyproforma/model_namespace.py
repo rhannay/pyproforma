@@ -1,18 +1,17 @@
 """
-ModelNamespace — unified formula namespace combining line items and assumptions.
+ModelNamespace — unified formula namespace for line items and scalar constants.
 
-Formulas receive a single `li` object of this type, giving uniform access to
-both line items (period-indexed) and assumptions (scalar):
+Formulas receive a single `li` object of this type:
 
     expenses = FormulaLine(lambda li, t: li.revenue[t] * li.tax_rate)
 
-Line items are accessed with [t]; assumptions are accessed directly (no [t]).
+Period-indexed line items are accessed with [t].
+Scalar line items (FixedLine with value=, or scalar InputLine) are accessed directly.
 """
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma.assumption_values import AssumptionValues
     from pyproforma.line_items.line_item_values import LineItemValues
 
 
@@ -20,27 +19,21 @@ class ModelNamespace:
     """
     Unified namespace passed to formula functions.
 
-    Wraps both LineItemValues and AssumptionValues into a single object.
-    Attribute access checks line items first, then falls back to assumptions.
-
-    - Line items   → returns a period-indexable object: li.revenue[t]
-    - Assumptions  → returns the scalar value directly: li.tax_rate
+    Wraps LineItemValues and a scalar dict into a single object.
+    Scalars are returned directly; all other line items return a period-indexable object.
 
     Examples:
-        >>> # In a formula:
+        >>> # Scalar: no [t] needed
         >>> expenses = FormulaLine(lambda li, t: li.revenue[t] * li.tax_rate)
-        >>> growth   = FormulaLine(lambda li, t: li.revenue[t-1] * (1 + li.growth_rate))
+        >>> # Period-indexed: [t] required
+        >>> growth = FormulaLine(lambda li, t: li.revenue[t - 1] * (1 + li.rate[t]))
     """
 
-    __slots__ = ("_li", "_av")
+    __slots__ = ("_li", "_scalars")
 
-    def __init__(
-        self,
-        li: "LineItemValues",
-        av: "AssumptionValues",
-    ):
+    def __init__(self, li: "LineItemValues", scalars: dict):
         object.__setattr__(self, "_li", li)
-        object.__setattr__(self, "_av", av)
+        object.__setattr__(self, "_scalars", scalars)
 
     def __getattr__(self, name: str):
         if name.startswith("_"):
@@ -48,34 +41,27 @@ class ModelNamespace:
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
 
+        scalars = object.__getattribute__(self, "_scalars")
         li = object.__getattribute__(self, "_li")
-        av = object.__getattribute__(self, "_av")
 
-        # Special case: tag namespace lives on li
         if name == "tag":
             return li.tag
 
-        # Try line items first
+        if name in scalars:
+            return scalars[name]
+
         li_error = None
         try:
             return getattr(li, name)
         except AttributeError as e:
             li_error = e
 
-        # Fall back to assumptions (scalar)
-        try:
-            return getattr(av, name)
-        except AttributeError:
-            pass
-
-        # Not found in either — if li gave "is not registered", preserve it for
-        # typo detection in the calculation engine (which checks for that message).
         if li_error is not None and "is not registered" in str(li_error):
             raise li_error
 
         raise AttributeError(
             f"'{name}' not found. "
-            "Check that it is declared as a line item or assumption in the model."
+            "Check that it is declared as a line item in the model."
         )
 
     def __repr__(self) -> str:

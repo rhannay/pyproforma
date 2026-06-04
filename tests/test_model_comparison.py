@@ -5,7 +5,6 @@ Tests for ModelComparison.
 import pytest
 
 from pyproforma import (
-    Assumption,
     FixedLine,
     FormulaLine,
     ModelComparison,
@@ -24,9 +23,8 @@ def two_models():
     """Base and one comparison model with identical structure."""
 
     class MyModel(ProformaModel):
-        expense_ratio = Assumption(value=0.6)
         revenue = FixedLine(values={2024: 100, 2025: 110})
-        expenses = FormulaLine(lambda li, t: li.revenue[t] * li.expense_ratio)
+        expenses = FormulaLine(lambda li, t: li.revenue[t] * 0.6)
         profit = FormulaLine(lambda li, t: li.revenue[t] - li.expenses[t])
 
     base = MyModel(periods=[2024, 2025])
@@ -39,15 +37,13 @@ def two_models_different_revenue():
     """Base (100/110) vs optimistic (120/132)."""
 
     class MyModel(ProformaModel):
-        expense_ratio = Assumption(value=0.6)
         revenue = FixedLine(values={2024: 100, 2025: 110})
-        expenses = FormulaLine(lambda li, t: li.revenue[t] * li.expense_ratio)
+        expenses = FormulaLine(lambda li, t: li.revenue[t] * 0.6)
         profit = FormulaLine(lambda li, t: li.revenue[t] - li.expenses[t])
 
     class OptModel(ProformaModel):
-        expense_ratio = Assumption(value=0.6)
         revenue = FixedLine(values={2024: 120, 2025: 132})
-        expenses = FormulaLine(lambda li, t: li.revenue[t] * li.expense_ratio)
+        expenses = FormulaLine(lambda li, t: li.revenue[t] * 0.6)
         profit = FormulaLine(lambda li, t: li.revenue[t] - li.expenses[t])
 
     base = MyModel(periods=[2024, 2025])
@@ -305,7 +301,7 @@ class TestAssumptionDiff:
 
     def test_same_class_returns_dict(self):
         class MyModel(ProformaModel):
-            expense_ratio = Assumption(value=0.6)
+            expense_ratio = FixedLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
 
         a = MyModel(periods=[2024])

@@ -4,7 +4,7 @@ Tests for LineItemResult class and model['item'] access in v2.
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, Format, ProformaModel
 from pyproforma.line_items.line_item_result import LineItemResult
 
 
@@ -277,7 +277,7 @@ class TestLineItemResultWithFormulas:
         """Test accessing formula values that use assumptions."""
 
         class TestModel(ProformaModel):
-            expense_ratio = Assumption(value=0.6)
+            expense_ratio = FixedLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(
                 formula=lambda li, t: li.revenue[t] * li.expense_ratio
@@ -288,6 +288,39 @@ class TestLineItemResultWithFormulas:
 
         assert result[2024] == 60.0
         assert result.values == {2024: 60.0}
+
+
+class TestLineItemResultFormattedValue:
+    """Tests for LineItemResult.formatted_value()."""
+
+    def test_formatted_value_currency(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 1_000_000}, value_format=Format.CURRENCY_NO_DECIMALS)
+
+        model = TestModel(periods=[2024])
+        assert model["revenue"].formatted_value(2024) == "$1,000,000"
+
+    def test_formatted_value_percent(self):
+        class TestModel(ProformaModel):
+            margin = FixedLine(values={2024: 0.354}, value_format=Format.PERCENT_ONE_DECIMAL)
+
+        model = TestModel(periods=[2024])
+        assert model["margin"].formatted_value(2024) == "35.4%"
+
+    def test_formatted_value_default_format(self):
+        class TestModel(ProformaModel):
+            count = FixedLine(values={2024: 42})
+
+        model = TestModel(periods=[2024])
+        assert model["count"].formatted_value(2024) == "42"
+
+    def test_formatted_value_raises_on_invalid_period(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100})
+
+        model = TestModel(periods=[2024])
+        with pytest.raises(KeyError):
+            model["revenue"].formatted_value(2099)
 
 
 class TestLiPropertyAccess:

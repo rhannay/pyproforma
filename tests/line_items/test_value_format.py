@@ -154,10 +154,12 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
+            bond_rate = FixedLine(value=0.05)
+            bond_term = FixedLine(value=10)
             principal, interest = create_debt_lines(
-                par_amounts_line_item="bond_proceeds",
-                interest_rate=0.05,
-                term=10,
+                par_amounts="bond_proceeds",
+                interest_rate="bond_rate",
+                term="bond_term",
             )
             principal_payment = principal
             interest_expense = interest
@@ -176,10 +178,12 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
+            bond_rate = FixedLine(value=0.05)
+            bond_term = FixedLine(value=10)
             principal, interest = create_debt_lines(
-                par_amounts_line_item="bond_proceeds",
-                interest_rate=0.05,
-                term=10,
+                par_amounts="bond_proceeds",
+                interest_rate="bond_rate",
+                term="bond_term",
                 principal_value_format="currency_no_decimals",
                 interest_value_format=Format.CURRENCY,
             )
@@ -200,10 +204,12 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
+            bond_rate = FixedLine(value=0.05)
+            bond_term = FixedLine(value=10)
             principal, interest = create_debt_lines(
-                par_amounts_line_item="bond_proceeds",
-                interest_rate=0.05,
-                term=10,
+                par_amounts="bond_proceeds",
+                interest_rate="bond_rate",
+                term="bond_term",
                 principal_value_format="no_decimals",
                 interest_value_format="two_decimals",
             )

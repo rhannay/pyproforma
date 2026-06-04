@@ -19,10 +19,12 @@ from .row_types import (
     TagTotalRow,
     dict_to_row_config,
 )
+from .table_def import TableDef
 from .tables import Tables
 
 __all__ = [
     "Tables",
+    "TableDef",
     "BaseRow",
     "HeaderRow",
     "ItemRow",

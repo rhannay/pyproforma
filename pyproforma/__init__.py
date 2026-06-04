@@ -1,13 +1,9 @@
 """
-PyProforma v2 - Simplified modeling framework
-
-Version 2 provides a cleaner, Pydantic-inspired API for building financial models.
+PyProforma - A lightweight financial modeling framework.
 """
 
-from .assumption import Assumption
-from .assumption_result import AssumptionResult
-from .assumption_values import AssumptionValues
-from .input_assumption import InputAssumption
+from .charts.chart_def import ChartDef
+from .tables.table_def import TableDef
 from .line_items import (
     DebtCalculator,
     DebtInterestLine,
@@ -30,18 +26,16 @@ from .tags_namespace import ModelTagNamespace
 
 __all__ = [
     "ProformaModel",
+    "ChartDef",
+    "TableDef",
     "FixedLine",
     "FormulaLine",
     "InputLine",
-    "InputAssumption",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",
     "create_debt_lines",
-    "Assumption",
-    "AssumptionResult",
     "LineItem",
-    "AssumptionValues",
     "LineItemValues",
     "LineItemValue",
     "LineItemResult",

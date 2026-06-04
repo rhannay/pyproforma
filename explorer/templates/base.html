@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>{% block title %}pyproforma{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+    .table td, .table th { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+  </style>
+</head>
+<body class="antialiased">
+  <div class="wrapper">
+
+    <header class="navbar navbar-expand-md d-print-none" data-bs-theme="dark">
+      <div class="container-xl">
+        <a href="/" class="navbar-brand">pyproforma</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-menu">
+          <ul class="navbar-nav me-auto ms-auto-sm">
+            <li class="nav-item">
+              <a href="{{ url_for('index') }}" class="nav-link">Line Items</a>
+            </li>
+            {% if model.__class__._input_line_names %}
+            <li class="nav-item">
+              <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
+            </li>
+            {% endif %}
+            {% if nav_tags %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tags</a>
+              <div class="dropdown-menu">
+                {% for tag in nav_tags %}
+                <a class="dropdown-item" href="{{ url_for('tag_view', tag_name=tag) }}">{{ tag }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %}
+            {% if nav_views %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Views</a>
+              <div class="dropdown-menu">
+                {% for idx, label in nav_views %}
+                <a class="dropdown-item" href="{{ url_for('view_page', idx=idx) }}">{{ label }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %}
+            {% if nav_charts %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Charts</a>
+              <div class="dropdown-menu">
+                {% for idx, label in nav_charts %}
+                <a class="dropdown-item" href="{{ url_for('chart_view', idx=idx) }}">{{ label }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
+              <div class="dropdown-menu">
+                {% if nav_tables %}
+                  {% for idx, label in nav_tables %}
+                  <a class="dropdown-item" href="{{ url_for('table_view', idx=idx) }}">{{ label }}</a>
+                  {% endfor %}
+                {% else %}
+                  <span class="dropdown-item text-muted fst-italic small">No tables configured</span>
+                {% endif %}
+              </div>
+            </li>
+          </ul>
+          <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-wrapper">
+      <div class="page-body">
+        <div class="container-xl">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.min.js"></script>
+  <script>
+  function formatApexValue(val, fmt) {
+    if (!fmt) return val.toLocaleString();
+    var v = val * (fmt.multiplier || 1);
+    var scaleMap = { thousands: 1e3, millions: 1e6, billions: 1e9, trillions: 1e12 };
+    if (fmt.scale && scaleMap[fmt.scale]) v = v / scaleMap[fmt.scale];
+    var str;
+    if (fmt.thousands) {
+      str = v.toLocaleString('en-US', { minimumFractionDigits: fmt.decimals, maximumFractionDigits: fmt.decimals });
+    } else {
+      str = v.toFixed(fmt.decimals);
+    }
+    return (fmt.prefix || '') + str + (fmt.suffix || '');
+  }
+  function apexOptionsFromSpec(spec, height) {
+    var isStacked = spec.chart_type === 'stacked_bar';
+    return {
+      chart: {
+        type: spec.chart_type === 'line' ? 'line' : 'bar',
+        stacked: isStacked,
+        height: height || 280,
+        toolbar: { show: false },
+        zoom: { enabled: false },
+      },
+      series: spec.series,
+      xaxis: { categories: spec.categories },
+      colors: spec.colors || undefined,
+      yaxis: { labels: { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } },
+      stroke: spec.chart_type === 'line' ? { curve: 'straight', width: 2 } : {},
+      markers: spec.chart_type === 'line' ? { size: 4 } : {},
+      dataLabels: isStacked ? { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } : { enabled: false },
+      tooltip: { y: { formatter: function(val) { return formatApexValue(val, spec.yaxis_format); } } },
+      grid: { borderColor: '#e5e7eb' },
+    };
+  }
+  </script>
+  <script>document.addEventListener('focusin', function(e) { if (e.target.type === 'number') e.target.select(); });</script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

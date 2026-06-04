@@ -2,7 +2,7 @@
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine
+from pyproforma import FixedLine, FormulaLine
 
 
 class TestFormulaLinePrecedents:
@@ -35,9 +35,34 @@ class TestFormulaLinePrecedents:
         line = FormulaLine(formula=lambda li, t: max(li.revenue[t], 0))
         assert line.precedents == ["revenue"]
 
-    def test_tag_access_appears_as_tag(self):
+    def test_tag_access_excluded_from_precedents(self):
         line = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
-        assert line.precedents == ["tag"]
+        assert line.precedents == []
+
+    def test_tag_references_single(self):
+        line = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
+        assert line.tag_references == ["revenue"]
+
+    def test_tag_references_multiple(self):
+        line = FormulaLine(formula=lambda li, t: li.tag["revenue"][t] + li.tag["cogs"][t])
+        assert line.tag_references == ["revenue", "cogs"]
+
+    def test_tag_references_deduplication(self):
+        line = FormulaLine(formula=lambda li, t: li.tag["revenue"][t] + li.tag["revenue"][t])
+        assert line.tag_references == ["revenue"]
+
+    def test_tag_references_none_when_no_formula(self):
+        line = FormulaLine()
+        assert line.tag_references is None
+
+    def test_tag_references_empty_when_no_tags_used(self):
+        line = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6)
+        assert line.tag_references == []
+
+    def test_mixed_precedents_and_tag_references(self):
+        line = FormulaLine(formula=lambda li, t: li.revenue[t] - li.tag["cogs"][t])
+        assert line.precedents == ["revenue"]
+        assert line.tag_references == ["cogs"]
 
     def test_no_formula_returns_none(self):
         line = FormulaLine()

@@ -4,7 +4,7 @@ Tests for time offset functionality in formulas.
 
 import pytest
 
-from pyproforma import Assumption, FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, ProformaModel
 
 
 class TestTimeOffsets:
@@ -49,7 +49,7 @@ class TestTimeOffsets:
         """Test compound growth using current period value."""
 
         class TestModel(ProformaModel):
-            growth_rate = Assumption(value=0.1)
+            growth_rate = FixedLine(value=0.1)
             revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121})
             next_revenue = FormulaLine(
                 formula=lambda li, t: li.revenue[t] * (1 + li.growth_rate),

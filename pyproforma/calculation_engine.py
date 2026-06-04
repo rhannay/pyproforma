@@ -1,49 +1,32 @@
 """
-Calculation engine for v2 ProformaModel.
+Calculation engine for ProformaModel.
 
-This module contains the logic for calculating line item values from formulas,
-handling dependencies, and resolving values across periods.
+Calculates line item values from formulas, handling dependencies and resolving
+values across periods.
 """
 
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .assumption_values import AssumptionValues
     from .line_items.line_item_values import LineItemValues
 
 
 def calculate_line_items(
     model: Any,
-    av: "AssumptionValues",
+    scalars: dict,
     periods: list[int],
 ) -> "LineItemValues":
     """
     Calculate all line item values for the given model.
 
-    This function processes formulas in dependency order, evaluates them for
-    each period, and returns a populated LineItemValues container.
-
-    Formulas receive three parameters:
-    - a (AssumptionValues): Access assumptions via a.tax_rate, a.growth_rate, etc.
-    - li (LineItemValues): Access line items via li.revenue[t], li.revenue[t-1], etc.
-    - t (int): Current period being calculated
-
-    This function processes each period in order, calculating all line items
-    for that period before moving to the next. This allows for time-offset
-    references (e.g., li.revenue[t-1]) to work correctly.
-
     Args:
         model: The ProformaModel instance containing line item definitions.
-        av (AssumptionValues): Assumption values for the model.
-        periods (list[int]): List of periods to calculate.
+        scalars: Dict of scalar line item values (FixedLine(value=) or scalar InputLine).
+        periods: List of periods to calculate.
 
     Returns:
         LineItemValues: Populated container with all calculated values.
-
-    Raises:
-        ValueError: If line items are not found or calculation fails.
     """
-    # Import here to avoid circular imports
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
@@ -51,10 +34,8 @@ def calculate_line_items(
     from .line_items.line_item_values import LineItemValues
     from .model_namespace import ModelNamespace
 
-    # Initialize line item values with registered names for validation
     li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
 
-    # Separate fixed and formula line items
     fixed_items = []
     formula_items = []
 
@@ -65,18 +46,14 @@ def calculate_line_items(
         elif isinstance(line_item, (FormulaLine, DebtBase)):
             formula_items.append(name)
 
-    # Calculate values for each period
     for period in periods:
-        # Build a unified namespace for formula evaluation this period
-        ns = ModelNamespace(li, av)
+        ns = ModelNamespace(li, scalars)
 
-        # First, calculate all fixed line items (they don't depend on other line items)
         for name in fixed_items:
             line_item = getattr(model.__class__, name)
             value = _calculate_single_line_item(line_item, ns, period, model)
             li.set(name, period, value)
 
-        # Then calculate formula items with dependency resolution
         remaining = formula_items.copy()
         max_iterations = len(formula_items) + 1
         iteration = 0
@@ -91,32 +68,21 @@ def calculate_line_items(
                     value = _calculate_single_line_item(line_item, ns, period, model)
                     li.set(name, period, value)
                 except AttributeError as e:
-                    # AttributeError means accessing unregistered line item (typo)
-                    # LineItemValues now raises helpful error with available names
                     error_msg = str(e)
                     if "is not registered" in error_msg:
-                        # This is a typo - raise immediately with helpful message
                         raise ValueError(
                             f"Error in formula for '{line_item.name}': {e}"
                         ) from e
-                    # Otherwise, it's some other AttributeError - retry
                     still_pending.append(name)
                 except KeyError as e:
-                    # KeyError could mean:
-                    # 1. Dependency not yet calculated for current period (retry)
-                    # 2. Accessing a period not in the model (fatal error)
-                    # Check if the error is about the current period
                     error_msg = str(e)
                     if f"Period {period}" in error_msg:
-                        # Dependency not yet calculated for current period - retry
                         still_pending.append(name)
                     else:
-                        # Accessing a period outside the model - wrap in ValueError
                         raise ValueError(
                             f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
                         ) from e
 
-            # If we made no progress, we have a circular reference
             if len(still_pending) == len(remaining):
                 raise ValueError(
                     f"Circular reference detected for period {period}. "
@@ -134,35 +100,11 @@ def _calculate_single_line_item(
     period: int,
     model: Any = None,
 ) -> float:
-    """
-    Calculate the value of a single line item for a specific period.
-
-    This is a pure function that computes and returns a value without modifying
-    the LineItemValues container. The caller is responsible for storing the result.
-
-    Args:
-        line_item: The line item definition (FixedLine, FormulaLine, etc.).
-            Must have a .name attribute set by __set_name__.
-        ns (ModelNamespace): Unified namespace giving formulas access to both
-            line items and assumptions via a single object.
-        period (int): The period to calculate for.
-        model: The ProformaModel instance (needed for InputLine value lookup).
-
-    Returns:
-        float: The calculated value.
-
-    Raises:
-        ValueError: If calculation fails.
-        AttributeError: If a dependency is not yet calculated.
-        KeyError: If accessing a period not yet calculated.
-    """
-    # Import here to avoid circular imports
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
     from .line_items.input_line import InputLine
 
-    # Handle InputLine — values live on the model instance
     if isinstance(line_item, InputLine):
         input_values = getattr(model, "_input_line_values", {})
         period_values = input_values.get(line_item.name, {})
@@ -173,7 +115,6 @@ def _calculate_single_line_item(
             )
         return float(value)
 
-    # Handle FixedLine
     if isinstance(line_item, FixedLine):
         value = line_item.get_value(period)
         if value is None:
@@ -182,50 +123,36 @@ def _calculate_single_line_item(
             )
         return value
 
-    # Handle FormulaLine
     if isinstance(line_item, FormulaLine):
-        # Check for override value first
         if period in line_item.values:
             return line_item.values[period]
-
         try:
             value = line_item.eval(ns, period)
         except (AttributeError, KeyError):
-            # Re-raise these - indicate missing dependencies or periods
-            # The caller will decide whether to retry or raise ValueError
             raise
         except Exception as e:
             raise ValueError(
                 f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
             ) from e
-
-        # Validate the result type
         if not isinstance(value, (int, float)):
             raise ValueError(
                 f"Formula for '{line_item.name}' returned invalid type: {type(value)}"
             )
-
         return float(value)
 
-    # Handle DebtBase (DebtPrincipalLine, DebtInterestLine)
     if isinstance(line_item, DebtBase):
         try:
             value = line_item.eval(ns, period)
         except (AttributeError, KeyError):
-            # Re-raise these - indicate missing dependencies or periods
-            # The caller will decide whether to retry or raise ValueError
             raise
         except Exception as e:
             raise ValueError(
                 f"Error evaluating debt line for '{line_item.name}' in period {period}: {e}"
             ) from e
-
-        # Validate the result type
         if not isinstance(value, (int, float)):
             raise ValueError(
                 f"Debt line '{line_item.name}' returned invalid type: {type(value)}"
             )
-
         return float(value)
 
     raise ValueError(f"Unknown line item type for '{line_item.name}'")

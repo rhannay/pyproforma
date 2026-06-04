@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ info.label }} — pyproforma{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mt-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="page-pretitle">
+        <a href="/">Line Items</a>
+      </div>
+      <h2 class="page-title">{{ info.label }}</h2>
+      <div class="text-secondary font-monospace small">{{ info.name }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">Details</h3>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5">Type</dt>
+          <dd class="col-7">{{ info.type }}</dd>
+
+          <dt class="col-5">Tags</dt>
+          <dd class="col-7">
+            {% if info.tags %}
+              {% for tag in info.tags %}
+              <a href="{{ url_for('tag_view', tag_name=tag) }}" class="badge bg-azure-lt text-azure text-decoration-none">{{ tag }}</a>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">none</span>
+            {% endif %}
+          </dd>
+
+          <dt class="col-5">Format</dt>
+          <dd class="col-7 font-monospace small">{{ info.value_format }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+
+    {% if info.formula_source is defined %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Formula</h3>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0"><code>{{ info.formula_source }}</code></pre>
+      </div>
+    </div>
+    {% if (info.dependencies is defined and info.dependencies) or (info.tag_dependencies is defined and info.tag_dependencies) %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Precedents</h3>
+      </div>
+      <div class="card-body">
+        {% for dep in info.dependencies %}
+        <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        {% endfor %}
+        {% for tag, members in info.tag_dependencies.items() %}
+        <div class="mt-2 small text-muted">via tag: <a href="{{ url_for('tag_view', tag_name=tag) }}" class="text-decoration-none">{{ tag }}</a></div>
+        {% for name in members %}
+        <a href="{{ url_for('line_item', name=name) }}" class="badge bg-azure-lt text-azure me-1 text-decoration-none">{{ name }}</a>
+        {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if info.scalar_value is defined %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Scalar Value</h3>
+      </div>
+      <div class="card-body">
+        <span class="font-monospace fs-3">{{ info.scalar_value }}</span>
+        <div class="text-muted small mt-1">Same value for every period.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if dependents %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Dependents</h3>
+      </div>
+      <div class="card-body">
+        {% for dep in dependents %}
+        <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if info.fixed_values is defined %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Fixed Values</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter table-sm card-table">
+          <thead>
+            <tr><th>Period</th><th class="text-end">Value</th></tr>
+          </thead>
+          <tbody>
+            {% for period, value in info.fixed_values.items() %}
+            <tr>
+              <td>{{ period }}</td>
+              <td class="text-end">{{ value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+
+  </div>
+</div>
+
+{% if chart_data %}
+<div class="card mt-3">
+  <div class="card-body">
+    <div id="line-item-chart"></div>
+  </div>
+</div>
+{% endif %}
+
+{% if values_table %}
+<div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">Values</h3>
+  </div>
+  <div class="card-body p-0">
+    {{ values_table | safe }}
+  </div>
+</div>
+{% endif %}
+
+{% if precedents_table %}
+<div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">Precedents</h3>
+  </div>
+  <div class="card-body p-0">
+    {{ precedents_table | safe }}
+  </div>
+</div>
+{% endif %}
+
+
+{% endblock %}
+
+{% block scripts %}
+{% if chart_data %}
+<script>
+(function () {
+  var spec = {{ chart_data | safe }};
+  var options = apexOptionsFromSpec(spec, 260);
+  new ApexCharts(document.querySelector('#line-item-chart'), options).render();
+}());
+</script>
+{% endif %}
+{% endblock %}

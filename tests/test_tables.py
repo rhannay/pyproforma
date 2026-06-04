@@ -167,7 +167,7 @@ def test_tables_from_template_works(simple_model):
         {"row_type": "item", "name": "revenue"},
         {"row_type": "item", "name": "expenses"},
     ]
-    table = simple_model.tables.from_template(template)
+    table = simple_model.tables.build(template)
 
     # Should have header + 2 data rows
     assert len(table.cells) == 3

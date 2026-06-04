@@ -221,17 +221,17 @@ class ModelComparison:
                 f"Found: {[type(m).__name__ for m in self.models]}"
             )
 
-        common_assumptions = set(self.models[0].assumption_names)
+        common_scalars = set(self.models[0]._scalars)
         for m in self.models[1:]:
-            common_assumptions &= set(m.assumption_names)
+            common_scalars &= set(m._scalars)
 
         return {
             name: {
-                label: getattr(self.models[i].av, name)
+                label: self.models[i]._scalars[name]
                 for i, label in enumerate(self.labels)
             }
-            for name in self.models[0].assumption_names
-            if name in common_assumptions
+            for name in self.models[0]._scalars
+            if name in common_scalars
         }
 
     def table(
