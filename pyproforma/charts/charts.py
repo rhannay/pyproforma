@@ -46,6 +46,7 @@ class Charts:
         name: str,
         chart_type: ChartType = "line",
         title: str | None = None,
+        value_format=None,
     ) -> Chart:
         """
         Build a chart for a single line item.
@@ -54,6 +55,7 @@ class Charts:
             name: Line item name.
             chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
             title: Chart title. Defaults to the line item's label (or name).
+            value_format: Override the line item's value format for the y-axis.
 
         Returns:
             Chart ready for rendering.
@@ -64,6 +66,7 @@ class Charts:
         Examples:
             >>> model.charts.line_item("revenue").show()
             >>> model.charts.line_item("revenue", chart_type="bar").figure()
+            >>> model.charts.line_item("revenue", value_format=Format.MILLIONS_M).show()
         """
         self._validate_line_item(name)
         result = self._model[name]
@@ -79,7 +82,7 @@ class Charts:
             series=[series],
             chart_type=chart_type,
             title=title if title is not None else label,
-            value_format=result.value_format,
+            value_format=value_format or result.value_format,
         )
 
     def line_items(
@@ -92,10 +95,14 @@ class Charts:
         """
         Build a chart with one series per line item.
 
+        If all line items share the same value_format it is applied to the chart
+        automatically. Pass value_format explicitly to override.
+
         Args:
             names: List of line item names to include as series.
             chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
             title: Chart title. Defaults to None (no title).
+            value_format: Override the auto-detected format for the y-axis.
 
         Returns:
             Chart ready for rendering.
@@ -106,6 +113,7 @@ class Charts:
         Examples:
             >>> model.charts.line_items(["revenue", "expenses"]).show()
             >>> model.charts.line_items(["revenue", "cogs"], chart_type="stacked_bar").show()
+            >>> model.charts.line_items(["revenue", "expenses"], value_format=Format.MILLIONS_M).show()
         """
         for name in names:
             self._validate_line_item(name)
