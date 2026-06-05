@@ -179,15 +179,25 @@ class TestCalculateSingleLineItem:
         with pytest.raises(ValueError, match="Error evaluating formula for 'bad_formula'"):
             _calculate_single_line_item(TestModel.bad_formula, ns, 2024)
 
-    def test_formula_returns_non_numeric_raises_error(self):
+    def test_formula_returning_string_is_allowed(self):
         class TestModel(ProformaModel):
-            bad_formula = FormulaLine(formula=lambda li, t: "not a number")
+            status = FormulaLine(formula=lambda li, t: "PASS")
 
-        li = LineItemValues(periods=[2024], names=["bad_formula"])
+        li = LineItemValues(periods=[2024], names=["status"])
         ns = ModelNamespace(li, {})
 
-        with pytest.raises(ValueError, match="returned invalid type"):
-            _calculate_single_line_item(TestModel.bad_formula, ns, 2024)
+        result = _calculate_single_line_item(TestModel.status, ns, 2024)
+        assert result == "PASS"
+
+    def test_formula_returning_none_raises_error(self):
+        class TestModel(ProformaModel):
+            bad = FormulaLine(formula=lambda li, t: None)
+
+        li = LineItemValues(periods=[2024], names=["bad"])
+        ns = ModelNamespace(li, {})
+
+        with pytest.raises(ValueError, match="returned None"):
+            _calculate_single_line_item(TestModel.bad, ns, 2024)
 
 
 class TestDependencyResolution:

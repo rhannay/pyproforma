@@ -99,7 +99,7 @@ class LineItemValues:
 
     def get(
         self, name: str, period: int | None = None
-    ) -> float | dict[int, float] | None:
+    ) -> Any | dict[int, Any] | None:
         """
         Get the value(s) for a line item.
 
@@ -120,7 +120,7 @@ class LineItemValues:
 
         return self._values[name].get(period)
 
-    def set(self, name: str, period: int, value: float) -> None:
+    def set(self, name: str, period: int, value: Any) -> None:
         """
         Set the value for a line item at a specific period.
 
@@ -217,7 +217,7 @@ class LineItemValue:
         self._name = name
         self._values = values
 
-    def get(self, period: int, default: Any = None) -> float | None:
+    def get(self, period: int, default: Any = None) -> Any | None:
         """
         Get the value for a specific period.
 
@@ -230,7 +230,7 @@ class LineItemValue:
         """
         return self._values.get(period, default)
 
-    def __getitem__(self, period: int) -> float:
+    def __getitem__(self, period: int) -> Any:
         """
         Get value using subscript notation.
 

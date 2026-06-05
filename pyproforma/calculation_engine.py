@@ -99,7 +99,7 @@ def _calculate_single_line_item(
     ns: Any,
     period: int,
     model: Any = None,
-) -> float:
+) -> Any:
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
@@ -113,7 +113,7 @@ def _calculate_single_line_item(
             raise ValueError(
                 f"No input value for '{line_item.name}' in period {period}"
             )
-        return float(value)
+        return value
 
     if isinstance(line_item, FixedLine):
         value = line_item.get_value(period)
@@ -134,11 +134,11 @@ def _calculate_single_line_item(
             raise ValueError(
                 f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
             ) from e
-        if not isinstance(value, (int, float)):
+        if value is None:
             raise ValueError(
-                f"Formula for '{line_item.name}' returned invalid type: {type(value)}"
+                f"Formula for '{line_item.name}' returned None"
             )
-        return float(value)
+        return value
 
     if isinstance(line_item, DebtBase):
         try:

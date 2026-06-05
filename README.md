@@ -109,7 +109,6 @@ class FlexModel(ProformaModel):
     gross_profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.cogs[t])
 
 base = FlexModel(periods=[2024, 2025])
-# InputAssumption lets callers override at instantiation time — coming soon
 ```
 
 Use `ModelComparison` to diff two model instances:

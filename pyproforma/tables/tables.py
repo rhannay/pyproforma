@@ -1,8 +1,11 @@
 """
-Tables class for PyProforma v2 API.
+Tables — model-aware namespace for building Table objects.
 
-Provides table creation methods for v2 models, similar to the v1 API but
-adapted for v2's simpler structure.
+Accessed via model.tables. Takes model data and builds Table instances
+via convenience methods (line_item, line_items, precedents) or the general
+build() method which accepts a TableDef or plain list of row configurations.
+
+This layer knows about ProformaModel; the Table class beneath it does not.
 """
 
 from typing import TYPE_CHECKING, Optional, Union

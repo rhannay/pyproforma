@@ -1,9 +1,15 @@
-"""ChartDef — declarative config for registering a chart."""
+"""
+ChartDef — declarative definition of a chart to build from a model.
+
+Used with model.charts.build() to produce a Chart. Holds the line item names,
+chart type, title, and optional per-series colors. Accepts either the dataclass
+form (IDE autocomplete, validation) or a plain dict (JSON-serializable configs).
+"""
 
 from dataclasses import dataclass, field
 from typing import Union
 
-from pyproforma.chart.chart_spec import ChartType
+from pyproforma.chart.chart import ChartType
 
 
 @dataclass

@@ -5,6 +5,8 @@ Users define models by subclassing ProformaModel and declaring line items as
 class attributes using FixedLine, FormulaLine, or InputLine.
 """
 
+from typing import Any
+
 from pyproforma.calculation_engine import calculate_line_items
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.input_line import InputLine
@@ -94,10 +96,9 @@ class ProformaModel:
                 missing.append(name)
                 continue
 
-            if isinstance(raw, (int, float)):
-                self._scalars[name] = float(raw)
-                # Also expand into period dict so the engine can store it in _li
-                self._input_line_values[name] = {p: float(raw) for p in self.periods}
+            if not isinstance(raw, dict):
+                self._scalars[name] = raw
+                self._input_line_values[name] = {p: raw for p in self.periods}
             else:
                 self._input_line_values[name] = raw
 
@@ -123,7 +124,7 @@ class ProformaModel:
         self.charts: Charts = Charts(self)
         self._tag_namespace = ModelTagNamespace(self)
 
-    def get_value(self, name: str, period: int) -> float:
+    def get_value(self, name: str, period: int) -> Any:
         line_item = getattr(self._li, name)
         return line_item[period]
 

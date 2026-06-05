@@ -1,14 +1,18 @@
 """
-Charts namespace for PyProforma v2 models.
+Charts — model-aware namespace for building Chart objects.
 
-Accessed via model.charts. Mirrors the model.tables namespace pattern.
+Accessed via model.charts. Takes model data and builds Chart instances
+via convenience methods (line_item, line_items) or the general build()
+method which accepts a ChartDef or plain dict.
+
+This layer knows about ProformaModel; the Chart class beneath it does not.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyproforma.chart.chart_spec import ChartSeries, ChartSpec, ChartType
+from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
@@ -18,7 +22,7 @@ class Charts:
     """
     Namespace for chart creation methods on a ProformaModel.
 
-    Accessed via model.charts. Each method returns a ChartSpec — the
+    Accessed via model.charts. Each method returns a Chart — the
     intermediate data representation — which can then be rendered via
     .show() (matplotlib) or .to_dict() (web / JSON).
 
@@ -42,7 +46,8 @@ class Charts:
         name: str,
         chart_type: ChartType = "line",
         title: str | None = None,
-    ) -> ChartSpec:
+        value_format=None,
+    ) -> Chart:
         """
         Build a chart for a single line item.
 
@@ -50,9 +55,10 @@ class Charts:
             name: Line item name.
             chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
             title: Chart title. Defaults to the line item's label (or name).
+            value_format: Override the line item's value format for the y-axis.
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Raises:
             ValueError: If the line item doesn't exist in the model.
@@ -60,6 +66,7 @@ class Charts:
         Examples:
             >>> model.charts.line_item("revenue").show()
             >>> model.charts.line_item("revenue", chart_type="bar").figure()
+            >>> model.charts.line_item("revenue", value_format=Format.MILLIONS_M).show()
         """
         self._validate_line_item(name)
         result = self._model[name]
@@ -71,11 +78,11 @@ class Charts:
             y_values=[result[p] for p in self._model.periods],
         )
 
-        return ChartSpec(
+        return Chart(
             series=[series],
             chart_type=chart_type,
             title=title if title is not None else label,
-            value_format=result.value_format,
+            value_format=value_format or result.value_format,
         )
 
     def line_items(
@@ -83,17 +90,22 @@ class Charts:
         names: list[str],
         chart_type: ChartType = "line",
         title: str | None = None,
-    ) -> ChartSpec:
+        value_format=None,
+    ) -> Chart:
         """
         Build a chart with one series per line item.
+
+        If all line items share the same value_format it is applied to the chart
+        automatically. Pass value_format explicitly to override.
 
         Args:
             names: List of line item names to include as series.
             chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
             title: Chart title. Defaults to None (no title).
+            value_format: Override the auto-detected format for the y-axis.
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Raises:
             ValueError: If any line item doesn't exist in the model.
@@ -101,6 +113,7 @@ class Charts:
         Examples:
             >>> model.charts.line_items(["revenue", "expenses"]).show()
             >>> model.charts.line_items(["revenue", "cogs"], chart_type="stacked_bar").show()
+            >>> model.charts.line_items(["revenue", "expenses"], value_format=Format.MILLIONS_M).show()
         """
         for name in names:
             self._validate_line_item(name)
@@ -116,15 +129,20 @@ class Charts:
                 )
             )
 
-        return ChartSpec(
+        if value_format is None:
+            formats = [self._model[n].value_format for n in names]
+            value_format = formats[0] if len(set(formats)) == 1 else None
+
+        return Chart(
             series=series,
             chart_type=chart_type,
             title=title,
+            value_format=value_format,
         )
 
-    def build(self, template: "ChartDef | dict") -> ChartSpec:
+    def build(self, template: "ChartDef | dict") -> Chart:
         """
-        Build a ChartSpec from a ChartDef or equivalent dict.
+        Build a Chart from a ChartDef or equivalent dict.
 
         Accepts either the ChartDef dataclass (for Python code with IDE support)
         or a plain dict (for JSON-serializable configs). Both produce identical results.
@@ -136,7 +154,7 @@ class Charts:
                 - title (str, optional): Chart title.
 
         Returns:
-            ChartSpec ready for rendering.
+            Chart ready for rendering.
 
         Examples:
             >>> model.charts.from_template(ChartDef(names=["revenue", "expenses"]))

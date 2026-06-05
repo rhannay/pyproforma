@@ -1,8 +1,11 @@
 """
-Row type configurations for PyProforma v2 API table generation.
+Row types — building blocks for TableDef row configurations.
 
-This module provides row type classes similar to v1 but adapted for v2 models.
-Each row type is a dataclass that can generate table rows from v2 ProformaModel data.
+Each row type is a dataclass that generates one or more rows of Cell objects
+when passed to Tables.build(). Row types are model-aware: they receive a
+ProformaModel instance and produce formatted Cell rows from its data.
+
+Used directly in TableDef.rows or as plain dicts via dict_to_row_config().
 """
 
 from abc import ABC, abstractmethod

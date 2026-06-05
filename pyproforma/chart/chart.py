@@ -1,13 +1,18 @@
 """
-Chart data layer for PyProforma.
+Chart — generic chart data class, rendering-backend agnostic.
 
-ChartSpec and ChartSeries are the intermediate representation between model data
-and any rendering backend (matplotlib, charts.js, plotly, etc.).
+Chart and ChartSeries are the intermediate representation between any data
+source and a rendering backend. They are not specific to ProformaModel —
+anything that can populate a list of ChartSeries can produce a Chart.
+
+Rendering backends:
+  - MatplotlibRenderer  → .show() / .figure() for Jupyter and scripts
+  - .to_apexcharts()    → JSON-ready dict for ApexCharts in web apps
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
@@ -27,12 +32,12 @@ class ChartSeries:
 
 
 @dataclass
-class ChartSpec:
+class Chart:
     """
     Intermediate representation of a chart — pure data, rendering-backend agnostic.
 
     Build one via model.charts.line_item() or model.charts.line_items(), then
-    render it with .show() / .figure() (matplotlib) or .to_dict() (web/JSON).
+    render it with .show() / .figure() (matplotlib) or .to_apexcharts() (web/JSON).
     """
 
     series: list[ChartSeries]
@@ -47,28 +52,13 @@ class ChartSpec:
     # ------------------------------------------------------------------
 
     def figure(self, figsize: tuple[float, float] = (10, 6)):
-        """Return a matplotlib Figure for this chart.
-
-        Args:
-            figsize: (width, height) in inches. Defaults to (10, 6).
-
-        Returns:
-            matplotlib.figure.Figure
-        """
+        """Return a matplotlib Figure for this chart."""
         from pyproforma.chart.renderers.matplotlib_renderer import MatplotlibRenderer
-
         return MatplotlibRenderer().render(self, figsize=figsize)
 
     def show(self, figsize: tuple[float, float] = (10, 6)) -> None:
-        """Render and display this chart via matplotlib.
-
-        In a Jupyter notebook this renders inline. In a script it opens a window.
-
-        Args:
-            figsize: (width, height) in inches. Defaults to (10, 6).
-        """
+        """Render and display this chart via matplotlib."""
         import matplotlib.pyplot as plt
-
         self.figure(figsize=figsize)
         plt.show()
 
@@ -77,12 +67,7 @@ class ChartSpec:
     # ------------------------------------------------------------------
 
     def to_apexcharts(self) -> dict:
-        """Return a dict of ApexCharts options ready for JSON serialization.
-
-        Pass the result through json.dumps() and inject into a template.
-        The ``yaxis_format`` field mirrors NumberFormatSpec.to_dict() and is
-        intended to drive a JS formatter that replicates Python formatting logic.
-        """
+        """Return a dict of ApexCharts options ready for JSON serialization."""
         result = {
             "series": [
                 {"name": s.label, "data": s.y_values}
@@ -99,7 +84,7 @@ class ChartSpec:
         return result
 
     def to_dict(self) -> dict:
-        """Serialise this ChartSpec to a plain dict suitable for JSON / web renderers."""
+        """Serialise this Chart to a plain dict suitable for JSON / web renderers."""
         return {
             "chart_type": self.chart_type,
             "title": self.title,
@@ -116,3 +101,7 @@ class ChartSpec:
             ],
             "value_format": self.value_format.to_dict() if self.value_format else None,
         }
+
+
+# Backwards compatibility alias
+ChartSpec = Chart

@@ -6,12 +6,12 @@ but adapted for the v2 API design. It provides read-only access to line item
 values and basic analysis methods.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pyproforma.table import format_value
 
 if TYPE_CHECKING:
-    from pyproforma.chart.chart_spec import ChartSpec, ChartType
+    from pyproforma.chart.chart import Chart, ChartType
     from pyproforma.table import Table
     from pyproforma.proforma_model import ProformaModel
 
@@ -78,7 +78,7 @@ class LineItemResult:
         )
         return f"{self._name}: {{{values_str}}}"
 
-    def __getitem__(self, period: int) -> float:
+    def __getitem__(self, period: int) -> Any:
         """
         Get value for a specific period using subscript notation.
 
@@ -186,6 +186,52 @@ class LineItemResult:
         result = self._model._li.get(self._name, period=None)
         return result if result is not None else {}
 
+    # ------------------------------------------------------------------
+    # Aggregation helpers
+    # ------------------------------------------------------------------
+
+    def min(self) -> float | None:
+        """Minimum value across all periods, or None if no values."""
+        vals = [v for v in self.values.values() if v is not None]
+        return min(vals) if vals else None
+
+    def max(self) -> float | None:
+        """Maximum value across all periods, or None if no values."""
+        vals = [v for v in self.values.values() if v is not None]
+        return max(vals) if vals else None
+
+    def first(self) -> float | None:
+        """Value for the first period, or None if no periods."""
+        if not self._model.periods:
+            return None
+        return self[self._model.periods[0]]
+
+    def latest(self) -> float | None:
+        """Value for the last period, or None if no periods."""
+        if not self._model.periods:
+            return None
+        return self[self._model.periods[-1]]
+
+    def formatted_min(self, value_format=None) -> str:
+        """Formatted minimum value. Pass value_format to override the line item's format."""
+        v = self.min()
+        return format_value(v, value_format or self.value_format) if v is not None else ""
+
+    def formatted_max(self, value_format=None) -> str:
+        """Formatted maximum value. Pass value_format to override the line item's format."""
+        v = self.max()
+        return format_value(v, value_format or self.value_format) if v is not None else ""
+
+    def formatted_first(self, value_format=None) -> str:
+        """Formatted first-period value. Pass value_format to override the line item's format."""
+        v = self.first()
+        return format_value(v, value_format or self.value_format) if v is not None else ""
+
+    def formatted_latest(self, value_format=None) -> str:
+        """Formatted last-period value. Pass value_format to override the line item's format."""
+        v = self.latest()
+        return format_value(v, value_format or self.value_format) if v is not None else ""
+
     def is_input(self, period: int) -> bool:
         """
         Check whether the value for a period is hardcoded (input) rather than calculated.
@@ -231,7 +277,7 @@ class LineItemResult:
         """
         return format_value(self[period], self.value_format)
 
-    def value(self, period: int) -> float:
+    def value(self, period: int) -> Any:
         """
         Get the value for a specific period.
 
@@ -297,7 +343,7 @@ class LineItemResult:
         self,
         chart_type: "ChartType" = "line",
         title: str | None = None,
-    ) -> "ChartSpec":
+    ) -> "Chart":
         """
         Build a chart for this line item.
 
@@ -306,7 +352,7 @@ class LineItemResult:
             title: Chart title. Defaults to the line item's label (or name).
 
         Returns:
-            ChartSpec — call .show() to display or .figure() to get the Figure.
+            Chart — call .show() to display or .figure() to get the Figure.
 
         Examples:
             >>> model["revenue"].chart().show()
