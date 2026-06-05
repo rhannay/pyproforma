@@ -6,7 +6,7 @@ but adapted for the v2 API design. It provides read-only access to line item
 values and basic analysis methods.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pyproforma.table import format_value
 
@@ -78,7 +78,7 @@ class LineItemResult:
         )
         return f"{self._name}: {{{values_str}}}"
 
-    def __getitem__(self, period: int) -> float:
+    def __getitem__(self, period: int) -> Any:
         """
         Get value for a specific period using subscript notation.
 
@@ -277,7 +277,7 @@ class LineItemResult:
         """
         return format_value(self[period], self.value_format)
 
-    def value(self, period: int) -> float:
+    def value(self, period: int) -> Any:
         """
         Get the value for a specific period.
 

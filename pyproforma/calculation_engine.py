@@ -99,7 +99,7 @@ def _calculate_single_line_item(
     ns: Any,
     period: int,
     model: Any = None,
-) -> float:
+) -> Any:
     from .line_items.debt_line import DebtBase
     from .line_items.fixed_line import FixedLine
     from .line_items.formula_line import FormulaLine
