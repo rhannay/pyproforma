@@ -194,3 +194,69 @@ class TestScenarioWorkflow:
         assert s2.get_value("fixed_overhead", 2024) == 50_000
         assert s1.get_value("profit", 2024) == 150_000.0
         assert s2.get_value("profit", 2024) == 250_000.0
+
+
+class TestNonNumericInputLine:
+    """Tests for string and boolean InputLine values."""
+
+    def test_string_scalar_input(self):
+        class M(ProformaModel):
+            scenario = InputLine(label="Scenario", default="base")
+            revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
+            growth = FormulaLine(
+                formula=lambda li, t: li.revenue[t] * (1.2 if li.scenario == "aggressive" else 1.0)
+            )
+
+        base = M(periods=[2024, 2025])
+        assert base.get_value("growth", 2024) == 100_000.0
+
+        aggressive = M(periods=[2024, 2025], scenario="aggressive")
+        assert aggressive.get_value("growth", 2024) == 120_000.0
+
+    def test_string_stored_in_scalars(self):
+        class M(ProformaModel):
+            mode = InputLine(default="base")
+
+        model = M(periods=[2024])
+        assert model._scalars["mode"] == "base"
+
+    def test_boolean_scalar_input(self):
+        class M(ProformaModel):
+            include_bonus = InputLine(label="Include Bonus", default=False)
+            salary = FixedLine(values={2024: 100_000})
+            total_comp = FormulaLine(
+                formula=lambda li, t: li.salary[t] * (1.1 if li.include_bonus else 1.0)
+            )
+
+        base = M(periods=[2024])
+        assert base.get_value("total_comp", 2024) == 100_000.0
+
+        with_bonus = M(periods=[2024], include_bonus=True)
+        assert with_bonus.get_value("total_comp", 2024) == pytest.approx(110_000.0)
+
+    def test_formula_line_returning_string(self):
+        class M(ProformaModel):
+            dscr = FixedLine(values={2024: 1.5, 2025: 0.9})
+            status = FormulaLine(
+                formula=lambda li, t: "PASS" if li.dscr[t] >= 1.25 else "FAIL"
+            )
+
+        model = M(periods=[2024, 2025])
+        assert model.get_value("status", 2024) == "PASS"
+        assert model.get_value("status", 2025) == "FAIL"
+
+    def test_string_value_formatted_as_string(self):
+        from pyproforma.table import format_value, Format
+        assert format_value("PASS", Format.NO_DECIMALS) == "PASS"
+        assert format_value("WARNING", Format.CURRENCY) == "WARNING"
+
+    def test_string_line_item_formatted_value(self):
+        class M(ProformaModel):
+            dscr = FixedLine(values={2024: 1.5, 2025: 0.9})
+            status = FormulaLine(
+                formula=lambda li, t: "PASS" if li.dscr[t] >= 1.25 else "FAIL"
+            )
+
+        model = M(periods=[2024, 2025])
+        assert model["status"].formatted_value(2024) == "PASS"
+        assert model["status"].formatted_value(2025) == "FAIL"

@@ -302,6 +302,9 @@ def format_value(
     if value is None:
         return none_returns
 
+    if not isinstance(value, (int, float)):
+        return str(value)
+
     if value_format is None:
         return value
 

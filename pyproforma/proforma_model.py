@@ -94,10 +94,9 @@ class ProformaModel:
                 missing.append(name)
                 continue
 
-            if isinstance(raw, (int, float)):
-                self._scalars[name] = float(raw)
-                # Also expand into period dict so the engine can store it in _li
-                self._input_line_values[name] = {p: float(raw) for p in self.periods}
+            if not isinstance(raw, dict):
+                self._scalars[name] = raw
+                self._input_line_values[name] = {p: raw for p in self.periods}
             else:
                 self._input_line_values[name] = raw
 
