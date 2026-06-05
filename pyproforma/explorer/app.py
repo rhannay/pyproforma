@@ -6,7 +6,7 @@ import os
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
-from explorer.components import StatCard
+from pyproforma.explorer.components import StatCard
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
@@ -26,7 +26,7 @@ def create_app(model, tables=None, charts=None, views=None):
 
     Usage:
         from pyproforma import ProformaModel, FixedLine
-        from explorer import create_app
+        from pyproforma.explorer import create_app
 
         class MyModel(ProformaModel):
             revenue = FixedLine(values={2024: 100_000, 2025: 110_000})

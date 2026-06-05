@@ -50,6 +50,9 @@ dev = [
 notebook = [
     "ipython>=7.0.0",
 ]
+explorer = [
+    "flask>=2.0.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

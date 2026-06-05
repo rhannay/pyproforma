@@ -12,8 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from model import model
 from tables import dscr_table
-from explorer import create_app
-from explorer.components import StatCard
+from pyproforma.explorer import create_app
+from pyproforma.explorer.components import StatCard
 from pyproforma import ChartDef
 
 tables = {

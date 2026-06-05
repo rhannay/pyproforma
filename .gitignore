@@ -91,6 +91,7 @@ settings.py
 .temp/
 temp*
 !explorer/templates/
+!pyproforma/explorer/templates/
 
 # Examples folder - ignore hidden files (files starting with .)
 examples/.*
