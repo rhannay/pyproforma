@@ -57,22 +57,6 @@ net_income = FormulaLine(
 )
 ```
 
-### `InputAssumption`
-
-Like `Assumption` but the value is supplied at instantiation, not baked into the class. Useful for scenario analysis:
-
-```python
-from pyproforma import InputAssumption
-
-class FlexModel(ProformaModel):
-    growth_rate = InputAssumption(label="Growth Rate", default=0.10)
-    revenue = FixedLine(values={2024: 500_000})
-    # ...
-
-base = FlexModel(periods=[2024, 2025], growth_rate=0.10)
-upside = FlexModel(periods=[2024, 2025], growth_rate=0.15)
-```
-
 ### `InputLine`
 
 Like `FixedLine` but the period values are supplied at instantiation:
