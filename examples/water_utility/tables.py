@@ -1,11 +1,11 @@
 """Table definitions for the Water Utility model."""
 
-from pyproforma import TableDef
-from pyproforma.tables.row_types import (
+from pyproforma import (
     BlankRow,
     HeaderRow,
     ItemRow,
     LabelRow,
+    TableDef,
     TagItemsRow,
 )
 

@@ -4,6 +4,18 @@ PyProforma - A lightweight financial modeling framework.
 
 from .charts.chart_def import ChartDef
 from .tables.table_def import TableDef
+from .tables.row_types import (
+    BlankRow,
+    CumulativeChangeRow,
+    CumulativePercentChangeRow,
+    HeaderRow,
+    ItemRow,
+    LabelRow,
+    LineItemsTotalRow,
+    PercentChangeRow,
+    TagItemsRow,
+    TagTotalRow,
+)
 from .line_items import (
     DebtCalculator,
     DebtInterestLine,
@@ -28,6 +40,16 @@ __all__ = [
     "ProformaModel",
     "ChartDef",
     "TableDef",
+    "HeaderRow",
+    "ItemRow",
+    "LabelRow",
+    "BlankRow",
+    "TagItemsRow",
+    "TagTotalRow",
+    "LineItemsTotalRow",
+    "PercentChangeRow",
+    "CumulativeChangeRow",
+    "CumulativePercentChangeRow",
     "FixedLine",
     "FormulaLine",
     "InputLine",
