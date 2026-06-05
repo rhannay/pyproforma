@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd
 
 from .colors import color_to_hex
 from .excel import to_excel
@@ -806,7 +807,7 @@ class Table:
                     cell.value_format = value_format
 
     # Public API - Conversion and Export methods
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self) -> "pd.DataFrame":
         """Convert the Table to a pandas DataFrame with raw cell values.
 
         Creates a standard pandas DataFrame using the raw (unformatted) cell values.
@@ -821,6 +822,15 @@ class Table:
             This method extracts only the raw values from cells.
             If the table is empty or has only one row, returns an empty DataFrame.
         """
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "pandas is required for DataFrame export. "
+                "Install it with: pip install pandas  "
+                "(or: pip install pyproforma[pandas])"
+            ) from e
+
         if not self.cells or len(self.cells) < 2:
             return pd.DataFrame()
 
