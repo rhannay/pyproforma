@@ -5,9 +5,9 @@ Tests for calculation_engine module.
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarLine
-from pyproforma.calculation_engine import _calculate_single_line_item, calculate_line_items
-from pyproforma.line_items.line_item_values import LineItemValues
-from pyproforma.model_namespace import ModelNamespace
+from pyproforma.engine.calculation_engine import _calculate_single_line_item, calculate_line_items
+from pyproforma.engine.line_item_values import LineItemValues
+from pyproforma.engine.model_namespace import ModelNamespace
 
 
 class TestCalculateLineItems:

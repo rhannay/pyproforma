@@ -8,7 +8,7 @@ values across periods.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .line_items.line_item_values import LineItemValues
+    from .line_item_values import LineItemValues
 
 
 def calculate_line_items(
@@ -27,11 +27,11 @@ def calculate_line_items(
     Returns:
         LineItemValues: Populated container with all calculated values.
     """
-    from .line_items.debt_line import DebtBase
-    from .line_items.fixed_line import FixedLine
-    from .line_items.formula_line import FormulaLine
-    from .line_items.input_line import InputLine
-    from .line_items.line_item_values import LineItemValues
+    from pyproforma.specs.debt_line import DebtBase
+    from pyproforma.specs.fixed_line import FixedLine
+    from pyproforma.specs.formula_line import FormulaLine
+    from pyproforma.specs.input_line import InputLine
+    from .line_item_values import LineItemValues
     from .model_namespace import ModelNamespace
 
     # scalar_names are already resolved into the scalars dict — skip them here
@@ -101,10 +101,10 @@ def _calculate_single_line_item(
     period: int,
     model: Any = None,
 ) -> Any:
-    from .line_items.debt_line import DebtBase
-    from .line_items.fixed_line import FixedLine
-    from .line_items.formula_line import FormulaLine
-    from .line_items.input_line import InputLine
+    from pyproforma.specs.debt_line import DebtBase
+    from pyproforma.specs.fixed_line import FixedLine
+    from pyproforma.specs.formula_line import FormulaLine
+    from pyproforma.specs.input_line import InputLine
 
     if isinstance(line_item, InputLine):
         input_values = getattr(model, "_input_line_values", {})

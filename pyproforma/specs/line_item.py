@@ -78,9 +78,9 @@ class LineItem(ABC):
         if obj is None:
             return self
         if self._is_scalar:
-            from pyproforma.line_items.scalar_result import ScalarResult
+            from pyproforma.results.scalar_result import ScalarResult
             return ScalarResult(obj, self.name)
-        from pyproforma.line_items.line_item_result import LineItemResult
+        from pyproforma.results.line_item_result import LineItemResult
         return LineItemResult(obj, self.name)
 
     @abstractmethod

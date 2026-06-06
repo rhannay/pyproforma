@@ -18,7 +18,7 @@ from .row_types import BaseRow, dict_to_row_config
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
 
-from pyproforma.line_items.formula_line import FormulaLine
+from pyproforma.specs.formula_line import FormulaLine
 
 
 class Tables:

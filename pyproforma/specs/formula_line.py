@@ -10,7 +10,7 @@ from pyproforma.table import NumberFormatSpec
 from .line_item import LineItem
 
 if TYPE_CHECKING:
-    from pyproforma.model_namespace import ModelNamespace
+    from pyproforma.engine.model_namespace import ModelNamespace
 
 
 # ---------------------------------------------------------------------------

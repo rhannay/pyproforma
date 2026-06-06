@@ -16,7 +16,7 @@ from .tables.row_types import (
     TagItemsRow,
     TagTotalRow,
 )
-from .line_items import (
+from .specs import (
     DebtCalculator,
     DebtInterestLine,
     DebtPrincipalLine,
@@ -24,20 +24,17 @@ from .line_items import (
     FormulaLine,
     InputLine,
     LineItem,
-    LineItemResult,
-    LineItemSelection,
-    LineItemValue,
-    LineItemValues,
     ScalarInputLine,
     ScalarLine,
-    ScalarResult,
     create_debt_lines,
 )
+from .engine import LineItemValue, LineItemValues
+from .results import LineItemResult, LineItemSelection, ScalarResult
 from .table import Format, NumberFormatSpec
 from .compare import ModelComparison
 from .proforma_model import ProformaModel
 from .tables import Tables
-from .tags_namespace import ModelTagNamespace
+from .results.tags_namespace import ModelTagNamespace
 
 __all__ = [
     "ProformaModel",

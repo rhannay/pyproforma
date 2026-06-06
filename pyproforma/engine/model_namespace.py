@@ -12,7 +12,7 @@ Scalar line items (FixedLine with value=, or scalar InputLine) are accessed dire
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma.line_items.line_item_values import LineItemValues
+    from pyproforma.engine.line_item_values import LineItemValues
 
 
 class ModelNamespace:

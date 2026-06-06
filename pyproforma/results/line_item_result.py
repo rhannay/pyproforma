@@ -247,9 +247,9 @@ class LineItemResult:
         Returns:
             bool: True if the value is hardcoded/input, False if calculated
         """
-        from pyproforma.line_items.fixed_line import FixedLine
-        from pyproforma.line_items.formula_line import FormulaLine
-        from pyproforma.line_items.input_line import InputLine
+        from pyproforma.specs.fixed_line import FixedLine
+        from pyproforma.specs.formula_line import FormulaLine
+        from pyproforma.specs.input_line import InputLine
 
         spec = self._line_item_spec
         if isinstance(spec, (FixedLine, InputLine)):

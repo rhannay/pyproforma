@@ -5,8 +5,8 @@ Tests for ProformaModel and calculation engine.
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel, ScalarInputLine, ScalarLine
-from pyproforma.line_items.line_item_result import LineItemResult
-from pyproforma.line_items.scalar_result import ScalarResult
+from pyproforma.results.line_item_result import LineItemResult
+from pyproforma.results.scalar_result import ScalarResult
 
 
 class TestProformaModelBasic:
@@ -266,8 +266,8 @@ class TestAttributeAccess:
         assert self.model.rate.value == 0.1
 
     def test_class_level_access_returns_descriptor(self):
-        from pyproforma.line_items.fixed_line import FixedLine as FL
-        from pyproforma.line_items.scalar_input_line import ScalarInputLine as SIL
+        from pyproforma.specs.fixed_line import FixedLine as FL
+        from pyproforma.specs.scalar_input_line import ScalarInputLine as SIL
         assert isinstance(self.M.revenue, FL)
         assert isinstance(self.M.rate, SIL)
 

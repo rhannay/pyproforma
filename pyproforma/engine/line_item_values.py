@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
 
-from pyproforma.tags_namespace import TagNamespace
+from pyproforma.results.tags_namespace import TagNamespace
 
 
 class LineItemValues:

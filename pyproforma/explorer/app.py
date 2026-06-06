@@ -7,11 +7,11 @@ import os
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 from pyproforma.explorer.components import StatCard
-from pyproforma.line_items.fixed_line import FixedLine
-from pyproforma.line_items.formula_line import FormulaLine
-from pyproforma.line_items.input_line import InputLine
-from pyproforma.line_items.scalar_input_line import ScalarInputLine
-from pyproforma.line_items.scalar_line import ScalarLine
+from pyproforma.specs.fixed_line import FixedLine
+from pyproforma.specs.formula_line import FormulaLine
+from pyproforma.specs.input_line import InputLine
+from pyproforma.specs.scalar_input_line import ScalarInputLine
+from pyproforma.specs.scalar_line import ScalarLine
 from pyproforma.table import Format
 from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef

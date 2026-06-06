@@ -5,7 +5,7 @@ Tests for ScalarResult — the wrapper returned by model["scalar_name"] and mode
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, Format, ProformaModel, ScalarInputLine, ScalarLine
-from pyproforma.line_items.scalar_result import ScalarResult
+from pyproforma.results.scalar_result import ScalarResult
 
 
 class TestScalarLineResult:

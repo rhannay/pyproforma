@@ -5,7 +5,7 @@ Tests for LineItemResult class and model['item'] access in v2.
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, Format, ProformaModel, ScalarLine
-from pyproforma.line_items.line_item_result import LineItemResult
+from pyproforma.results.line_item_result import LineItemResult
 
 
 class TestModelGetItemAccess:

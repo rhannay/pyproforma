@@ -8,19 +8,19 @@ ScalarInputLine.
 
 from typing import Any
 
-from pyproforma.calculation_engine import calculate_line_items
-from pyproforma.line_items.input_line import InputLine
-from pyproforma.line_items.line_item import LineItem
-from pyproforma.line_items.line_item_result import LineItemResult
-from pyproforma.line_items.line_item_selection import LineItemSelection
-from pyproforma.line_items.line_item_values import LineItemValues
-from pyproforma.line_items.scalar_input_line import ScalarInputLine
-from pyproforma.line_items.scalar_line import ScalarLine
-from pyproforma.line_items.scalar_result import ScalarResult
+from pyproforma.engine.calculation_engine import calculate_line_items
+from pyproforma.specs.input_line import InputLine
+from pyproforma.specs.line_item import LineItem
+from pyproforma.results.line_item_result import LineItemResult
+from pyproforma.results.line_item_selection import LineItemSelection
+from pyproforma.engine.line_item_values import LineItemValues
+from pyproforma.specs.scalar_input_line import ScalarInputLine
+from pyproforma.specs.scalar_line import ScalarLine
+from pyproforma.results.scalar_result import ScalarResult
 from pyproforma.charts import Charts
 from pyproforma.reserved_words import validate_name
 from pyproforma.tables import Tables
-from pyproforma.tags_namespace import ModelTagNamespace
+from pyproforma.results.tags_namespace import ModelTagNamespace
 
 
 class ProformaModel:
@@ -181,7 +181,7 @@ class ProformaModel:
 
     def dependents(self, name: str) -> list[str]:
         """Return names of line items whose formulas directly reference the given name."""
-        from pyproforma.line_items.formula_line import FormulaLine
+        from pyproforma.specs.formula_line import FormulaLine
         return [
             n for n in self.line_item_names
             if n != name
