@@ -123,8 +123,8 @@ class TestReservedWordsInModel:
             tax_rate = FixedLine(value=0.21)
 
         model = TestModel(periods=[2024])
-        assert model.li.revenue[2024] == 100
-        assert model.li.expenses[2024] == 60
+        assert model.revenue[2024] == 100
+        assert model.expenses[2024] == 60
         assert model._scalars["tax_rate"] == 0.21
 
 

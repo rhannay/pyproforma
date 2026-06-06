@@ -323,43 +323,6 @@ class TestLineItemResultFormattedValue:
             model["revenue"].formatted_value(2099)
 
 
-class TestLiPropertyAccess:
-    """Tests for model.li property access."""
-
-    def test_li_property_exists(self):
-        """Test that model.li property exists and returns LineItemValues."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100})
-
-        model = TestModel(periods=[2024])
-
-        assert hasattr(model, "li")
-        from pyproforma.line_items.line_item_values import LineItemValues
-
-        assert isinstance(model.li, LineItemValues)
-
-    def test_li_property_access(self):
-        """Test accessing values via model.li.item[period]."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100, 2025: 110})
-
-        model = TestModel(periods=[2024, 2025])
-
-        assert model.li.revenue[2024] == 100
-        assert model.li.revenue[2025] == 110
-
-    def test_li_property_is_same_as_internal(self):
-        """Test that model.li returns the same object as model._li."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100})
-
-        model = TestModel(periods=[2024])
-
-        assert model.li is model._li
-
 
 class TestLineItemResultAggregations:
     """Tests for min, max, first, latest and their formatted variants."""

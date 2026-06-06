@@ -129,10 +129,6 @@ class ProformaModel:
         return line_item[period]
 
     @property
-    def li(self) -> LineItemValues:
-        return self._li
-
-    @property
     def tags(self) -> list[str]:
         all_tags = set()
         for name in self.line_item_names:

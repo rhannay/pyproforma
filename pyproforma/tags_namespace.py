@@ -2,7 +2,7 @@
 TagNamespace classes for tag-based operations.
 
 This module provides tag-based functionality:
-- TagNamespace: For summing line items by tag (used in model.li.tag)
+- TagNamespace: For summing line items by tag (used in model.tag inside formulas)
 - ModelTagNamespace: For selecting line items by tag (used in model.tag)
 """
 
@@ -34,9 +34,9 @@ class TagNamespace:
         ...     expenses = FixedLine(values={2024: 60}, tags=["expense"])
         ...
         >>> model = MyModel(periods=[2024])
-        >>> model.li.tag["income"][2024]  # Sum of revenue + interest
+        >>> model.tag["income"][2024]  # Sum of revenue + interest
         105
-        >>> model.li.tag["expense"][2024]
+        >>> model.tag["expense"][2024]
         60
     """
 
@@ -62,7 +62,7 @@ class TagNamespace:
             TagSum: Object that supports period subscripting to get tag sums
 
         Examples:
-            >>> income_sum = model.li.tag["income"]
+            >>> income_sum = model.tag["income"]
             >>> income_sum[2024]
             105
         """

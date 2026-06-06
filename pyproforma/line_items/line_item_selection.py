@@ -87,7 +87,7 @@ class LineItemSelection:
         """
         result = {}
         for name in self._names:
-            line_item = getattr(self._model.li, name)
+            line_item = getattr(self._model._li, name)
             result[name] = line_item[period]
         return result
 

@@ -129,17 +129,17 @@ class TestDebtPrincipalLine:
 
     def test_single_bond_issue(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0, 2029: 0})
-        assert model.li.principal_payment[2024] > 0
-        assert model.li.principal_payment[2028] > 0
-        assert model.li.principal_payment[2029] == 0
+        assert model.principal_payment[2024] > 0
+        assert model.principal_payment[2028] > 0
+        assert model.principal_payment[2029] == 0
 
     def test_multiple_bond_issues(self):
         model = _make_model(
             {2024: 1_000_000, 2025: 0, 2026: 500_000, 2027: 0, 2028: 0, 2029: 0, 2030: 0, 2031: 0}
         )
-        assert model.li.principal_payment[2026] > model.li.principal_payment[2024]
-        assert model.li.principal_payment[2029] > 0
-        assert model.li.principal_payment[2031] == 0
+        assert model.principal_payment[2026] > model.principal_payment[2024]
+        assert model.principal_payment[2029] > 0
+        assert model.principal_payment[2031] == 0
 
     def test_labels_and_tags(self):
         principal, _ = create_debt_lines(
@@ -157,9 +157,9 @@ class TestDebtInterestLine:
 
     def test_interest_declines_over_time(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0, 2029: 0})
-        assert model.li.interest_expense[2024] > model.li.interest_expense[2025]
-        assert abs(model.li.interest_expense[2024] - 50_000) < 1000
-        assert model.li.interest_expense[2029] == 0
+        assert model.interest_expense[2024] > model.interest_expense[2025]
+        assert abs(model.interest_expense[2024] - 50_000) < 1000
+        assert model.interest_expense[2029] == 0
 
     def test_interest_label(self):
         _, interest = create_debt_lines(
@@ -192,7 +192,7 @@ class TestDebtLinesIntegration:
             )
 
         model = M(periods=[2024, 2025, 2026, 2027, 2028])
-        ds = [model.li.debt_service[y] for y in [2024, 2025, 2026, 2027, 2028]]
+        ds = [model.debt_service[y] for y in [2024, 2025, 2026, 2027, 2028]]
         for i in range(1, len(ds)):
             assert abs(ds[i] - ds[0]) < 1.0
 
@@ -220,8 +220,8 @@ class TestDebtLinesIntegration:
 
         model = M(periods=[2024, 2025, 2026, 2027, 2028])
         for year in [2024, 2025, 2026, 2027, 2028]:
-            expected = model.li.principal_payment[year] + model.li.interest_expense[year]
-            assert abs(model.li.total_ds[year] - expected) < 0.01
+            expected = model.principal_payment[year] + model.interest_expense[year]
+            assert abs(model.total_ds[year] - expected) < 0.01
 
     def test_input_line_rate_scenario_analysis(self):
         """InputLine rate produces different schedules per scenario."""
@@ -241,7 +241,7 @@ class TestDebtLinesIntegration:
         base = M(periods=[2024, 2025, 2026, 2027, 2028])
         high = M(periods=[2024, 2025, 2026, 2027, 2028], bond_rate=0.08)
 
-        assert high.li.interest_expense[2024] > base.li.interest_expense[2024]
+        assert high.interest_expense[2024] > base.interest_expense[2024]
 
     def test_repr(self):
         principal, interest = create_debt_lines(
@@ -275,18 +275,18 @@ class TestDebtEdgeCases:
             interest_expense = interest
 
         model = M(periods=[2024, 2025])
-        assert model.li.principal_payment[2024] == 0
-        assert model.li.interest_expense[2024] == 0
+        assert model.principal_payment[2024] == 0
+        assert model.interest_expense[2024] == 0
 
     def test_high_rate(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0}, rate=0.20)
-        assert model.li.interest_expense[2024] > 150_000
+        assert model.interest_expense[2024] > 150_000
 
     def test_short_term(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0}, term=2)
-        assert model.li.principal_payment[2024] > 0
-        assert model.li.principal_payment[2025] > 0
-        assert model.li.principal_payment[2026] == 0
+        assert model.principal_payment[2024] > 0
+        assert model.principal_payment[2025] > 0
+        assert model.principal_payment[2026] == 0
 
     def test_long_term(self):
         model = _make_model(
@@ -294,4 +294,4 @@ class TestDebtEdgeCases:
             term=30,
             extra_periods=[2025, 2026, 2027, 2028],
         )
-        assert model.li.interest_expense[2024] > model.li.principal_payment[2024]
+        assert model.interest_expense[2024] > model.principal_payment[2024]
