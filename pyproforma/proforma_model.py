@@ -20,7 +20,7 @@ from pyproforma.results.scalar_result import ScalarResult
 from pyproforma.charts import Charts
 from pyproforma.reserved_words import validate_name
 from pyproforma.tables import Tables
-from pyproforma.results.tags_namespace import ModelTagNamespace
+from pyproforma.results.tags_namespace import TagNamespace
 
 
 class ProformaModel:
@@ -137,7 +137,7 @@ class ProformaModel:
 
         self.tables: Tables = Tables(self)
         self.charts: Charts = Charts(self)
-        self._tag_namespace = ModelTagNamespace(self)
+        self._tag_namespace = TagNamespace(self)
 
     def get_value(self, name: str, period: int) -> Any:
         if name in self.scalar_names:
@@ -160,7 +160,7 @@ class ProformaModel:
         return sorted(all_tags)
 
     @property
-    def tag(self) -> ModelTagNamespace:
+    def tag(self) -> TagNamespace:
         return self._tag_namespace
 
     def select(self, names: list[str]) -> LineItemSelection:

@@ -34,7 +34,7 @@ from .table import Format, NumberFormatSpec
 from .compare import ModelComparison
 from .proforma_model import ProformaModel
 from .tables import Tables
-from .results.tags_namespace import ModelTagNamespace
+from .results.tags_namespace import TagNamespace
 
 __all__ = [
     "ProformaModel",
@@ -65,7 +65,7 @@ __all__ = [
     "LineItemValue",
     "LineItemResult",
     "LineItemSelection",
-    "ModelTagNamespace",
+    "TagNamespace",
     "Tables",
     "ModelComparison",
     "Format",
