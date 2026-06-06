@@ -4,7 +4,8 @@ Tests for ProformaModel and calculation engine.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel
+from pyproforma.line_items.line_item_result import LineItemResult
 
 
 class TestProformaModelBasic:
@@ -234,3 +235,44 @@ class TestComplexModel:
         assert model.get_value("profit", 2024) == 40000.0
         assert model.get_value("profit", 2025) == 44000.0
         assert model.get_value("profit", 2026) == 48400.0
+
+
+class TestAttributeAccess:
+    """Tests for dot-notation access: model.line_item_name returns LineItemResult."""
+
+    def setup_method(self):
+        class M(ProformaModel):
+            revenue = FixedLine(values={2024: 100_000, 2025: 110_000}, label="Revenue")
+            cost = FormulaLine(formula=lambda li, t: li.revenue[t] * 0.6, label="Cost")
+            rate = InputLine(default=0.1, label="Rate")
+
+        self.M = M
+        self.model = M(periods=[2024, 2025])
+
+    def test_instance_attribute_returns_line_item_result(self):
+        assert isinstance(self.model.revenue, LineItemResult)
+
+    def test_instance_attribute_correct_name(self):
+        assert self.model.revenue.name == "revenue"
+
+    def test_instance_attribute_correct_value(self):
+        assert self.model.revenue[2024] == 100_000
+
+    def test_formula_line_attribute_access(self):
+        assert self.model.cost[2024] == 60_000.0
+
+    def test_input_line_attribute_access(self):
+        assert isinstance(self.model.rate, LineItemResult)
+        assert self.model.rate[2024] == 0.1
+
+    def test_class_level_access_returns_descriptor(self):
+        from pyproforma.line_items.fixed_line import FixedLine as FL
+        assert isinstance(self.M.revenue, FL)
+
+    def test_attribute_access_matches_subscript_access(self):
+        assert self.model.revenue[2024] == self.model["revenue"][2024]
+        assert self.model.revenue[2025] == self.model["revenue"][2025]
+
+    def test_fluent_chain(self):
+        assert self.model.revenue.label == "Revenue"
+        assert self.model.revenue.values == {2024: 100_000, 2025: 110_000}

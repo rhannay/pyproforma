@@ -69,6 +69,12 @@ class LineItem(ABC):
         """
         self.name = name
 
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        from pyproforma.line_items.line_item_result import LineItemResult
+        return LineItemResult(obj, self.name)
+
     @abstractmethod
     def get_value(self, period: Any) -> Any:
         """
