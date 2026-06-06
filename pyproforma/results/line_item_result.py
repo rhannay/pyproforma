@@ -275,7 +275,8 @@ class LineItemResult:
             >>> model["revenue"].formatted_value(2024)
             '$1,000,000'
         """
-        return format_value(self[period], self.value_format)
+        result = format_value(self[period], self.value_format)
+        return result if isinstance(result, str) else str(result)
 
     def value(self, period: int) -> Any:
         """

@@ -18,7 +18,7 @@ class TestFixedLineValueFormat:
     """Tests for value_format in FixedLine."""
 
     def test_fixed_line_default_value_format(self):
-        """Test that FixedLine has default value_format of 'no_decimals'."""
+        """Test that FixedLine has no default value_format (None)."""
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100, 2025: 110})
@@ -26,8 +26,7 @@ class TestFixedLineValueFormat:
         model = TestModel(periods=[2024, 2025])
         result = model["revenue"]
 
-        assert result.value_format is not None
-        assert result.value_format == Format.NO_DECIMALS
+        assert result.value_format is None
 
     def test_fixed_line_with_string_format(self):
         """Test FixedLine with string format specification."""
@@ -97,7 +96,7 @@ class TestFormulaLineValueFormat:
     """Tests for value_format in FormulaLine."""
 
     def test_formula_line_default_value_format(self):
-        """Test that FormulaLine has default value_format of 'no_decimals'."""
+        """Test that FormulaLine has no default value_format (None)."""
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
@@ -106,8 +105,7 @@ class TestFormulaLineValueFormat:
         model = TestModel(periods=[2024])
         result = model["profit"]
 
-        assert result.value_format is not None
-        assert result.value_format == Format.NO_DECIMALS
+        assert result.value_format is None
 
     def test_formula_line_with_string_format(self):
         """Test FormulaLine with string format specification."""
@@ -169,10 +167,8 @@ class TestDebtLineValueFormat:
         principal_result = model["principal_payment"]
         interest_result = model["interest_expense"]
 
-        assert principal_result.value_format is not None
-        assert interest_result.value_format is not None
-        assert principal_result.value_format == Format.NO_DECIMALS
-        assert interest_result.value_format == Format.NO_DECIMALS
+        assert principal_result.value_format is None
+        assert interest_result.value_format is None
 
     def test_debt_lines_with_custom_formats(self):
         """Test debt lines with custom value formats."""
@@ -252,8 +248,8 @@ class TestValueFormatInheritance:
         assert model["margin"].value_format == Format.PERCENT_TWO_DECIMALS
         assert model["profit"].value_format == Format.CURRENCY
 
-    def test_none_value_format_uses_default(self):
-        """Test that None value_format uses the default."""
+    def test_none_value_format_stays_none(self):
+        """Test that None value_format is preserved as None (no default applied)."""
 
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100}, value_format=None)
@@ -261,8 +257,7 @@ class TestValueFormatInheritance:
         model = TestModel(periods=[2024])
         result = model["revenue"]
 
-        # None should result in default Format.NO_DECIMALS
-        assert result.value_format == Format.NO_DECIMALS
+        assert result.value_format is None
 
 
 class TestValueFormatPropertyAccess:
