@@ -4,7 +4,7 @@ Tests for calculation_engine module.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarLine
 from pyproforma.calculation_engine import _calculate_single_line_item, calculate_line_items
 from pyproforma.line_items.line_item_values import LineItemValues
 from pyproforma.model_namespace import ModelNamespace
@@ -66,7 +66,7 @@ class TestCalculateLineItems:
 
     def test_formula_line_with_scalar(self):
         class TestModel(ProformaModel):
-            expense_ratio = FixedLine(value=0.65)
+            expense_ratio = ScalarLine(value=0.65)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
 
@@ -148,7 +148,7 @@ class TestCalculateSingleLineItem:
 
     def test_formula_with_scalar(self):
         class TestModel(ProformaModel):
-            expense_ratio = FixedLine(value=0.65)
+            expense_ratio = ScalarLine(value=0.65)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
 

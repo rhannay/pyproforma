@@ -66,7 +66,7 @@ class InputLine(LineItem):
         Args:
             default (dict[int, float], optional): Default period-value mapping used
                 when no value is supplied at instantiation. Omit to make the input
-                required.
+                required. Must be a dict — for a scalar input use ScalarInputLine.
             label (str, optional): Human-readable label. Defaults to None.
             tags (list[str], optional): List of tags for categorizing the line item.
                 Defaults to None (empty list).
@@ -74,6 +74,11 @@ class InputLine(LineItem):
                 Format specification for displaying values.
                 Defaults to None (inherits default 'no_decimals').
         """
+        if default is not _MISSING and not isinstance(default, dict):
+            raise TypeError(
+                "InputLine default must be a dict mapping periods to values. "
+                "For a scalar constant use ScalarInputLine instead."
+            )
         super().__init__(label=label, tags=tags, value_format=value_format)
         self._default = default
 

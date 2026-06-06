@@ -10,6 +10,8 @@ from pyproforma.explorer.components import StatCard
 from pyproforma.line_items.fixed_line import FixedLine
 from pyproforma.line_items.formula_line import FormulaLine
 from pyproforma.line_items.input_line import InputLine
+from pyproforma.line_items.scalar_input_line import ScalarInputLine
+from pyproforma.line_items.scalar_line import ScalarLine
 from pyproforma.table import Format
 from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
@@ -81,33 +83,35 @@ def create_app(model, tables=None, charts=None, views=None):
         items = []
         for name in names:
             item_def = getattr(type(m), name)
-            is_scalar = isinstance(item_def, FixedLine) and item_def.is_scalar
             items.append({
                 "name": name,
                 "label": item_def.label or name,
                 "type": type(item_def).__name__,
-                "tags": item_def.tags,
-                "scalar": is_scalar,
-                "value": m[name].formatted_value(m.periods[0]) if (is_scalar and m.periods) else None,
+                "tags": getattr(item_def, "tags", []),
+                "scalar": False,
             })
         return items
 
     def _build_inputs():
         m = state.model
         inputs = []
-        for name in state.model_class._input_line_names:
+        for name in state.model_class._scalar_input_names:
             spec = getattr(state.model_class, name)
-            is_scalar = name in m._scalars
-            if is_scalar:
-                formatted = [m[name].formatted_value(p) for p in state.periods[:1]]
-            else:
-                formatted = [m[name].formatted_value(p) for p in state.periods]
             inputs.append({
                 "name": name,
                 "label": spec.label or name,
-                "is_scalar": is_scalar,
-                "value": m._scalars[name] if is_scalar else m._input_line_values.get(name, {}),
-                "formatted_values": formatted,
+                "is_scalar": True,
+                "value": m._scalars[name],
+                "formatted_values": [m[name].formatted_value],
+            })
+        for name in state.model_class._input_line_names:
+            spec = getattr(state.model_class, name)
+            inputs.append({
+                "name": name,
+                "label": spec.label or name,
+                "is_scalar": False,
+                "value": m._input_line_values.get(name, {}),
+                "formatted_values": [m[name].formatted_value(p) for p in state.periods],
             })
         return inputs
 
@@ -194,22 +198,13 @@ def create_app(model, tables=None, charts=None, views=None):
                 for tag in (item_def.tag_references or [])
             }
         elif isinstance(item_def, FixedLine):
-            if item_def.is_scalar:
-                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(item_def._scalar_value)
-            else:
-                info["fixed_values"] = item_def.values or {}
+            info["fixed_values"] = item_def.values or {}
         elif isinstance(item_def, InputLine):
-            is_scalar = name in m._scalars
-            if is_scalar:
-                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(m._scalars[name])
-            else:
-                info["input_values"] = m._input_line_values.get(name, {})
+            info["input_values"] = m._input_line_values.get(name, {})
             info["is_input"] = True
 
         values_table = None
-        scalar_input = isinstance(item_def, InputLine) and name in m._scalars
-        scalar_fixed = isinstance(item_def, FixedLine) and item_def.is_scalar
-        if not (scalar_input or scalar_fixed):
+        if True:
             values_table = m.tables.line_item(name).to_bootstrap_html()
 
         precedents_table = None
@@ -321,15 +316,13 @@ def create_app(model, tables=None, charts=None, views=None):
         m = state.model
         kwargs = {}
         try:
+            for name in state.model_class._scalar_input_names:
+                kwargs[name] = float(request.form[name])
             for name in state.model_class._input_line_names:
-                is_scalar = name in m._scalars
-                if is_scalar:
-                    kwargs[name] = float(request.form[name])
-                else:
-                    kwargs[name] = {
-                        period: float(request.form[f"{name}_{period}"])
-                        for period in state.periods
-                    }
+                kwargs[name] = {
+                    period: float(request.form[f"{name}_{period}"])
+                    for period in state.periods
+                }
             state.model = state.model_class(periods=state.periods, **kwargs)
             state.error = None
             flash("Model updated.")

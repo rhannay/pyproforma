@@ -4,7 +4,7 @@ Tests for LineItemResult class and model['item'] access in v2.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, Format, ProformaModel
+from pyproforma import FixedLine, FormulaLine, Format, ProformaModel, ScalarLine
 from pyproforma.line_items.line_item_result import LineItemResult
 
 
@@ -277,7 +277,7 @@ class TestLineItemResultWithFormulas:
         """Test accessing formula values that use assumptions."""
 
         class TestModel(ProformaModel):
-            expense_ratio = FixedLine(value=0.6)
+            expense_ratio = ScalarLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(
                 formula=lambda li, t: li.revenue[t] * li.expense_ratio

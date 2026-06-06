@@ -4,6 +4,8 @@ from pyproforma import (
     Format,
     InputLine,
     ProformaModel,
+    ScalarInputLine,
+    ScalarLine,
     create_debt_lines,
 )
 
@@ -42,12 +44,12 @@ class WaterUtilityModel(ProformaModel):
     """
 
     # ── Scalar assumptions ────────────────────────────────────────────────────
-    inflation_rate = InputLine(
+    inflation_rate = ScalarInputLine(
         default=0.030,
         label="CPI Inflation Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
-    om_growth_rate = FixedLine(
+    om_growth_rate = ScalarLine(
         value=0.040,
         label="O&M Growth Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
@@ -109,12 +111,12 @@ class WaterUtilityModel(ProformaModel):
     )
 
     # ── New bond parameters ────────────────────────────────────────────────────
-    new_bond_rate = InputLine(
+    new_bond_rate = ScalarInputLine(
         default=0.045,
         label="Series B Interest Rate",
         value_format=Format.PERCENT_TWO_DECIMALS,
     )
-    new_bond_term = FixedLine(
+    new_bond_term = ScalarLine(
         value=20,
         label="Series B Term (Years)",
     )

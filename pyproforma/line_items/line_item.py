@@ -15,6 +15,9 @@ class LineItem(ABC):
     """
     Abstract base class for all line items in a ProformaModel.
 
+    Subclasses that represent scalar constants (no period indexing) set
+    ``_is_scalar = True``.
+
     All concrete line item types (FixedLine, FormulaLine, etc.) inherit from this
     class and must implement the required methods.
 
@@ -26,6 +29,8 @@ class LineItem(ABC):
             'currency', 'no_decimals', etc., a NumberFormatSpec instance for more
             control, or a dict. Defaults to 'no_decimals'.
     """
+
+    _is_scalar: bool = False
 
     def __init__(
         self,
@@ -72,6 +77,9 @@ class LineItem(ABC):
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
+        if self._is_scalar:
+            from pyproforma.line_items.scalar_result import ScalarResult
+            return ScalarResult(obj, self.name)
         from pyproforma.line_items.line_item_result import LineItemResult
         return LineItemResult(obj, self.name)
 

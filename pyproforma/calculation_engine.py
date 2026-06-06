@@ -34,6 +34,7 @@ def calculate_line_items(
     from .line_items.line_item_values import LineItemValues
     from .model_namespace import ModelNamespace
 
+    # scalar_names are already resolved into the scalars dict — skip them here
     li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
 
     fixed_items = []

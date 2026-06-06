@@ -10,6 +10,8 @@ from pyproforma import (
     FormulaLine,
     InputLine,
     ProformaModel,
+    ScalarInputLine,
+    ScalarLine,
     create_debt_lines,
 )
 
@@ -31,8 +33,8 @@ def _make_model(par_values, rate=0.05, term=5, extra_periods=None):
     )
 
     model_ns = {
-        "bond_rate": FixedLine(value=rate),
-        "bond_term": FixedLine(value=term),
+        "bond_rate": ScalarLine(value=rate),
+        "bond_term": ScalarLine(value=term),
         "bond_proceeds": FixedLine(values=par_values),
         "principal_payment": principal,
         "interest_expense": interest,
@@ -182,8 +184,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -211,8 +213,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -232,8 +234,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = InputLine(default=0.045)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarInputLine(default=0.045)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -268,8 +270,8 @@ class TestDebtEdgeCases:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             # bond_proceeds intentionally omitted
             principal_payment = principal
             interest_expense = interest

@@ -4,7 +4,7 @@ Tests for reserved words validation in v2 API.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarLine
 from pyproforma.reserved_words import RESERVED_WORDS, validate_name
 
 
@@ -95,14 +95,14 @@ class TestReservedWordsInModel:
         with pytest.raises(ValueError, match="'t' is a reserved word"):
 
             class TestModel(ProformaModel):
-                t = FixedLine(value=0.21)
+                t = ScalarLine(value=0.21)
 
     def test_reserved_word_assumption_periods(self):
         """Test that using 'periods' as assumption name raises error."""
         with pytest.raises(ValueError, match="'periods' is a reserved word"):
 
             class TestModel(ProformaModel):
-                periods = FixedLine(value=0.1)
+                periods = ScalarLine(value=0.1)
 
     def test_reserved_word_python_keyword(self):
         """Test that Python keywords are in the reserved words list."""
@@ -120,7 +120,7 @@ class TestReservedWordsInModel:
         class TestModel(ProformaModel):
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(formula=lambda li, t: 60)
-            tax_rate = FixedLine(value=0.21)
+            tax_rate = ScalarLine(value=0.21)
 
         model = TestModel(periods=[2024])
         assert model.revenue[2024] == 100

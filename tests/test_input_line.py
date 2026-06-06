@@ -4,7 +4,7 @@ Tests for InputLine — scenario input types for v2 models.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel
+from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel, ScalarInputLine
 from pyproforma.table import Format, NumberFormatSpec
 
 
@@ -128,18 +128,18 @@ class TestInputLineInstantiation:
 
 
 class TestScalarInputLine:
-    """Tests for scalar InputLine (float kwarg at instantiation)."""
+    """Tests for ScalarInputLine (scalar kwarg at instantiation)."""
 
     def test_scalar_kwarg_stored_in_scalars(self):
         class M(ProformaModel):
-            tax_rate = InputLine(label="Tax Rate")
+            tax_rate = ScalarInputLine(label="Tax Rate")
 
         model = M(periods=[2024, 2025], tax_rate=0.21)
         assert model._scalars["tax_rate"] == 0.21
 
     def test_scalar_accessible_in_formula_without_t(self):
         class M(ProformaModel):
-            tax_rate = InputLine(label="Tax Rate")
+            tax_rate = ScalarInputLine(label="Tax Rate")
             revenue = FixedLine(values={2024: 100_000})
             after_tax = FormulaLine(formula=lambda li, t: li.revenue[t] * (1 - li.tax_rate))
 
@@ -151,15 +151,14 @@ class TestScalarInputLine:
 
     def test_scalar_getitem_works(self):
         class M(ProformaModel):
-            tax_rate = InputLine()
+            tax_rate = ScalarInputLine()
 
         model = M(periods=[2024, 2025], tax_rate=0.21)
-        assert model["tax_rate"][2024] == 0.21
-        assert model["tax_rate"][2025] == 0.21
+        assert model["tax_rate"].value == 0.21
 
     def test_scalar_default(self):
         class M(ProformaModel):
-            growth = InputLine(default=0.05)
+            growth = ScalarInputLine(default=0.05)
 
         model = M(periods=[2024, 2025])
         assert model._scalars["growth"] == 0.05
@@ -170,7 +169,7 @@ class TestScalarInputLine:
 class TestScenarioWorkflow:
     def test_base_and_bull_scenario(self):
         class IncomeModel(ProformaModel):
-            expense_ratio = InputLine(label="Expense Ratio", default=0.60)
+            expense_ratio = ScalarInputLine(label="Expense Ratio", default=0.60)
             revenue = InputLine(label="Revenue")
             expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio)
             profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
@@ -197,11 +196,11 @@ class TestScenarioWorkflow:
 
 
 class TestNonNumericInputLine:
-    """Tests for string and boolean InputLine values."""
+    """Tests for string and boolean ScalarInputLine values."""
 
     def test_string_scalar_input(self):
         class M(ProformaModel):
-            scenario = InputLine(label="Scenario", default="base")
+            scenario = ScalarInputLine(label="Scenario", default="base")
             revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
             growth = FormulaLine(
                 formula=lambda li, t: li.revenue[t] * (1.2 if li.scenario == "aggressive" else 1.0)
@@ -215,14 +214,14 @@ class TestNonNumericInputLine:
 
     def test_string_stored_in_scalars(self):
         class M(ProformaModel):
-            mode = InputLine(default="base")
+            mode = ScalarInputLine(default="base")
 
         model = M(periods=[2024])
         assert model._scalars["mode"] == "base"
 
     def test_boolean_scalar_input(self):
         class M(ProformaModel):
-            include_bonus = InputLine(label="Include Bonus", default=False)
+            include_bonus = ScalarInputLine(label="Include Bonus", default=False)
             salary = FixedLine(values={2024: 100_000})
             total_comp = FormulaLine(
                 formula=lambda li, t: li.salary[t] * (1.1 if li.include_bonus else 1.0)

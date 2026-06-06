@@ -28,6 +28,9 @@ from .line_items import (
     LineItemSelection,
     LineItemValue,
     LineItemValues,
+    ScalarInputLine,
+    ScalarLine,
+    ScalarResult,
     create_debt_lines,
 )
 from .table import Format, NumberFormatSpec
@@ -53,6 +56,9 @@ __all__ = [
     "FixedLine",
     "FormulaLine",
     "InputLine",
+    "ScalarLine",
+    "ScalarInputLine",
+    "ScalarResult",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",

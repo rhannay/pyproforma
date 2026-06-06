@@ -20,12 +20,18 @@ from .line_item import LineItem
 from .line_item_result import LineItemResult
 from .line_item_selection import LineItemSelection
 from .line_item_values import LineItemValue, LineItemValues
+from .scalar_input_line import ScalarInputLine
+from .scalar_line import ScalarLine
+from .scalar_result import ScalarResult
 
 __all__ = [
     "LineItem",
     "FixedLine",
     "FormulaLine",
     "InputLine",
+    "ScalarLine",
+    "ScalarInputLine",
+    "ScalarResult",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",

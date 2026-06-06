@@ -9,6 +9,7 @@ from pyproforma import (
     FixedLine,
     FormulaLine,
     ProformaModel,
+    ScalarLine,
     create_debt_lines,
 )
 
@@ -154,8 +155,8 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=10)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=10)
             principal, interest = create_debt_lines(
                 par_amounts="bond_proceeds",
                 interest_rate="bond_rate",
@@ -178,8 +179,8 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=10)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=10)
             principal, interest = create_debt_lines(
                 par_amounts="bond_proceeds",
                 interest_rate="bond_rate",
@@ -204,8 +205,8 @@ class TestDebtLineValueFormat:
 
         class TestModel(ProformaModel):
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0})
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=10)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=10)
             principal, interest = create_debt_lines(
                 par_amounts="bond_proceeds",
                 interest_rate="bond_rate",

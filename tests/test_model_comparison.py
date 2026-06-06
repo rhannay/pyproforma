@@ -9,6 +9,7 @@ from pyproforma import (
     FormulaLine,
     ModelComparison,
     ProformaModel,
+    ScalarLine,
 )
 from pyproforma.table import Table
 
@@ -301,7 +302,7 @@ class TestAssumptionDiff:
 
     def test_same_class_returns_dict(self):
         class MyModel(ProformaModel):
-            expense_ratio = FixedLine(value=0.6)
+            expense_ratio = ScalarLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
 
         a = MyModel(periods=[2024])

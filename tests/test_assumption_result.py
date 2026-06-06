@@ -1,100 +1,126 @@
 """
-Tests for scalar FixedLine behavior via LineItemResult.
-
-Previously tested AssumptionResult; now scalar FixedLines are first-class
-line items accessed uniformly through LineItemResult.
+Tests for ScalarResult — the wrapper returned by model["scalar_name"] and model.scalar_name.
 """
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, Format, InputLine, ProformaModel
-from pyproforma.line_items.line_item_result import LineItemResult
+from pyproforma import FixedLine, FormulaLine, Format, ProformaModel, ScalarInputLine, ScalarLine
+from pyproforma.line_items.scalar_result import ScalarResult
 
 
-class TestScalarFixedLineResult:
+class TestScalarLineResult:
 
-    def test_getitem_returns_scalar_for_any_period(self):
+    def test_getitem_returns_scalar_result(self):
         class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21)
+            tax_rate = ScalarLine(value=0.21)
 
         model = M(periods=[2024, 2025])
-        assert model["tax_rate"][2024] == 0.21
-        assert model["tax_rate"][2025] == 0.21
+        assert isinstance(model["tax_rate"], ScalarResult)
 
-    def test_getitem_raises_on_invalid_period(self):
+    def test_value_property(self):
         class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21)
+            tax_rate = ScalarLine(value=0.21)
 
         model = M(periods=[2024, 2025])
-        with pytest.raises(KeyError):
-            model["tax_rate"][2055]
-
-    def test_returns_line_item_result(self):
-        class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21)
-
-        model = M(periods=[2024])
-        assert isinstance(model["tax_rate"], LineItemResult)
+        assert model["tax_rate"].value == 0.21
 
     def test_label_property(self):
         class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21, label="Tax Rate")
+            tax_rate = ScalarLine(value=0.21, label="Tax Rate")
 
         model = M(periods=[2024])
         assert model["tax_rate"].label == "Tax Rate"
 
     def test_value_format_property(self):
         class M(ProformaModel):
-            cogs_rate = FixedLine(value=0.35, value_format=Format.PERCENT_ONE_DECIMAL)
+            cogs_rate = ScalarLine(value=0.35, value_format=Format.PERCENT_ONE_DECIMAL)
 
         model = M(periods=[2024])
         assert model["cogs_rate"].value_format == Format.PERCENT_ONE_DECIMAL
 
     def test_formatted_value(self):
         class M(ProformaModel):
-            cogs_rate = FixedLine(value=0.354, value_format=Format.PERCENT_ONE_DECIMAL)
+            cogs_rate = ScalarLine(value=0.354, value_format=Format.PERCENT_ONE_DECIMAL)
 
         model = M(periods=[2024])
-        assert model["cogs_rate"].formatted_value(2024) == "35.4%"
-
-    def test_is_input_true_for_scalar_fixed_line(self):
-        class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21)
-
-        model = M(periods=[2024])
-        assert model["tax_rate"].is_input(2024) is True
+        assert model["cogs_rate"].formatted_value == "35.4%"
 
     def test_scalar_usable_in_formula_without_t(self):
         class M(ProformaModel):
-            tax_rate = FixedLine(value=0.21)
+            tax_rate = ScalarLine(value=0.21)
             revenue = FixedLine(values={2024: 100_000})
             after_tax = FormulaLine(formula=lambda li, t: li.revenue[t] * (1 - li.tax_rate))
 
         model = M(periods=[2024])
         assert model.get_value("after_tax", 2024) == pytest.approx(79_000.0)
 
+    def test_float_conversion(self):
+        class M(ProformaModel):
+            rate = ScalarLine(value=0.05)
+
+        model = M(periods=[2024])
+        assert float(model["rate"]) == 0.05
+
+    def test_repr(self):
+        class M(ProformaModel):
+            rate = ScalarLine(value=0.05)
+
+        model = M(periods=[2024])
+        r = repr(model["rate"])
+        assert "rate" in r
+        assert "0.05" in r
+
+    def test_scalar_in_scalar_names(self):
+        class M(ProformaModel):
+            tax_rate = ScalarLine(value=0.21)
+
+        model = M(periods=[2024])
+        assert "tax_rate" in model.scalar_names
+        assert "tax_rate" not in model.line_item_names
+
+    def test_dot_notation_access(self):
+        class M(ProformaModel):
+            tax_rate = ScalarLine(value=0.21)
+
+        model = M(periods=[2024])
+        assert isinstance(model.tax_rate, ScalarResult)
+        assert model.tax_rate.value == 0.21
+
 
 class TestScalarInputLineResult:
 
-    def test_getitem_returns_scalar_for_any_period(self):
+    def test_getitem_returns_scalar_result(self):
         class M(ProformaModel):
-            tax_rate = InputLine()
+            tax_rate = ScalarInputLine()
 
         model = M(periods=[2024, 2025], tax_rate=0.21)
-        assert model["tax_rate"][2024] == 0.21
-        assert model["tax_rate"][2025] == 0.21
+        assert isinstance(model["tax_rate"], ScalarResult)
 
-    def test_getitem_raises_on_invalid_period(self):
+    def test_value_property(self):
         class M(ProformaModel):
-            tax_rate = InputLine()
+            tax_rate = ScalarInputLine()
+
+        model = M(periods=[2024, 2025], tax_rate=0.21)
+        assert model["tax_rate"].value == 0.21
+
+    def test_default_used_when_kwarg_omitted(self):
+        class M(ProformaModel):
+            tax_rate = ScalarInputLine(default=0.30)
+
+        model = M(periods=[2024])
+        assert model["tax_rate"].value == 0.30
+
+    def test_kwarg_overrides_default(self):
+        class M(ProformaModel):
+            tax_rate = ScalarInputLine(default=0.30)
 
         model = M(periods=[2024], tax_rate=0.21)
-        with pytest.raises(KeyError):
-            model["tax_rate"][2099]
+        assert model["tax_rate"].value == 0.21
 
     def test_is_input_true(self):
         class M(ProformaModel):
-            tax_rate = InputLine()
+            tax_rate = ScalarInputLine()
 
         model = M(periods=[2024], tax_rate=0.21)
-        assert model["tax_rate"].is_input(2024) is True
+        result = model["tax_rate"]
+        assert isinstance(result, ScalarResult)
