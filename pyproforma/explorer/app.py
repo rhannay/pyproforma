@@ -78,7 +78,7 @@ def create_app(model, tables=None, charts=None, views=None):
                 return name.upper()
         return str(spec)
 
-    def _build_items(names):
+    def _build_items(names, scalar_names=None):
         m = state.model
         items = []
         for name in names:
@@ -89,6 +89,16 @@ def create_app(model, tables=None, charts=None, views=None):
                 "type": type(item_def).__name__,
                 "tags": getattr(item_def, "tags", []),
                 "scalar": False,
+            })
+        for name in (scalar_names or []):
+            item_def = getattr(type(m), name)
+            items.append({
+                "name": name,
+                "label": item_def.label or name,
+                "type": type(item_def).__name__,
+                "tags": [],
+                "scalar": True,
+                "value": m[name].formatted_value,
             })
         return items
 
@@ -143,7 +153,7 @@ def create_app(model, tables=None, charts=None, views=None):
         return render_template(
             "index.html",
             model=m,
-            items=_build_items(m.line_item_names),
+            items=_build_items(m.line_item_names, m.scalar_names),
             title=m.__class__.__name__,
         )
 
@@ -177,18 +187,32 @@ def create_app(model, tables=None, charts=None, views=None):
     @app.route("/line_item/<name>")
     def line_item(name):
         m = state.model
-        if name not in m.line_item_names:
+        is_scalar = name in m.scalar_names
+        if name not in m.line_item_names and not is_scalar:
             abort(404)
         item_def = getattr(type(m), name)
-        result = m[name]
 
         info = {
             "name": name,
             "label": item_def.label or name,
             "type": type(item_def).__name__,
-            "tags": item_def.tags,
+            "tags": getattr(item_def, "tags", []),
             "value_format": _format_name(item_def.value_format),
         }
+
+        dependents = m.dependents(name)
+
+        if is_scalar:
+            info["scalar_value"] = m[name].formatted_value
+            return render_template(
+                "line_item.html",
+                model=m,
+                info=info,
+                values_table=None,
+                precedents_table=None,
+                chart_data=None,
+                dependents=dependents,
+            )
 
         if isinstance(item_def, FormulaLine):
             info["formula_source"] = item_def.formula_source
@@ -203,16 +227,13 @@ def create_app(model, tables=None, charts=None, views=None):
             info["input_values"] = m._input_line_values.get(name, {})
             info["is_input"] = True
 
-        values_table = None
-        if True:
-            values_table = m.tables.line_item(name).to_bootstrap_html()
+        values_table = m.tables.line_item(name).to_bootstrap_html()
 
         precedents_table = None
         if isinstance(item_def, FormulaLine) and item_def.precedents:
             precedents_table = m.tables.precedents(name).to_bootstrap_html()
 
         chart_data = json.dumps(m.charts.line_item(name).to_apexcharts()) if m.periods else None
-        dependents = m.dependents(name)
 
         return render_template(
             "line_item.html",
