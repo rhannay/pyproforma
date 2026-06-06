@@ -68,16 +68,22 @@ class DebtCalculator:
 
     def eval(self, ns: "ModelNamespace", t: int) -> None:
         """Process a period, detecting new issuances and building schedules."""
-        rate = getattr(ns, self.interest_rate)
-        term = int(getattr(ns, self.term))
-
         try:
             par_amount = getattr(ns, self.par_amounts)[t]
         except (KeyError, AttributeError):
             return
 
-        if par_amount and par_amount > 0:
-            self._add_bond_issue(par_amount, t, rate, term)
+        if not (par_amount and par_amount > 0):
+            return
+
+        # Support both ScalarLine (float) and FixedLine/FormulaLine (period-indexed)
+        rate_val = getattr(ns, self.interest_rate)
+        rate = float(rate_val[t] if not isinstance(rate_val, (int, float)) else rate_val)
+
+        term_val = getattr(ns, self.term)
+        term = int(term_val[t] if not isinstance(term_val, (int, float)) else term_val)
+
+        self._add_bond_issue(par_amount, t, rate, term)
 
     def _calculate_annual_payment(self, par: float, rate: float, term: int) -> float:
         if rate == 0:

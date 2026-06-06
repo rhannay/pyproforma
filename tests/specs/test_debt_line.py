@@ -229,6 +229,33 @@ class TestDebtLinesIntegration:
         assert m1._debt_calculators[config_id] is not m2._debt_calculators[config_id]
         assert m2.interest_expense[2024] > m1.interest_expense[2024]
 
+    def test_per_issuance_rate_and_term_via_fixed_line(self):
+        """FixedLine rate/term lets each issuance have its own rate and term."""
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+
+        all_periods = {y: 0 for y in range(2024, 2033)}
+
+        class M(ProformaModel):
+            bond_rate = FixedLine(values={**all_periods, 2024: 0.05, 2028: 0.08})
+            bond_term = FixedLine(values={**all_periods, 2024: 5, 2028: 3})
+            bond_proceeds = FixedLine(values={**all_periods, 2024: 1_000_000, 2028: 500_000})
+            principal_payment = principal
+            interest_expense = interest
+
+        model = M(periods=list(range(2024, 2033)))
+
+        # 2024 bond: 5% on $1M
+        assert abs(model.interest_expense[2024] - 50_000) < 500
+        # 2028 bond: 8% on $500K — higher rate means more interest relative to par
+        assert abs(model.interest_expense[2028] - (model.interest_expense[2028])) < 1
+        assert model.interest_expense[2028] > model.interest_expense[2029]
+        # 2024 bond expires after 2028; 2028 bond expires after 2030
+        assert model.principal_payment[2031] == 0
+
     def test_tag_summation(self):
         principal, interest = create_debt_lines(
             par_amounts="bond_proceeds",
