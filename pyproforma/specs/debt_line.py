@@ -7,8 +7,8 @@ using level annual debt service amortization.
 Example:
     >>> class MyModel(ProformaModel):
     ...     bond_par  = FixedLine(values={2024: 1_000_000, 2026: 500_000})
-    ...     bond_rate = FixedLine(value=0.05, label="Bond Rate")
-    ...     bond_term = FixedLine(value=10,   label="Bond Term")
+    ...     bond_rate = ScalarLine(value=0.05, label="Bond Rate")
+    ...     bond_term = ScalarLine(value=10,   label="Bond Term")
     ...
     ...     principal, interest = create_debt_lines(
     ...         par_amounts="bond_par",
@@ -20,6 +20,7 @@ Example:
 """
 
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 
 from pyproforma.table import NumberFormatSpec
@@ -30,12 +31,28 @@ if TYPE_CHECKING:
     from pyproforma.engine.model_namespace import ModelNamespace
 
 
+@dataclass
+class DebtConfig:
+    """
+    Declarative config for a debt line pair — class-level, no mutable state.
+
+    Holds the names of the three model items needed to compute debt service.
+    Both DebtPrincipalLine and DebtInterestLine in a pair reference the same
+    DebtConfig instance, so ProformaModel.__init__ can group them and create
+    one fresh DebtCalculator per pair per model instance.
+    """
+    par_amounts: str
+    interest_rate: str
+    term: str
+
+
 class DebtCalculator:
     """
-    Stateful calculator for bond debt schedules across multiple issuances.
+    Per-instance stateful calculator for bond debt schedules across multiple issuances.
 
-    Reads interest rate and term from scalar line items in the model namespace
-    at calculation time, so they can be varied via InputLine for scenario analysis.
+    Created fresh for each model instance by ProformaModel.__init__ — never shared
+    across instances. Reads interest rate and term from the model namespace at
+    calculation time, so they can be varied via ScalarInputLine for scenario analysis.
 
     Attributes:
         par_amounts (str): Name of the line item containing par amounts per period.
@@ -47,28 +64,12 @@ class DebtCalculator:
         self.par_amounts = par_amounts
         self.interest_rate = interest_rate
         self.term = term
-
         self._schedules: dict[int, dict[int, dict[str, float]]] = {}
-        self._last_period: int | None = None
-        self._cached_rate: float | None = None
-        self._cached_term: int | None = None
 
     def eval(self, ns: "ModelNamespace", t: int) -> None:
         """Process a period, detecting new issuances and building schedules."""
         rate = getattr(ns, self.interest_rate)
         term = int(getattr(ns, self.term))
-
-        # Invalidate cache if rate or term changed (e.g. new model instantiation)
-        if (rate, term) != (self._cached_rate, self._cached_term):
-            self._schedules.clear()
-            self._cached_rate = rate
-            self._cached_term = term
-
-        # Reset if called out of order (new model calculation)
-        if self._last_period is not None and t < self._last_period:
-            self._schedules.clear()
-
-        self._last_period = t
 
         try:
             par_amount = getattr(ns, self.par_amounts)[t]
@@ -130,20 +131,20 @@ class DebtBase(LineItem):
 
     def __init__(
         self,
-        calculator: DebtCalculator,
+        config: DebtConfig,
         label: str | None = None,
         tags: list[str] | None = None,
         value_format: Union[str, NumberFormatSpec, dict, None] = None,
     ):
         super().__init__(label=label, tags=tags, value_format=value_format)
-        self.calculator = calculator
+        self.config = config
 
-    def eval(self, ns: "ModelNamespace", t: int) -> float:
-        self.calculator.eval(ns, t)
-        return self._get_value(t)
+    def eval(self, ns: "ModelNamespace", t: int, calculator: DebtCalculator) -> float:
+        calculator.eval(ns, t)
+        return self._get_value(calculator, t)
 
     @abstractmethod
-    def _get_value(self, period: int) -> float:
+    def _get_value(self, calculator: DebtCalculator, period: int) -> float:
         pass
 
     def get_value(self, period: int) -> float | None:
@@ -153,14 +154,14 @@ class DebtBase(LineItem):
 class DebtPrincipalLine(DebtBase):
     """Line item returning total principal payments across all active bond issues."""
 
-    def _get_value(self, period: int) -> float:
-        return self.calculator.get_principal(period)
+    def _get_value(self, calculator: DebtCalculator, period: int) -> float:
+        return calculator.get_principal(period)
 
     def __repr__(self):
         parts = [
-            f"par_amounts={self.calculator.par_amounts!r}",
-            f"interest_rate={self.calculator.interest_rate!r}",
-            f"term={self.calculator.term!r}",
+            f"par_amounts={self.config.par_amounts!r}",
+            f"interest_rate={self.config.interest_rate!r}",
+            f"term={self.config.term!r}",
         ]
         if self.label:
             parts.append(f"label={self.label!r}")
@@ -170,14 +171,14 @@ class DebtPrincipalLine(DebtBase):
 class DebtInterestLine(DebtBase):
     """Line item returning total interest payments across all active bond issues."""
 
-    def _get_value(self, period: int) -> float:
-        return self.calculator.get_interest(period)
+    def _get_value(self, calculator: DebtCalculator, period: int) -> float:
+        return calculator.get_interest(period)
 
     def __repr__(self):
         parts = [
-            f"par_amounts={self.calculator.par_amounts!r}",
-            f"interest_rate={self.calculator.interest_rate!r}",
-            f"term={self.calculator.term!r}",
+            f"par_amounts={self.config.par_amounts!r}",
+            f"interest_rate={self.config.interest_rate!r}",
+            f"term={self.config.term!r}",
         ]
         if self.label:
             parts.append(f"label={self.label!r}")
@@ -198,8 +199,8 @@ def create_debt_lines(
     Factory function to create matched principal and interest debt line items.
 
     All three positional arguments are line item names (strings). The referenced
-    line items must be defined on the same model — typically FixedLine(value=...)
-    for rate and term, and FixedLine(values={...}) or InputLine for par amounts.
+    line items must be defined on the same model — typically ScalarLine(value=...)
+    for rate and term, and FixedLine(values={...}) or ScalarInputLine for par amounts.
 
     Args:
         par_amounts (str): Name of the line item with par amounts per period.
@@ -213,13 +214,13 @@ def create_debt_lines(
         interest_value_format: Format for interest values.
 
     Returns:
-        tuple[DebtPrincipalLine, DebtInterestLine]: Matched pair sharing one calculator.
+        tuple[DebtPrincipalLine, DebtInterestLine]: Matched pair sharing one DebtConfig.
 
     Example:
         >>> class MyModel(ProformaModel):
         ...     bond_par  = FixedLine(values={2024: 0, 2025: 10_000_000})
-        ...     bond_rate = InputLine(default=0.045, label="Bond Rate")
-        ...     bond_term = FixedLine(value=20, label="Bond Term")
+        ...     bond_rate = ScalarInputLine(default=0.045, label="Bond Rate")
+        ...     bond_term = ScalarLine(value=20, label="Bond Term")
         ...
         ...     principal, interest = create_debt_lines(
         ...         par_amounts="bond_par",
@@ -236,24 +237,24 @@ def create_debt_lines(
             raise TypeError(
                 f"'{param_name}' must be a string (line item name), "
                 f"got {type(value).__name__}. "
-                f"Define a FixedLine or InputLine for this value and pass its name."
+                f"Define a ScalarLine or ScalarInputLine for this value and pass its name."
             )
 
-    calculator = DebtCalculator(
+    config = DebtConfig(
         par_amounts=par_amounts,
         interest_rate=interest_rate,
         term=term,
     )
 
     principal = DebtPrincipalLine(
-        calculator=calculator,
+        config=config,
         label=principal_label,
         tags=tags,
         value_format=principal_value_format,
     )
 
     interest = DebtInterestLine(
-        calculator=calculator,
+        config=config,
         label=interest_label,
         tags=tags,
         value_format=interest_value_format,

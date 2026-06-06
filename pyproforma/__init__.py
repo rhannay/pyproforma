@@ -18,6 +18,7 @@ from .tables.row_types import (
 )
 from .specs import (
     DebtCalculator,
+    DebtConfig,
     DebtInterestLine,
     DebtPrincipalLine,
     FixedLine,
@@ -59,6 +60,7 @@ __all__ = [
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",
+    "DebtConfig",
     "create_debt_lines",
     "LineItem",
     "LineItemValues",

@@ -21,6 +21,7 @@ from pyproforma.charts import Charts
 from pyproforma.reserved_words import validate_name
 from pyproforma.tables import Tables
 from pyproforma.results.tags_namespace import TagNamespace
+from pyproforma.specs.debt_line import DebtBase, DebtCalculator
 
 
 class ProformaModel:
@@ -128,6 +129,19 @@ class ProformaModel:
             attr = getattr(self.__class__, name)
             if isinstance(attr, ScalarLine):
                 self._scalars[name] = float(attr.value)
+
+        # Build per-instance debt calculators, one per DebtConfig (i.e. per pair)
+        self._debt_calculators: dict[int, DebtCalculator] = {}
+        for name in self.line_item_names:
+            spec = getattr(self.__class__, name)
+            if isinstance(spec, DebtBase):
+                config_id = id(spec.config)
+                if config_id not in self._debt_calculators:
+                    self._debt_calculators[config_id] = DebtCalculator(
+                        par_amounts=spec.config.par_amounts,
+                        interest_rate=spec.config.interest_rate,
+                        term=spec.config.term,
+                    )
 
         # Run the calculation engine
         if self.periods:

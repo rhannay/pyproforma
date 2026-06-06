@@ -142,8 +142,15 @@ def _calculate_single_line_item(
         return value
 
     if isinstance(line_item, DebtBase):
+        debt_calculators = getattr(model, "_debt_calculators", {})
+        calculator = debt_calculators.get(id(line_item.config))
+        if calculator is None:
+            raise ValueError(
+                f"No calculator found for debt line '{line_item.name}'. "
+                f"Ensure the model was instantiated via ProformaModel.__init__."
+            )
         try:
-            value = line_item.eval(ns, period)
+            value = line_item.eval(ns, period, calculator)
         except (AttributeError, KeyError):
             raise
         except Exception as e:

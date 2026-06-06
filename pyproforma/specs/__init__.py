@@ -5,6 +5,7 @@ Line item descriptor classes — declared in model class bodies.
 from .debt_line import (
     DebtBase,
     DebtCalculator,
+    DebtConfig,
     DebtInterestLine,
     DebtPrincipalLine,
     create_debt_lines,
@@ -26,6 +27,7 @@ __all__ = [
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",
+    "DebtConfig",
     "DebtBase",
     "create_debt_lines",
 ]

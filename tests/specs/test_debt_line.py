@@ -4,6 +4,7 @@ import pytest
 
 from pyproforma import (
     DebtCalculator,
+    DebtConfig,
     DebtInterestLine,
     DebtPrincipalLine,
     FixedLine,
@@ -198,11 +199,35 @@ class TestDebtLinesIntegration:
         for i in range(1, len(ds)):
             assert abs(ds[i] - ds[0]) < 1.0
 
-    def test_shared_calculator(self):
-        calculator = DebtCalculator(par_amounts="p", interest_rate="r", term="t")
-        principal = DebtPrincipalLine(calculator=calculator)
-        interest = DebtInterestLine(calculator=calculator)
-        assert principal.calculator is interest.calculator
+    def test_shared_config(self):
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+        assert principal.config is interest.config
+
+    def test_independent_calculators_per_instance(self):
+        """Two model instances must not share a calculator."""
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+
+        class M(ProformaModel):
+            bond_rate = ScalarInputLine(default=0.05)
+            bond_term = ScalarLine(value=5)
+            bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
+            principal_payment = principal
+            interest_expense = interest
+
+        m1 = M(periods=[2024, 2025, 2026, 2027, 2028])
+        m2 = M(periods=[2024, 2025, 2026, 2027, 2028], bond_rate=0.08)
+
+        config_id = id(principal.config)
+        assert m1._debt_calculators[config_id] is not m2._debt_calculators[config_id]
+        assert m2.interest_expense[2024] > m1.interest_expense[2024]
 
     def test_tag_summation(self):
         principal, interest = create_debt_lines(
