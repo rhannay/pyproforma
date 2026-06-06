@@ -15,6 +15,23 @@ if TYPE_CHECKING:
     from pyproforma.engine.line_item_values import LineItemValues
 
 
+class _ScalarValue(float):
+    """float subclass returned for scalar line items in formulas.
+
+    Raises a clear TypeError if the caller tries li.rate[t] instead of li.rate.
+    """
+
+    def __new__(cls, value: float, name: str):
+        inst = super().__new__(cls, value)
+        inst._name = name
+        return inst
+
+    def __getitem__(self, key):
+        raise TypeError(
+            f"'{self._name}' is a scalar — use li.{self._name}, not li.{self._name}[{key}]"
+        )
+
+
 class ModelNamespace:
     """
     Unified namespace passed to formula functions.
@@ -48,7 +65,10 @@ class ModelNamespace:
             return li.tag
 
         if name in scalars:
-            return scalars[name]
+            value = scalars[name]
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return _ScalarValue(value, name)
+            return value
 
         li_error = None
         try:

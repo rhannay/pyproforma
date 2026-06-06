@@ -279,6 +279,28 @@ class TestFormulaLineEval:
         result = expenses_line.eval(ns, 2024)
         assert result == 65.0
 
+    def test_scalar_subscript_raises_clear_error(self):
+        li = LineItemValues(periods=[2024], names=["revenue"])
+        ns = ModelNamespace(li, {"tax_rate": 0.21})
+
+        with pytest.raises(TypeError, match="'tax_rate' is a scalar"):
+            _ = ns.tax_rate[2024]
+
+    def test_scalar_subscript_error_includes_period(self):
+        li = LineItemValues(periods=[2024], names=["revenue"])
+        ns = ModelNamespace(li, {"rate": 0.05})
+
+        with pytest.raises(TypeError, match=r"li\.rate\[2025\]"):
+            _ = ns.rate[2025]
+
+    def test_scalar_arithmetic_still_works(self):
+        li = LineItemValues(periods=[2024], names=["revenue"])
+        li.set("revenue", 2024, 100.0)
+        ns = ModelNamespace(li, {"tax_rate": 0.21})
+
+        assert ns.tax_rate * 100 == pytest.approx(21.0)
+        assert 1 - ns.tax_rate == pytest.approx(0.79)
+
     def test_eval_method_no_formula_raises_error(self):
         profit_line = FormulaLine(formula=None)
         profit_line.name = "profit"
