@@ -171,6 +171,7 @@ class Format:
     # Large number scale formats with suffix
     THOUSANDS_K = NumberFormatSpec(decimals=1, thousands=False, scale="thousands", suffix="K")
     MILLIONS_M = NumberFormatSpec(decimals=1, thousands=False, scale="millions", suffix="M")
+    CURRENCY_MILLIONS_M = NumberFormatSpec(decimals=1, thousands=False, scale="millions", prefix="$", suffix="M")
 
     # Mapping of string names to format constants
     _STRING_MAP = {
@@ -185,6 +186,7 @@ class Format:
         "millions": MILLIONS,
         "thousands_k": THOUSANDS_K,
         "millions_m": MILLIONS_M,
+        "currency_millions_m": CURRENCY_MILLIONS_M,
     }
 
     @classmethod

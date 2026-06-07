@@ -14,7 +14,7 @@ from model import model
 from tables import dscr_table
 from pyproforma.explorer import create_app
 from pyproforma.explorer.components import StatCard
-from pyproforma import ChartDef
+from pyproforma import ChartDef, Format
 
 tables = {
     "Debt Service Coverage": dscr_table,
@@ -36,6 +36,7 @@ views = {
             StatCard("dscr",             "Min DSCR",          aggregation="min"),
             StatCard("ending_cash",      "Ending Cash"),
             StatCard("days_cash_on_hand","Days Cash on Hand"),
+            StatCard("capital_spending", "Total Capex",        aggregation="sum", value_format=Format.CURRENCY_MILLIONS_M),
         ],
         [
             {"type": "chart", "ref": "Revenue & O&M"},
