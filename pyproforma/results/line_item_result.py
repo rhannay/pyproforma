@@ -166,50 +166,14 @@ class LineItemResult:
         return result if result is not None else {}
 
     # ------------------------------------------------------------------
-    # Aggregation helpers
+    # Stat namespace
     # ------------------------------------------------------------------
 
-    def min(self) -> float | None:
-        """Minimum value across all periods, or None if no values."""
-        vals = [v for v in self.values.values() if v is not None]
-        return min(vals) if vals else None
-
-    def max(self) -> float | None:
-        """Maximum value across all periods, or None if no values."""
-        vals = [v for v in self.values.values() if v is not None]
-        return max(vals) if vals else None
-
-    def first(self) -> float | None:
-        """Value for the first period, or None if no periods."""
-        if not self._model.periods:
-            return None
-        return self[self._model.periods[0]]
-
-    def latest(self) -> float | None:
-        """Value for the last period, or None if no periods."""
-        if not self._model.periods:
-            return None
-        return self[self._model.periods[-1]]
-
-    def formatted_min(self, value_format=None) -> str:
-        """Formatted minimum value. Pass value_format to override the line item's format."""
-        v = self.min()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_max(self, value_format=None) -> str:
-        """Formatted maximum value. Pass value_format to override the line item's format."""
-        v = self.max()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_first(self, value_format=None) -> str:
-        """Formatted first-period value. Pass value_format to override the line item's format."""
-        v = self.first()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_latest(self, value_format=None) -> str:
-        """Formatted last-period value. Pass value_format to override the line item's format."""
-        v = self.latest()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
+    @property
+    def stat(self):
+        """Aggregation namespace: min, max, first, latest, sum, avg, cagr (raw and formatted)."""
+        from pyproforma.results.line_item_stat import LineItemStat
+        return LineItemStat(self)
 
     def is_input(self, period: int) -> bool:
         """

@@ -34,7 +34,7 @@ class StatCard:
 
     def build(self, model) -> dict:
         result = model[self.name]
-        formatted = getattr(result, f"formatted_{self.aggregation}")(self.value_format)
+        formatted = getattr(result.stat, f"formatted_{self.aggregation}")(self.value_format)
         return {
             "type": "stat",
             "label": self.label or result.label or self.name,
