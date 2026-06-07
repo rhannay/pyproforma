@@ -10,13 +10,6 @@
   </div>
 </div>
 
-{% for msg in get_flashed_messages() %}
-<div class="alert alert-success alert-dismissible fade show mt-3">
-  {{ msg }}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% endfor %}
-
 {% if error %}
 <div class="alert alert-danger alert-dismissible fade show mt-3">
   {{ error }}

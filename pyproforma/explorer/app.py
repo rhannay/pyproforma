@@ -6,7 +6,7 @@ import os
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
-from pyproforma.explorer.components import StatCard
+from pyproforma.explorer.components import InputGroup, StatCard
 from pyproforma.specs.fixed_line import FixedLine
 from pyproforma.specs.formula_line import FormulaLine
 from pyproforma.specs.input_line import InputLine
@@ -67,6 +67,16 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             f"Available views: {available}"
         )
     state.home_view = home_view
+
+    for view_label, view_def in (views or {}).items():
+        input_group_count = sum(
+            1 for row in view_def for comp in row if isinstance(comp, InputGroup)
+        )
+        if input_group_count > 1:
+            raise ValueError(
+                f"View '{view_label}' has {input_group_count} InputGroup components. "
+                f"At most one InputGroup is allowed per view."
+            )
 
     # ------------------------------------------------------------------
     # Helpers
@@ -304,12 +314,24 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         label = labels[idx]
         view_def = state.views[label]
 
+        has_inputs = any(
+            isinstance(comp, InputGroup) for row in view_def for comp in row
+        )
+        form_action = (
+            url_for("update_inputs") + f"?next={url_for('view_page', idx=idx)}"
+            if has_inputs
+            else None
+        )
+
         rows = []
         for row_idx, row in enumerate(view_def):
             col_width = 12 // len(row)
             processed = []
             for col_idx, comp in enumerate(row):
                 if isinstance(comp, StatCard):
+                    c = comp.build(state.model)
+                    c["col_width"] = col_width
+                elif isinstance(comp, InputGroup):
                     c = comp.build(state.model)
                     c["col_width"] = col_width
                 elif isinstance(comp, dict) and comp.get("type") == "stat":
@@ -340,6 +362,8 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             model=state.model,
             title=label,
             rows=rows,
+            has_inputs=has_inputs,
+            form_action=form_action,
         )
 
     @app.route("/inputs", methods=["GET"])
@@ -359,17 +383,24 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         kwargs = {}
         try:
             for name in state.model_class._scalar_input_names:
-                kwargs[name] = float(request.form[name])
+                if name in request.form:
+                    kwargs[name] = float(request.form[name])
+                else:
+                    kwargs[name] = state.model._scalars[name]
             for name in state.model_class._input_line_names:
-                kwargs[name] = {
-                    period: float(request.form[f"{name}_{period}"])
-                    for period in state.periods
-                }
+                if any(f"{name}_{p}" in request.form for p in state.periods):
+                    kwargs[name] = {
+                        period: float(request.form[f"{name}_{period}"])
+                        for period in state.periods
+                    }
+                else:
+                    kwargs[name] = state.model._input_line_values.get(name, {})
             state.model = state.model_class(periods=state.periods, **kwargs)
             state.error = None
             flash("Model updated.")
         except Exception as e:
             state.error = str(e)
-        return redirect(url_for("inputs"))
+        next_url = request.args.get("next") or url_for("inputs")
+        return redirect(next_url)
 
     return app

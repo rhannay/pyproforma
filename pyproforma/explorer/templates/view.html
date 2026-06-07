@@ -10,6 +10,8 @@
   </div>
 </div>
 
+{% if has_inputs %}<form method="POST" action="{{ form_action }}">{% endif %}
+
 {% for row in rows %}
 <div class="row g-3 mt-2">
   {% for comp in row %}
@@ -20,6 +22,108 @@
       <div class="card-body d-flex flex-column justify-content-center">
         <div class="display-6 fw-bold font-monospace">{{ comp.value }}</div>
         <div class="text-muted mt-1">{{ comp.label }}</div>
+      </div>
+    </div>
+
+    {% elif comp.type == "input_group" and comp.orient == "vertical" %}
+    <div class="card h-100">
+      {% if comp.label %}
+      <div class="card-header">
+        <h3 class="card-title">{{ comp.label }}</h3>
+      </div>
+      {% endif %}
+      <div class="card-body">
+        {% for inp in comp.inputs %}
+          {% if inp.is_scalar %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ inp.label }}</label>
+            <input type="number" step="any" name="{{ inp.name }}"
+                   value="{{ inp.value }}" class="form-control">
+            <div class="text-muted small mt-1 font-monospace">{{ inp.formatted_value }}</div>
+          </div>
+          {% else %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ inp.label }}</label>
+            {% for i in range(inp.periods | length) %}
+            <div class="d-flex align-items-center mb-1">
+              <span class="text-muted small me-2" style="min-width:44px;">{{ inp.periods[i] }}</span>
+              <input type="number" step="any"
+                     name="{{ inp.name }}_{{ inp.periods[i] }}"
+                     value="{{ inp.value[inp.periods[i]] }}"
+                     class="form-control form-control-sm">
+              <span class="text-muted small font-monospace ms-2" style="min-width:60px;">{{ inp.formatted_values[i] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100 mt-1">Update</button>
+      </div>
+    </div>
+
+    {% elif comp.type == "input_group" and comp.orient == "horizontal" %}
+    <div class="card">
+      {% if comp.label %}
+      <div class="card-header">
+        <h3 class="card-title">{{ comp.label }}</h3>
+      </div>
+      {% endif %}
+      {# Scalar inputs above the table if any #}
+      {% set scalar_inputs = comp.inputs | selectattr("is_scalar") | list %}
+      {% if scalar_inputs %}
+      <div class="card-body pb-0">
+        <div class="row g-3">
+          {% for inp in scalar_inputs %}
+          <div class="col-sm-6 col-md-4 col-lg-3">
+            <label class="form-label fw-semibold">{{ inp.label }}</label>
+            <input type="number" step="any" name="{{ inp.name }}"
+                   value="{{ inp.value }}" class="form-control">
+            <div class="text-muted small mt-1 font-monospace">{{ inp.formatted_value }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {# Period inputs as a table — years across the top #}
+      {% set period_inputs = comp.inputs | rejectattr("is_scalar") | list %}
+      {% if period_inputs %}
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Input</th>
+              {% for p in comp.periods %}
+              <th class="text-end">{{ p }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for inp in period_inputs %}
+            <tr>
+              <td class="fw-semibold">{{ inp.label }}</td>
+              {% for i in range(inp.periods | length) %}
+              <td>
+                <input type="number" step="any"
+                       name="{{ inp.name }}_{{ inp.periods[i] }}"
+                       value="{{ inp.value[inp.periods[i]] }}"
+                       class="form-control form-control-sm text-end"
+                       style="min-width:90px;">
+              </td>
+              {% endfor %}
+            </tr>
+            <tr class="text-muted small">
+              <td class="ps-2">Current</td>
+              {% for fv in inp.formatted_values %}
+              <td class="text-end font-monospace">{{ fv }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      <div class="card-footer">
+        <button type="submit" class="btn btn-primary">Update</button>
       </div>
     </div>
 
@@ -48,6 +152,8 @@
   {% endfor %}
 </div>
 {% endfor %}
+
+{% if has_inputs %}</form>{% endif %}
 
 {% endblock %}
 

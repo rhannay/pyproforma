@@ -15,7 +15,7 @@ from tables import dscr_table
 
 from pyproforma import ChartDef, Format
 from pyproforma.explorer import create_app
-from pyproforma.explorer.components import StatCard
+from pyproforma.explorer.components import InputGroup, StatCard
 
 tables = {
     "Debt Service Coverage": dscr_table,
@@ -32,6 +32,19 @@ charts = {
 }
 
 views = {
+    "Update Assumptions": [
+        [
+            InputGroup(
+                names=["inflation_rate", "new_bond_rate", "rate_increase"],
+                label="Scenario Inputs",
+                orient="horizontal",
+            ),
+        ],
+        [
+            {"type": "chart", "ref": "Revenue & O&M"},
+            {"type": "chart", "ref": "Key Ratios"},
+        ],
+    ],
     "Financial Summary": [
         [
             StatCard("dscr",             "Min DSCR",          aggregation="min"),

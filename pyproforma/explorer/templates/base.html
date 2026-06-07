@@ -82,6 +82,12 @@
     <div class="page-wrapper">
       <div class="page-body">
         <div class="container-xl">
+          {% for msg in get_flashed_messages() %}
+          <div class="alert alert-success alert-dismissible fade show mt-3">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          {% endfor %}
           {% block content %}{% endblock %}
         </div>
       </div>
