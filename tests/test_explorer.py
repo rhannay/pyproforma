@@ -88,6 +88,9 @@ class TestBasicRoutes:
     def test_unknown_line_item_returns_404(self, client):
         assert client.get("/line_item/does_not_exist").status_code == 404
 
+    def test_items_returns_200(self, client):
+        assert client.get("/items").status_code == 200
+
     def test_inputs_returns_200(self, client):
         assert client.get("/inputs").status_code == 200
 
@@ -134,6 +137,11 @@ class TestHomeView:
         app = create_app(model, home_view=None)
         client = app.test_client()
         assert client.get("/").status_code == 200
+
+    def test_items_route_accessible_when_home_view_set(self, model, tables, charts, views):
+        app = create_app(model, tables=tables, charts=charts, views=views, home_view="Summary")
+        client = app.test_client()
+        assert client.get("/items").status_code == 200
 
     def test_home_view_invalid_raises_at_creation(self, model, views):
         with pytest.raises(ValueError, match="home_view 'Typo View' not found"):

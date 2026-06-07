@@ -160,12 +160,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
     # Routes
     # ------------------------------------------------------------------
 
-    @app.route("/")
-    def index():
-        if state.home_view is not None:
-            view_labels = list(state.views.keys())
-            if state.home_view in view_labels:
-                return redirect(url_for("view_page", idx=view_labels.index(state.home_view)))
+    def _render_line_items_index():
         m = state.model
         return render_template(
             "index.html",
@@ -173,6 +168,18 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             items=_build_items(m.line_item_names, m.scalar_names),
             title=m.__class__.__name__,
         )
+
+    @app.route("/")
+    def index():
+        if state.home_view is not None:
+            view_labels = list(state.views.keys())
+            if state.home_view in view_labels:
+                return redirect(url_for("view_page", idx=view_labels.index(state.home_view)))
+        return _render_line_items_index()
+
+    @app.route("/items")
+    def items():
+        return _render_line_items_index()
 
     @app.route("/tag/<tag_name>")
     def tag_view(tag_name):
