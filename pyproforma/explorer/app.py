@@ -62,6 +62,12 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
     state.tables = {"All Line Items": all_items_def, **(tables or {})}
     state.charts = charts or {}
     state.views = views or {}
+    if home_view is not None and home_view not in (views or {}):
+        available = ", ".join(f"'{v}'" for v in (views or {})) or "none"
+        raise ValueError(
+            f"home_view '{home_view}' not found in views. "
+            f"Available views: {available}"
+        )
     state.home_view = home_view
 
     # ------------------------------------------------------------------
