@@ -29,9 +29,16 @@ charts = {
         chart_type="stacked_bar",
     ),
     "Key Ratios": ChartDef(names=["dscr", "days_cash_on_hand"]),
+    "DSCR": ChartDef(names=["dscr"]),
 }
 
 views = {
+    "Update Rates": [
+        [
+            InputGroup(names=["rate_increase"], label="Annual Rate Increases"),
+            {"type": "chart", "ref": "DSCR"},
+        ],
+    ],
     "Update Assumptions": [
         [
             InputGroup(
