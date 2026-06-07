@@ -48,5 +48,5 @@ views = {
 }
 
 if __name__ == "__main__":
-    app = create_app(model, tables=tables, charts=charts, views=views)
+    app = create_app(model, tables=tables, charts=charts, views=views, home_view="Financial Summary")
     app.run(debug=True)

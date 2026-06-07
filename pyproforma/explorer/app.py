@@ -17,11 +17,17 @@ from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
 
 
-def create_app(model, tables=None, charts=None, views=None):
+def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
     """Create a Flask app for exploring a ProformaModel.
 
     Args:
         model: An instantiated ProformaModel.
+        tables: Dict of label → TableDef for the Tables nav section.
+        charts: Dict of label → ChartDef for the Charts nav section.
+        views: Dict of label → view definition for the Views nav section.
+        home_view: Name of a view to show at '/' instead of the default index.
+            Must match a key in `views`. If None or not found, the default
+            line item index is shown.
 
     Returns:
         Flask app instance.
@@ -34,7 +40,7 @@ def create_app(model, tables=None, charts=None, views=None):
             revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
 
         model = MyModel(periods=[2024, 2025])
-        app = create_app(model)
+        app = create_app(model, home_view="Financial Summary")
         app.run(debug=True)
     """
     app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
@@ -56,6 +62,7 @@ def create_app(model, tables=None, charts=None, views=None):
     state.tables = {"All Line Items": all_items_def, **(tables or {})}
     state.charts = charts or {}
     state.views = views or {}
+    state.home_view = home_view
 
     # ------------------------------------------------------------------
     # Helpers
@@ -149,6 +156,10 @@ def create_app(model, tables=None, charts=None, views=None):
 
     @app.route("/")
     def index():
+        if state.home_view is not None:
+            view_labels = list(state.views.keys())
+            if state.home_view in view_labels:
+                return redirect(url_for("view_page", idx=view_labels.index(state.home_view)))
         m = state.model
         return render_template(
             "index.html",
