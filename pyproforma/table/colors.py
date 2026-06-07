@@ -5,7 +5,6 @@ Supports CSS color names and hex codes (with or without #).
 Provides validation with helpful error messages including typo suggestions.
 """
 
-from typing import Optional
 
 
 # Standard CSS color names mapped to hex values
@@ -163,22 +162,22 @@ CSS_COLORS = {
 def is_valid_color(color: str) -> bool:
     """
     Check if a color string is valid.
-    
+
     Args:
         color: Color name (e.g., 'red') or hex code (e.g., '#FF0000' or 'FF0000')
-        
+
     Returns:
         True if the color is valid, False otherwise
     """
     if not color:
         return False
-    
+
     color_lower = color.lower().strip()
-    
+
     # Check if it's a CSS color name
     if color_lower in CSS_COLORS:
         return True
-    
+
     # Check if it's a hex code
     hex_code = color_lower.lstrip('#')
     if len(hex_code) == 6:
@@ -187,69 +186,69 @@ def is_valid_color(color: str) -> bool:
             return True
         except ValueError:
             return False
-    
+
     return False
 
 
 def _find_similar_colors(color: str, max_suggestions: int = 3) -> list[str]:
     """
     Find similar color names using simple string matching.
-    
+
     Args:
         color: The invalid color name
         max_suggestions: Maximum number of suggestions to return
-        
+
     Returns:
         List of similar color names
     """
     color_lower = color.lower().strip()
-    
+
     # Simple substring matching - find colors that contain the input or vice versa
     suggestions = []
-    
+
     # First priority: colors that start with the input
     for css_color in CSS_COLORS:
         if css_color.startswith(color_lower):
             suggestions.append(css_color)
-    
+
     # Second priority: colors that contain the input
     if len(suggestions) < max_suggestions:
         for css_color in CSS_COLORS:
             if color_lower in css_color and css_color not in suggestions:
                 suggestions.append(css_color)
-    
+
     # Third priority: input contained in color name
     if len(suggestions) < max_suggestions:
         for css_color in CSS_COLORS:
             if css_color in color_lower and css_color not in suggestions:
                 suggestions.append(css_color)
-    
+
     return suggestions[:max_suggestions]
 
 
 def color_to_hex(color: str) -> str:
     """
     Convert a color to hex format with validation.
-    
+
     Args:
         color: Color name (e.g., 'red') or hex code (e.g., '#FF0000' or 'FF0000')
-        
+
     Returns:
         Hex color code with # prefix (e.g., '#FF0000')
-        
+
     Raises:
         ValueError: If the color is invalid, with suggestions for similar colors
     """
     if not color:
         raise ValueError("Color cannot be empty")
-    
+
     color_stripped = color.strip()
     color_lower = color_stripped.lower()
-    
+
     # Check if it's a CSS color name
     if color_lower in CSS_COLORS:
         return CSS_COLORS[color_lower]
-    
+
     # Check if it's a hex code
     hex_code = color_stripped.lstrip('#')
     if len(hex_code) == 6:
@@ -258,7 +257,7 @@ def color_to_hex(color: str) -> str:
             return f'#{hex_code.upper()}'
         except ValueError:
             pass
-    
+
     # Invalid color - provide helpful error message
     suggestions = _find_similar_colors(color_stripped)
     if suggestions:
@@ -275,21 +274,21 @@ def color_to_hex(color: str) -> str:
 def color_to_rgb(color: str) -> tuple[int, int, int]:
     """
     Convert a color to RGB tuple.
-    
+
     Args:
         color: Color name (e.g., 'red') or hex code (e.g., '#FF0000' or 'FF0000')
-        
+
     Returns:
         Tuple of (red, green, blue) values from 0-255
-        
+
     Raises:
         ValueError: If the color is invalid
     """
     hex_color = color_to_hex(color)
     hex_code = hex_color.lstrip('#')
-    
+
     r = int(hex_code[0:2], 16)
     g = int(hex_code[2:4], 16)
     b = int(hex_code[4:6], 16)
-    
+
     return (r, g, b)

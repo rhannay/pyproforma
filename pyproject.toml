@@ -84,15 +84,20 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 100
+exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings  
+    "W",   # pycodestyle warnings
     "F",   # pyflakes
     "I",   # isort (import sorting)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**/run.py" = ["E402"]  # sys.path.insert before local imports is intentional
+"pyproforma/table/table_class.py" = ["E501"]  # error message strings are intentionally verbose
 
 [tool.ruff.format]
 quote-style = "double"

@@ -4,7 +4,6 @@ Tests for value_format functionality in v2 line items.
 
 import pytest
 
-from pyproforma.table import Format, NumberFormatSpec
 from pyproforma import (
     FixedLine,
     FormulaLine,
@@ -12,6 +11,7 @@ from pyproforma import (
     ScalarLine,
     create_debt_lines,
 )
+from pyproforma.table import Format, NumberFormatSpec
 
 
 class TestFixedLineValueFormat:

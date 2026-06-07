@@ -2,12 +2,10 @@
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarInputLine, ScalarLine
+from pyproforma import ChartDef, FixedLine, FormulaLine, ProformaModel, ScalarInputLine, ScalarLine
 from pyproforma.explorer import create_app
-from pyproforma.tables.table_def import TableDef
 from pyproforma.tables.row_types import HeaderRow, ItemRow
-from pyproforma import ChartDef
-
+from pyproforma.tables.table_def import TableDef
 
 # ---------------------------------------------------------------------------
 # Fixtures

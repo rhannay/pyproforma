@@ -3,19 +3,11 @@ PyProforma - A lightweight financial modeling framework.
 """
 
 from .charts.chart_def import ChartDef
-from .tables.table_def import TableDef
-from .tables.row_types import (
-    BlankRow,
-    CumulativeChangeRow,
-    CumulativePercentChangeRow,
-    HeaderRow,
-    ItemRow,
-    LabelRow,
-    LineItemsTotalRow,
-    PercentChangeRow,
-    TagItemsRow,
-    TagTotalRow,
-)
+from .compare import ModelComparison
+from .engine import LineItemValue, LineItemValues
+from .proforma_model import ProformaModel
+from .results import LineItemResult, LineItemSelection, ScalarResult
+from .results.tags_namespace import TagNamespace
 from .specs import (
     DebtCalculator,
     DebtConfig,
@@ -29,13 +21,21 @@ from .specs import (
     ScalarLine,
     create_debt_lines,
 )
-from .engine import LineItemValue, LineItemValues
-from .results import LineItemResult, LineItemSelection, ScalarResult
 from .table import Format, NumberFormatSpec
-from .compare import ModelComparison
-from .proforma_model import ProformaModel
 from .tables import Tables
-from .results.tags_namespace import TagNamespace
+from .tables.row_types import (
+    BlankRow,
+    CumulativeChangeRow,
+    CumulativePercentChangeRow,
+    HeaderRow,
+    ItemRow,
+    LabelRow,
+    LineItemsTotalRow,
+    PercentChangeRow,
+    TagItemsRow,
+    TagTotalRow,
+)
+from .tables.table_def import TableDef
 
 __all__ = [
     "ProformaModel",

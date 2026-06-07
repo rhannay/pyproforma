@@ -3,8 +3,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyproforma.results.line_item_selection import LineItemSelection
     from pyproforma.proforma_model import ProformaModel
+    from pyproforma.results.line_item_selection import LineItemSelection
 
 
 class TagNamespace:

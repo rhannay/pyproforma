@@ -54,15 +54,25 @@ class HeaderRow(BaseRow):
         # Add label column headers
         col_labels = self.col_labels if self.col_labels is not None else model.period_label
         if isinstance(col_labels, str):
-            cells.append(Cell(value=col_labels, bold=True, align="left", background_color=self.background_color))
+            cells.append(Cell(
+                value=col_labels, bold=True, align="left", background_color=self.background_color
+            ))
         else:
             for label in col_labels:
-                cells.append(Cell(value=label, bold=True, align="left", background_color=self.background_color))
+                cells.append(Cell(
+                    value=label, bold=True, align="left", background_color=self.background_color
+                ))
 
         # Add period column headers
         for period in model.periods:
             cells.append(
-                Cell(value=period, bold=True, align="center", value_format=None, background_color=self.background_color)
+                Cell(
+                    value=period,
+                    bold=True,
+                    align="center",
+                    value_format=None,
+                    background_color=self.background_color,
+                )
             )
 
         return cells
@@ -583,11 +593,8 @@ class TagItemsRow(BaseRow):
 
         rows = []
         for name in names:
-            rows.append(
-                ItemRow(name=name, bold=self.bold, hardcoded_color=self.hardcoded_color).generate_row(
-                    model, label_col_count=label_col_count
-                )
-            )
+            row_spec = ItemRow(name=name, bold=self.bold, hardcoded_color=self.hardcoded_color)
+            rows.append(row_spec.generate_row(model, label_col_count=label_col_count))
 
         if self.include_total_row and names:
             label = self.total_row_label or f"Total {self.tag.replace('_', ' ').title()}"

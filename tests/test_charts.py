@@ -16,7 +16,6 @@ from pyproforma.chart.chart import Chart, ChartSeries
 from pyproforma.charts import Charts
 from pyproforma.table.format_value import Format
 
-
 # ---------------------------------------------------------------------------
 # Test models
 # ---------------------------------------------------------------------------
@@ -233,7 +232,8 @@ def test_line_items_chart_type_bar(model):
 
 
 def test_line_items_chart_type_stacked_bar(model):
-    assert model.charts.line_items(["revenue"], chart_type="stacked_bar").chart_type == "stacked_bar"
+    chart = model.charts.line_items(["revenue"], chart_type="stacked_bar")
+    assert chart.chart_type == "stacked_bar"
 
 
 def test_line_items_invalid_name_raises_value_error(model):
@@ -304,11 +304,13 @@ def test_to_dict_series_label(model):
 
 
 def test_to_dict_series_x_values(model):
-    assert model.charts.line_item("revenue").to_dict()["series"][0]["x_values"] == [2024, 2025, 2026]
+    series = model.charts.line_item("revenue").to_dict()["series"][0]
+    assert series["x_values"] == [2024, 2025, 2026]
 
 
 def test_to_dict_series_y_values(model):
-    assert model.charts.line_item("revenue").to_dict()["series"][0]["y_values"] == [100_000, 110_000, 121_000]
+    series = model.charts.line_item("revenue").to_dict()["series"][0]
+    assert series["y_values"] == [100_000, 110_000, 121_000]
 
 
 def test_to_dict_value_format_is_none_when_not_explicit(model):

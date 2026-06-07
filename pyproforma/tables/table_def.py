@@ -7,8 +7,7 @@ the dataclass form (IDE autocomplete, validation) or a plain list of row
 configurations passed directly to build().
 """
 
-from dataclasses import dataclass, field
-from typing import Union
+from dataclasses import dataclass
 
 
 @dataclass

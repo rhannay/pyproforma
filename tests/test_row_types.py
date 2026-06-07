@@ -77,7 +77,7 @@ def test_item_row_inherits_value_format():
 
     class ModelWithFormats(ProformaModel):
         revenue = FixedLine(
-            values={2024: 100000, 2025: 110000}, 
+            values={2024: 100000, 2025: 110000},
             label="Revenue",
             value_format="currency"
         )
@@ -118,7 +118,7 @@ def test_item_row_explicit_value_format_overrides():
     # Explicitly specify a different format
     row_config = ItemRow(name="revenue", value_format="no_decimals")
     cells = row_config.generate_row(model, label_col_count=1)
-    
+
     # Should use the explicitly specified format, not the line item's
     assert cells[1].value_format == Format.NO_DECIMALS
     assert cells[2].value_format == Format.NO_DECIMALS
@@ -201,7 +201,7 @@ def test_cumulative_change_row_inherits_value_format():
     # Test cumulative change row - should inherit currency format
     row_config = CumulativeChangeRow(name="revenue")
     cells = row_config.generate_row(model, label_col_count=1)
-    
+
     # Value cells should have the line item's format
     assert cells[1].value_format == Format.CURRENCY
     assert cells[2].value_format == Format.CURRENCY
@@ -223,7 +223,7 @@ def test_cumulative_change_row_explicit_value_format_overrides():
     # Explicitly specify a different format
     row_config = CumulativeChangeRow(name="revenue", value_format="no_decimals")
     cells = row_config.generate_row(model, label_col_count=1)
-    
+
     # Should use the explicitly specified format, not the line item's
     assert cells[1].value_format == Format.NO_DECIMALS
     assert cells[2].value_format == Format.NO_DECIMALS

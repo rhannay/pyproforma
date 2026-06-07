@@ -21,18 +21,18 @@ def value_format_to_excel_format(
     # Handle None
     if value_format is None:
         return "General"
-    
+
     # Handle dict - convert to NumberFormatSpec
     if isinstance(value_format, dict):
         try:
             value_format = NumberFormatSpec.from_dict(value_format)
         except (KeyError, TypeError, ValueError):
             return "General"
-    
+
     # Handle NumberFormatSpec instances
     if isinstance(value_format, NumberFormatSpec):
         return _spec_to_excel_format(value_format)
-    
+
     # Unknown type
     return "General"
 

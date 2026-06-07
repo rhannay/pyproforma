@@ -7,8 +7,8 @@ chart types. Applies NumberFormatSpec to y-axis tick labels when set.
 
 from __future__ import annotations
 
-from pyproforma.chart.renderers.base import ChartRenderer
 from pyproforma.chart.chart import Chart as ChartSpec
+from pyproforma.chart.renderers.base import ChartRenderer
 
 
 class MatplotlibRenderer(ChartRenderer):
@@ -26,7 +26,6 @@ class MatplotlibRenderer(ChartRenderer):
             matplotlib.figure.Figure
         """
         import matplotlib.pyplot as plt
-        import numpy as np
 
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -109,6 +108,7 @@ class MatplotlibRenderer(ChartRenderer):
             return
 
         from matplotlib.ticker import FuncFormatter
+
         from pyproforma.table.format_value import format_value
 
         fmt = spec.value_format

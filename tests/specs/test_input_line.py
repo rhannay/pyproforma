@@ -5,7 +5,7 @@ Tests for InputLine — scenario input types for v2 models.
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel, ScalarInputLine
-from pyproforma.table import Format, NumberFormatSpec
+from pyproforma.table import Format
 
 
 class TestInputLineClassLevel:
@@ -175,7 +175,9 @@ class TestScenarioWorkflow:
             profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t])
 
         base = IncomeModel(periods=[2024, 2025], revenue={2024: 1_000_000, 2025: 1_100_000})
-        bull = IncomeModel(periods=[2024, 2025], revenue={2024: 1_400_000, 2025: 1_600_000}, expense_ratio=0.50)
+        bull = IncomeModel(
+            periods=[2024, 2025], revenue={2024: 1_400_000, 2025: 1_600_000}, expense_ratio=0.50
+        )
 
         assert base.get_value("profit", 2024) == pytest.approx(400_000.0)
         assert bull.get_value("profit", 2024) == pytest.approx(700_000.0)
@@ -245,7 +247,7 @@ class TestNonNumericInputLine:
         assert model.get_value("status", 2025) == "FAIL"
 
     def test_string_value_formatted_as_string(self):
-        from pyproforma.table import format_value, Format
+        from pyproforma.table import format_value
         assert format_value("PASS", Format.NO_DECIMALS) == "PASS"
         assert format_value("WARNING", Format.CURRENCY) == "WARNING"
 

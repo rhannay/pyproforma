@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 
 if TYPE_CHECKING:
+    from pyproforma.charts.chart_def import ChartDef
     from pyproforma.proforma_model import ProformaModel
 
 
@@ -113,7 +114,9 @@ class Charts:
         Examples:
             >>> model.charts.line_items(["revenue", "expenses"]).show()
             >>> model.charts.line_items(["revenue", "cogs"], chart_type="stacked_bar").show()
-            >>> model.charts.line_items(["revenue", "expenses"], value_format=Format.MILLIONS_M).show()
+            >>> model.charts.line_items(  # noqa: E501
+            ...     ["revenue", "expenses"], value_format=Format.MILLIONS_M
+            ... ).show()
         """
         for name in names:
             self._validate_line_item(name)

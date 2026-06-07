@@ -8,20 +8,20 @@ ScalarInputLine.
 
 from typing import Any
 
+from pyproforma.charts import Charts
 from pyproforma.engine.calculation_engine import calculate_line_items
-from pyproforma.specs.input_line import InputLine
-from pyproforma.specs.line_item import LineItem
+from pyproforma.engine.line_item_values import LineItemValues
+from pyproforma.reserved_words import validate_name
 from pyproforma.results.line_item_result import LineItemResult
 from pyproforma.results.line_item_selection import LineItemSelection
-from pyproforma.engine.line_item_values import LineItemValues
-from pyproforma.specs.scalar_input_line import ScalarInputLine
-from pyproforma.specs.scalar_line import ScalarLine
 from pyproforma.results.scalar_result import ScalarResult
-from pyproforma.charts import Charts
-from pyproforma.reserved_words import validate_name
-from pyproforma.tables import Tables
 from pyproforma.results.tags_namespace import TagNamespace
 from pyproforma.specs.debt_line import DebtBase, DebtCalculator
+from pyproforma.specs.input_line import InputLine
+from pyproforma.specs.line_item import LineItem
+from pyproforma.specs.scalar_input_line import ScalarInputLine
+from pyproforma.specs.scalar_line import ScalarLine
+from pyproforma.tables import Tables
 
 
 class ProformaModel:

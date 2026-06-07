@@ -1,8 +1,7 @@
 """Tests for FormulaLine.precedents property."""
 
-import pytest
 
-from pyproforma import FixedLine, FormulaLine
+from pyproforma import FormulaLine
 
 
 class TestFormulaLinePrecedents:

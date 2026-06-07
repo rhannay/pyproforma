@@ -4,7 +4,7 @@ Tests for ProformaModel and calculation engine.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel, ScalarInputLine, ScalarLine
+from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarInputLine, ScalarLine
 from pyproforma.results.line_item_result import LineItemResult
 from pyproforma.results.scalar_result import ScalarResult
 
@@ -224,8 +224,12 @@ class TestComplexModel:
         class SimpleFinancialModel(ProformaModel):
             expense_ratio = ScalarLine(value=0.6, label="Expense Ratio")
             revenue = FixedLine(values={2024: 100000, 2025: 110000, 2026: 121000}, label="Revenue")
-            expenses = FormulaLine(formula=lambda li, t: li.revenue[t] * li.expense_ratio, label="Operating Expenses")
-            profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.expenses[t], label="Net Profit")
+            expenses = FormulaLine(
+                formula=lambda li, t: li.revenue[t] * li.expense_ratio, label="Operating Expenses"
+            )
+            profit = FormulaLine(
+                formula=lambda li, t: li.revenue[t] - li.expenses[t], label="Net Profit"
+            )
 
         model = SimpleFinancialModel(periods=[2024, 2025, 2026])
 

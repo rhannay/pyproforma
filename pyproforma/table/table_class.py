@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 if TYPE_CHECKING:
     import pandas as pd
 
+from .bootstrap_html_renderer import to_bootstrap_html as _to_bootstrap_html
 from .colors import color_to_hex
 from .excel import to_excel
 from .format_value import NumberFormatSpec, format_value, normalize_format
-from .bootstrap_html_renderer import to_bootstrap_html as _to_bootstrap_html
 from .html_renderer import to_html as _to_html
 
 # Define a type alias for border styles
@@ -60,7 +60,7 @@ class Cell:
         """Validate color values and border styles after initialization."""
         # Normalize value_format to NumberFormatSpec
         self.value_format = normalize_format(self.value_format)
-        
+
         if self.background_color is not None:
             # Validate the color - will raise ValueError if invalid
             color_to_hex(self.background_color)

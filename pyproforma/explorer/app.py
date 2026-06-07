@@ -10,8 +10,6 @@ from pyproforma.explorer.components import StatCard
 from pyproforma.specs.fixed_line import FixedLine
 from pyproforma.specs.formula_line import FormulaLine
 from pyproforma.specs.input_line import InputLine
-from pyproforma.specs.scalar_input_line import ScalarInputLine
-from pyproforma.specs.scalar_line import ScalarLine
 from pyproforma.table import Format
 from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
@@ -358,7 +356,6 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
 
     @app.route("/inputs", methods=["POST"])
     def update_inputs():
-        m = state.model
         kwargs = {}
         try:
             for name in state.model_class._scalar_input_names:

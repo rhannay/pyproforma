@@ -1,7 +1,7 @@
 from pyproforma import (
     FixedLine,
-    FormulaLine,
     Format,
+    FormulaLine,
     InputLine,
     ProformaModel,
     ScalarInputLine,
@@ -156,7 +156,9 @@ class WaterUtilityModel(ProformaModel):
     # Seed: 8.05 MGD × 365 × $4,725/MG = $13,883,231 (2025 actual).
     # Subsequent years compound both volume (mgd_growth_rate) and price (rate_increase).
     water_sales_revenue = FormulaLine(
-        formula=lambda li, t: li.water_sales_revenue[t - 1] * (1 + li.mgd_growth_rate[t]) * (1 + li.rate_increase[t]),
+        formula=lambda li, t: (
+            li.water_sales_revenue[t - 1] * (1 + li.mgd_growth_rate[t]) * (1 + li.rate_increase[t])
+        ),
         values={2025: 13_883_231},
         label="Water Sales Revenue",
         tags=["revenue"],
@@ -301,7 +303,9 @@ class WaterUtilityModel(ProformaModel):
     # Tracks end-of-year balance: prior balance + new issuance - principal paid.
     # Seed: $0 (no new bonds outstanding before 2027).
     new_bond_outstanding = FormulaLine(
-        formula=lambda li, t: li.new_bond_outstanding[t - 1] + li.new_bond_par[t] - li.new_bond_principal[t],
+        formula=lambda li, t: (
+            li.new_bond_outstanding[t - 1] + li.new_bond_par[t] - li.new_bond_principal[t]
+        ),
         values={2025: 0},
         label="2027 Series B Outstanding",
         value_format=Format.CURRENCY_NO_DECIMALS,

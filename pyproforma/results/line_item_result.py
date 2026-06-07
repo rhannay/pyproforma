@@ -6,8 +6,8 @@ from pyproforma.table import format_value
 
 if TYPE_CHECKING:
     from pyproforma.chart.chart import Chart, ChartType
-    from pyproforma.table import Table
     from pyproforma.proforma_model import ProformaModel
+    from pyproforma.table import Table
 
 
 class LineItemResult:

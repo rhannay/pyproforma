@@ -31,6 +31,7 @@ def calculate_line_items(
     from pyproforma.specs.fixed_line import FixedLine
     from pyproforma.specs.formula_line import FormulaLine
     from pyproforma.specs.input_line import InputLine
+
     from .line_item_values import LineItemValues
     from .model_namespace import ModelNamespace
 
@@ -81,7 +82,7 @@ def calculate_line_items(
                         still_pending.append(name)
                     else:
                         raise ValueError(
-                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
+                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"  # noqa: E501
                         ) from e
 
             if len(still_pending) == len(remaining):
