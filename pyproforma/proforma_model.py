@@ -40,6 +40,10 @@ class ProformaModel:
         ...     profit   = FormulaLine(lambda li, t: li.revenue[t] * (1 - li.tax_rate))
         ...
         >>> model = MyModel(periods=[2024, 2025])
+        >>> model.revenue[2024]   # dot notation — primary API
+        100
+        >>> model["revenue"][2024]  # bracket notation — for dynamic/programmatic access
+        100
     """
 
     def __init_subclass__(cls, **kwargs):

@@ -70,6 +70,13 @@ class LineItem(ABC):
         self.name = name
 
     def __get__(self, obj, objtype=None):
+        """Descriptor protocol: returns the spec on class access, a result on instance access.
+
+        This is what makes ``model.revenue`` return a ``LineItemResult`` (not the
+        ``FixedLine`` spec) — the same pattern used by SQLAlchemy columns and Pydantic fields.
+        ``obj is None`` means access via the class (``IncomeStatement.revenue``), which
+        returns the spec itself for introspection.
+        """
         if obj is None:
             return self
         if self._is_scalar:
