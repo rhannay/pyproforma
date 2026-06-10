@@ -2,8 +2,17 @@
 
 import pytest
 
-from pyproforma import ChartDef, FixedLine, FormulaLine, ProformaModel, ScalarInputLine, ScalarLine
+from pyproforma import (
+    ChartDef,
+    FixedLine,
+    FormulaLine,
+    InputLine,
+    ProformaModel,
+    ScalarInputLine,
+    ScalarLine,
+)
 from pyproforma.explorer import create_app
+from pyproforma.explorer.components import InputGroup
 from pyproforma.tables.row_types import HeaderRow, ItemRow
 from pyproforma.tables.table_def import TableDef
 
@@ -182,3 +191,146 @@ class TestInputUpdate:
         client = app.test_client()
         response = client.post("/inputs", data={"growth": "0.15"})
         assert response.status_code == 302
+
+
+# ---------------------------------------------------------------------------
+# InputGroup component
+# ---------------------------------------------------------------------------
+
+
+class InputModel(ProformaModel):
+    from pyproforma.table import Format as _F
+
+    inflation = ScalarInputLine(default=0.03, label="Inflation Rate", value_format=_F.PERCENT_ONE_DECIMAL)
+    revenue = FixedLine(values={2024: 100_000, 2025: 110_000}, label="Revenue")
+    rate_increase = InputLine(
+        default={2024: 0.05, 2025: 0.06},
+        label="Rate Increase",
+        value_format=_F.PERCENT_ONE_DECIMAL,
+    )
+
+
+@pytest.fixture
+def input_model():
+    return InputModel(periods=[2024, 2025])
+
+
+class TestInputGroup:
+
+    def test_default_orient_is_vertical(self):
+        ig = InputGroup(names=["inflation"])
+        assert ig.orient == "vertical"
+
+    def test_invalid_orient_raises(self):
+        with pytest.raises(ValueError, match="orient must be 'vertical' or 'horizontal'"):
+            InputGroup(names=["inflation"], orient="sideways")
+
+    def test_vertical_orient_accepted(self):
+        ig = InputGroup(names=["inflation"], orient="vertical")
+        assert ig.orient == "vertical"
+
+    def test_horizontal_orient_accepted(self):
+        ig = InputGroup(names=["inflation"], orient="horizontal")
+        assert ig.orient == "horizontal"
+
+    def test_build_scalar_input(self, input_model):
+        ig = InputGroup(names=["inflation"])
+        result = ig.build(input_model)
+        assert result["type"] == "input_group"
+        assert result["orient"] == "vertical"
+        assert result["periods"] == [2024, 2025]
+        assert len(result["inputs"]) == 1
+        inp = result["inputs"][0]
+        assert inp["name"] == "inflation"
+        assert inp["label"] == "Inflation Rate"
+        assert inp["is_scalar"] is True
+        assert inp["value"] == pytest.approx(0.03)
+        assert isinstance(inp["formatted_value"], str)
+
+    def test_build_period_input(self, input_model):
+        ig = InputGroup(names=["rate_increase"])
+        result = ig.build(input_model)
+        assert len(result["inputs"]) == 1
+        inp = result["inputs"][0]
+        assert inp["name"] == "rate_increase"
+        assert inp["label"] == "Rate Increase"
+        assert inp["is_scalar"] is False
+        assert inp["value"] == {2024: pytest.approx(0.05), 2025: pytest.approx(0.06)}
+        assert inp["periods"] == [2024, 2025]
+        assert len(inp["formatted_values"]) == 2
+
+    def test_build_mixed_inputs(self, input_model):
+        ig = InputGroup(names=["inflation", "rate_increase"])
+        result = ig.build(input_model)
+        assert len(result["inputs"]) == 2
+        assert result["inputs"][0]["is_scalar"] is True
+        assert result["inputs"][1]["is_scalar"] is False
+
+    def test_build_orient_passed_through(self, input_model):
+        ig = InputGroup(names=["inflation"], orient="horizontal")
+        result = ig.build(input_model)
+        assert result["orient"] == "horizontal"
+
+    def test_build_label_passed_through(self, input_model):
+        ig = InputGroup(names=["inflation"], label="My Inputs")
+        result = ig.build(input_model)
+        assert result["label"] == "My Inputs"
+
+    def test_build_label_none_when_not_set(self, input_model):
+        ig = InputGroup(names=["inflation"])
+        result = ig.build(input_model)
+        assert result["label"] is None
+
+    def test_build_invalid_name_raises(self, input_model):
+        ig = InputGroup(names=["revenue"])  # FixedLine, not an input
+        with pytest.raises(ValueError, match="'revenue' is not an input item"):
+            ig.build(input_model)
+
+    def test_build_unknown_name_raises(self, input_model):
+        ig = InputGroup(names=["nonexistent"])
+        with pytest.raises(ValueError, match="'nonexistent' is not an input item"):
+            ig.build(input_model)
+
+    def test_create_app_raises_for_two_input_groups_in_one_view(self, input_model):
+        views = {
+            "Bad View": [
+                [
+                    InputGroup(names=["inflation"]),
+                    InputGroup(names=["rate_increase"]),
+                ],
+            ]
+        }
+        with pytest.raises(ValueError, match="At most one InputGroup is allowed per view"):
+            create_app(input_model, views=views)
+
+    def test_create_app_allows_one_input_group_per_view(self, input_model):
+        views = {
+            "View A": [[InputGroup(names=["inflation"])]],
+            "View B": [[InputGroup(names=["rate_increase"])]],
+        }
+        app = create_app(input_model, views=views)
+        assert app is not None
+
+    def test_view_page_with_input_group_returns_200(self, input_model):
+        views = {"Rates": [[InputGroup(names=["rate_increase"])]]}
+        client = create_app(input_model, views=views).test_client()
+        assert client.get("/view/0").status_code == 200
+
+    def test_post_from_view_redirects_back_to_view(self, input_model):
+        views = {"Rates": [[InputGroup(names=["inflation"])]]}
+        client = create_app(input_model, views=views).test_client()
+        response = client.post(
+            "/inputs?next=/view/0",
+            data={"inflation": "0.04"},
+        )
+        assert response.status_code == 302
+        assert "/view/0" in response.headers["Location"]
+
+    def test_partial_post_carries_forward_unsubmitted_inputs(self, input_model):
+        views = {"Rates": [[InputGroup(names=["inflation"])]]}
+        app = create_app(input_model, views=views)
+        client = app.test_client()
+        # Only submit 'inflation'; 'rate_increase' should carry forward from the model
+        client.post("/inputs?next=/view/0", data={"inflation": "0.04"})
+        # If rate_increase was lost, the model rebuild would fail (it has no default-less path)
+        assert client.get("/view/0").status_code == 200

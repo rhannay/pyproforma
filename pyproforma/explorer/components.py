@@ -50,20 +50,39 @@ class InputGroup:
 
     Only ScalarInputLine and InputLine items may be listed. Place alongside
     charts or tables in a view row to show cause and effect on one screen.
-    At most one InputGroup is allowed per view.
+    At most one InputGroup is allowed per view (enforced at create_app() time).
 
     Args:
-        names: Input line item names to expose. Must be ScalarInputLine or InputLine.
+        names: Input item names to expose. Each must be a ScalarInputLine or InputLine;
+            FixedLine and FormulaLine names raise ValueError at build() time.
         label: Optional card header label.
+        orient: Layout direction. ``"vertical"`` (default) stacks years top-to-bottom
+            inside a narrow card — suited for sharing a row with a chart.
+            ``"horizontal"`` puts years as columns in a table, with scalars above;
+            best when the InputGroup spans the full row width with output rows below.
+
+    Raises:
+        ValueError: If ``orient`` is not ``"vertical"`` or ``"horizontal"``.
+        ValueError: If any name in ``names`` is not a ScalarInputLine or InputLine.
 
     Examples:
-        >>> InputGroup(names=["bond_rate", "rate_increase"], label="Rate Assumptions")
-        >>> InputGroup(names=["capital_spending"])
+        >>> InputGroup(names=["rate_increase"], label="Rate Increases")
+        >>> InputGroup(names=["rate_increase"], orient="horizontal")
+        >>> InputGroup(names=["inflation_rate", "new_bond_rate", "rate_increase"],
+        ...            label="Scenario Inputs", orient="horizontal")
     """
 
     names: list
     label: str | None = None
     orient: str = "vertical"
+
+    _VALID_ORIENTS = frozenset({"vertical", "horizontal"})
+
+    def __post_init__(self):
+        if self.orient not in self._VALID_ORIENTS:
+            raise ValueError(
+                f"orient must be 'vertical' or 'horizontal', got '{self.orient}'."
+            )
 
     def build(self, model) -> dict:
         valid_scalar = set(model.__class__._scalar_input_names)
