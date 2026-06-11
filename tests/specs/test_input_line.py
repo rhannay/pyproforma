@@ -277,6 +277,95 @@ class TestLockedPeriods:
         assert model._input_line_values["rate"][2024] == pytest.approx(0.10)
 
 
+class TestInputLineValuesParam:
+    """InputLine values= param — locked memorized actuals."""
+
+    def test_values_param_accepted(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025])
+        assert model._input_line_values["rate"][2024] == pytest.approx(0.05)
+
+    def test_locked_value_accessible_via_result(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025])
+        assert model["rate"][2024] == pytest.approx(0.05)
+
+    def test_values_supersede_default_not_allowed_same_period(self):
+        with pytest.raises(ValueError, match="appear in both values and default"):
+            class M(ProformaModel):
+                rate = InputLine(values={2024: 0.05}, default={2024: 0.06, 2025: 0.04})
+                rev = FixedLine(values={2024: 100, 2025: 100})
+
+    def test_override_values_locked_period_raises(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        with pytest.raises(ValueError, match="locked via values="):
+            M(periods=[2024, 2025], rate={2024: 0.10, 2025: 0.06})
+
+    def test_error_names_field_and_period(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        with pytest.raises(ValueError, match="'rate'"):
+            M(periods=[2024, 2025], rate={2024: 0.10, 2025: 0.06})
+        with pytest.raises(ValueError, match="2024"):
+            M(periods=[2024, 2025], rate={2024: 0.10, 2025: 0.06})
+
+    def test_partial_kwarg_auto_fills_locked_period(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025], rate={2025: 0.08})
+        assert model._input_line_values["rate"][2024] == pytest.approx(0.05)
+        assert model._input_line_values["rate"][2025] == pytest.approx(0.08)
+
+    def test_locked_values_property(self):
+        line = InputLine(values={2024: 0.05}, default={2025: 0.06})
+        assert line.locked_values == {2024: 0.05}
+
+    def test_locked_values_empty_when_no_values_param(self):
+        line = InputLine(default={2024: 0.05})
+        assert line.locked_values == {}
+
+    def test_values_without_default_works(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05})
+            rev = FormulaLine(
+                formula=lambda li, t: 100 * (1 + li.rate[t]),
+                values={2024: 100},
+            )
+
+        model = M(periods=[2024])
+        assert model._input_line_values["rate"][2024] == pytest.approx(0.05)
+
+    def test_repr_includes_values(self):
+        line = InputLine(values={2024: 0.05}, label="Rate")
+        line.name = "rate"
+        assert "values=" in repr(line)
+
+    def test_formula_can_read_locked_value(self):
+        class M(ProformaModel):
+            rate = InputLine(values={2024: 0.05}, default={2025: 0.06})
+            rev = FormulaLine(
+                formula=lambda li, t: li.rev[t - 1] * (1 + li.rate[t]),
+                values={2024: 1_000},
+            )
+
+        model = M(periods=[2024, 2025])
+        assert model["rev"][2024] == pytest.approx(1_000)   # seeded
+        assert model["rev"][2025] == pytest.approx(1_060)
+
+
 class TestNonNumericInputLine:
     """Tests for string and boolean ScalarInputLine values."""
 

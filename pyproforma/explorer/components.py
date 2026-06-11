@@ -101,6 +101,7 @@ class InputGroup:
             elif name in valid_line:
                 spec = getattr(type(model), name)
                 period_values = model._input_line_values.get(name, {})
+                locked = set(spec.locked_values)
                 inputs.append({
                     "name": name,
                     "label": spec.label or name,
@@ -108,7 +109,10 @@ class InputGroup:
                     "value": period_values,
                     "formatted_values": [model[name].formatted_value(p) for p in model.periods],
                     "periods": model.periods,
-                    "editable": [period_values.get(p) is not None for p in model.periods],
+                    "editable": [
+                        p not in locked and period_values.get(p) is not None
+                        for p in model.periods
+                    ],
                 })
             else:
                 raise ValueError(

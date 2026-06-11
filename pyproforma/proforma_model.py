@@ -115,24 +115,40 @@ class ProformaModel:
         # Resolve period-indexed InputLine values → _input_line_values
         for name in self.__class__._input_line_names:
             attr = getattr(self.__class__, name)
-            locked = (
+            locked_vals = attr.locked_values  # {period: value} — cannot be overridden
+            none_periods = (
                 {p for p, v in attr.default.items() if v is None}
                 if attr.has_default else set()
             )
             if name in kwargs:
                 provided = kwargs[name]
-                bad = sorted(p for p, v in provided.items() if p in locked and v is not None)
-                if bad:
+                # Reject attempts to override values-locked periods
+                bad_locked = sorted(p for p, v in provided.items() if p in locked_vals)
+                if bad_locked:
                     raise ValueError(
-                        f"'{name}' period(s) {bad} are locked (None in the model spec) "
+                        f"'{name}' period(s) {bad_locked} are locked via values= "
+                        f"and cannot be overridden."
+                    )
+                # Reject attempts to set None-locked periods to a real value
+                bad_none = sorted(p for p, v in provided.items()
+                                  if p in none_periods and v is not None)
+                if bad_none:
+                    raise ValueError(
+                        f"'{name}' period(s) {bad_none} are locked (None in the model spec) "
                         f"and cannot be overridden."
                     )
                 # Auto-fill locked periods so callers don't need to include them
-                self._input_line_values[name] = {**provided, **{p: None for p in locked}}
+                merged = {**provided, **{p: None for p in none_periods if p not in provided}}
             elif attr.has_default:
-                self._input_line_values[name] = attr.default
+                merged = dict(attr.default)
+            elif attr.locked_values:
+                merged = {}  # locked_values applied below is sufficient
             else:
                 missing.append(name)
+                continue
+            # Always apply values-locked periods on top (they supersede everything)
+            merged.update(locked_vals)
+            self._input_line_values[name] = merged
 
         if missing:
             raise TypeError(

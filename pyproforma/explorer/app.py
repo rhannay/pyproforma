@@ -388,6 +388,8 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                 else:
                     kwargs[name] = state.model._scalars[name]
             for name in state.model_class._input_line_names:
+                attr = getattr(state.model_class, name)
+                locked = set(attr.locked_values)  # __init__ fills these in; never pass them
                 current = state.model._input_line_values.get(name, {})
                 if any(f"{name}_{p}" in request.form for p in state.periods):
                     kwargs[name] = {
@@ -395,9 +397,10 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                         if f"{name}_{period}" in request.form
                         else current.get(period)  # carry forward per-period (preserves None)
                         for period in state.periods
+                        if period not in locked
                     }
                 else:
-                    kwargs[name] = current
+                    kwargs[name] = {p: v for p, v in current.items() if p not in locked}
             state.model = state.model_class(periods=state.periods, **kwargs)
             state.error = None
             flash("Model updated.")
