@@ -17,8 +17,9 @@ from .row_types import BaseRow, dict_to_row_config
 
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
+    from pyproforma.tables.table_def import TableDef
 
-from pyproforma.line_items.formula_line import FormulaLine
+from pyproforma.specs.formula_line import FormulaLine
 
 
 class Tables:
@@ -200,7 +201,9 @@ class Tables:
         for item_name in items_to_include:
             if show_name and not show_label:
                 # Force ItemRow to show name instead of label
-                template.append(rt.ItemRow(name=item_name, label=item_name, hardcoded_color=hardcoded_color))
+                template.append(
+                    rt.ItemRow(name=item_name, label=item_name, hardcoded_color=hardcoded_color)
+                )
             else:
                 # Let ItemRow use default label behavior
                 template.append(rt.ItemRow(name=item_name, hardcoded_color=hardcoded_color))

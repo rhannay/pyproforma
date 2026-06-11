@@ -16,7 +16,6 @@ from pyproforma.chart.chart import Chart, ChartSeries
 from pyproforma.charts import Charts
 from pyproforma.table.format_value import Format
 
-
 # ---------------------------------------------------------------------------
 # Test models
 # ---------------------------------------------------------------------------
@@ -154,9 +153,9 @@ def test_line_item_value_format_propagated(formatted_model):
     assert spec.value_format == formatted_model["revenue"].value_format
 
 
-def test_line_item_value_format_defaults_to_no_decimals_when_not_explicit(model):
-    # LineItem always has a value_format; unset items default to Format.NO_DECIMALS
-    assert model.charts.line_item("revenue").value_format == Format.NO_DECIMALS
+def test_line_item_value_format_is_none_when_not_explicit(model):
+    # value_format is None when not explicitly set on the line item
+    assert model.charts.line_item("revenue").value_format is None
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +232,8 @@ def test_line_items_chart_type_bar(model):
 
 
 def test_line_items_chart_type_stacked_bar(model):
-    assert model.charts.line_items(["revenue"], chart_type="stacked_bar").chart_type == "stacked_bar"
+    chart = model.charts.line_items(["revenue"], chart_type="stacked_bar")
+    assert chart.chart_type == "stacked_bar"
 
 
 def test_line_items_invalid_name_raises_value_error(model):
@@ -304,16 +304,18 @@ def test_to_dict_series_label(model):
 
 
 def test_to_dict_series_x_values(model):
-    assert model.charts.line_item("revenue").to_dict()["series"][0]["x_values"] == [2024, 2025, 2026]
+    series = model.charts.line_item("revenue").to_dict()["series"][0]
+    assert series["x_values"] == [2024, 2025, 2026]
 
 
 def test_to_dict_series_y_values(model):
-    assert model.charts.line_item("revenue").to_dict()["series"][0]["y_values"] == [100_000, 110_000, 121_000]
+    series = model.charts.line_item("revenue").to_dict()["series"][0]
+    assert series["y_values"] == [100_000, 110_000, 121_000]
 
 
-def test_to_dict_value_format_present_even_when_not_explicit(model):
-    # value_format is always serialized — defaults to NO_DECIMALS when not explicitly set
-    assert model.charts.line_item("revenue").to_dict()["value_format"] is not None
+def test_to_dict_value_format_is_none_when_not_explicit(model):
+    # value_format serializes as None when not explicitly set
+    assert model.charts.line_item("revenue").to_dict()["value_format"] is None
 
 
 def test_to_dict_value_format_serialized_when_set(formatted_model):
@@ -381,13 +383,18 @@ def test_figure_with_value_format_applies_y_formatter(formatted_model):
     assert isinstance(ax.yaxis.get_major_formatter(), matplotlib.ticker.FuncFormatter)
 
 
-def test_figure_always_applies_func_formatter_for_y_axis(model):
-    # value_format is always set (defaults to NO_DECIMALS), so FuncFormatter is always applied
+def test_figure_applies_func_formatter_only_when_value_format_set(model, formatted_model):
+    # No FuncFormatter when value_format is None
     import matplotlib.ticker
 
     fig = model.charts.line_item("revenue").figure()
     ax = fig.axes[0]
-    assert isinstance(ax.yaxis.get_major_formatter(), matplotlib.ticker.FuncFormatter)
+    assert not isinstance(ax.yaxis.get_major_formatter(), matplotlib.ticker.FuncFormatter)
+
+    # FuncFormatter applied when value_format is explicit
+    fig2 = formatted_model.charts.line_item("revenue").figure()
+    ax2 = fig2.axes[0]
+    assert isinstance(ax2.yaxis.get_major_formatter(), matplotlib.ticker.FuncFormatter)
 
 
 def test_show_calls_pyplot_show(model):

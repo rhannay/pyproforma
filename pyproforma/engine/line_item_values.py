@@ -9,7 +9,49 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
 
-from pyproforma.tags_namespace import TagNamespace
+
+class TagSum:
+    """Sums all line items sharing a tag for a given period. Used inside formula evaluation."""
+
+    def __init__(self, model: "ProformaModel", li: "LineItemValues", tag: str):
+        self._model = model
+        self._li = li
+        self._tag = tag
+
+    def __getitem__(self, period: int) -> float:
+        if period not in self._model.periods:
+            raise KeyError(
+                f"Period {period} not found in model. "
+                f"Available periods: {self._model.periods}"
+            )
+        total = 0.0
+        for name in self._model.line_item_names:
+            spec = getattr(self._model.__class__, name)
+            if hasattr(spec, "tags") and self._tag in spec.tags:
+                try:
+                    value = self._li.get(name, period)
+                    if value is not None:
+                        total += value
+                except (AttributeError, KeyError):
+                    pass
+        return total
+
+    def __repr__(self):
+        return f"TagSum(tag={self._tag!r})"
+
+
+class TagNamespace:
+    """Namespace for tag-based summation inside formula evaluation (li.tag["revenue"][t])."""
+
+    def __init__(self, model: "ProformaModel", li: "LineItemValues"):
+        self._model = model
+        self._li = li
+
+    def __getitem__(self, tag: str) -> TagSum:
+        return TagSum(self._model, self._li, tag)
+
+    def __repr__(self):
+        return f"TagNamespace(model={self._model.__class__.__name__})"
 
 
 class LineItemValues:
@@ -77,7 +119,7 @@ class LineItemValues:
         self._tag_namespace = TagNamespace(model, self) if model else None
 
     @property
-    def tag(self) -> TagNamespace:
+    def tag(self) -> "TagNamespace":
         """
         Access line items by tags.
 

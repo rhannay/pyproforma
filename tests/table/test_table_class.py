@@ -1623,7 +1623,6 @@ class TestTableShow:
         )
 
         # Mock the IPython import to fail
-        import sys
         import builtins
 
         original_import = builtins.__import__
@@ -1647,7 +1646,7 @@ class TestTableShow:
         """Test that show() works when IPython is available."""
         pytest.importorskip("IPython")
 
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import patch
 
         table = Table(
             cells=[
@@ -1690,7 +1689,7 @@ class TestTableShow:
         """Test that show() uses to_html() to generate content."""
         pytest.importorskip("IPython")
 
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch
 
         table = Table(
             cells=[

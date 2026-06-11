@@ -1,9 +1,11 @@
 from pyproforma import (
     FixedLine,
-    FormulaLine,
     Format,
+    FormulaLine,
     InputLine,
     ProformaModel,
+    ScalarInputLine,
+    ScalarLine,
     create_debt_lines,
 )
 
@@ -42,12 +44,12 @@ class WaterUtilityModel(ProformaModel):
     """
 
     # ── Scalar assumptions ────────────────────────────────────────────────────
-    inflation_rate = InputLine(
+    inflation_rate = ScalarInputLine(
         default=0.030,
         label="CPI Inflation Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
-    om_growth_rate = FixedLine(
+    om_growth_rate = ScalarLine(
         value=0.040,
         label="O&M Growth Rate",
         value_format=Format.PERCENT_ONE_DECIMAL,
@@ -57,7 +59,8 @@ class WaterUtilityModel(ProformaModel):
     # Increase applied to prior year's rate each period.
     # Pass rate_increase={...} at instantiation to override the default schedule.
     rate_increase = InputLine(
-        default={2025: 0.050, 2026: 0.060, 2027: 0.050, 2028: 0.040, 2029: 0.040, 2030: 0.030},
+        values={2025: 0.050},
+        default={2026: 0.060, 2027: 0.050, 2028: 0.040, 2029: 0.040, 2030: 0.030},
         label="Rate Increase",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
@@ -109,12 +112,12 @@ class WaterUtilityModel(ProformaModel):
     )
 
     # ── New bond parameters ────────────────────────────────────────────────────
-    new_bond_rate = InputLine(
+    new_bond_rate = ScalarInputLine(
         default=0.045,
         label="Series B Interest Rate",
         value_format=Format.PERCENT_TWO_DECIMALS,
     )
-    new_bond_term = FixedLine(
+    new_bond_term = ScalarLine(
         value=20,
         label="Series B Term (Years)",
     )
@@ -154,7 +157,9 @@ class WaterUtilityModel(ProformaModel):
     # Seed: 8.05 MGD × 365 × $4,725/MG = $13,883,231 (2025 actual).
     # Subsequent years compound both volume (mgd_growth_rate) and price (rate_increase).
     water_sales_revenue = FormulaLine(
-        formula=lambda li, t: li.water_sales_revenue[t - 1] * (1 + li.mgd_growth_rate[t]) * (1 + li.rate_increase[t]),
+        formula=lambda li, t: (
+            li.water_sales_revenue[t - 1] * (1 + li.mgd_growth_rate[t]) * (1 + li.rate_increase[t])
+        ),
         values={2025: 13_883_231},
         label="Water Sales Revenue",
         tags=["revenue"],
@@ -299,7 +304,9 @@ class WaterUtilityModel(ProformaModel):
     # Tracks end-of-year balance: prior balance + new issuance - principal paid.
     # Seed: $0 (no new bonds outstanding before 2027).
     new_bond_outstanding = FormulaLine(
-        formula=lambda li, t: li.new_bond_outstanding[t - 1] + li.new_bond_par[t] - li.new_bond_principal[t],
+        formula=lambda li, t: (
+            li.new_bond_outstanding[t - 1] + li.new_bond_par[t] - li.new_bond_principal[t]
+        ),
         values={2025: 0},
         label="2027 Series B Outstanding",
         value_format=Format.CURRENCY_NO_DECIMALS,

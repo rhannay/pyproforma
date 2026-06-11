@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 
-from pyproforma.table import Cell, Table, to_excel, Format
+from pyproforma.table import Cell, Format, Table, to_excel
 from pyproforma.table.excel import value_format_to_excel_format
 
 
@@ -41,7 +41,7 @@ class TestValueFormatToExcelFormat:
         """Test unknown format type returns reasonable default."""
         # String should return General
         assert value_format_to_excel_format("unknown_format") == "General"
-        
+
         # Invalid dict is converted to default NumberFormatSpec which returns #,##0
         assert value_format_to_excel_format({"invalid": "dict"}) == "#,##0"
 

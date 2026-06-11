@@ -1,9 +1,5 @@
 from typing import TYPE_CHECKING, Optional, Union
 
-import openpyxl
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
-
 if TYPE_CHECKING:
     from .table_class import Table
 
@@ -25,18 +21,18 @@ def value_format_to_excel_format(
     # Handle None
     if value_format is None:
         return "General"
-    
+
     # Handle dict - convert to NumberFormatSpec
     if isinstance(value_format, dict):
         try:
             value_format = NumberFormatSpec.from_dict(value_format)
         except (KeyError, TypeError, ValueError):
             return "General"
-    
+
     # Handle NumberFormatSpec instances
     if isinstance(value_format, NumberFormatSpec):
         return _spec_to_excel_format(value_format)
-    
+
     # Unknown type
     return "General"
 
@@ -90,6 +86,17 @@ def to_excel(table: "Table", filename="table.xlsx"):
         table: The Table instance to export
         filename: The Excel filename to create
     """
+    try:
+        import openpyxl
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+    except ImportError as e:
+        raise ImportError(
+            "openpyxl is required for Excel export. "
+            "Install it with: pip install openpyxl  "
+            "(or: pip install pyproforma[excel])"
+        ) from e
+
     if not table.cells:
         # Create empty workbook if table is empty
         workbook = openpyxl.Workbook()

@@ -219,48 +219,48 @@ class TestCellColorValidation:
     def test_valid_background_color(self):
         """Test that valid background colors work."""
         from pyproforma.table import Cell
-        
+
         cell = Cell(value="Test", background_color="red")
         assert cell.background_color == "red"
-        
+
         cell = Cell(value="Test", background_color="#FF0000")
         assert cell.background_color == "#FF0000"
 
     def test_valid_font_color(self):
         """Test that valid font colors work."""
         from pyproforma.table import Cell
-        
+
         cell = Cell(value="Test", font_color="blue")
         assert cell.font_color == "blue"
-        
+
         cell = Cell(value="Test", font_color="00FF00")
         assert cell.font_color == "00FF00"
 
     def test_invalid_background_color_raises_error(self):
         """Test that invalid background color raises ValueError."""
         from pyproforma.table import Cell
-        
+
         with pytest.raises(ValueError, match="Invalid color"):
             Cell(value="Test", background_color="notacolor")
 
     def test_invalid_font_color_raises_error(self):
         """Test that invalid font color raises ValueError."""
         from pyproforma.table import Cell
-        
+
         with pytest.raises(ValueError, match="Invalid color"):
             Cell(value="Test", font_color="notacolor")
 
     def test_typo_in_color_shows_suggestions(self):
         """Test that color typos show helpful suggestions."""
         from pyproforma.table import Cell
-        
+
         with pytest.raises(ValueError, match="Did you mean"):
             Cell(value="Test", background_color="lightblu")
 
     def test_none_colors_are_valid(self):
         """Test that None is valid for colors."""
         from pyproforma.table import Cell
-        
+
         cell = Cell(value="Test", background_color=None, font_color=None)
         assert cell.background_color is None
         assert cell.font_color is None
@@ -272,10 +272,10 @@ class TestColorRendering:
     def test_html_rendering_with_colors(self):
         """Test that HTML renderer uses color_to_hex."""
         from pyproforma.table import Cell, Table
-        
+
         cell = Cell(value="Test", background_color="red", font_color="blue")
         table = Table(cells=[[cell]])
-        
+
         html = table.to_html()
         # Should have hex colors in the HTML
         assert '#FF0000' in html  # red background
@@ -283,17 +283,18 @@ class TestColorRendering:
 
     def test_excel_export_with_colors(self):
         """Test that Excel export handles colors correctly."""
-        from pyproforma.table import Cell, Table
-        import tempfile
         import os
-        
+        import tempfile
+
+        from pyproforma.table import Cell, Table
+
         cell = Cell(value="Test", background_color="red", font_color="blue")
         table = Table(cells=[[cell]])
-        
+
         # Export to temp file
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
             tmp_path = tmp.name
-        
+
         try:
             table.to_excel(tmp_path)
             # Just verify it doesn't raise an error

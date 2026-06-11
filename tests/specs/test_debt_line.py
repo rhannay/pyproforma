@@ -4,15 +4,13 @@ import pytest
 
 from pyproforma import (
     DebtCalculator,
-    DebtInterestLine,
-    DebtPrincipalLine,
     FixedLine,
     FormulaLine,
-    InputLine,
     ProformaModel,
+    ScalarInputLine,
+    ScalarLine,
     create_debt_lines,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -31,8 +29,8 @@ def _make_model(par_values, rate=0.05, term=5, extra_periods=None):
     )
 
     model_ns = {
-        "bond_rate": FixedLine(value=rate),
-        "bond_term": FixedLine(value=term),
+        "bond_rate": ScalarLine(value=rate),
+        "bond_term": ScalarLine(value=term),
         "bond_proceeds": FixedLine(values=par_values),
         "principal_payment": principal,
         "interest_expense": interest,
@@ -129,17 +127,17 @@ class TestDebtPrincipalLine:
 
     def test_single_bond_issue(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0, 2029: 0})
-        assert model.li.principal_payment[2024] > 0
-        assert model.li.principal_payment[2028] > 0
-        assert model.li.principal_payment[2029] == 0
+        assert model.principal_payment[2024] > 0
+        assert model.principal_payment[2028] > 0
+        assert model.principal_payment[2029] == 0
 
     def test_multiple_bond_issues(self):
         model = _make_model(
             {2024: 1_000_000, 2025: 0, 2026: 500_000, 2027: 0, 2028: 0, 2029: 0, 2030: 0, 2031: 0}
         )
-        assert model.li.principal_payment[2026] > model.li.principal_payment[2024]
-        assert model.li.principal_payment[2029] > 0
-        assert model.li.principal_payment[2031] == 0
+        assert model.principal_payment[2026] > model.principal_payment[2024]
+        assert model.principal_payment[2029] > 0
+        assert model.principal_payment[2031] == 0
 
     def test_labels_and_tags(self):
         principal, _ = create_debt_lines(
@@ -157,9 +155,9 @@ class TestDebtInterestLine:
 
     def test_interest_declines_over_time(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0, 2029: 0})
-        assert model.li.interest_expense[2024] > model.li.interest_expense[2025]
-        assert abs(model.li.interest_expense[2024] - 50_000) < 1000
-        assert model.li.interest_expense[2029] == 0
+        assert model.interest_expense[2024] > model.interest_expense[2025]
+        assert abs(model.interest_expense[2024] - 50_000) < 1000
+        assert model.interest_expense[2029] == 0
 
     def test_interest_label(self):
         _, interest = create_debt_lines(
@@ -182,8 +180,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -192,15 +190,66 @@ class TestDebtLinesIntegration:
             )
 
         model = M(periods=[2024, 2025, 2026, 2027, 2028])
-        ds = [model.li.debt_service[y] for y in [2024, 2025, 2026, 2027, 2028]]
+        ds = [model.debt_service[y] for y in [2024, 2025, 2026, 2027, 2028]]
         for i in range(1, len(ds)):
             assert abs(ds[i] - ds[0]) < 1.0
 
-    def test_shared_calculator(self):
-        calculator = DebtCalculator(par_amounts="p", interest_rate="r", term="t")
-        principal = DebtPrincipalLine(calculator=calculator)
-        interest = DebtInterestLine(calculator=calculator)
-        assert principal.calculator is interest.calculator
+    def test_shared_config(self):
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+        assert principal.config is interest.config
+
+    def test_independent_calculators_per_instance(self):
+        """Two model instances must not share a calculator."""
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+
+        class M(ProformaModel):
+            bond_rate = ScalarInputLine(default=0.05)
+            bond_term = ScalarLine(value=5)
+            bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
+            principal_payment = principal
+            interest_expense = interest
+
+        m1 = M(periods=[2024, 2025, 2026, 2027, 2028])
+        m2 = M(periods=[2024, 2025, 2026, 2027, 2028], bond_rate=0.08)
+
+        config_id = id(principal.config)
+        assert m1._debt_calculators[config_id] is not m2._debt_calculators[config_id]
+        assert m2.interest_expense[2024] > m1.interest_expense[2024]
+
+    def test_per_issuance_rate_and_term_via_fixed_line(self):
+        """FixedLine rate/term lets each issuance have its own rate and term."""
+        principal, interest = create_debt_lines(
+            par_amounts="bond_proceeds",
+            interest_rate="bond_rate",
+            term="bond_term",
+        )
+
+        all_periods = {y: 0 for y in range(2024, 2033)}
+
+        class M(ProformaModel):
+            bond_rate = FixedLine(values={**all_periods, 2024: 0.05, 2028: 0.08})
+            bond_term = FixedLine(values={**all_periods, 2024: 5, 2028: 3})
+            bond_proceeds = FixedLine(values={**all_periods, 2024: 1_000_000, 2028: 500_000})
+            principal_payment = principal
+            interest_expense = interest
+
+        model = M(periods=list(range(2024, 2033)))
+
+        # 2024 bond: 5% on $1M
+        assert abs(model.interest_expense[2024] - 50_000) < 500
+        # 2028 bond: 8% on $500K — higher rate means more interest relative to par
+        assert abs(model.interest_expense[2028] - (model.interest_expense[2028])) < 1
+        assert model.interest_expense[2028] > model.interest_expense[2029]
+        # 2024 bond expires after 2028; 2028 bond expires after 2030
+        assert model.principal_payment[2031] == 0
 
     def test_tag_summation(self):
         principal, interest = create_debt_lines(
@@ -211,8 +260,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -220,8 +269,8 @@ class TestDebtLinesIntegration:
 
         model = M(periods=[2024, 2025, 2026, 2027, 2028])
         for year in [2024, 2025, 2026, 2027, 2028]:
-            expected = model.li.principal_payment[year] + model.li.interest_expense[year]
-            assert abs(model.li.total_ds[year] - expected) < 0.01
+            expected = model.principal_payment[year] + model.interest_expense[year]
+            assert abs(model.total_ds[year] - expected) < 0.01
 
     def test_input_line_rate_scenario_analysis(self):
         """InputLine rate produces different schedules per scenario."""
@@ -232,8 +281,8 @@ class TestDebtLinesIntegration:
         )
 
         class M(ProformaModel):
-            bond_rate = InputLine(default=0.045)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarInputLine(default=0.045)
+            bond_term = ScalarLine(value=5)
             bond_proceeds = FixedLine(values={2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0})
             principal_payment = principal
             interest_expense = interest
@@ -241,7 +290,7 @@ class TestDebtLinesIntegration:
         base = M(periods=[2024, 2025, 2026, 2027, 2028])
         high = M(periods=[2024, 2025, 2026, 2027, 2028], bond_rate=0.08)
 
-        assert high.li.interest_expense[2024] > base.li.interest_expense[2024]
+        assert high.interest_expense[2024] > base.interest_expense[2024]
 
     def test_repr(self):
         principal, interest = create_debt_lines(
@@ -268,25 +317,25 @@ class TestDebtEdgeCases:
         )
 
         class M(ProformaModel):
-            bond_rate = FixedLine(value=0.05)
-            bond_term = FixedLine(value=5)
+            bond_rate = ScalarLine(value=0.05)
+            bond_term = ScalarLine(value=5)
             # bond_proceeds intentionally omitted
             principal_payment = principal
             interest_expense = interest
 
         model = M(periods=[2024, 2025])
-        assert model.li.principal_payment[2024] == 0
-        assert model.li.interest_expense[2024] == 0
+        assert model.principal_payment[2024] == 0
+        assert model.interest_expense[2024] == 0
 
     def test_high_rate(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0, 2027: 0, 2028: 0}, rate=0.20)
-        assert model.li.interest_expense[2024] > 150_000
+        assert model.interest_expense[2024] > 150_000
 
     def test_short_term(self):
         model = _make_model({2024: 1_000_000, 2025: 0, 2026: 0}, term=2)
-        assert model.li.principal_payment[2024] > 0
-        assert model.li.principal_payment[2025] > 0
-        assert model.li.principal_payment[2026] == 0
+        assert model.principal_payment[2024] > 0
+        assert model.principal_payment[2025] > 0
+        assert model.principal_payment[2026] == 0
 
     def test_long_term(self):
         model = _make_model(
@@ -294,4 +343,4 @@ class TestDebtEdgeCases:
             term=30,
             extra_periods=[2025, 2026, 2027, 2028],
         )
-        assert model.li.interest_expense[2024] > model.li.principal_payment[2024]
+        assert model.interest_expense[2024] > model.principal_payment[2024]

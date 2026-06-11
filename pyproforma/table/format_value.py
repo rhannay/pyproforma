@@ -167,10 +167,13 @@ class Format:
     # Large number scale formats (for tables labeled "in thousands/millions")
     THOUSANDS = NumberFormatSpec(decimals=1, thousands=True, scale="thousands")
     MILLIONS = NumberFormatSpec(decimals=1, thousands=True, scale="millions")
-    
+
     # Large number scale formats with suffix
     THOUSANDS_K = NumberFormatSpec(decimals=1, thousands=False, scale="thousands", suffix="K")
     MILLIONS_M = NumberFormatSpec(decimals=1, thousands=False, scale="millions", suffix="M")
+    CURRENCY_MILLIONS_M = NumberFormatSpec(
+        decimals=1, thousands=False, scale="millions", prefix="$", suffix="M"
+    )
 
     # Mapping of string names to format constants
     _STRING_MAP = {
@@ -185,6 +188,7 @@ class Format:
         "millions": MILLIONS,
         "thousands_k": THOUSANDS_K,
         "millions_m": MILLIONS_M,
+        "currency_millions_m": CURRENCY_MILLIONS_M,
     }
 
     @classmethod
@@ -213,7 +217,7 @@ class Format:
         normalized = format_str.lower().strip()
         if normalized in cls._STRING_MAP:
             return cls._STRING_MAP[normalized]
-        
+
         valid_formats = ', '.join(f"'{k}'" for k in sorted(cls._STRING_MAP.keys()))
         raise ValueError(
             f"Unknown format string: '{format_str}'. "

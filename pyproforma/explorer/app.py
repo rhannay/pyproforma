@@ -6,20 +6,26 @@ import os
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
-from pyproforma.explorer.components import StatCard
-from pyproforma.line_items.fixed_line import FixedLine
-from pyproforma.line_items.formula_line import FormulaLine
-from pyproforma.line_items.input_line import InputLine
+from pyproforma.explorer.components import InputGroup, StatCard
+from pyproforma.specs.fixed_line import FixedLine
+from pyproforma.specs.formula_line import FormulaLine
+from pyproforma.specs.input_line import InputLine
 from pyproforma.table import Format
 from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
 
 
-def create_app(model, tables=None, charts=None, views=None):
+def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
     """Create a Flask app for exploring a ProformaModel.
 
     Args:
         model: An instantiated ProformaModel.
+        tables: Dict of label → TableDef for the Tables nav section.
+        charts: Dict of label → ChartDef for the Charts nav section.
+        views: Dict of label → view definition for the Views nav section.
+        home_view: Name of a view to show at '/' instead of the default index.
+            Must match a key in `views`. If None or not found, the default
+            line item index is shown.
 
     Returns:
         Flask app instance.
@@ -32,7 +38,7 @@ def create_app(model, tables=None, charts=None, views=None):
             revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
 
         model = MyModel(periods=[2024, 2025])
-        app = create_app(model)
+        app = create_app(model, home_view="Financial Summary")
         app.run(debug=True)
     """
     app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
@@ -54,6 +60,23 @@ def create_app(model, tables=None, charts=None, views=None):
     state.tables = {"All Line Items": all_items_def, **(tables or {})}
     state.charts = charts or {}
     state.views = views or {}
+    if home_view is not None and home_view not in (views or {}):
+        available = ", ".join(f"'{v}'" for v in (views or {})) or "none"
+        raise ValueError(
+            f"home_view '{home_view}' not found in views. "
+            f"Available views: {available}"
+        )
+    state.home_view = home_view
+
+    for view_label, view_def in (views or {}).items():
+        input_group_count = sum(
+            1 for row in view_def for comp in row if isinstance(comp, InputGroup)
+        )
+        if input_group_count > 1:
+            raise ValueError(
+                f"View '{view_label}' has {input_group_count} InputGroup components. "
+                f"At most one InputGroup is allowed per view."
+            )
 
     # ------------------------------------------------------------------
     # Helpers
@@ -76,38 +99,50 @@ def create_app(model, tables=None, charts=None, views=None):
                 return name.upper()
         return str(spec)
 
-    def _build_items(names):
+    def _build_items(names, scalar_names=None):
         m = state.model
         items = []
         for name in names:
             item_def = getattr(type(m), name)
-            is_scalar = isinstance(item_def, FixedLine) and item_def.is_scalar
             items.append({
                 "name": name,
                 "label": item_def.label or name,
                 "type": type(item_def).__name__,
-                "tags": item_def.tags,
-                "scalar": is_scalar,
-                "value": m[name].formatted_value(m.periods[0]) if (is_scalar and m.periods) else None,
+                "tags": getattr(item_def, "tags", []),
+                "scalar": False,
+            })
+        for name in (scalar_names or []):
+            item_def = getattr(type(m), name)
+            items.append({
+                "name": name,
+                "label": item_def.label or name,
+                "type": type(item_def).__name__,
+                "tags": [],
+                "scalar": True,
+                "value": m[name].formatted_value,
             })
         return items
 
     def _build_inputs():
         m = state.model
         inputs = []
-        for name in state.model_class._input_line_names:
+        for name in state.model_class._scalar_input_names:
             spec = getattr(state.model_class, name)
-            is_scalar = name in m._scalars
-            if is_scalar:
-                formatted = [m[name].formatted_value(p) for p in state.periods[:1]]
-            else:
-                formatted = [m[name].formatted_value(p) for p in state.periods]
             inputs.append({
                 "name": name,
                 "label": spec.label or name,
-                "is_scalar": is_scalar,
-                "value": m._scalars[name] if is_scalar else m._input_line_values.get(name, {}),
-                "formatted_values": formatted,
+                "is_scalar": True,
+                "value": m._scalars[name],
+                "formatted_values": [m[name].formatted_value],
+            })
+        for name in state.model_class._input_line_names:
+            spec = getattr(state.model_class, name)
+            inputs.append({
+                "name": name,
+                "label": spec.label or name,
+                "is_scalar": False,
+                "value": m._input_line_values.get(name, {}),
+                "formatted_values": [m[name].formatted_value(p) for p in state.periods],
             })
         return inputs
 
@@ -133,15 +168,26 @@ def create_app(model, tables=None, charts=None, views=None):
     # Routes
     # ------------------------------------------------------------------
 
-    @app.route("/")
-    def index():
+    def _render_line_items_index():
         m = state.model
         return render_template(
             "index.html",
             model=m,
-            items=_build_items(m.line_item_names),
+            items=_build_items(m.line_item_names, m.scalar_names),
             title=m.__class__.__name__,
         )
+
+    @app.route("/")
+    def index():
+        if state.home_view is not None:
+            view_labels = list(state.views.keys())
+            if state.home_view in view_labels:
+                return redirect(url_for("view_page", idx=view_labels.index(state.home_view)))
+        return _render_line_items_index()
+
+    @app.route("/items")
+    def items():
+        return _render_line_items_index()
 
     @app.route("/tag/<tag_name>")
     def tag_view(tag_name):
@@ -173,18 +219,32 @@ def create_app(model, tables=None, charts=None, views=None):
     @app.route("/line_item/<name>")
     def line_item(name):
         m = state.model
-        if name not in m.line_item_names:
+        is_scalar = name in m.scalar_names
+        if name not in m.line_item_names and not is_scalar:
             abort(404)
         item_def = getattr(type(m), name)
-        result = m[name]
 
         info = {
             "name": name,
             "label": item_def.label or name,
             "type": type(item_def).__name__,
-            "tags": item_def.tags,
+            "tags": getattr(item_def, "tags", []),
             "value_format": _format_name(item_def.value_format),
         }
+
+        dependents = m.dependents(name)
+
+        if is_scalar:
+            info["scalar_value"] = m[name].formatted_value
+            return render_template(
+                "line_item.html",
+                model=m,
+                info=info,
+                values_table=None,
+                precedents_table=None,
+                chart_data=None,
+                dependents=dependents,
+            )
 
         if isinstance(item_def, FormulaLine):
             info["formula_source"] = item_def.formula_source
@@ -194,30 +254,18 @@ def create_app(model, tables=None, charts=None, views=None):
                 for tag in (item_def.tag_references or [])
             }
         elif isinstance(item_def, FixedLine):
-            if item_def.is_scalar:
-                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(item_def._scalar_value)
-            else:
-                info["fixed_values"] = item_def.values or {}
+            info["fixed_values"] = item_def.values or {}
         elif isinstance(item_def, InputLine):
-            is_scalar = name in m._scalars
-            if is_scalar:
-                info["scalar_value"] = result.formatted_value(m.periods[0]) if m.periods else str(m._scalars[name])
-            else:
-                info["input_values"] = m._input_line_values.get(name, {})
+            info["input_values"] = m._input_line_values.get(name, {})
             info["is_input"] = True
 
-        values_table = None
-        scalar_input = isinstance(item_def, InputLine) and name in m._scalars
-        scalar_fixed = isinstance(item_def, FixedLine) and item_def.is_scalar
-        if not (scalar_input or scalar_fixed):
-            values_table = m.tables.line_item(name).to_bootstrap_html()
+        values_table = m.tables.line_item(name).to_bootstrap_html()
 
         precedents_table = None
         if isinstance(item_def, FormulaLine) and item_def.precedents:
             precedents_table = m.tables.precedents(name).to_bootstrap_html()
 
         chart_data = json.dumps(m.charts.line_item(name).to_apexcharts()) if m.periods else None
-        dependents = m.dependents(name)
 
         return render_template(
             "line_item.html",
@@ -266,12 +314,24 @@ def create_app(model, tables=None, charts=None, views=None):
         label = labels[idx]
         view_def = state.views[label]
 
+        has_inputs = any(
+            isinstance(comp, InputGroup) for row in view_def for comp in row
+        )
+        form_action = (
+            url_for("update_inputs") + f"?next={url_for('view_page', idx=idx)}"
+            if has_inputs
+            else None
+        )
+
         rows = []
         for row_idx, row in enumerate(view_def):
             col_width = 12 // len(row)
             processed = []
             for col_idx, comp in enumerate(row):
                 if isinstance(comp, StatCard):
+                    c = comp.build(state.model)
+                    c["col_width"] = col_width
+                elif isinstance(comp, InputGroup):
                     c = comp.build(state.model)
                     c["col_width"] = col_width
                 elif isinstance(comp, dict) and comp.get("type") == "stat":
@@ -302,6 +362,8 @@ def create_app(model, tables=None, charts=None, views=None):
             model=state.model,
             title=label,
             rows=rows,
+            has_inputs=has_inputs,
+            form_action=form_action,
         )
 
     @app.route("/inputs", methods=["GET"])
@@ -318,23 +380,33 @@ def create_app(model, tables=None, charts=None, views=None):
 
     @app.route("/inputs", methods=["POST"])
     def update_inputs():
-        m = state.model
         kwargs = {}
         try:
-            for name in state.model_class._input_line_names:
-                is_scalar = name in m._scalars
-                if is_scalar:
+            for name in state.model_class._scalar_input_names:
+                if name in request.form:
                     kwargs[name] = float(request.form[name])
                 else:
+                    kwargs[name] = state.model._scalars[name]
+            for name in state.model_class._input_line_names:
+                attr = getattr(state.model_class, name)
+                locked = set(attr.locked_values)  # __init__ fills these in; never pass them
+                current = state.model._input_line_values.get(name, {})
+                if any(f"{name}_{p}" in request.form for p in state.periods):
                     kwargs[name] = {
                         period: float(request.form[f"{name}_{period}"])
+                        if f"{name}_{period}" in request.form
+                        else current.get(period)  # carry forward per-period (preserves None)
                         for period in state.periods
+                        if period not in locked
                     }
+                else:
+                    kwargs[name] = {p: v for p, v in current.items() if p not in locked}
             state.model = state.model_class(periods=state.periods, **kwargs)
             state.error = None
             flash("Model updated.")
         except Exception as e:
             state.error = str(e)
-        return redirect(url_for("inputs"))
+        next_url = request.args.get("next") or url_for("inputs")
+        return redirect(next_url)
 
     return app

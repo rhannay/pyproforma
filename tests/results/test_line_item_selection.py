@@ -4,8 +4,8 @@ Tests for LineItemSelection.
 
 import pytest
 
-from pyproforma.table import Table
 from pyproforma import FixedLine, FormulaLine, ProformaModel
+from pyproforma.table import Table
 
 
 class TestLineItemSelection:
@@ -183,10 +183,10 @@ class TestLineItemSelectionValue:
         model = TestModel(periods=[2024, 2025])
 
         selection = model.select(["revenue", "expenses"])
-        
+
         result_2024 = selection.value(2024)
         assert result_2024 == {"revenue": 100, "expenses": 60}
-        
+
         result_2025 = selection.value(2025)
         assert result_2025 == {"revenue": 110, "expenses": 66}
 
@@ -205,7 +205,7 @@ class TestLineItemSelectionValue:
         # Select in specific order
         selection = model.select(["profit", "revenue", "expenses"])
         result = selection.value(2024)
-        
+
         # Dict should maintain insertion order (Python 3.7+)
         assert list(result.keys()) == ["profit", "revenue", "expenses"]
         assert result == {"profit": 40, "revenue": 100, "expenses": 60}
@@ -339,7 +339,7 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue"])
         table = selection.table()
-        
+
         assert isinstance(table, Table)
         # Header + 1 item row + total row (with include_total_row=True by default)
         assert len(table.cells) == 3
@@ -358,7 +358,7 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue", "expenses", "profit"])
         table = selection.table()
-        
+
         assert isinstance(table, Table)
         # Header + 3 item rows + total row (with include_total_row=True by default)
         assert len(table.cells) == 5
@@ -378,7 +378,7 @@ class TestLineItemSelectionTable:
         # Select in specific order
         selection = model.select(["profit", "revenue", "expenses"])
         table = selection.table()
-        
+
         # Check order in table (skip header row, rows 1-3 are line items, row 4 is total)
         assert table.cells[1][0].value == "profit"
         assert table.cells[2][0].value == "revenue"
@@ -394,11 +394,11 @@ class TestLineItemSelectionTable:
         model = TestModel(periods=[2024])
 
         selection = model.select(["revenue", "expenses"])
-        
+
         # With name
         table_with_name = selection.table(include_name=True)
         assert isinstance(table_with_name, Table)
-        
+
         # Without name (but with label)
         table_no_name = selection.table(include_name=False, include_label=True)
         assert isinstance(table_no_name, Table)
@@ -413,7 +413,7 @@ class TestLineItemSelectionTable:
         model = TestModel(periods=[2024])
 
         selection = model.select(["revenue", "expenses"])
-        
+
         # With label
         table = selection.table(include_name=False, include_label=True)
         assert isinstance(table, Table)
@@ -428,7 +428,7 @@ class TestLineItemSelectionTable:
 
         selection = model.select([])
         table = selection.table()
-        
+
         assert isinstance(table, Table)
         # Only header row (no items, so no total row either)
         assert len(table.cells) == 1
@@ -444,12 +444,12 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue", "expenses"])
         table = selection.table()
-        
+
         # Check values in table (skip header row, skip label column)
         # Row 1 is revenue
         assert table.cells[1][1].value == 100  # 2024
         assert table.cells[1][2].value == 110  # 2025
-        
+
         # Row 2 is expenses
         assert table.cells[2][1].value == 60   # 2024
         assert table.cells[2][2].value == 66   # 2025
@@ -465,10 +465,10 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue", "expenses"])
         table = selection.table()
-        
+
         # Should have header + 2 items + total = 4 rows
         assert len(table.cells) == 4
-        
+
         # Check total row
         total_row = table.cells[3]
         assert total_row[0].value == "Total"
@@ -489,10 +489,10 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue", "expenses"])
         table = selection.table(include_total_row=False)
-        
+
         # Should have header + 2 items only (no total row)
         assert len(table.cells) == 3
-        
+
         # Verify no "Total" row
         assert all(row[0].value != "Total" for row in table.cells)
 
@@ -507,10 +507,10 @@ class TestLineItemSelectionTable:
 
         selection = model.select(["revenue", "expenses"])
         table = selection.table(include_total_row=True)
-        
+
         # Should have header + 2 items + total = 4 rows
         assert len(table.cells) == 4
-        
+
         # Check total row
         total_row = table.cells[3]
         assert total_row[0].value == "Total"

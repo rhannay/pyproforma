@@ -74,8 +74,8 @@ class TestTagNamespace:
 
         model = TestModel(periods=[2024, 2025])
 
-        assert model.li.tag["income"][2024] == 100
-        assert model.li.tag["income"][2025] == 110
+        assert model.tag["income"].sum(2024) == 100
+        assert model.tag["income"].sum(2025) == 110
 
     def test_sum_by_tag_multiple_items(self):
         """Test summing multiple line items by tag."""
@@ -88,12 +88,12 @@ class TestTagNamespace:
         model = TestModel(periods=[2024, 2025])
 
         # Sum income items
-        assert model.li.tag["income"][2024] == 105  # 100 + 5
-        assert model.li.tag["income"][2025] == 116  # 110 + 6
+        assert model.tag["income"].sum(2024) == 105  # 100 + 5
+        assert model.tag["income"].sum(2025) == 116  # 110 + 6
 
         # Sum expense items
-        assert model.li.tag["expense"][2024] == 60
-        assert model.li.tag["expense"][2025] == 66
+        assert model.tag["expense"].sum(2024) == 60
+        assert model.tag["expense"].sum(2025) == 66
 
     def test_sum_by_tag_with_formula_lines(self):
         """Test summing line items that include FormulaLine."""
@@ -108,8 +108,8 @@ class TestTagNamespace:
         model = TestModel(periods=[2024])
 
         # Sum income items (fixed + formula)
-        assert model.li.tag["income"][2024] == 105  # 100 + 5
-        assert model.li.tag["expense"][2024] == 60
+        assert model.tag["income"].sum(2024) == 105  # 100 + 5
+        assert model.tag["expense"].sum(2024) == 60
 
     def test_sum_by_tag_no_matching_items(self):
         """Test summing when no items have the tag."""
@@ -120,7 +120,7 @@ class TestTagNamespace:
         model = TestModel(periods=[2024])
 
         # No items with "expense" tag
-        assert model.li.tag["expense"][2024] == 0
+        assert model.tag["expense"].sum(2024) == 0
 
     def test_sum_by_tag_multiple_tags_per_item(self):
         """Test that items with multiple tags are counted in each tag sum."""
@@ -134,10 +134,10 @@ class TestTagNamespace:
         model = TestModel(periods=[2024])
 
         # Revenue appears in all its tags
-        assert model.li.tag["income"][2024] == 105  # Both items
-        assert model.li.tag["operational"][2024] == 100  # Only revenue
-        assert model.li.tag["recurring"][2024] == 100  # Only revenue
-        assert model.li.tag["non-operational"][2024] == 5  # Only interest
+        assert model.tag["income"].sum(2024) == 105  # Both items
+        assert model.tag["operational"].sum(2024) == 100  # Only revenue
+        assert model.tag["recurring"].sum(2024) == 100  # Only revenue
+        assert model.tag["non-operational"].sum(2024) == 5  # Only interest
 
     def test_sum_by_tag_invalid_period(self):
         """Test that invalid period raises KeyError."""
@@ -148,7 +148,7 @@ class TestTagNamespace:
         model = TestModel(periods=[2024])
 
         with pytest.raises(KeyError, match="Period 2025 not found"):
-            model.li.tag["income"][2025]
+            model.tag["income"].sum(2025)
 
     def test_tags_in_formula(self):
         """Test using tags namespace in a formula."""
@@ -165,8 +165,8 @@ class TestTagNamespace:
 
         model = TestModel(periods=[2024, 2025])
 
-        assert model.li.profit[2024] == 45  # 105 - 60
-        assert model.li.profit[2025] == 50  # 116 - 66
+        assert model.profit[2024] == 45  # 105 - 60
+        assert model.profit[2025] == 50  # 116 - 66
 
 
 class TestModelTags:

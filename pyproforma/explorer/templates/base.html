@@ -24,7 +24,7 @@
         <div class="collapse navbar-collapse" id="navbar-menu">
           <ul class="navbar-nav me-auto ms-auto-sm">
             <li class="nav-item">
-              <a href="{{ url_for('index') }}" class="nav-link">Line Items</a>
+              <a href="{{ url_for('items') }}" class="nav-link">Line Items</a>
             </li>
             {% if model.__class__._input_line_names %}
             <li class="nav-item">
@@ -82,6 +82,12 @@
     <div class="page-wrapper">
       <div class="page-body">
         <div class="container-xl">
+          {% for msg in get_flashed_messages() %}
+          <div class="alert alert-success alert-dismissible fade show mt-3">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          {% endfor %}
           {% block content %}{% endblock %}
         </div>
       </div>

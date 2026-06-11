@@ -293,7 +293,9 @@ class ModelComparison:
             for model, label in zip(self.models, self.labels):
                 row = [Cell(value=label, align="left")]
                 for period in self.common_periods:
-                    row.append(Cell(value=model.get_value(item_name, period), value_format=value_format))
+                    row.append(
+                        Cell(value=model.get_value(item_name, period), value_format=value_format)
+                    )
                 all_rows.append(row)
 
             # Difference row(s)

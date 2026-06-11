@@ -3,7 +3,26 @@ PyProforma - A lightweight financial modeling framework.
 """
 
 from .charts.chart_def import ChartDef
-from .tables.table_def import TableDef
+from .compare import ModelComparison
+from .engine import LineItemValue, LineItemValues
+from .proforma_model import ProformaModel
+from .results import LineItemResult, LineItemSelection, ScalarResult
+from .results.tags_namespace import TagNamespace
+from .specs import (
+    DebtCalculator,
+    DebtConfig,
+    DebtInterestLine,
+    DebtPrincipalLine,
+    FixedLine,
+    FormulaLine,
+    InputLine,
+    LineItem,
+    ScalarInputLine,
+    ScalarLine,
+    create_debt_lines,
+)
+from .table import Format, NumberFormatSpec
+from .tables import Tables
 from .tables.row_types import (
     BlankRow,
     CumulativeChangeRow,
@@ -16,25 +35,7 @@ from .tables.row_types import (
     TagItemsRow,
     TagTotalRow,
 )
-from .line_items import (
-    DebtCalculator,
-    DebtInterestLine,
-    DebtPrincipalLine,
-    FixedLine,
-    FormulaLine,
-    InputLine,
-    LineItem,
-    LineItemResult,
-    LineItemSelection,
-    LineItemValue,
-    LineItemValues,
-    create_debt_lines,
-)
-from .table import Format, NumberFormatSpec
-from .compare import ModelComparison
-from .proforma_model import ProformaModel
-from .tables import Tables
-from .tags_namespace import ModelTagNamespace
+from .tables.table_def import TableDef
 
 __all__ = [
     "ProformaModel",
@@ -53,16 +54,20 @@ __all__ = [
     "FixedLine",
     "FormulaLine",
     "InputLine",
+    "ScalarLine",
+    "ScalarInputLine",
+    "ScalarResult",
     "DebtPrincipalLine",
     "DebtInterestLine",
     "DebtCalculator",
+    "DebtConfig",
     "create_debt_lines",
     "LineItem",
     "LineItemValues",
     "LineItemValue",
     "LineItemResult",
     "LineItemSelection",
-    "ModelTagNamespace",
+    "TagNamespace",
     "Tables",
     "ModelComparison",
     "Format",

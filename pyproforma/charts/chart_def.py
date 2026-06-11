@@ -6,8 +6,7 @@ chart type, title, and optional per-series colors. Accepts either the dataclass
 form (IDE autocomplete, validation) or a plain dict (JSON-serializable configs).
 """
 
-from dataclasses import dataclass, field
-from typing import Union
+from dataclasses import dataclass
 
 from pyproforma.chart.chart import ChartType
 

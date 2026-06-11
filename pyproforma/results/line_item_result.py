@@ -1,10 +1,4 @@
-"""
-LineItemResult class for v2 API.
-
-This class provides a results namespace wrapper similar to v1's LineItemResults,
-but adapted for the v2 API design. It provides read-only access to line item
-values and basic analysis methods.
-"""
+"""LineItemResult — read-only results wrapper for a single line item."""
 
 from typing import TYPE_CHECKING, Any
 
@@ -12,48 +6,33 @@ from pyproforma.table import format_value
 
 if TYPE_CHECKING:
     from pyproforma.chart.chart import Chart, ChartType
-    from pyproforma.table import Table
     from pyproforma.proforma_model import ProformaModel
+    from pyproforma.table import Table
 
 
 class LineItemResult:
     """
-    A read-only results wrapper for a single line item in a v2 model.
+    Read-only results wrapper for a single line item.
 
-    LineItemResult provides convenient access to calculated values for a specific
-    line item across all periods. It supports subscript notation for accessing
-    period values and provides basic properties for exploring the item.
-
-    This class is similar to v1's LineItemResults but simplified for v2:
-    - Read-only access (no setters)
-    - No chart/table support (may be added later)
-    - Simpler metadata access
+    Returned by dot notation (``model.revenue``) or bracket notation
+    (``model["revenue"]``). Dot notation is the primary API — it works because
+    ``LineItem`` implements the descriptor protocol (``__get__``), the same
+    pattern used by SQLAlchemy columns and Pydantic fields.
 
     Args:
-        model: The parent ProformaModel instance
-        name: The name of the line item
+        model: The parent ProformaModel instance.
+        name: The name of the line item.
 
     Examples:
-        >>> result = model['revenue']
-        >>> result[2024]  # Get value for 2024
-        100000
-        >>> result.values  # Get all period values
-        {2024: 100000, 2025: 110000}
-        >>> result.name
-        'revenue'
+        >>> model.revenue[2024]          # primary: dot notation
+        1000000
+        >>> model["revenue"][2024]       # dynamic access: bracket notation
+        1000000
+        >>> model.revenue.values         # all period values
+        {2024: 1000000, 2025: 1100000}
     """
 
     def __init__(self, model: "ProformaModel", name: str):
-        """
-        Initialize LineItemResult.
-
-        Args:
-            model: The parent ProformaModel instance
-            name: The name of the line item
-
-        Raises:
-            AttributeError: If the line item name doesn't exist in the model
-        """
         self._model = model
         self._name = name
 
@@ -187,50 +166,14 @@ class LineItemResult:
         return result if result is not None else {}
 
     # ------------------------------------------------------------------
-    # Aggregation helpers
+    # Stat namespace
     # ------------------------------------------------------------------
 
-    def min(self) -> float | None:
-        """Minimum value across all periods, or None if no values."""
-        vals = [v for v in self.values.values() if v is not None]
-        return min(vals) if vals else None
-
-    def max(self) -> float | None:
-        """Maximum value across all periods, or None if no values."""
-        vals = [v for v in self.values.values() if v is not None]
-        return max(vals) if vals else None
-
-    def first(self) -> float | None:
-        """Value for the first period, or None if no periods."""
-        if not self._model.periods:
-            return None
-        return self[self._model.periods[0]]
-
-    def latest(self) -> float | None:
-        """Value for the last period, or None if no periods."""
-        if not self._model.periods:
-            return None
-        return self[self._model.periods[-1]]
-
-    def formatted_min(self, value_format=None) -> str:
-        """Formatted minimum value. Pass value_format to override the line item's format."""
-        v = self.min()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_max(self, value_format=None) -> str:
-        """Formatted maximum value. Pass value_format to override the line item's format."""
-        v = self.max()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_first(self, value_format=None) -> str:
-        """Formatted first-period value. Pass value_format to override the line item's format."""
-        v = self.first()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
-
-    def formatted_latest(self, value_format=None) -> str:
-        """Formatted last-period value. Pass value_format to override the line item's format."""
-        v = self.latest()
-        return format_value(v, value_format or self.value_format) if v is not None else ""
+    @property
+    def stat(self):
+        """Aggregation namespace: min, max, first, latest, sum, avg, cagr (raw and formatted)."""
+        from pyproforma.results.line_item_stat import LineItemStat
+        return LineItemStat(self)
 
     def is_input(self, period: int) -> bool:
         """
@@ -247,9 +190,9 @@ class LineItemResult:
         Returns:
             bool: True if the value is hardcoded/input, False if calculated
         """
-        from pyproforma.line_items.fixed_line import FixedLine
-        from pyproforma.line_items.formula_line import FormulaLine
-        from pyproforma.line_items.input_line import InputLine
+        from pyproforma.specs.fixed_line import FixedLine
+        from pyproforma.specs.formula_line import FormulaLine
+        from pyproforma.specs.input_line import InputLine
 
         spec = self._line_item_spec
         if isinstance(spec, (FixedLine, InputLine)):
@@ -275,7 +218,8 @@ class LineItemResult:
             >>> model["revenue"].formatted_value(2024)
             '$1,000,000'
         """
-        return format_value(self[period], self.value_format)
+        result = format_value(self[period], self.value_format)
+        return result if isinstance(result, str) else str(result)
 
     def value(self, period: int) -> Any:
         """

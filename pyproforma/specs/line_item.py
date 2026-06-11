@@ -8,12 +8,15 @@ This allows for type checking and ensures consistency across different line item
 from abc import ABC, abstractmethod
 from typing import Any, Union
 
-from pyproforma.table import Format, NumberFormatSpec, normalize_format
+from pyproforma.table import NumberFormatSpec, normalize_format
 
 
 class LineItem(ABC):
     """
     Abstract base class for all line items in a ProformaModel.
+
+    Subclasses that represent scalar constants (no period indexing) set
+    ``_is_scalar = True``.
 
     All concrete line item types (FixedLine, FormulaLine, etc.) inherit from this
     class and must implement the required methods.
@@ -24,8 +27,10 @@ class LineItem(ABC):
         value_format (str | NumberFormatSpec | dict, optional): Format specification
             for displaying values. Can be a string format name like 'percent',
             'currency', 'no_decimals', etc., a NumberFormatSpec instance for more
-            control, or a dict. Defaults to 'no_decimals'.
+            control, or a dict. Defaults to None (raw value, no formatting).
     """
+
+    _is_scalar: bool = False
 
     def __init__(
         self,
@@ -44,17 +49,12 @@ class LineItem(ABC):
             value_format (str | NumberFormatSpec | dict, optional): Format specification
                 for displaying values. Can be a string format name like 'percent',
                 'currency', 'no_decimals', etc., a NumberFormatSpec instance for more
-                control, or a dict. Defaults to None (which uses 'no_decimals').
+                control, or a dict. Defaults to None (raw value, no formatting).
         """
         self.name: str | None = None  # Set by __set_name__ when assigned to class
         self.label = label
         self.tags = tags or []
-        # Normalize value_format to NumberFormatSpec, defaulting to NO_DECIMALS
-        self.value_format = (
-            normalize_format(value_format)
-            if value_format is not None
-            else Format.NO_DECIMALS
-        )
+        self.value_format = normalize_format(value_format)
 
     def __set_name__(self, owner, name: str):
         """
@@ -68,6 +68,22 @@ class LineItem(ABC):
             name (str): The attribute name.
         """
         self.name = name
+
+    def __get__(self, obj, objtype=None):
+        """Descriptor protocol: returns the spec on class access, a result on instance access.
+
+        This is what makes ``model.revenue`` return a ``LineItemResult`` (not the
+        ``FixedLine`` spec) — the same pattern used by SQLAlchemy columns and Pydantic fields.
+        ``obj is None`` means access via the class (``IncomeStatement.revenue``), which
+        returns the spec itself for introspection.
+        """
+        if obj is None:
+            return self
+        if self._is_scalar:
+            from pyproforma.results.scalar_result import ScalarResult
+            return ScalarResult(obj, self.name)
+        from pyproforma.results.line_item_result import LineItemResult
+        return LineItemResult(obj, self.name)
 
     @abstractmethod
     def get_value(self, period: Any) -> Any:

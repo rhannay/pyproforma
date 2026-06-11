@@ -18,10 +18,10 @@ class TestFormatValue:
         """Test that invalid value_format type raises ValueError."""
         with pytest.raises(ValueError, match="Unknown format string"):
             format_value(123, "invalid_format_string")
-        
+
         with pytest.raises(ValueError, match="Invalid value_format type: int"):
             format_value(123, 42)
-        
+
         with pytest.raises(ValueError, match="Invalid value_format type: list"):
             format_value(123, [1, 2, 3])
 
@@ -117,7 +117,7 @@ class TestNumberFormatSpec:
         spec_lower = NumberFormatSpec(decimals=1, thousands=True, scale="thousands")
         spec_upper = NumberFormatSpec(decimals=1, thousands=True, scale="THOUSANDS")
         spec_mixed = NumberFormatSpec(decimals=1, thousands=True, scale="Thousands")
-        
+
         assert format_value(3456, spec_lower) == "3.5"
         assert format_value(3456, spec_upper) == "3.5"
         assert format_value(3456, spec_mixed) == "3.5"

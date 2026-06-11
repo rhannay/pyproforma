@@ -4,8 +4,8 @@ Tests for LineItemResult class and model['item'] access in v2.
 
 import pytest
 
-from pyproforma import FixedLine, FormulaLine, Format, ProformaModel
-from pyproforma.line_items.line_item_result import LineItemResult
+from pyproforma import FixedLine, Format, FormulaLine, ProformaModel, ScalarLine
+from pyproforma.results.line_item_result import LineItemResult
 
 
 class TestModelGetItemAccess:
@@ -277,7 +277,7 @@ class TestLineItemResultWithFormulas:
         """Test accessing formula values that use assumptions."""
 
         class TestModel(ProformaModel):
-            expense_ratio = FixedLine(value=0.6)
+            expense_ratio = ScalarLine(value=0.6)
             revenue = FixedLine(values={2024: 100})
             expenses = FormulaLine(
                 formula=lambda li, t: li.revenue[t] * li.expense_ratio
@@ -323,103 +323,4 @@ class TestLineItemResultFormattedValue:
             model["revenue"].formatted_value(2099)
 
 
-class TestLiPropertyAccess:
-    """Tests for model.li property access."""
 
-    def test_li_property_exists(self):
-        """Test that model.li property exists and returns LineItemValues."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100})
-
-        model = TestModel(periods=[2024])
-
-        assert hasattr(model, "li")
-        from pyproforma.line_items.line_item_values import LineItemValues
-
-        assert isinstance(model.li, LineItemValues)
-
-    def test_li_property_access(self):
-        """Test accessing values via model.li.item[period]."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100, 2025: 110})
-
-        model = TestModel(periods=[2024, 2025])
-
-        assert model.li.revenue[2024] == 100
-        assert model.li.revenue[2025] == 110
-
-    def test_li_property_is_same_as_internal(self):
-        """Test that model.li returns the same object as model._li."""
-
-        class TestModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100})
-
-        model = TestModel(periods=[2024])
-
-        assert model.li is model._li
-
-
-class TestLineItemResultAggregations:
-    """Tests for min, max, first, latest and their formatted variants."""
-
-    def _model(self):
-        class M(ProformaModel):
-            revenue = FixedLine(
-                values={2024: 100_000, 2025: 110_000, 2026: 80_000},
-                value_format=Format.CURRENCY_NO_DECIMALS,
-            )
-        return M(periods=[2024, 2025, 2026])
-
-    def test_min(self):
-        assert self._model()["revenue"].min() == 80_000
-
-    def test_max(self):
-        assert self._model()["revenue"].max() == 110_000
-
-    def test_first(self):
-        assert self._model()["revenue"].first() == 100_000
-
-    def test_latest(self):
-        assert self._model()["revenue"].latest() == 80_000
-
-    def test_min_returns_none_when_no_periods(self):
-        class M(ProformaModel):
-            revenue = FixedLine(values={})
-        assert M()["revenue"].min() is None
-
-    def test_max_returns_none_when_no_periods(self):
-        class M(ProformaModel):
-            revenue = FixedLine(values={})
-        assert M()["revenue"].max() is None
-
-    def test_first_returns_none_when_no_periods(self):
-        class M(ProformaModel):
-            revenue = FixedLine(values={})
-        assert M()["revenue"].first() is None
-
-    def test_latest_returns_none_when_no_periods(self):
-        class M(ProformaModel):
-            revenue = FixedLine(values={})
-        assert M()["revenue"].latest() is None
-
-    def test_formatted_min(self):
-        assert self._model()["revenue"].formatted_min() == "$80,000"
-
-    def test_formatted_max(self):
-        assert self._model()["revenue"].formatted_max() == "$110,000"
-
-    def test_formatted_first(self):
-        assert self._model()["revenue"].formatted_first() == "$100,000"
-
-    def test_formatted_latest(self):
-        assert self._model()["revenue"].formatted_latest() == "$80,000"
-
-    def test_formatted_min_override_format(self):
-        assert self._model()["revenue"].formatted_min(Format.THOUSANDS_K) == "80.0K"
-
-    def test_formatted_returns_empty_string_when_none(self):
-        class M(ProformaModel):
-            revenue = FixedLine(values={})
-        assert M()["revenue"].formatted_min() == ""

@@ -8,7 +8,7 @@ values across periods.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .line_items.line_item_values import LineItemValues
+    from .line_item_values import LineItemValues
 
 
 def calculate_line_items(
@@ -27,13 +27,15 @@ def calculate_line_items(
     Returns:
         LineItemValues: Populated container with all calculated values.
     """
-    from .line_items.debt_line import DebtBase
-    from .line_items.fixed_line import FixedLine
-    from .line_items.formula_line import FormulaLine
-    from .line_items.input_line import InputLine
-    from .line_items.line_item_values import LineItemValues
+    from pyproforma.specs.debt_line import DebtBase
+    from pyproforma.specs.fixed_line import FixedLine
+    from pyproforma.specs.formula_line import FormulaLine
+    from pyproforma.specs.input_line import InputLine
+
+    from .line_item_values import LineItemValues
     from .model_namespace import ModelNamespace
 
+    # scalar_names are already resolved into the scalars dict — skip them here
     li = LineItemValues(periods=periods, names=model.line_item_names, model=model)
 
     fixed_items = []
@@ -80,7 +82,7 @@ def calculate_line_items(
                         still_pending.append(name)
                     else:
                         raise ValueError(
-                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"
+                            f"Error evaluating formula for '{line_item.name}' in period {period}: {e}"  # noqa: E501
                         ) from e
 
             if len(still_pending) == len(remaining):
@@ -100,20 +102,19 @@ def _calculate_single_line_item(
     period: int,
     model: Any = None,
 ) -> Any:
-    from .line_items.debt_line import DebtBase
-    from .line_items.fixed_line import FixedLine
-    from .line_items.formula_line import FormulaLine
-    from .line_items.input_line import InputLine
+    from pyproforma.specs.debt_line import DebtBase
+    from pyproforma.specs.fixed_line import FixedLine
+    from pyproforma.specs.formula_line import FormulaLine
+    from pyproforma.specs.input_line import InputLine
 
     if isinstance(line_item, InputLine):
         input_values = getattr(model, "_input_line_values", {})
         period_values = input_values.get(line_item.name, {})
-        value = period_values.get(period)
-        if value is None:
+        if period not in period_values:
             raise ValueError(
                 f"No input value for '{line_item.name}' in period {period}"
             )
-        return value
+        return period_values[period]  # None is a valid value — means "no input this period"
 
     if isinstance(line_item, FixedLine):
         value = line_item.get_value(period)
@@ -141,8 +142,15 @@ def _calculate_single_line_item(
         return value
 
     if isinstance(line_item, DebtBase):
+        debt_calculators = getattr(model, "_debt_calculators", {})
+        calculator = debt_calculators.get(id(line_item.config))
+        if calculator is None:
+            raise ValueError(
+                f"No calculator found for debt line '{line_item.name}'. "
+                f"Ensure the model was instantiated via ProformaModel.__init__."
+            )
         try:
-            value = line_item.eval(ns, period)
+            value = line_item.eval(ns, period, calculator)
         except (AttributeError, KeyError):
             raise
         except Exception as e:
