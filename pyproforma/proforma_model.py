@@ -115,8 +115,20 @@ class ProformaModel:
         # Resolve period-indexed InputLine values → _input_line_values
         for name in self.__class__._input_line_names:
             attr = getattr(self.__class__, name)
+            locked = (
+                {p for p, v in attr.default.items() if v is None}
+                if attr.has_default else set()
+            )
             if name in kwargs:
-                self._input_line_values[name] = kwargs[name]
+                provided = kwargs[name]
+                bad = sorted(p for p, v in provided.items() if p in locked and v is not None)
+                if bad:
+                    raise ValueError(
+                        f"'{name}' period(s) {bad} are locked (None in the model spec) "
+                        f"and cannot be overridden."
+                    )
+                # Auto-fill locked periods so callers don't need to include them
+                self._input_line_values[name] = {**provided, **{p: None for p in locked}}
             elif attr.has_default:
                 self._input_line_values[name] = attr.default
             else:

@@ -100,13 +100,15 @@ class InputGroup:
                 })
             elif name in valid_line:
                 spec = getattr(type(model), name)
+                period_values = model._input_line_values.get(name, {})
                 inputs.append({
                     "name": name,
                     "label": spec.label or name,
                     "is_scalar": False,
-                    "value": model._input_line_values.get(name, {}),
+                    "value": period_values,
                     "formatted_values": [model[name].formatted_value(p) for p in model.periods],
                     "periods": model.periods,
+                    "editable": [period_values.get(p) is not None for p in model.periods],
                 })
             else:
                 raise ValueError(

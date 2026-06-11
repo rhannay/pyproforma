@@ -59,7 +59,7 @@ class WaterUtilityModel(ProformaModel):
     # Increase applied to prior year's rate each period.
     # Pass rate_increase={...} at instantiation to override the default schedule.
     rate_increase = InputLine(
-        default={2025: 0.050, 2026: 0.060, 2027: 0.050, 2028: 0.040, 2029: 0.040, 2030: 0.030},
+        default={2025: None, 2026: 0.060, 2027: 0.050, 2028: 0.040, 2029: 0.040, 2030: 0.030},
         label="Rate Increase",
         value_format=Format.PERCENT_ONE_DECIMAL,
     )

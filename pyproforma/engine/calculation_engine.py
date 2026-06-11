@@ -110,12 +110,11 @@ def _calculate_single_line_item(
     if isinstance(line_item, InputLine):
         input_values = getattr(model, "_input_line_values", {})
         period_values = input_values.get(line_item.name, {})
-        value = period_values.get(period)
-        if value is None:
+        if period not in period_values:
             raise ValueError(
                 f"No input value for '{line_item.name}' in period {period}"
             )
-        return value
+        return period_values[period]  # None is a valid value — means "no input this period"
 
     if isinstance(line_item, FixedLine):
         value = line_item.get_value(period)

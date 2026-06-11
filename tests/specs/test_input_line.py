@@ -197,6 +197,86 @@ class TestScenarioWorkflow:
         assert s2.get_value("profit", 2024) == 250_000.0
 
 
+class TestLockedPeriods:
+    """InputLine with None values in the default dict — locked periods."""
+
+    def test_none_in_default_instantiates_ok(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025])
+        assert model._input_line_values["rate"][2024] is None
+        assert model._input_line_values["rate"][2025] == pytest.approx(0.05)
+
+    def test_result_for_locked_period_is_none(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025])
+        assert model["rate"][2024] is None
+
+    def test_override_locked_period_raises(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        with pytest.raises(ValueError, match="locked"):
+            M(periods=[2024, 2025], rate={2024: 0.03, 2025: 0.05})
+
+    def test_error_names_the_field_and_period(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        with pytest.raises(ValueError, match="'rate'"):
+            M(periods=[2024, 2025], rate={2024: 0.03, 2025: 0.05})
+
+        with pytest.raises(ValueError, match="2024"):
+            M(periods=[2024, 2025], rate={2024: 0.03, 2025: 0.05})
+
+    def test_passing_none_explicitly_for_locked_period_is_ok(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025], rate={2024: None, 2025: 0.07})
+        assert model._input_line_values["rate"][2024] is None
+        assert model._input_line_values["rate"][2025] == pytest.approx(0.07)
+
+    def test_partial_dict_auto_fills_locked_periods(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        # Caller omits locked period — should be filled in automatically
+        model = M(periods=[2024, 2025], rate={2025: 0.08})
+        assert model._input_line_values["rate"][2024] is None
+        assert model._input_line_values["rate"][2025] == pytest.approx(0.08)
+
+    def test_locked_period_safe_when_formula_seeded(self):
+        """None value is safe if FormulaLine.values seeds that period."""
+        class M(ProformaModel):
+            rate = InputLine(default={2024: None, 2025: 0.05})
+            rev = FormulaLine(
+                formula=lambda li, t: li.rev[t - 1] * (1 + li.rate[t]),
+                values={2024: 1_000},
+            )
+
+        model = M(periods=[2024, 2025])
+        assert model["rev"][2024] == pytest.approx(1_000)
+        assert model["rev"][2025] == pytest.approx(1_050)
+
+    def test_no_locked_periods_allows_any_value(self):
+        class M(ProformaModel):
+            rate = InputLine(default={2024: 0.05, 2025: 0.06})
+            rev = FixedLine(values={2024: 100, 2025: 100})
+
+        model = M(periods=[2024, 2025], rate={2024: 0.10, 2025: 0.10})
+        assert model._input_line_values["rate"][2024] == pytest.approx(0.10)
+
+
 class TestNonNumericInputLine:
     """Tests for string and boolean ScalarInputLine values."""
 

@@ -388,13 +388,16 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                 else:
                     kwargs[name] = state.model._scalars[name]
             for name in state.model_class._input_line_names:
+                current = state.model._input_line_values.get(name, {})
                 if any(f"{name}_{p}" in request.form for p in state.periods):
                     kwargs[name] = {
                         period: float(request.form[f"{name}_{period}"])
+                        if f"{name}_{period}" in request.form
+                        else current.get(period)  # carry forward per-period (preserves None)
                         for period in state.periods
                     }
                 else:
-                    kwargs[name] = state.model._input_line_values.get(name, {})
+                    kwargs[name] = current
             state.model = state.model_class(periods=state.periods, **kwargs)
             state.error = None
             flash("Model updated.")

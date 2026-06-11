@@ -47,11 +47,15 @@
             {% for i in range(inp.periods | length) %}
             <div class="d-flex align-items-center mb-1">
               <span class="text-muted small me-2" style="min-width:44px;">{{ inp.periods[i] }}</span>
+              {% if inp.editable[i] %}
               <input type="number" step="any"
                      name="{{ inp.name }}_{{ inp.periods[i] }}"
                      value="{{ inp.value[inp.periods[i]] }}"
                      class="form-control form-control-sm">
               <span class="text-muted small font-monospace ms-2" style="min-width:60px;">{{ inp.formatted_values[i] }}</span>
+              {% else %}
+              <span class="form-control form-control-sm text-muted font-monospace bg-light border-0">—</span>
+              {% endif %}
             </div>
             {% endfor %}
           </div>
@@ -103,11 +107,15 @@
               <td class="fw-semibold">{{ inp.label }}</td>
               {% for i in range(inp.periods | length) %}
               <td>
+                {% if inp.editable[i] %}
                 <input type="number" step="any"
                        name="{{ inp.name }}_{{ inp.periods[i] }}"
                        value="{{ inp.value[inp.periods[i]] }}"
                        class="form-control form-control-sm text-end"
                        style="min-width:90px;">
+                {% else %}
+                <span class="d-block text-center text-muted">—</span>
+                {% endif %}
               </td>
               {% endfor %}
             </tr>
