@@ -208,11 +208,6 @@ class ProformaModel:
         return line_item[period]
 
     @property
-    def assumption_names(self) -> list[str]:
-        """Names of all scalar line items (ScalarLine and ScalarInputLine)."""
-        return self.scalar_names
-
-    @property
     def tags(self) -> list[str]:
         all_tags = set()
         for name in self.line_item_names:

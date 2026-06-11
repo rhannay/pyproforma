@@ -69,9 +69,9 @@ model["revenue"].values      # → {2024: 120000.0, 2025: 138000.0, 2026: 158000
 # Assumption value
 model["cogs_rate"].value     # → 0.4
 
-# List all line items and assumptions
+# List all line items and scalars
 model.line_item_names        # → ["revenue", "cogs", "gross_profit", ...]
-model.assumption_names       # → ["cogs_rate"]
+model.scalar_names           # → ["cogs_rate"]
 ```
 
 ---
