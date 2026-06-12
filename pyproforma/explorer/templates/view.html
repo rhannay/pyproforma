@@ -12,6 +12,12 @@
 
 {% if has_inputs %}<form method="POST" action="{{ form_action }}">{% endif %}
 
+{% if empty_message %}
+<div class="card mt-3">
+  <div class="card-body text-muted">{{ empty_message }}</div>
+</div>
+{% endif %}
+
 {% for row in rows %}
 <div class="row g-3 mt-2">
   {% for comp in row %}
