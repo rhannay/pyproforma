@@ -94,6 +94,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             "nav_charts": list(enumerate(state.charts.keys())),
             "nav_views": list(enumerate(state.views.keys())),
             "nav_tags": state.model.tags,
+            "nav_has_inputs": state.inputs_group is not None,
         }
 
     def _format_name(spec):

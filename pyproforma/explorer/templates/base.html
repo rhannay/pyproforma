@@ -26,7 +26,7 @@
             <li class="nav-item">
               <a href="{{ url_for('items') }}" class="nav-link">Line Items</a>
             </li>
-            {% if model.__class__._input_line_names or model.__class__._scalar_input_names %}
+            {% if nav_has_inputs %}
             <li class="nav-item">
               <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
             </li>
