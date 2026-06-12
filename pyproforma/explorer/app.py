@@ -51,7 +51,12 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
     state.model = model
     state.model_class = type(model)
     state.periods = model.periods
-    state.error = None
+
+    all_input_names = type(model)._scalar_input_names + type(model)._input_line_names
+    state.inputs_group = (
+        InputGroup(names=all_input_names, orient="horizontal")
+        if all_input_names else None
+    )
 
     all_items_def = TableDef(
         rows=[HeaderRow(), *[ItemRow(name=n) for n in model.line_item_names]],
@@ -89,6 +94,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             "nav_charts": list(enumerate(state.charts.keys())),
             "nav_views": list(enumerate(state.views.keys())),
             "nav_tags": state.model.tags,
+            "nav_has_inputs": state.inputs_group is not None,
         }
 
     def _format_name(spec):
@@ -122,29 +128,6 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                 "value": m[name].formatted_value,
             })
         return items
-
-    def _build_inputs():
-        m = state.model
-        inputs = []
-        for name in state.model_class._scalar_input_names:
-            spec = getattr(state.model_class, name)
-            inputs.append({
-                "name": name,
-                "label": spec.label or name,
-                "is_scalar": True,
-                "value": m._scalars[name],
-                "formatted_values": [m[name].formatted_value],
-            })
-        for name in state.model_class._input_line_names:
-            spec = getattr(state.model_class, name)
-            inputs.append({
-                "name": name,
-                "label": spec.label or name,
-                "is_scalar": False,
-                "value": m._input_line_values.get(name, {}),
-                "formatted_values": [m[name].formatted_value(p) for p in state.periods],
-            })
-        return inputs
 
     def _add_hrefs(definition):
         rows = definition.rows if isinstance(definition, TableDef) else definition
@@ -368,14 +351,25 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
 
     @app.route("/inputs", methods=["GET"])
     def inputs():
-        m = state.model
-        error = state.error
-        state.error = None
+        if state.inputs_group is None:
+            return render_template(
+                "view.html",
+                model=state.model,
+                title="Inputs",
+                rows=[],
+                has_inputs=False,
+                form_action=None,
+                empty_message="This model has no input line items.",
+            )
+        built = state.inputs_group.build(state.model)
+        built["col_width"] = 12
         return render_template(
-            "inputs.html",
-            model=m,
-            inputs=_build_inputs(),
-            error=error,
+            "view.html",
+            model=state.model,
+            title="Inputs",
+            rows=[[built]],
+            has_inputs=True,
+            form_action=url_for("update_inputs"),
         )
 
     @app.route("/inputs", methods=["POST"])
@@ -402,10 +396,9 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                 else:
                     kwargs[name] = {p: v for p, v in current.items() if p not in locked}
             state.model = state.model_class(periods=state.periods, **kwargs)
-            state.error = None
-            flash("Model updated.")
+            flash("Model updated.", "success")
         except Exception as e:
-            state.error = str(e)
+            flash(str(e), "danger")
         next_url = request.args.get("next") or url_for("inputs")
         return redirect(next_url)
 

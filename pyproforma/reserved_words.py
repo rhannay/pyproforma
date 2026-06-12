@@ -21,7 +21,6 @@ RESERVED_WORDS = {
     "periods",  # Model periods list
     "period",  # Singular form
     "line_item_names",  # Model property
-    "assumption_names",  # Model property
     "get_value",  # Model method
     # Python/common reserved words to prevent confusion
     "self",

@@ -26,7 +26,7 @@
             <li class="nav-item">
               <a href="{{ url_for('items') }}" class="nav-link">Line Items</a>
             </li>
-            {% if model.__class__._input_line_names %}
+            {% if nav_has_inputs %}
             <li class="nav-item">
               <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
             </li>
@@ -82,8 +82,8 @@
     <div class="page-wrapper">
       <div class="page-body">
         <div class="container-xl">
-          {% for msg in get_flashed_messages() %}
-          <div class="alert alert-success alert-dismissible fade show mt-3">
+          {% for category, msg in get_flashed_messages(with_categories=True) %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show mt-3">
             {{ msg }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>

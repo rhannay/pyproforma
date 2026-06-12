@@ -25,7 +25,6 @@ from pyproforma.tables import Tables
 
 
 class ProformaModel:
-    period_label: str = ""
     """
     Base class for user-defined financial models.
 
@@ -33,18 +32,29 @@ class ProformaModel:
     at instantiation. InputLine and ScalarInputLine values are supplied as
     keyword arguments.
 
+    Class attributes:
+        default_periods (list[int]): Optional. Periods used when none are passed to
+            ``__init__``. Declare on the subclass to make ``periods`` optional at
+            instantiation.
+        period_label (str): Optional display label for the period column in tables
+            (e.g. ``"Fiscal Year"``). Defaults to ``""``.
+
     Examples:
         >>> class MyModel(ProformaModel):
+        ...     default_periods = [2024, 2025, 2026]
         ...     tax_rate = ScalarLine(value=0.21)
-        ...     revenue  = FixedLine(values={2024: 100, 2025: 110})
+        ...     revenue  = FixedLine(values={2024: 100, 2025: 110, 2026: 120})
         ...     profit   = FormulaLine(lambda li, t: li.revenue[t] * (1 - li.tax_rate))
         ...
-        >>> model = MyModel(periods=[2024, 2025])
+        >>> model = MyModel()              # uses default_periods
+        >>> model = MyModel(periods=[2024, 2025])  # override
         >>> model.revenue[2024]   # dot notation — primary API
         100
         >>> model["revenue"][2024]  # bracket notation — for dynamic/programmatic access
         100
     """
+
+    period_label: str = ""
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -76,11 +86,17 @@ class ProformaModel:
         Initialize a ProformaModel instance.
 
         Args:
-            periods: List of periods (typically years) for the model.
-            **kwargs: Values for InputLine and ScalarInputLine fields.
+            periods: List of periods (typically years) for the model. If ``None``,
+                falls back to ``default_periods`` defined on the subclass. Raises no
+                error if both are absent — the model simply has no periods.
+            **kwargs: Values for ``InputLine`` and ``ScalarInputLine`` fields declared
+                on the subclass. Period-indexed inputs are passed as
+                ``{period: value}`` dicts; scalar inputs as plain floats.
 
         Raises:
-            TypeError: If unknown kwargs or missing required inputs.
+            TypeError: If unknown kwargs are supplied or required inputs are missing.
+            ValueError: If a kwarg attempts to override a locked period (``values=``
+                or ``None`` in ``default``).
         """
         if periods is None:
             periods = getattr(self.__class__, "default_periods", [])
@@ -190,11 +206,6 @@ class ProformaModel:
             return self._scalars[name]
         line_item = getattr(self._li, name)
         return line_item[period]
-
-    @property
-    def assumption_names(self) -> list[str]:
-        """Names of all scalar line items (ScalarLine and ScalarInputLine)."""
-        return self.scalar_names
 
     @property
     def tags(self) -> list[str]:
