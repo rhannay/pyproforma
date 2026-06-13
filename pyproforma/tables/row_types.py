@@ -90,6 +90,7 @@ class ItemRow(BaseRow):
     top_border: Optional[str] = None
     hardcoded_color: Optional[str] = None
     href: Optional[str] = None
+    reverse_sign: bool = False
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
@@ -152,6 +153,8 @@ class ItemRow(BaseRow):
         # Add a cell for each period with the item's value for that period
         for period in model.periods:
             value = item_result[period]
+            if self.reverse_sign and value is not None:
+                value = -value
             font_color = (
                 self.hardcoded_color
                 if self.hardcoded_color and item_result.is_input(period)

@@ -124,6 +124,19 @@ def test_item_row_explicit_value_format_overrides():
     assert cells[2].value_format == Format.NO_DECIMALS
 
 
+def test_item_row_reverse_sign(simple_model):
+    row = ItemRow(name="revenue", reverse_sign=True)
+    cells = row.generate_row(simple_model, label_col_count=1)
+    assert cells[1].value == -100_000
+    assert cells[2].value == -110_000
+
+
+def test_item_row_reverse_sign_false_by_default(simple_model):
+    row = ItemRow(name="revenue")
+    cells = row.generate_row(simple_model, label_col_count=1)
+    assert cells[1].value == 100_000
+
+
 def test_label_row(simple_model):
     """Test LabelRow generation."""
     row_config = LabelRow(label="Income Statement")
