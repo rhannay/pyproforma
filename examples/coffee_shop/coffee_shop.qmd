@@ -1,0 +1,294 @@
+---
+title: "Coffee Shop Pro Forma"
+subtitle: "A pyproforma walkthrough"
+format: html
+execute:
+  echo: true
+---
+
+pyproforma is a code-first alternative to Excel for building financial models. Instead of
+formula cells in a spreadsheet, you define line items as class attributes on a Python class.
+You get version control, testing, and clean exports to tables and charts — with the same
+structure any analyst would recognise.
+
+This walkthrough builds a three-year income statement for a fictional coffee shop and
+covers the core concepts along the way.
+
+## Setup
+
+```{python}
+from IPython.display import HTML
+from pyproforma import FixedLine, Format, FormulaLine, ProformaModel, ScalarLine
+```
+
+## Defining the model
+
+Subclass `ProformaModel` and declare each line item as a class attribute. Setting
+`default_periods` means you can instantiate without passing `periods=` every time.
+
+```{python}
+class CoffeeShop(ProformaModel):
+    default_periods = [2024, 2025, 2026]
+    period_label = "Year"
+
+    # Revenue — hardcoded actuals / projections
+    coffee_sales = FixedLine(
+        values={2024: 280_000, 2025: 308_000, 2026: 339_000},
+        label="Coffee Sales",
+        tags=["revenue"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    food_sales = FixedLine(
+        values={2024: 95_000, 2025: 105_000, 2026: 116_000},
+        label="Food Sales",
+        tags=["revenue"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    merchandise_sales = FixedLine(
+        values={2024: 25_000, 2025: 27_000, 2026: 30_000},
+        label="Merchandise",
+        tags=["revenue"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+
+    # COGS rates — single values shared across all periods
+    coffee_cogs_rate = ScalarLine(
+        value=0.35, label="Coffee COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL
+    )
+    food_cogs_rate = ScalarLine(
+        value=0.45, label="Food COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL
+    )
+
+    # COGS — calculated from the rates above
+    coffee_cogs = FormulaLine(
+        formula=lambda li, t: li.coffee_sales[t] * li.coffee_cogs_rate,
+        label="Coffee COGS",
+        tags=["cogs"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    food_cogs = FormulaLine(
+        formula=lambda li, t: li.food_sales[t] * li.food_cogs_rate,
+        label="Food COGS",
+        tags=["cogs"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+
+    # Subtotals — tag sums roll up all items with a given tag
+    total_revenue = FormulaLine(
+        formula=lambda li, t: li.tag["revenue"][t],
+        label="Total Revenue",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    total_cogs = FormulaLine(
+        formula=lambda li, t: li.tag["cogs"][t],
+        label="Total COGS",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    gross_profit = FormulaLine(
+        formula=lambda li, t: li.total_revenue[t] - li.total_cogs[t],
+        label="Gross Profit",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    gross_margin = FormulaLine(
+        formula=lambda li, t: li.gross_profit[t] / li.total_revenue[t],
+        label="Gross Margin",
+        value_format=Format.PERCENT_ONE_DECIMAL,
+    )
+
+    # Operating expenses
+    rent = FixedLine(
+        values={2024: 48_000, 2025: 49_440, 2026: 50_923},
+        label="Rent",
+        tags=["opex"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    labor = FixedLine(
+        values={2024: 110_000, 2025: 118_000, 2026: 127_000},
+        label="Labor",
+        tags=["opex"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    utilities = FixedLine(
+        values={2024: 12_000, 2025: 12_600, 2026: 13_230},
+        label="Utilities",
+        tags=["opex"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    marketing = FixedLine(
+        values={2024: 15_000, 2025: 17_000, 2026: 19_000},
+        label="Marketing",
+        tags=["opex"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    total_opex = FormulaLine(
+        formula=lambda li, t: li.tag["opex"][t],
+        label="Total Operating Expenses",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+
+    # Bottom line
+    operating_profit = FormulaLine(
+        formula=lambda li, t: li.gross_profit[t] - li.total_opex[t],
+        label="Operating Profit",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    operating_margin = FormulaLine(
+        formula=lambda li, t: li.operating_profit[t] / li.total_revenue[t],
+        label="Operating Margin",
+        value_format=Format.PERCENT_ONE_DECIMAL,
+    )
+```
+
+## Instantiating
+
+Calling the class runs the calculation engine and resolves every formula across every period.
+Because `default_periods` is set on the class, no arguments are required.
+
+```{python}
+model = CoffeeShop()
+model
+```
+
+## Accessing values
+
+Use dot notation to read any line item. Bracket notation works the same way and is useful
+when the name is in a variable.
+
+```{python}
+model.total_revenue[2024]
+```
+
+```{python}
+model.gross_margin[2026]
+```
+
+```{python}
+# ScalarLine — not period-indexed
+model.coffee_cogs_rate.value
+```
+
+## Line item types
+
+There are three line item types used in this model:
+
+| Type | Use | Example |
+|---|---|---|
+| `FixedLine` | Hardcoded values per period | `coffee_sales` |
+| `ScalarLine` | A single value shared across all periods | `coffee_cogs_rate` |
+| `FormulaLine` | Calculated from other items | `gross_profit` |
+
+Formula lambdas receive `li` (a namespace for all items) and `t` (the current period).
+Access period-indexed items with `li.name[t]` and scalars with `li.name`.
+
+## Revenue
+
+```{python}
+from pyproforma.tables.row_types import BlankRow, HeaderRow, ItemRow, LabelRow, LineItemsTotalRow
+
+revenue_template = [
+    HeaderRow(),
+    LabelRow("Revenue"),
+    ItemRow("coffee_sales"),
+    ItemRow("food_sales"),
+    ItemRow("merchandise_sales"),
+    LineItemsTotalRow(
+        line_item_names=["coffee_sales", "food_sales", "merchandise_sales"],
+        label="Total Revenue",
+        bold=True,
+    ),
+]
+
+HTML(model.tables.from_template(revenue_template).to_html())
+```
+
+## Cost of goods sold
+
+COGS lines reference the scalar rates via `li.coffee_cogs_rate` — no `[t]` subscript needed
+because scalars are not period-indexed.
+
+```{python}
+cogs_template = [
+    HeaderRow(),
+    LabelRow("Cost of Goods Sold"),
+    ItemRow("coffee_cogs"),
+    ItemRow("food_cogs"),
+    LineItemsTotalRow(
+        line_item_names=["coffee_cogs", "food_cogs"],
+        label="Total COGS",
+        bold=True,
+    ),
+]
+
+HTML(model.tables.from_template(cogs_template).to_html())
+```
+
+## Tags
+
+Tagging line items (`tags=["revenue"]`) lets formulas sum an entire category without
+naming each item explicitly:
+
+```python
+total_revenue = FormulaLine(formula=lambda li, t: li.tag["revenue"][t], ...)
+```
+
+This means adding a new revenue stream only requires declaring it with `tags=["revenue"]` —
+the total updates automatically.
+
+## Income statement
+
+```{python}
+income_statement = [
+    HeaderRow(),
+    LabelRow("Revenue"),
+    ItemRow("coffee_sales"),
+    ItemRow("food_sales"),
+    ItemRow("merchandise_sales"),
+    ItemRow("total_revenue", bold=True, borders="top"),
+    BlankRow(),
+    LabelRow("Cost of Goods Sold"),
+    ItemRow("coffee_cogs"),
+    ItemRow("food_cogs"),
+    ItemRow("total_cogs", bold=True, borders="top"),
+    ItemRow("gross_profit", bold=True),
+    ItemRow("gross_margin"),
+    BlankRow(),
+    LabelRow("Operating Expenses"),
+    ItemRow("rent"),
+    ItemRow("labor"),
+    ItemRow("utilities"),
+    ItemRow("marketing"),
+    ItemRow("total_opex", bold=True, borders="top"),
+    BlankRow(),
+    ItemRow("operating_profit", bold=True, borders="top"),
+    ItemRow("operating_margin"),
+]
+
+HTML(model.tables.from_template(income_statement).to_html())
+```
+
+## Charts
+
+```{python}
+model.charts.line_items(
+    ["total_revenue", "gross_profit", "operating_profit"],
+    chart_type="bar",
+    title="Revenue & Profit",
+).figure();
+```
+
+```{python}
+model.charts.line_items(
+    ["gross_margin", "operating_margin"],
+    chart_type="line",
+    title="Margin Trends",
+).figure();
+```
+
+## Exports
+
+Any table can be exported to Excel or converted to a pandas DataFrame:
+
+```python
+model.tables.from_template(income_statement).to_excel("coffee_shop.xlsx")
+model.tables.from_template(income_statement).to_dataframe()
+```
