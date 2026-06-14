@@ -849,6 +849,11 @@ class Table:
         """Export the Table to an Excel file with formatting."""
         to_excel(self, filename)
 
+    def to_excel_bytes(self):
+        """Export the Table to Excel and return the content as a BytesIO buffer."""
+        from pyproforma.table.excel import to_excel_bytes
+        return to_excel_bytes(self)
+
     def to_html(self) -> str:
         """Generate custom HTML representation with Excel-like grid styling.
 

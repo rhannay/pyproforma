@@ -79,17 +79,12 @@ def _spec_to_excel_format(spec: NumberFormatSpec) -> str:
     return number_format
 
 
-def to_excel(table: "Table", filename="table.xlsx"):
-    """Export a Table to Excel with formatting.
-
-    Args:
-        table: The Table instance to export
-        filename: The Excel filename to create
-    """
+def _import_openpyxl():
     try:
         import openpyxl
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
         from openpyxl.utils import get_column_letter
+        return openpyxl, Alignment, Border, Font, PatternFill, Side, get_column_letter
     except ImportError as e:
         raise ImportError(
             "openpyxl is required for Excel export. "
@@ -97,94 +92,66 @@ def to_excel(table: "Table", filename="table.xlsx"):
             "(or: pip install pyproforma[excel])"
         ) from e
 
-    if not table.cells:
-        # Create empty workbook if table is empty
-        workbook = openpyxl.Workbook()
-        workbook.save(filename)
-        workbook.close()
-        print(f"Empty table exported to {filename}")
-        return
 
-    # Create a new workbook and select the active worksheet
+def _build_workbook(table: "Table"):
+    """Build and return an openpyxl Workbook from a Table."""
+    openpyxl, Alignment, Border, Font, PatternFill, Side, get_column_letter = _import_openpyxl()
+
     workbook = openpyxl.Workbook()
     worksheet = workbook.active
 
-    # Write all rows (first row is treated as header with special formatting)
+    if not table.cells:
+        return workbook
+
     for row_idx, row in enumerate(table.cells, start=1):
         is_header = row_idx == 1
         for col_idx, cell_data in enumerate(row, start=1):
             cell = worksheet.cell(row=row_idx, column=col_idx)
-
-            # Set the value
             cell.value = cell_data.value
-
-            # Apply number formatting based on value_format
             cell.number_format = value_format_to_excel_format(cell_data.value_format)
 
-            # Apply other formatting
             font_kwargs = {}
-
-            # Handle bold (headers are always bold, or if cell specifies it)
             if is_header or cell_data.bold:
                 font_kwargs["bold"] = True
-
-            # Handle font color
             if cell_data.font_color is not None:
                 r, g, b = color_to_rgb(cell_data.font_color)
-                # openpyxl expects RGB hex string (RRGGBB)
                 font_kwargs["color"] = f"{r:02X}{g:02X}{b:02X}"
-
-            # Apply font if any font properties are set
             if font_kwargs:
                 cell.font = Font(**font_kwargs)
 
-            # Handle background color
             if cell_data.background_color is not None:
                 r, g, b = color_to_rgb(cell_data.background_color)
-                # openpyxl expects RGB hex string (RRGGBB)
                 hex_color = f"{r:02X}{g:02X}{b:02X}"
                 cell.fill = PatternFill(
                     start_color=hex_color, end_color=hex_color, fill_type="solid"
                 )
 
-            # Handle borders
             border_kwargs = {}
-            if cell_data.bottom_border is not None:
-                if cell_data.bottom_border == "single":
-                    border_kwargs["bottom"] = Side(style="thin")
-                elif cell_data.bottom_border == "double":
-                    border_kwargs["bottom"] = Side(style="double")
-
-            if cell_data.top_border is not None:
-                if cell_data.top_border == "single":
-                    border_kwargs["top"] = Side(style="thin")
-                elif cell_data.top_border == "double":
-                    border_kwargs["top"] = Side(style="double")
-
-            # Apply border if any border properties are set
+            if cell_data.bottom_border == "single":
+                border_kwargs["bottom"] = Side(style="thin")
+            elif cell_data.bottom_border == "double":
+                border_kwargs["bottom"] = Side(style="double")
+            if cell_data.top_border == "single":
+                border_kwargs["top"] = Side(style="thin")
+            elif cell_data.top_border == "double":
+                border_kwargs["top"] = Side(style="double")
             if border_kwargs:
                 cell.border = Border(**border_kwargs)
 
-            # Set alignment
             if cell_data.align:
                 cell.alignment = Alignment(horizontal=cell_data.align)
             elif is_header:
-                # Default header alignment to center if not specified
                 cell.alignment = Alignment(horizontal="center")
 
-    # Set column widths
     for col_idx, column in enumerate(worksheet.columns):
         column_letter = get_column_letter(column[0].column)
-
         if (
             table.col_widths
             and col_idx < len(table.col_widths)
             and table.col_widths[col_idx] is not None
         ):
-            # Convert pixels to Excel character units (~7px per unit)
             worksheet.column_dimensions[column_letter].width = table.col_widths[col_idx] / 7
         else:
-            # Auto-size based on content
             max_length = 0
             for cell in column:
                 try:
@@ -194,7 +161,36 @@ def to_excel(table: "Table", filename="table.xlsx"):
                     pass
             worksheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
 
-    # Save the workbook
+    return workbook
+
+
+def to_excel(table: "Table", filename="table.xlsx"):
+    """Export a Table to an Excel file.
+
+    Args:
+        table: The Table instance to export.
+        filename: Destination file path (default: ``"table.xlsx"``).
+    """
+    workbook = _build_workbook(table)
     workbook.save(filename)
-    workbook.close()  # Explicitly close to release file handle on Windows
-    print(f"Table exported to {filename}")
+    workbook.close()
+
+
+def to_excel_bytes(table: "Table") -> "BytesIO":
+    """Export a Table to Excel and return the content as a BytesIO buffer.
+
+    Useful for serving Excel files over HTTP without writing to disk.
+
+    Args:
+        table: The Table instance to export.
+
+    Returns:
+        BytesIO buffer positioned at the start, ready for reading.
+    """
+    from io import BytesIO
+    buf = BytesIO()
+    workbook = _build_workbook(table)
+    workbook.save(buf)
+    workbook.close()
+    buf.seek(0)
+    return buf

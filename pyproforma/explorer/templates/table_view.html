@@ -11,6 +11,16 @@
 </div>
 
 <div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">{{ title }}</h3>
+    {% if download_url %}
+    <div class="card-options">
+      <a href="{{ download_url }}" class="btn btn-sm btn-outline-success" title="Download Excel">
+        <i class="ti ti-file-type-xls me-1"></i>Excel
+      </a>
+    </div>
+    {% endif %}
+  </div>
   <div class="card-body p-0">
     {{ table_html | safe }}
   </div>

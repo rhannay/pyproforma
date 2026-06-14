@@ -155,6 +155,13 @@
     <div class="card h-100">
       <div class="card-header">
         <h3 class="card-title">{{ comp.table_title }}</h3>
+        {% if comp.download_url %}
+        <div class="card-options">
+          <a href="{{ comp.download_url }}" class="btn btn-sm btn-outline-success" title="Download Excel">
+            <i class="ti ti-file-type-xls me-1"></i>Excel
+          </a>
+        </div>
+        {% endif %}
       </div>
       <div class="card-body p-0">
         {{ comp.html | safe }}
