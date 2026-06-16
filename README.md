@@ -19,119 +19,109 @@ Spreadsheets are the default tool for financial modeling, but they have real pro
 Define a model by subclassing `ProformaModel` and declaring line items as class attributes. Instantiate it with a list of periods and the library calculates everything.
 
 ```python
-from pyproforma import ProformaModel, FixedLine, FormulaLine, Assumption
+from pyproforma import ProformaModel, FixedLine, FormulaLine, ScalarLine, Format
 
 class IncomeStatement(ProformaModel):
-    growth_rate = Assumption(value=0.10)
+    default_periods = [2024, 2025, 2026]
+
+    tax_rate = ScalarLine(value=0.21, label="Tax Rate")
 
     revenue = FixedLine(
         values={2024: 500_000, 2025: 550_000, 2026: 605_000},
         label="Revenue",
         tags=["operating"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
     )
     cogs = FormulaLine(
         formula=lambda li, t: li.revenue[t] * 0.55,
         label="Cost of Goods Sold",
-        tags=["operating"],
+        value_format=Format.CURRENCY_NO_DECIMALS,
     )
     gross_profit = FormulaLine(
         formula=lambda li, t: li.revenue[t] - li.cogs[t],
         label="Gross Profit",
-    )
-    tax_expense = FormulaLine(
-        formula=lambda li, t: li.gross_profit[t] * 0.21,
-        label="Tax Expense",
+        value_format=Format.CURRENCY_NO_DECIMALS,
     )
     net_income = FormulaLine(
-        formula=lambda li, t: li.gross_profit[t] - li.tax_expense[t],
+        formula=lambda li, t: li.gross_profit[t] * (1 - li.tax_rate),
         label="Net Income",
+        value_format=Format.CURRENCY_NO_DECIMALS,
     )
 
-model = IncomeStatement(periods=[2024, 2025, 2026])
+model = IncomeStatement()  # uses default_periods
 ```
 
-Access results directly:
+Access results with dot notation (primary) or bracket notation (useful when the name is in a variable):
 
 ```python
-model["net_income"][2025]   # 218_130.0
-model["gross_profit"][2024] # 225_000.0
-```
+model.net_income[2025]      # 173_745.0  — dot notation
+model["net_income"][2025]   # same value — bracket notation
 
----
+model.tax_rate.value        # 0.21  — scalars have .value, not [t]
 
-## Tables
-
-Generate formatted tables for display or export. Tables are the primary output — they render to HTML (for Jupyter notebooks), Excel, or a pandas DataFrame.
-
-```python
-# All line items
-model.tables.line_items().show()
-
-# Single item with period-over-period analysis
-model.tables.line_item("net_income", include_percent_change=True).show()
-
-# Show what feeds into a calculated line item
-model.tables.precedents("net_income").show()
-
-# Custom layout using a template
-from pyproforma import Format
-from pyproforma.tables import HeaderRow, LabelRow, ItemRow
-
-table = model.tables.from_template([
-    HeaderRow(background_color="lightblue"),
-    LabelRow(label="Income Statement"),
-    ItemRow(name="revenue", value_format=Format.THOUSANDS_K),
-    ItemRow(name="cogs",    value_format=Format.THOUSANDS_K, bottom_border="single"),
-    ItemRow(name="gross_profit", bold=True, value_format=Format.THOUSANDS_K),
-])
-table.show()
-```
-
-![Example table](docs/images/table_example.png)
-
-Export to Excel with formatting preserved:
-
-```python
-model.tables.line_items().to_excel("income_statement.xlsx")
+model.periods               # [2024, 2025, 2026]
+model.line_item_names       # ["revenue", "cogs", "gross_profit", "net_income"]
+model.scalar_names          # ["tax_rate"]
 ```
 
 ---
 
-## Scenarios and comparisons
+## Line item types
 
-A model is just a class — create multiple instances with different inputs to compare scenarios.
+| Type | Use |
+|------|-----|
+| `FixedLine(values, ...)` | Hardcoded values per period |
+| `FormulaLine(formula, ...)` | Calculated from other items via a lambda |
+| `ScalarLine(value, ...)` | A single value shared across all periods |
+| `InputLine(default, ...)` | Period-indexed values supplied at instantiation |
+| `ScalarInputLine(default, ...)` | A single value supplied at instantiation |
+
+Formula lambdas receive `li` (the model namespace) and `t` (the current period). Period-indexed items use `li.name[t]`; scalars use `li.name` (no `[t]`). Reference prior periods with `li.name[t-1]`.
+
+---
+
+## Scenario inputs
+
+`InputLine` and `ScalarInputLine` let callers supply values at instantiation without subclassing again — useful for scenario analysis.
 
 ```python
+from pyproforma import InputLine, ScalarInputLine
+
 class FlexModel(ProformaModel):
-    cogs_rate = Assumption(value=0.55)
-    revenue = FixedLine(values={2024: 500_000, 2025: 550_000})
-    cogs = FormulaLine(formula=lambda li, t: li.revenue[t] * li.cogs_rate)
-    gross_profit = FormulaLine(formula=lambda li, t: li.revenue[t] - li.cogs[t])
+    default_periods = [2024, 2025, 2026]
 
-base = FlexModel(periods=[2024, 2025])
+    margin = ScalarInputLine(default=0.45, label="Gross Margin")
+    revenue = FixedLine(
+        values={2024: 500_000, 2025: 550_000, 2026: 605_000},
+        label="Revenue",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+    gross_profit = FormulaLine(
+        formula=lambda li, t: li.revenue[t] * li.margin,
+        label="Gross Profit",
+        value_format=Format.CURRENCY_NO_DECIMALS,
+    )
+
+base   = FlexModel()                  # uses default margin of 0.45
+upside = FlexModel(margin=0.52)       # override at instantiation
 ```
 
-Use `ModelComparison` to diff two model instances:
+Use `model.compare()` to diff two instances:
 
 ```python
-from pyproforma import ModelComparison
-
-# (requires two separately instantiated models with different inputs)
-comparison = ModelComparison(base, upside)
-comparison.diff("gross_profit")
+comparison = base.compare(upside, labels=["Base", "Upside"])
 ```
 
 ---
 
 ## Time-series formulas
 
-Formulas receive the full model namespace and the current period `t`. Reference prior periods with `t-1`:
+Seed a value in the first period and let the formula compound from there — no `if t == first_year` guards needed:
 
 ```python
-# Compound growth from a seeded base year
 revenue = FormulaLine(
     formula=lambda li, t: li.revenue[t-1] * (1 + li.growth_rate),
-    values={2024: 500_000},  # seed value for first period
+    values={2024: 500_000},   # engine uses this for 2024; formula runs from 2025 onward
     label="Revenue",
 )
 ```
@@ -140,37 +130,85 @@ revenue = FormulaLine(
 
 ## Tags
 
-Tag line items to group them flexibly without fixed categories:
+Tag line items to group them without fixed categories:
 
 ```python
-revenue = FixedLine(values={...}, tags=["operating", "top_line"])
-other_income = FixedLine(values={...}, tags=["operating"])
+water_sales = FixedLine(values={...}, tags=["revenue"])
+power_sales = FixedLine(values={...}, tags=["revenue"])
 
-# Sum all items tagged "operating" in a formula
-ebit = FormulaLine(formula=lambda li, t: li.tag["operating"][t])
+# Sum all "revenue"-tagged items in a formula
+total_revenue = FormulaLine(formula=lambda li, t: li.tag["revenue"][t])
+```
 
-# Or in a table
-from pyproforma.tables import TagTotalRow
+Tags also work in table templates:
+
+```python
+from pyproforma import TagTotalRow
+TagTotalRow(tag="revenue", label="Total Revenue")
+```
+
+---
+
+## Tables
+
+Generate formatted tables for HTML, Excel, or pandas. `from_template` gives full control over layout:
+
+```python
+from pyproforma import HeaderRow, LabelRow, ItemRow, BlankRow, LineItemsTotalRow
+
 table = model.tables.from_template([
     HeaderRow(),
-    ItemRow(name="revenue"),
-    ItemRow(name="other_income"),
-    TagTotalRow(tag="operating", label="Total Operating"),
+    LabelRow("Income Statement"),
+    ItemRow("revenue"),
+    ItemRow("cogs", reverse_sign=True),   # display as positive deduction
+    ItemRow("gross_profit", bold=True, borders="top"),
+    BlankRow(),
+    ItemRow("net_income", bold=True),
 ])
+
+table.show()                           # inline in Jupyter
+table.to_excel("output.xlsx")          # Excel with formatting preserved
+table.to_dataframe()                   # pandas DataFrame
 ```
+
+Convenience builders for common layouts:
+
+```python
+model.tables.line_items().show()                              # all line items
+model.tables.line_item("net_income", include_percent_change=True).show()
+model.tables.precedents("net_income").show()                  # formula dependency tree
+```
+
+---
+
+## Charts
+
+```python
+model.charts.line_item("net_income", chart_type="bar").show()
+model.charts.line_items(["revenue", "gross_profit", "net_income"]).show()
+```
+
+Charts return a `ChartSpec` which can also render to a matplotlib `Figure`:
+
+```python
+fig = model.charts.line_item("net_income").figure()
+```
+
+Requires `pip install pyproforma[charts]`.
 
 ---
 
 ## Number formatting
 
-A `Format` class provides named format constants that flow through to both HTML and Excel output:
+Named format constants flow through to both HTML and Excel output:
 
 ```python
 from pyproforma import Format
 
-ItemRow(name="revenue",    value_format=Format.THOUSANDS_K)   # 500K
-ItemRow(name="margin",     value_format=Format.PERCENT_ONE_DECIMAL)  # 45.0%
-ItemRow(name="net_income", value_format=Format.CURRENCY_NO_DECIMALS) # $218,130
+ItemRow("revenue",    value_format=Format.CURRENCY_NO_DECIMALS)  # $500,000
+ItemRow("revenue",    value_format=Format.THOUSANDS_K)           # 500.0K
+ItemRow("margin",     value_format=Format.PERCENT_ONE_DECIMAL)   # 45.0%
+ItemRow("net_income", value_format=Format.MILLIONS_M)            # $0.2M
 ```
 
 Custom formats via `NumberFormatSpec`:
@@ -178,25 +216,44 @@ Custom formats via `NumberFormatSpec`:
 ```python
 from pyproforma import NumberFormatSpec
 
-fmt = NumberFormatSpec(decimals=1, scale="millions", suffix="M")
-# 500_000 → "0.5M"
+fmt = NumberFormatSpec(decimals=1, scale="millions", prefix="$", suffix="M")
+# 500_000 → "$0.5M"
 ```
+
+---
+
+## Explorer
+
+A lightweight Flask web app for browsing any model interactively:
+
+```python
+from pyproforma.explorer import create_app
+
+app = create_app(model)
+app.run(debug=True)
+```
+
+Requires `pip install pyproforma[explorer]`. The app shows all line items, their values, formula sources, and lets you update `InputLine` / `ScalarInputLine` values live. You can also pass named tables, charts, and views to build a richer dashboard.
 
 ---
 
 ## Installation
 
 ```bash
-pip install pyproforma
+pip install pyproforma                   # core only
+pip install pyproforma[charts]           # + matplotlib
+pip install pyproforma[excel]            # + openpyxl
+pip install pyproforma[explorer]         # + Flask
+pip install pyproforma[pandas]           # + pandas
 ```
 
-Requires Python 3.9+. Dependencies: pandas, openpyxl.
+Requires Python 3.9+.
 
 ---
 
 ## Status
 
-This project is in active development. The core modeling and table export features are stable. Charts, extended documentation, and additional row types are on the roadmap. Feedback welcome — open an issue or reach out directly.
+Active development. Core modeling, table export, charts, and the Flask explorer are all stable. Feedback welcome — open an issue on GitHub.
 
 ## License
 
