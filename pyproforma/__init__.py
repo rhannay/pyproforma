@@ -32,6 +32,7 @@ from .tables.row_types import (
     LabelRow,
     LineItemsTotalRow,
     PercentChangeRow,
+    ScalarRow,
     TagItemsRow,
     TagTotalRow,
 )
@@ -51,6 +52,7 @@ __all__ = [
     "PercentChangeRow",
     "CumulativeChangeRow",
     "CumulativePercentChangeRow",
+    "ScalarRow",
     "FixedLine",
     "FormulaLine",
     "InputLine",

@@ -613,6 +613,43 @@ class TagItemsRow(BaseRow):
         return rows
 
 
+@dataclass
+class ScalarRow(BaseRow):
+    """Configuration for a scalar assumption row (non-period-indexed).
+
+    Displays the scalar's single value repeated across all period columns,
+    so it fits naturally alongside period-indexed rows in the same table.
+    """
+
+    name: str
+    label: Optional[str] = None
+    value_format: Optional[Union[str, "NumberFormatSpec", dict]] = None
+    bold: bool = False
+
+    def generate_row(
+        self, model: "ProformaModel", label_col_count: int = 1
+    ) -> list[Cell]:
+        scalar_result = model[self.name]
+        label = self.label or scalar_result.label or self.name
+        value_format = self.value_format or scalar_result.value_format
+        value = scalar_result.value
+
+        cells = []
+        if label_col_count >= 2:
+            cells.append(Cell(value=self.name, bold=self.bold, align="left"))
+            cells.append(Cell(value=label, bold=self.bold, align="left"))
+        else:
+            cells.append(Cell(value=label, bold=self.bold, align="left"))
+
+        for _ in range(label_col_count - len(cells)):
+            cells.append(Cell(value=""))
+
+        for _ in model.periods:
+            cells.append(Cell(value=value, bold=self.bold, value_format=value_format))
+
+        return cells
+
+
 # Helper function to convert dict to row config (for backwards compatibility)
 def dict_to_row_config(config: dict) -> BaseRow:
     """Convert a dictionary configuration to a BaseRow instance.
