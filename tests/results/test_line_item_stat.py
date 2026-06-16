@@ -89,3 +89,56 @@ class TestLineItemStat:
         assert s.formatted_min() == ""
         assert s.formatted_sum() == ""
         assert s.formatted_cagr() == ""
+
+
+class TestLineItemStatRange:
+
+    def _model(self):
+        class M(ProformaModel):
+            revenue = FixedLine(
+                values={2024: 100_000, 2025: 110_000, 2026: 80_000},
+                value_format=Format.CURRENCY_NO_DECIMALS,
+            )
+        return M(periods=[2024, 2025, 2026])
+
+    def test_sum_with_start_and_end(self):
+        assert self._model().revenue.stat.sum(start=2024, end=2025) == 210_000
+
+    def test_sum_with_start_only(self):
+        assert self._model().revenue.stat.sum(start=2025) == 190_000
+
+    def test_sum_with_end_only(self):
+        assert self._model().revenue.stat.sum(end=2025) == 210_000
+
+    def test_min_with_range(self):
+        # 2024–2025: min is 100_000, not 80_000
+        assert self._model().revenue.stat.min(start=2024, end=2025) == 100_000
+
+    def test_max_with_range(self):
+        assert self._model().revenue.stat.max(start=2025, end=2026) == 110_000
+
+    def test_first_with_start(self):
+        assert self._model().revenue.stat.first(start=2025) == 110_000
+
+    def test_latest_with_end(self):
+        assert self._model().revenue.stat.latest(end=2025) == 110_000
+
+    def test_avg_with_range(self):
+        assert self._model().revenue.stat.avg(start=2024, end=2025) == 105_000
+
+    def test_cagr_with_range(self):
+        expected = (110_000 / 100_000) ** (1 / 1) - 1
+        assert abs(self._model().revenue.stat.cagr(start=2024, end=2025) - expected) < 1e-9
+
+    def test_formatted_sum_with_range(self):
+        assert self._model().revenue.stat.formatted_sum(start=2024, end=2025) == "$210,000"
+
+    def test_invalid_start_raises(self):
+        import pytest
+        with pytest.raises(ValueError, match="start 2020"):
+            self._model().revenue.stat.sum(start=2020)
+
+    def test_invalid_end_raises(self):
+        import pytest
+        with pytest.raises(ValueError, match="end 2099"):
+            self._model().revenue.stat.sum(end=2099)

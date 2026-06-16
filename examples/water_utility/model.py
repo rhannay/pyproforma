@@ -321,11 +321,13 @@ class WaterUtilityModel(ProformaModel):
     dscr = FormulaLine(
         formula=calc_dscr,
         label="Debt Service Coverage Ratio",
+        tags=["ratio"],
         value_format=Format.TWO_DECIMALS,
     )
     days_cash_on_hand = FormulaLine(
         formula=lambda li, t: li.ending_cash[t] / (li.total_om[t] / 365),
         label="Days Cash on Hand",
+        tags=["ratio"],
         value_format=Format.NO_DECIMALS,
     )
     # Fraction of each year's capex covered by new-bond principal repayment.
@@ -335,6 +337,7 @@ class WaterUtilityModel(ProformaModel):
             if li.capital_spending[t] > 0 else 0.0
         ),
         label="Debt-Funded Capital Ratio",
+        tags=["ratio"],
         value_format=Format.PERCENT_ONE_DECIMAL,
     )
 

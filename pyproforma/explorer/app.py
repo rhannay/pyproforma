@@ -58,6 +58,12 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         if all_input_names else None
     )
 
+    try:
+        import openpyxl  # noqa: F401
+        state.excel_available = True
+    except ImportError:
+        state.excel_available = False
+
     all_items_def = TableDef(
         rows=[HeaderRow(), *[ItemRow(name=n) for n in model.line_item_names]],
         title="All Line Items",
@@ -95,6 +101,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             "nav_views": list(enumerate(state.views.keys())),
             "nav_tags": state.model.tags,
             "nav_has_inputs": state.inputs_group is not None,
+            "excel_available": state.excel_available,
         }
 
     def _format_name(spec):
@@ -268,11 +275,33 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         label = labels[idx]
         definition = state.tables[label]
         table = state.model.tables.build(_add_hrefs(definition))
+        download_url = url_for("table_download", idx=idx) if state.excel_available else None
         return render_template(
             "table_view.html",
             model=state.model,
             title=table.title or label,
             table_html=table.to_bootstrap_html(),
+            download_url=download_url,
+        )
+
+    @app.route("/table/<int:idx>/download")
+    def table_download(idx):
+        labels = list(state.tables.keys())
+        if idx >= len(labels):
+            abort(404)
+        if not state.excel_available:
+            abort(501)
+        from flask import send_file
+        label = labels[idx]
+        definition = state.tables[label]
+        table = state.model.tables.build(_add_hrefs(definition))
+        buf = table.to_excel_bytes()
+        filename = label.lower().replace(" ", "_") + ".xlsx"
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     @app.route("/chart/<int:idx>")
@@ -337,6 +366,11 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                     c["col_width"] = col_width
                     c["html"] = built.to_bootstrap_html()
                     c["table_title"] = built.title or comp["ref"]
+                    if state.excel_available:
+                        table_idx = list(state.tables.keys()).index(comp["ref"])
+                        c["download_url"] = url_for("table_download", idx=table_idx)
+                    else:
+                        c["download_url"] = None
                 processed.append(c)
             rows.append(processed)
 
