@@ -96,7 +96,7 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/**/run.py" = ["E402"]  # sys.path.insert before local imports is intentional
+"examples/**/app.py" = ["E402"]  # sys.path.insert before local imports is intentional
 "pyproforma/table/table_class.py" = ["E501"]  # error message strings are intentionally verbose
 
 [tool.ruff.format]
