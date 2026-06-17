@@ -58,8 +58,9 @@ views = {
             StatCard("ending_cash",      "Ending Cash"),
             StatCard("days_cash_on_hand","Days Cash on Hand"),
             StatCard(
-                "capital_spending", "Total Capex",
+                "capital_spending", "Capex 2026–2030",
                 aggregation="sum", value_format=Format.CURRENCY_MILLIONS_M,
+                start=2026, end=2030,
             ),
         ],
         [

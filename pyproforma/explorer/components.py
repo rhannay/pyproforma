@@ -20,22 +20,29 @@ class StatCard:
     Args:
         name: Line item name.
         label: Display label. Defaults to the line item's own label.
-        aggregation: One of "min", "max", "latest", "first". Defaults to "latest".
+        aggregation: One of "min", "max", "latest", "first", "sum", "avg", "cagr". Defaults to "latest".
         value_format: Optional format override. Uses the line item's format if not set.
+        start: Optional start period for the aggregation range.
+        end: Optional end period for the aggregation range.
 
     Examples:
         >>> StatCard("dscr", "Min DSCR", aggregation="min")
         >>> StatCard("ending_cash", aggregation="latest")
+        >>> StatCard("revenue", "5-Year Sum", aggregation="sum", start=2024, end=2028)
     """
 
     name: str
     label: str | None = None
     aggregation: str = "latest"
     value_format: object = None
+    start: object = None
+    end: object = None
 
     def build(self, model) -> dict:
         result = model[self.name]
-        formatted = getattr(result.stat, f"formatted_{self.aggregation}")(self.value_format)
+        formatted = getattr(result.stat, f"formatted_{self.aggregation}")(
+            self.value_format, start=self.start, end=self.end
+        )
         return {
             "type": "stat",
             "label": self.label or result.label or self.name,
