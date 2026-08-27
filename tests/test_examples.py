@@ -45,7 +45,7 @@ class TestExampleApps:
         assert coffee_shop_client.get("/line_item/gross_profit").status_code == 200
 
     def test_coffee_shop_scalar_line_item(self, coffee_shop_client):
-        assert coffee_shop_client.get("/line_item/coffee_cogs_rate").status_code == 200
+        assert coffee_shop_client.get("/line_item/food_cogs_rate").status_code == 200
 
     def test_water_utility_index(self, water_utility_client):
         assert water_utility_client.get("/").status_code == 200
