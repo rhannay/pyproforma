@@ -11,6 +11,7 @@ from pyproforma import (
     ProformaModel,
     ScalarLine,
 )
+from pyproforma.chart.chart import Chart
 from pyproforma.table import Table
 
 # ---------------------------------------------------------------------------
@@ -372,6 +373,58 @@ class TestTable:
         cmp = ModelComparison(base, opt)
         with pytest.raises(ValueError):
             cmp.table(item_names=["nonexistent"])
+
+
+# ---------------------------------------------------------------------------
+# chart()
+# ---------------------------------------------------------------------------
+
+
+class TestChart:
+
+    def test_returns_chart_instance(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.chart("revenue")
+        assert isinstance(result, Chart)
+
+    def test_chart_one_series_per_model(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt, labels=["Base", "Optimistic"])
+        result = cmp.chart("revenue")
+        assert [s.label for s in result.series] == ["Base", "Optimistic"]
+
+    def test_chart_series_values(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.chart("revenue")
+        assert result.series[0].x_values == [2024, 2025]
+        assert result.series[0].y_values == [100, 110]
+        assert result.series[1].y_values == [120, 132]
+
+    def test_chart_default_title_is_item_label(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.chart("revenue")
+        assert result.title == "revenue"
+
+    def test_chart_custom_title(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.chart("revenue", title="Revenue Comparison")
+        assert result.title == "Revenue Comparison"
+
+    def test_chart_type_passed_through(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.chart("revenue", chart_type="bar")
+        assert result.chart_type == "bar"
+
+    def test_chart_invalid_item_raises(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        with pytest.raises(ValueError):
+            cmp.chart("nonexistent")
 
 
 # ---------------------------------------------------------------------------

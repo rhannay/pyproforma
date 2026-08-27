@@ -4,6 +4,7 @@ ModelComparison class for comparing two or more v2 ProformaModel instances.
 
 from typing import TYPE_CHECKING, Optional, Union
 
+from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 from pyproforma.table import Cell, Format, Table
 
 if TYPE_CHECKING:
@@ -35,6 +36,7 @@ class ModelComparison:
         >>> cmp.difference("revenue", 2024)
         20000.0
         >>> cmp.table(["revenue", "expenses", "profit"])
+        >>> cmp.chart("revenue").show()
     """
 
     def __init__(
@@ -329,6 +331,55 @@ class ModelComparison:
             all_rows.append([Cell(value="") for _ in range(1 + len(self.common_periods))])
 
         return Table(cells=all_rows)
+
+    def chart(
+        self,
+        item_name: str,
+        chart_type: ChartType = "line",
+        title: Optional[str] = None,
+        value_format=None,
+    ) -> Chart:
+        """
+        Build a chart comparing a single line item across all models.
+
+        One series per model (using self.labels), plotted over common_periods.
+
+        Args:
+            item_name: Name of the line item (must be in common_items).
+            chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
+            title: Chart title. Defaults to the item's label.
+            value_format: Override the item's value format for the y-axis.
+
+        Returns:
+            Chart ready for rendering.
+
+        Raises:
+            ValueError: If item_name is not in common_items.
+
+        Examples:
+            >>> cmp.chart("revenue").show()
+            >>> cmp.chart("revenue", chart_type="bar").show()
+        """
+        self._validate_item(item_name)
+
+        item_result = self.base[item_name]
+        item_label = item_result.label or item_name
+
+        series = [
+            ChartSeries(
+                label=label,
+                x_values=list(self.common_periods),
+                y_values=[model.get_value(item_name, p) for p in self.common_periods],
+            )
+            for model, label in zip(self.models, self.labels)
+        ]
+
+        return Chart(
+            series=series,
+            chart_type=chart_type,
+            title=title if title is not None else item_label,
+            value_format=value_format or item_result.value_format,
+        )
 
     def __repr__(self) -> str:
         return (
