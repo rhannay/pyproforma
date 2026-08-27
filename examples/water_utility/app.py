@@ -1,6 +1,10 @@
-"""Launch the pyproforma explorer for the water utility model.
+"""pyproforma explorer for the water utility model.
 
-    python examples/water_utility/run.py
+Run directly:
+    python examples/water_utility/app.py
+
+Or with the Flask CLI (from this directory):
+    flask run
 """
 
 import sys
@@ -58,8 +62,9 @@ views = {
             StatCard("ending_cash",      "Ending Cash"),
             StatCard("days_cash_on_hand","Days Cash on Hand"),
             StatCard(
-                "capital_spending", "Total Capex",
+                "capital_spending", "Capex 2026–2030",
                 aggregation="sum", value_format=Format.CURRENCY_MILLIONS_M,
+                start=2026, end=2030,
             ),
         ],
         [
@@ -72,8 +77,9 @@ views = {
     ],
 }
 
+app = create_app(
+    model, tables=tables, charts=charts, views=views, home_view="Financial Summary"
+)
+
 if __name__ == "__main__":
-    app = create_app(
-        model, tables=tables, charts=charts, views=views, home_view="Financial Summary"
-    )
     app.run(debug=True)

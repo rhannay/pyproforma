@@ -351,6 +351,9 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                         name=comp["name"],
                         label=comp.get("label"),
                         aggregation=comp.get("aggregation", "latest"),
+                        value_format=comp.get("value_format"),
+                        start=comp.get("start"),
+                        end=comp.get("end"),
                     ).build(state.model)
                     c["col_width"] = col_width
                 elif comp["type"] == "chart":
