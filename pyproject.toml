@@ -29,6 +29,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.scripts]
+pyproforma = "pyproforma.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/rhannay/pyproforma"
 Repository = "https://github.com/rhannay/pyproforma"
