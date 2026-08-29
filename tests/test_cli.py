@@ -64,6 +64,18 @@ class TestLoadModelFromFile:
             load_model_from_file(path)
 
 
+CONFIG_YAML = """
+tables:
+  Revenue Table:
+    rows:
+      - row_type: header
+      - row_type: item
+        name: revenue
+
+home_view: null
+"""
+
+
 class TestBuildApp:
     def test_returns_working_flask_app(self, tmp_path):
         path = tmp_path / "one_model.py"
@@ -71,3 +83,15 @@ class TestBuildApp:
         app = build_app(path)
         client = app.test_client()
         assert client.get("/").status_code == 200
+
+    def test_with_config_serves_configured_table(self, tmp_path):
+        model_path = tmp_path / "one_model.py"
+        model_path.write_text(ONE_MODEL)
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(CONFIG_YAML)
+
+        app = build_app(model_path, config_path=config_path)
+        client = app.test_client()
+
+        # index 0 is the synthetic "All Line Items" table, 1 is "Revenue Table"
+        assert client.get("/table/1").status_code == 200

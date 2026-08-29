@@ -33,3 +33,24 @@ class TableDef:
 
     rows: list
     title: str | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "TableDef":
+        """
+        Build a TableDef from a plain dict (e.g. parsed from YAML/JSON).
+
+        Row dicts are eagerly converted to their row dataclass instances via
+        dict_to_row_config, rather than left as dicts, since downstream code
+        (e.g. the explorer's href injection) relies on isinstance checks.
+
+        Args:
+            data: Dict with keys "rows" (list of BaseRow instances or
+                equivalent dicts) and optionally "title".
+
+        Returns:
+            TableDef
+        """
+        from pyproforma.tables.row_types import dict_to_row_config
+
+        rows = [dict_to_row_config(r) if isinstance(r, dict) else r for r in data["rows"]]
+        return cls(rows=rows, title=data.get("title"))

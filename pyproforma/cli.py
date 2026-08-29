@@ -46,7 +46,7 @@ def load_model_from_file(path: Path) -> ProformaModel:
     return _find_model(module, path)
 
 
-def build_app(path: Path):
+def build_app(path: Path, config_path: Path | None = None):
     """Load the model at path and return a Flask app for the explorer."""
     try:
         from pyproforma.explorer import create_app
@@ -56,7 +56,13 @@ def build_app(path: Path):
         ) from e
 
     model = load_model_from_file(path)
-    return create_app(model)
+
+    if config_path is None:
+        return create_app(model)
+
+    from pyproforma.explorer.config import load_view_config
+
+    return create_app(model, **load_view_config(config_path))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -64,10 +70,14 @@ def main(argv: list[str] | None = None) -> None:
         prog="pyproforma", description="Launch the pyproforma explorer for a model file."
     )
     parser.add_argument("model_file", help="Path to a .py file containing a ProformaModel instance")
+    parser.add_argument(
+        "-c", "--config", help="Path to a YAML file configuring tables/charts/views"
+    )
     args = parser.parse_args(argv)
 
     try:
-        app = build_app(Path(args.model_file))
+        config_path = Path(args.config) if args.config else None
+        app = build_app(Path(args.model_file), config_path=config_path)
     except (FileNotFoundError, ValueError, ImportError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
