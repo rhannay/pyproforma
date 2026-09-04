@@ -29,12 +29,12 @@ def models(base_model, scenario_model):
 
 
 class TestScenarioRoutes:
-    def test_root_redirects_to_first_scenario(self, models):
+    def test_root_redirects_to_compare_overview(self, models):
         app = create_scenario_app(models)
         client = app.test_client()
         response = client.get("/")
         assert response.status_code == 302
-        assert response.headers["Location"] == "/scenario/Base/"
+        assert response.headers["Location"] == "/compare/"
 
     def test_each_scenario_index_returns_200(self, models):
         app = create_scenario_app(models)
@@ -106,17 +106,48 @@ class TestScenarioInputGroupDropped:
         assert b"Profit" in response.data
 
 
-class TestCompareRoutes:
-    def test_compare_index_lists_common_items(self, models):
+class TestCompareOverview:
+    def test_overview_shows_both_tabs(self, models):
         app = create_scenario_app(models)
         client = app.test_client()
         response = client.get("/compare/")
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Overview" in html
+        assert "Line Items" in html
+
+    def test_overview_shows_differing_inputs(self, models):
+        app = create_scenario_app(models)
+        client = app.test_client()
+        html = client.get("/compare/").data.decode()
+        assert "COGS" in html
+        assert "Base" in html
+        assert "Low COGS" in html
+        assert "50" in html
+        assert "40" in html
+
+    def test_overview_omits_computed_line_items(self, models):
+        app = create_scenario_app(models)
+        client = app.test_client()
+        html = client.get("/compare/").data.decode()
+        # revenue/profit aren't inputs, so shouldn't appear as diff rows
+        assert "Revenue" not in html
+        assert "Profit" not in html
+
+
+class TestCompareItemsTab:
+    def test_items_tab_lists_common_items(self, models):
+        app = create_scenario_app(models)
+        client = app.test_client()
+        response = client.get("/compare/items")
         assert response.status_code == 200
         html = response.data.decode()
         assert "revenue" in html
         assert "cogs" in html
         assert "profit" in html
 
+
+class TestCompareRoutes:
     def test_compare_item_shows_both_scenarios(self, models):
         app = create_scenario_app(models)
         client = app.test_client()

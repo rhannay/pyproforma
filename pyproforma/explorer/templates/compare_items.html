@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Compare{% endblock %}
+{% block title %}Compare — Line Items{% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none mt-3">
@@ -10,10 +10,16 @@
   </div>
 </div>
 
-<div class="card mt-3">
-  <div class="card-header">
-    <h3 class="card-title">Line Items</h3>
-  </div>
+<ul class="nav nav-tabs mt-3">
+  <li class="nav-item">
+    <a class="nav-link" href="{{ url_for('.compare_overview') }}">Overview</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('.compare_items') }}">Line Items</a>
+  </li>
+</ul>
+
+<div class="card">
   <div class="list-group list-group-flush">
     {% for name in items %}
     <a href="{{ url_for('.compare_item', name=name) }}" class="list-group-item list-group-item-action">{{ name }}</a>

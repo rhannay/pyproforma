@@ -9,6 +9,7 @@ from flask import Blueprint, Flask, abort, redirect, render_template, url_for
 from pyproforma.compare import ModelComparison
 from pyproforma.explorer.app import _register_model_routes
 from pyproforma.explorer.components import InputGroup
+from pyproforma.table import Cell, Table
 from pyproforma.tables.row_types import HeaderRow, ItemRow
 from pyproforma.tables.table_def import TableDef
 
@@ -34,6 +35,45 @@ def _drop_input_groups(views):
                 new_rows.append(new_row)
         filtered[view_label] = new_rows
     return filtered
+
+
+def _build_scenario_inputs_table(models, labels) -> Table:
+    """Build a table of every input that differs across the given scenarios.
+
+    Rows are the scalar/period inputs whose value isn't identical across all
+    scenarios; columns are the scenario labels. Inputs with the same value
+    everywhere are omitted.
+    """
+    model_class = type(models[labels[0]])
+    periods = models[labels[0]].periods
+
+    header = [Cell(value="", bold=True, align="left")]
+    header += [Cell(value=label, bold=True, align="center") for label in labels]
+    rows = [header]
+
+    for name in model_class._scalar_input_names:
+        spec = getattr(model_class, name)
+        values = {label: models[label]._scalars[name] for label in labels}
+        if len(set(values.values())) > 1:
+            row = [Cell(value=spec.label or name, align="left")]
+            row += [Cell(value=values[label], value_format=spec.value_format) for label in labels]
+            rows.append(row)
+
+    for name in model_class._input_line_names:
+        spec = getattr(model_class, name)
+        for period in periods:
+            values = {
+                label: models[label]._input_line_values.get(name, {}).get(period)
+                for label in labels
+            }
+            if len(set(values.values())) > 1:
+                row = [Cell(value=f"{spec.label or name} ({period})", align="left")]
+                row += [
+                    Cell(value=values[label], value_format=spec.value_format) for label in labels
+                ]
+                rows.append(row)
+
+    return Table(cells=rows)
 
 
 def _build_scenario_state(model, tables, charts, views, home_view, excel_available):
@@ -134,9 +174,18 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
         }
 
     @compare_bp.route("/")
-    def compare_index():
+    def compare_overview():
+        inputs_table = _build_scenario_inputs_table(models, labels)
         return render_template(
-            "compare_index.html",
+            "compare_overview.html",
+            model=models[labels[0]],
+            inputs_table_html=inputs_table.to_bootstrap_html(),
+        )
+
+    @compare_bp.route("/items")
+    def compare_items():
+        return render_template(
+            "compare_items.html",
             model=models[labels[0]],
             items=comparison.common_items,
         )
@@ -157,6 +206,6 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
 
     @app.route("/")
     def root_redirect():
-        return redirect(url_for("scenario_0.index"))
+        return redirect(url_for("compare.compare_overview"))
 
     return app

@@ -1,0 +1,104 @@
+tables:
+  Debt Service Coverage:
+    title: "Debt Service Coverage"
+    rows:
+      - row_type: header
+      - row_type: label
+        label: "Revenue"
+      - row_type: tag_items
+        tag: revenue
+      - row_type: item
+        name: total_revenue
+        bold: true
+        top_border: single
+      - row_type: blank
+      - row_type: label
+        label: "O&M Expenses"
+      - row_type: tag_items
+        tag: om
+      - row_type: item
+        name: total_om
+        bold: true
+        top_border: single
+      - row_type: blank
+      - row_type: item
+        name: net_revenue
+        bold: true
+        top_border: double
+      - row_type: blank
+      - row_type: label
+        label: "Debt Service"
+      - row_type: tag_items
+        tag: debt_service
+      - row_type: item
+        name: total_debt_service
+        bold: true
+        top_border: single
+      - row_type: blank
+      - row_type: item
+        name: dscr
+        bold: true
+      - row_type: item
+        name: days_cash_on_hand
+
+charts:
+  Revenue:
+    names: [water_sales_revenue, power_sales]
+  Revenue & O&M:
+    names: [total_revenue, total_om]
+  O&M Breakdown:
+    names: [labor_and_benefits, power_and_chemicals, maintenance_and_repairs, general_and_admin]
+    chart_type: stacked_bar
+  Key Ratios:
+    names: [dscr, days_cash_on_hand]
+  DSCR:
+    names: [dscr]
+
+views:
+  Update Rates:
+    - - type: input_group
+        names: [rate_increase]
+        label: "Annual Rate Increases"
+      - type: chart
+        ref: DSCR
+
+  Update Assumptions:
+    - - type: input_group
+        names: [inflation_rate, new_bond_rate, rate_increase]
+        label: "Scenario Inputs"
+        orient: horizontal
+    - - type: chart
+        ref: "Revenue & O&M"
+      - type: chart
+        ref: Key Ratios
+
+  Financial Summary:
+    - - type: stat
+        name: dscr
+        label: "Min DSCR"
+        aggregation: min
+      - type: stat
+        name: ending_cash
+        label: "Ending Cash"
+      - type: stat
+        name: days_cash_on_hand
+        label: "Days Cash on Hand"
+      - type: stat
+        name: capital_spending
+        label: "Capex 2026–2030"
+        aggregation: sum
+        value_format: currency_millions_m
+        start: 2026
+        end: 2030
+    - - type: chart
+        ref: "Revenue & O&M"
+      - type: chart
+        ref: "O&M Breakdown"
+    - - type: table
+        ref: Debt Service Coverage
+
+scenarios:
+  Lower Rate Increases:
+    rate_increase: {2026: 0.030, 2027: 0.025, 2028: 0.020, 2029: 0.020, 2030: 0.015}
+
+home_view: Financial Summary
