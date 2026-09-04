@@ -1,5 +1,7 @@
 """Tests for the pyproforma CLI (pyproforma/cli.py)."""
 
+from pathlib import Path
+
 import pytest
 
 from pyproforma.cli import build_app, load_model_from_file
@@ -104,6 +106,19 @@ class TestBuildApp:
         client = app.test_client()
 
         # index 0 is the synthetic "All Line Items" table, 1 is "Revenue Table"
+        assert client.get("/table/1").status_code == 200
+
+    def test_relative_config_resolves_against_model_dir(self, tmp_path):
+        model_dir = tmp_path / "sub"
+        model_dir.mkdir()
+        model_path = model_dir / "model.py"
+        model_path.write_text(ONE_MODEL)
+        (model_dir / "config.yaml").write_text(CONFIG_YAML)
+
+        # A bare filename, not resolvable from the test's cwd (repo root) —
+        # only correct if it's resolved against model_path's directory.
+        app = build_app(model_path, config_path=Path("config.yaml"))
+        client = app.test_client()
         assert client.get("/table/1").status_code == 200
 
     def test_with_scenarios_config_returns_scenario_app(self, tmp_path):

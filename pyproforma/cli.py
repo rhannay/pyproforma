@@ -47,7 +47,12 @@ def load_model_from_file(path: Path) -> ProformaModel:
 
 
 def build_app(path: Path, config_path: Path | None = None):
-    """Load the model at path and return a Flask app for the explorer."""
+    """Load the model at path and return a Flask app for the explorer.
+
+    A relative config_path is resolved against path's directory (not the
+    current working directory), so --config can be a bare filename when the
+    config lives next to the model file.
+    """
     try:
         from pyproforma.explorer import create_app, create_scenario_app
     except ImportError as e:
@@ -59,6 +64,9 @@ def build_app(path: Path, config_path: Path | None = None):
 
     if config_path is None:
         return create_app(model)
+
+    if not config_path.is_absolute():
+        config_path = path.parent / config_path
 
     from pyproforma.explorer.config import load_view_config
 
@@ -74,7 +82,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("model_file", help="Path to a .py file containing a ProformaModel instance")
     parser.add_argument(
-        "-c", "--config", help="Path to a YAML file configuring tables/charts/views"
+        "-c",
+        "--config",
+        help="Path to a YAML file configuring tables/charts/views. A relative "
+        "path is resolved against the model file's directory.",
     )
     args = parser.parse_args(argv)
 
