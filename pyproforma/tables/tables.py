@@ -269,11 +269,13 @@ class Tables:
                 f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
             )
 
-        # Build col_labels parameter
+        # Build col_labels parameter. With no Name column, this single header
+        # is the corner cell above periods running across the top, so it
+        # reads "Period" rather than "Label".
         if include_name:
             col_labels = ["Name", "Label"]
         else:
-            col_labels = "Label"
+            col_labels = "Period"
 
         # Build template with HeaderRow and single ItemRow
         template = [
@@ -325,7 +327,7 @@ class Tables:
             )
 
         line_item_def = getattr(self._model.__class__, name)
-        template = [rt.HeaderRow(col_labels="Label")]
+        template = [rt.HeaderRow(col_labels="Period")]
 
         if isinstance(line_item_def, FormulaLine) and line_item_def.precedents:
             precedent_names = [
@@ -342,4 +344,4 @@ class Tables:
 
         template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
 
-        return self.build(template, col_labels="Label")
+        return self.build(template, col_labels="Period")

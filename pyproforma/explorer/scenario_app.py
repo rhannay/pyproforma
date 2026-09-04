@@ -40,12 +40,12 @@ def _drop_input_groups(views):
 def _build_scenario_inputs_table(models, labels) -> Table:
     """Build a table of every input that differs across the given scenarios.
 
-    Each differing input gets its own section, read left to right: a title
-    row, a header row of column labels, and one row per scenario. For
-    period-varying inputs the columns are the periods that actually differ
-    (years running across the top); for scalars the columns are the
-    scenario labels, since there's no period axis to lay out. Inputs with
-    the same value everywhere are omitted.
+    Each differing input gets its own section, read top to bottom: a header
+    row of column labels, a title row naming the input, and one row per
+    scenario. For period-varying inputs the columns are the periods that
+    actually differ (years running across the top); for scalars the columns
+    are the scenario labels, since there's no period axis to lay out. Inputs
+    with the same value everywhere are omitted.
     """
     model_class = type(models[labels[0]])
     periods = models[labels[0]].periods
@@ -61,7 +61,9 @@ def _build_scenario_inputs_table(models, labels) -> Table:
                 (spec.label or name, [values[label] for label in labels], spec.value_format)
             )
     if scalar_rows:
-        blocks.append({"title": "Scalars", "col_headers": labels, "rows": scalar_rows})
+        blocks.append(
+            {"title": "Scalars", "corner": "", "col_headers": labels, "rows": scalar_rows}
+        )
 
     for name in model_class._input_line_names:
         spec = getattr(model_class, name)
@@ -83,7 +85,14 @@ def _build_scenario_inputs_table(models, labels) -> Table:
             )
             for label in labels
         ]
-        blocks.append({"title": spec.label or name, "col_headers": differing_periods, "rows": rows})
+        blocks.append(
+            {
+                "title": spec.label or name,
+                "corner": "Period",
+                "col_headers": differing_periods,
+                "rows": rows,
+            }
+        )
 
     if not blocks:
         return Table(cells=[[Cell(value="No differing inputs across scenarios.", align="left")]])
@@ -100,10 +109,10 @@ def _build_scenario_inputs_table(models, labels) -> Table:
     for i, block in enumerate(blocks):
         if i > 0:
             rows.append(pad([Cell(value="")]))
-        rows.append(pad([Cell(value=block["title"], bold=True, align="left")]))
-        header = [Cell(value="", align="left")]
+        header = [Cell(value=block["corner"], bold=True, align="left")]
         header += [Cell(value=h, bold=True, align="center") for h in block["col_headers"]]
         rows.append(pad(header))
+        rows.append(pad([Cell(value=block["title"], bold=True, align="left")]))
         for row_label, values, value_format in block["rows"]:
             row = [Cell(value=row_label, align="left")]
             row += [Cell(value=v, value_format=value_format) for v in values]
