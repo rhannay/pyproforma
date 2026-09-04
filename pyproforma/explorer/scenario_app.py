@@ -40,38 +40,74 @@ def _drop_input_groups(views):
 def _build_scenario_inputs_table(models, labels) -> Table:
     """Build a table of every input that differs across the given scenarios.
 
-    Rows are the scalar/period inputs whose value isn't identical across all
-    scenarios; columns are the scenario labels. Inputs with the same value
-    everywhere are omitted.
+    Each differing input gets its own section, read left to right: a title
+    row, a header row of column labels, and one row per scenario. For
+    period-varying inputs the columns are the periods that actually differ
+    (years running across the top); for scalars the columns are the
+    scenario labels, since there's no period axis to lay out. Inputs with
+    the same value everywhere are omitted.
     """
     model_class = type(models[labels[0]])
     periods = models[labels[0]].periods
 
-    header = [Cell(value="", bold=True, align="left")]
-    header += [Cell(value=label, bold=True, align="center") for label in labels]
-    rows = [header]
+    blocks = []
 
+    scalar_rows = []
     for name in model_class._scalar_input_names:
         spec = getattr(model_class, name)
         values = {label: models[label]._scalars[name] for label in labels}
         if len(set(values.values())) > 1:
-            row = [Cell(value=spec.label or name, align="left")]
-            row += [Cell(value=values[label], value_format=spec.value_format) for label in labels]
-            rows.append(row)
+            scalar_rows.append(
+                (spec.label or name, [values[label] for label in labels], spec.value_format)
+            )
+    if scalar_rows:
+        blocks.append({"title": "Scalars", "col_headers": labels, "rows": scalar_rows})
 
     for name in model_class._input_line_names:
         spec = getattr(model_class, name)
-        for period in periods:
-            values = {
-                label: models[label]._input_line_values.get(name, {}).get(period)
-                for label in labels
-            }
-            if len(set(values.values())) > 1:
-                row = [Cell(value=f"{spec.label or name} ({period})", align="left")]
-                row += [
-                    Cell(value=values[label], value_format=spec.value_format) for label in labels
-                ]
-                rows.append(row)
+        period_values = {
+            label: models[label]._input_line_values.get(name, {}) for label in labels
+        }
+        differing_periods = [
+            period
+            for period in periods
+            if len({period_values[label].get(period) for label in labels}) > 1
+        ]
+        if not differing_periods:
+            continue
+        rows = [
+            (
+                label,
+                [period_values[label].get(period) for period in differing_periods],
+                spec.value_format,
+            )
+            for label in labels
+        ]
+        blocks.append({"title": spec.label or name, "col_headers": differing_periods, "rows": rows})
+
+    if not blocks:
+        return Table(cells=[[Cell(value="No differing inputs across scenarios.", align="left")]])
+
+    n_cols = 1 + max(len(block["col_headers"]) for block in blocks)
+
+    def pad(cells):
+        cells = list(cells)
+        while len(cells) < n_cols:
+            cells.append(Cell(value=""))
+        return cells
+
+    rows = []
+    for i, block in enumerate(blocks):
+        if i > 0:
+            rows.append(pad([Cell(value="")]))
+        rows.append(pad([Cell(value=block["title"], bold=True, align="left")]))
+        header = [Cell(value="", align="left")]
+        header += [Cell(value=h, bold=True, align="center") for h in block["col_headers"]]
+        rows.append(pad(header))
+        for row_label, values, value_format in block["rows"]:
+            row = [Cell(value=row_label, align="left")]
+            row += [Cell(value=v, value_format=value_format) for v in values]
+            rows.append(pad(row))
 
     return Table(cells=rows)
 
