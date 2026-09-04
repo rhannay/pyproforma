@@ -30,6 +30,16 @@ model = MyModel(periods=[2024, 2025])
 alt_model = MyModel(periods=[2024, 2025])
 """
 
+SCENARIO_CAPABLE_MODEL = """
+from pyproforma import ProformaModel, FixedLine, ScalarInputLine
+
+class MyModel(ProformaModel):
+    revenue = FixedLine(values={2024: 100, 2025: 110}, label="Revenue")
+    growth = ScalarInputLine(default=0.10, label="Growth Rate")
+
+model = MyModel(periods=[2024, 2025])
+"""
+
 
 class TestLoadModelFromFile:
     def test_loads_the_single_model(self, tmp_path):
@@ -95,3 +105,18 @@ class TestBuildApp:
 
         # index 0 is the synthetic "All Line Items" table, 1 is "Revenue Table"
         assert client.get("/table/1").status_code == 200
+
+    def test_with_scenarios_config_returns_scenario_app(self, tmp_path):
+        model_path = tmp_path / "model.py"
+        model_path.write_text(SCENARIO_CAPABLE_MODEL)
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text("scenarios:\n  High Growth:\n    growth: 0.25\n")
+
+        app = build_app(model_path, config_path=config_path)
+        client = app.test_client()
+
+        assert client.get("/scenario/Base/items").status_code == 200
+        assert client.get("/scenario/High%20Growth/items").status_code == 200
+        assert client.get("/compare/").status_code == 200
+        # scenario mode has no /inputs route
+        assert client.get("/scenario/Base/inputs").status_code == 404

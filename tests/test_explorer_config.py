@@ -3,7 +3,7 @@
 import pytest
 
 from pyproforma import FixedLine, FormulaLine, ProformaModel, ScalarInputLine, ScalarLine
-from pyproforma.explorer import create_app
+from pyproforma.explorer import create_app, create_scenario_app
 from pyproforma.explorer.components import InputGroup
 from pyproforma.explorer.config import load_view_config
 from pyproforma.tables.row_types import HeaderRow, ItemRow
@@ -71,6 +71,24 @@ views:
   Overview:
     - - type: chart
         ref: Nonexistent Chart
+"""
+
+SCENARIOS_YAML = """
+scenarios:
+  High Growth:
+    growth: 0.20
+  Low Growth:
+    growth: 0.02
+"""
+
+EMPTY_SCENARIOS_YAML = """
+scenarios: {}
+"""
+
+BASE_COLLISION_YAML = """
+scenarios:
+  Base:
+    growth: 0.20
 """
 
 
@@ -163,3 +181,57 @@ class TestLoadViewConfigIntegration:
 
         response = client.get("/table/1")
         assert b'href="/line_item/revenue"' in response.data
+
+
+class TestLoadViewConfigScenarios:
+    def test_builds_model_per_scenario(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(SCENARIOS_YAML)
+        config = load_view_config(path, base_model=model)
+        assert set(config["models"].keys()) == {"Base", "High Growth", "Low Growth"}
+        assert config["models"]["Base"] is model
+        assert config["models"]["High Growth"].growth.value == 0.20
+        assert config["models"]["Low Growth"].growth.value == 0.02
+
+    def test_scenario_models_share_base_periods(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(SCENARIOS_YAML)
+        config = load_view_config(path, base_model=model)
+        assert config["models"]["High Growth"].periods == model.periods
+
+    def test_no_scenarios_key_omits_models(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(TABLE_AND_CHART_YAML)
+        config = load_view_config(path, base_model=model)
+        assert "models" not in config
+
+    def test_scenarios_without_base_model_raises(self, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(SCENARIOS_YAML)
+        with pytest.raises(ValueError, match="no base model was provided"):
+            load_view_config(path)
+
+    def test_empty_scenarios_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(EMPTY_SCENARIOS_YAML)
+        with pytest.raises(ValueError, match="at least one scenario"):
+            load_view_config(path, base_model=model)
+
+    def test_base_collision_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(BASE_COLLISION_YAML)
+        with pytest.raises(ValueError, match="reserved for the model loaded"):
+            load_view_config(path, base_model=model)
+
+
+class TestLoadViewConfigScenarioIntegration:
+    def test_create_scenario_app_from_config(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(SCENARIOS_YAML)
+        config = load_view_config(path, base_model=model)
+        app = create_scenario_app(**config)
+        client = app.test_client()
+
+        assert client.get("/scenario/Base/items").status_code == 200
+        assert client.get("/scenario/High%20Growth/items").status_code == 200
+        assert client.get("/compare/").status_code == 200

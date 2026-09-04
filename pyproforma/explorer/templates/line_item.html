@@ -6,7 +6,7 @@
   <div class="row align-items-center">
     <div class="col">
       <div class="page-pretitle">
-        <a href="{{ url_for('items') }}">Line Items</a>
+        <a href="{{ url_for('.items') }}">Line Items</a>
       </div>
       <h2 class="page-title">{{ info.label }}</h2>
       <div class="text-secondary font-monospace small">{{ info.name }}</div>
@@ -30,7 +30,7 @@
           <dd class="col-7">
             {% if info.tags %}
               {% for tag in info.tags %}
-              <a href="{{ url_for('tag_view', tag_name=tag) }}" class="badge bg-azure-lt text-azure text-decoration-none">{{ tag }}</a>
+              <a href="{{ url_for('.tag_view', tag_name=tag) }}" class="badge bg-azure-lt text-azure text-decoration-none">{{ tag }}</a>
               {% endfor %}
             {% else %}
               <span class="text-muted">none</span>
@@ -62,12 +62,12 @@
       </div>
       <div class="card-body">
         {% for dep in info.dependencies %}
-        <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        <a href="{{ url_for('.line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
         {% endfor %}
         {% for tag, members in info.tag_dependencies.items() %}
-        <div class="mt-2 small text-muted">via tag: <a href="{{ url_for('tag_view', tag_name=tag) }}" class="text-decoration-none">{{ tag }}</a></div>
+        <div class="mt-2 small text-muted">via tag: <a href="{{ url_for('.tag_view', tag_name=tag) }}" class="text-decoration-none">{{ tag }}</a></div>
         {% for name in members %}
-        <a href="{{ url_for('line_item', name=name) }}" class="badge bg-azure-lt text-azure me-1 text-decoration-none">{{ name }}</a>
+        <a href="{{ url_for('.line_item', name=name) }}" class="badge bg-azure-lt text-azure me-1 text-decoration-none">{{ name }}</a>
         {% endfor %}
         {% endfor %}
       </div>
@@ -94,7 +94,7 @@
       </div>
       <div class="card-body">
         {% for dep in dependents %}
-        <a href="{{ url_for('line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
+        <a href="{{ url_for('.line_item', name=dep) }}" class="badge bg-blue-lt text-blue me-1 text-decoration-none">{{ dep }}</a>
         {% endfor %}
       </div>
     </div>

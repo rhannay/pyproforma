@@ -49,7 +49,7 @@ def load_model_from_file(path: Path) -> ProformaModel:
 def build_app(path: Path, config_path: Path | None = None):
     """Load the model at path and return a Flask app for the explorer."""
     try:
-        from pyproforma.explorer import create_app
+        from pyproforma.explorer import create_app, create_scenario_app
     except ImportError as e:
         raise ImportError(
             "Explorer support requires the 'explorer' extra: pip install pyproforma[explorer]"
@@ -62,7 +62,10 @@ def build_app(path: Path, config_path: Path | None = None):
 
     from pyproforma.explorer.config import load_view_config
 
-    return create_app(model, **load_view_config(config_path))
+    config = load_view_config(config_path, base_model=model)
+    if "models" in config:
+        return create_scenario_app(**config)
+    return create_app(model, **config)
 
 
 def main(argv: list[str] | None = None) -> None:

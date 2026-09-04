@@ -16,23 +16,32 @@ from pyproforma.explorer.components import InputGroup
 from pyproforma.tables.table_def import TableDef
 
 
-def load_view_config(path: Path) -> dict:
+def load_view_config(path: Path, base_model=None) -> dict:
     """
     Parse a YAML explorer config file into create_app()'s kwargs.
 
     Args:
         path: Path to a .yaml/.yml file with optional top-level keys
             "tables", "charts", "views", "home_view" — matching create_app()'s
-            tables/charts/views/home_view parameters.
+            tables/charts/views/home_view parameters — plus an optional
+            "scenarios" key (dict of scenario label -> constructor kwargs).
+        base_model: The model already loaded from the target .py file. Only
+            required when the config declares "scenarios" — used to derive
+            the model class and periods for building each scenario instance.
 
     Returns:
         dict with keys "tables", "charts", "views", "home_view", ready to pass
-        as create_app(model, **load_view_config(path)).
+        as create_app(model, **load_view_config(path)). If the config declares
+        "scenarios", the dict also has a "models" key (dict of label ->
+        ProformaModel, including "Base" for base_model itself), ready to pass
+        as create_scenario_app(**load_view_config(path, base_model=model)).
 
     Raises:
         FileNotFoundError: If path doesn't exist.
-        ValueError: If path isn't a .yaml/.yml file, or a view component
-            references a table/chart ref that isn't defined.
+        ValueError: If path isn't a .yaml/.yml file, a view component
+            references a table/chart ref that isn't defined, "scenarios" is
+            declared without a base_model, "scenarios" is empty, or
+            "scenarios" declares a scenario named "Base".
     """
     if not path.exists():
         raise FileNotFoundError(f"No such file: {path}")
@@ -74,9 +83,29 @@ def load_view_config(path: Path) -> dict:
                             f"'{comp['ref']}'."
                         )
 
-    return {
+    result = {
         "tables": tables,
         "charts": charts,
         "views": views,
         "home_view": raw.get("home_view"),
     }
+
+    scenarios = raw.get("scenarios")
+    if scenarios is not None:
+        if base_model is None:
+            raise ValueError(f"{path} declares 'scenarios' but no base model was provided.")
+        if not scenarios:
+            raise ValueError("scenarios must declare at least one scenario.")
+        if "Base" in scenarios:
+            raise ValueError(
+                "scenarios must not declare a scenario named 'Base' — that name "
+                "is reserved for the model loaded from the .py file."
+            )
+        model_class = type(base_model)
+        periods = base_model.periods
+        models = {"Base": base_model}
+        for label, kwargs in scenarios.items():
+            models[label] = model_class(periods=periods, **kwargs)
+        result["models"] = models
+
+    return result

@@ -15,92 +15,24 @@ from pyproforma.tables.row_types import HeaderRow, ItemRow, TagItemsRow
 from pyproforma.tables.table_def import TableDef
 
 
-def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
-    """Create a Flask app for exploring a ProformaModel.
+def _register_model_routes(target, state, *, include_inputs=True):
+    """Register all model-browsing routes onto target (a Flask app or Blueprint).
 
-    Args:
-        model: An instantiated ProformaModel.
-        tables: Dict of label → TableDef for the Tables nav section.
-        charts: Dict of label → ChartDef for the Charts nav section.
-        views: Dict of label → view definition for the Views nav section.
-        home_view: Name of a view to show at '/' instead of the default index.
-            Must match a key in `views`. If None or not found, the default
-            line item index is shown.
-
-    Returns:
-        Flask app instance.
-
-    Usage:
-        from pyproforma import ProformaModel, FixedLine
-        from pyproforma.explorer import create_app
-
-        class MyModel(ProformaModel):
-            revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
-
-        model = MyModel(periods=[2024, 2025])
-        app = create_app(model, home_view="Financial Summary")
-        app.run(debug=True)
+    Every url_for() call here is blueprint-relative (a leading '.') so the same
+    routes can be registered directly on a Flask app (single-model mode) or on
+    N Blueprints (one per scenario) without endpoint collisions or template
+    changes — Flask resolves '.endpoint' against the current blueprint (if
+    any) at render time, and falls back to the bare endpoint name otherwise.
     """
-    app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
-    app.secret_key = "pyproforma-explorer"
 
-    class _State:
-        pass
-
-    state = _State()
-    state.model = model
-    state.model_class = type(model)
-    state.periods = model.periods
-
-    all_input_names = type(model)._scalar_input_names + type(model)._input_line_names
-    state.inputs_group = (
-        InputGroup(names=all_input_names, orient="horizontal")
-        if all_input_names else None
-    )
-
-    try:
-        import openpyxl  # noqa: F401
-        state.excel_available = True
-    except ImportError:
-        state.excel_available = False
-
-    all_items_def = TableDef(
-        rows=[HeaderRow(), *[ItemRow(name=n) for n in model.line_item_names]],
-        title="All Line Items",
-    )
-    state.tables = {"All Line Items": all_items_def, **(tables or {})}
-    state.charts = charts or {}
-    state.views = views or {}
-    if home_view is not None and home_view not in (views or {}):
-        available = ", ".join(f"'{v}'" for v in (views or {})) or "none"
-        raise ValueError(
-            f"home_view '{home_view}' not found in views. "
-            f"Available views: {available}"
-        )
-    state.home_view = home_view
-
-    for view_label, view_def in (views or {}).items():
-        input_group_count = sum(
-            1 for row in view_def for comp in row if isinstance(comp, InputGroup)
-        )
-        if input_group_count > 1:
-            raise ValueError(
-                f"View '{view_label}' has {input_group_count} InputGroup components. "
-                f"At most one InputGroup is allowed per view."
-            )
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    @app.context_processor
+    @target.context_processor
     def inject_nav():
         return {
             "nav_tables": list(enumerate(state.tables.keys())),
             "nav_charts": list(enumerate(state.charts.keys())),
             "nav_views": list(enumerate(state.views.keys())),
             "nav_tags": state.model.tags,
-            "nav_has_inputs": state.inputs_group is not None,
+            "nav_has_inputs": include_inputs and state.inputs_group is not None,
             "excel_available": state.excel_available,
         }
 
@@ -117,23 +49,27 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         items = []
         for name in names:
             item_def = getattr(type(m), name)
-            items.append({
-                "name": name,
-                "label": item_def.label or name,
-                "type": type(item_def).__name__,
-                "tags": getattr(item_def, "tags", []),
-                "scalar": False,
-            })
-        for name in (scalar_names or []):
+            items.append(
+                {
+                    "name": name,
+                    "label": item_def.label or name,
+                    "type": type(item_def).__name__,
+                    "tags": getattr(item_def, "tags", []),
+                    "scalar": False,
+                }
+            )
+        for name in scalar_names or []:
             item_def = getattr(type(m), name)
-            items.append({
-                "name": name,
-                "label": item_def.label or name,
-                "type": type(item_def).__name__,
-                "tags": [],
-                "scalar": True,
-                "value": m[name].formatted_value,
-            })
+            items.append(
+                {
+                    "name": name,
+                    "label": item_def.label or name,
+                    "type": type(item_def).__name__,
+                    "tags": [],
+                    "scalar": True,
+                    "value": m[name].formatted_value,
+                }
+            )
         return items
 
     def _add_hrefs(definition):
@@ -141,22 +77,22 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         result = []
         for row in rows:
             if isinstance(row, ItemRow):
-                result.append(dataclasses.replace(row, href=url_for("line_item", name=row.name)))
+                result.append(dataclasses.replace(row, href=url_for(".line_item", name=row.name)))
             elif isinstance(row, TagItemsRow):
-                names = [n for n in state.model.line_item_names
-                         if row.tag in getattr(type(state.model), n).tags]
+                names = [
+                    n
+                    for n in state.model.line_item_names
+                    if row.tag in getattr(type(state.model), n).tags
+                ]
                 for name in names:
-                    result.append(ItemRow(name=name, bold=row.bold,
-                                          href=url_for("line_item", name=name)))
+                    result.append(
+                        ItemRow(name=name, bold=row.bold, href=url_for(".line_item", name=name))
+                    )
             else:
                 result.append(row)
         if isinstance(definition, TableDef):
             return TableDef(rows=result, title=definition.title)
         return result
-
-    # ------------------------------------------------------------------
-    # Routes
-    # ------------------------------------------------------------------
 
     def _render_line_items_index():
         m = state.model
@@ -167,19 +103,19 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             title=m.__class__.__name__,
         )
 
-    @app.route("/")
+    @target.route("/")
     def index():
         if state.home_view is not None:
             view_labels = list(state.views.keys())
             if state.home_view in view_labels:
-                return redirect(url_for("view_page", idx=view_labels.index(state.home_view)))
+                return redirect(url_for(".view_page", idx=view_labels.index(state.home_view)))
         return _render_line_items_index()
 
-    @app.route("/items")
+    @target.route("/items")
     def items():
         return _render_line_items_index()
 
-    @app.route("/tag/<tag_name>")
+    @target.route("/tag/<tag_name>")
     def tag_view(tag_name):
         m = state.model
         names = [n for n in m.line_item_names if tag_name in getattr(type(m), n).tags]
@@ -188,13 +124,16 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
 
         tag_template = [
             HeaderRow(),
-            TagItemsRow(tag=tag_name, include_total_row=True,
-                        total_row_label=f"Total {tag_name}"),
+            TagItemsRow(tag=tag_name, include_total_row=True, total_row_label=f"Total {tag_name}"),
         ]
         tag_table_html = m.tables.build(_add_hrefs(tag_template)).to_bootstrap_html()
-        tag_chart_data = json.dumps(
-            m.charts.line_items(names, chart_type="stacked_bar", title=tag_name).to_apexcharts()
-        ) if m.periods else None
+        tag_chart_data = (
+            json.dumps(
+                m.charts.line_items(names, chart_type="stacked_bar", title=tag_name).to_apexcharts()
+            )
+            if m.periods
+            else None
+        )
 
         return render_template(
             "index.html",
@@ -206,7 +145,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             tag_chart_data=tag_chart_data,
         )
 
-    @app.route("/line_item/<name>")
+    @target.route("/line_item/<name>")
     def line_item(name):
         m = state.model
         is_scalar = name in m.scalar_names
@@ -240,8 +179,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             info["formula_source"] = item_def.formula_source
             info["dependencies"] = item_def.precedents or []
             info["tag_dependencies"] = {
-                tag: m.tag[tag].names
-                for tag in (item_def.tag_references or [])
+                tag: m.tag[tag].names for tag in (item_def.tag_references or [])
             }
         elif isinstance(item_def, FixedLine):
             info["fixed_values"] = item_def.values or {}
@@ -267,7 +205,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             dependents=dependents,
         )
 
-    @app.route("/table/<int:idx>")
+    @target.route("/table/<int:idx>")
     def table_view(idx):
         labels = list(state.tables.keys())
         if idx >= len(labels):
@@ -275,7 +213,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         label = labels[idx]
         definition = state.tables[label]
         table = state.model.tables.build(_add_hrefs(definition))
-        download_url = url_for("table_download", idx=idx) if state.excel_available else None
+        download_url = url_for(".table_download", idx=idx) if state.excel_available else None
         return render_template(
             "table_view.html",
             model=state.model,
@@ -284,7 +222,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             download_url=download_url,
         )
 
-    @app.route("/table/<int:idx>/download")
+    @target.route("/table/<int:idx>/download")
     def table_download(idx):
         labels = list(state.tables.keys())
         if idx >= len(labels):
@@ -292,6 +230,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         if not state.excel_available:
             abort(501)
         from flask import send_file
+
         label = labels[idx]
         definition = state.tables[label]
         table = state.model.tables.build(_add_hrefs(definition))
@@ -304,7 +243,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-    @app.route("/chart/<int:idx>")
+    @target.route("/chart/<int:idx>")
     def chart_view(idx):
         labels = list(state.charts.keys())
         if idx >= len(labels):
@@ -318,7 +257,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             chart_data=chart_data,
         )
 
-    @app.route("/view/<int:idx>")
+    @target.route("/view/<int:idx>")
     def view_page(idx):
         labels = list(state.views.keys())
         if idx >= len(labels):
@@ -326,11 +265,9 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
         label = labels[idx]
         view_def = state.views[label]
 
-        has_inputs = any(
-            isinstance(comp, InputGroup) for row in view_def for comp in row
-        )
+        has_inputs = any(isinstance(comp, InputGroup) for row in view_def for comp in row)
         form_action = (
-            url_for("update_inputs") + f"?next={url_for('view_page', idx=idx)}"
+            url_for(".update_inputs") + f"?next={url_for('.view_page', idx=idx)}"
             if has_inputs
             else None
         )
@@ -371,7 +308,7 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
                     c["table_title"] = built.title or comp["ref"]
                     if state.excel_available:
                         table_idx = list(state.tables.keys()).index(comp["ref"])
-                        c["download_url"] = url_for("table_download", idx=table_idx)
+                        c["download_url"] = url_for(".table_download", idx=table_idx)
                     else:
                         c["download_url"] = None
                 processed.append(c)
@@ -386,57 +323,135 @@ def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
             form_action=form_action,
         )
 
-    @app.route("/inputs", methods=["GET"])
-    def inputs():
-        if state.inputs_group is None:
+    if include_inputs:
+
+        @target.route("/inputs", methods=["GET"])
+        def inputs():
+            if state.inputs_group is None:
+                return render_template(
+                    "view.html",
+                    model=state.model,
+                    title="Inputs",
+                    rows=[],
+                    has_inputs=False,
+                    form_action=None,
+                    empty_message="This model has no input line items.",
+                )
+            built = state.inputs_group.build(state.model)
+            built["col_width"] = 12
             return render_template(
                 "view.html",
                 model=state.model,
                 title="Inputs",
-                rows=[],
-                has_inputs=False,
-                form_action=None,
-                empty_message="This model has no input line items.",
+                rows=[[built]],
+                has_inputs=True,
+                form_action=url_for(".update_inputs"),
             )
-        built = state.inputs_group.build(state.model)
-        built["col_width"] = 12
-        return render_template(
-            "view.html",
-            model=state.model,
-            title="Inputs",
-            rows=[[built]],
-            has_inputs=True,
-            form_action=url_for("update_inputs"),
-        )
 
-    @app.route("/inputs", methods=["POST"])
-    def update_inputs():
-        kwargs = {}
-        try:
-            for name in state.model_class._scalar_input_names:
-                if name in request.form:
-                    kwargs[name] = float(request.form[name])
-                else:
-                    kwargs[name] = state.model._scalars[name]
-            for name in state.model_class._input_line_names:
-                attr = getattr(state.model_class, name)
-                locked = set(attr.locked_values)  # __init__ fills these in; never pass them
-                current = state.model._input_line_values.get(name, {})
-                if any(f"{name}_{p}" in request.form for p in state.periods):
-                    kwargs[name] = {
-                        period: float(request.form[f"{name}_{period}"])
-                        if f"{name}_{period}" in request.form
-                        else current.get(period)  # carry forward per-period (preserves None)
-                        for period in state.periods
-                        if period not in locked
-                    }
-                else:
-                    kwargs[name] = {p: v for p, v in current.items() if p not in locked}
-            state.model = state.model_class(periods=state.periods, **kwargs)
-            flash("Model updated.", "success")
-        except Exception as e:
-            flash(str(e), "danger")
-        next_url = request.args.get("next") or url_for("inputs")
-        return redirect(next_url)
+        @target.route("/inputs", methods=["POST"])
+        def update_inputs():
+            kwargs = {}
+            try:
+                for name in state.model_class._scalar_input_names:
+                    if name in request.form:
+                        kwargs[name] = float(request.form[name])
+                    else:
+                        kwargs[name] = state.model._scalars[name]
+                for name in state.model_class._input_line_names:
+                    attr = getattr(state.model_class, name)
+                    locked = set(attr.locked_values)  # __init__ fills these in; never pass them
+                    current = state.model._input_line_values.get(name, {})
+                    if any(f"{name}_{p}" in request.form for p in state.periods):
+                        kwargs[name] = {
+                            period: float(request.form[f"{name}_{period}"])
+                            if f"{name}_{period}" in request.form
+                            else current.get(period)  # carry forward per-period (preserves None)
+                            for period in state.periods
+                            if period not in locked
+                        }
+                    else:
+                        kwargs[name] = {p: v for p, v in current.items() if p not in locked}
+                state.model = state.model_class(periods=state.periods, **kwargs)
+                flash("Model updated.", "success")
+            except Exception as e:
+                flash(str(e), "danger")
+            next_url = request.args.get("next") or url_for(".inputs")
+            return redirect(next_url)
+
+
+def create_app(model, *, tables=None, charts=None, views=None, home_view=None):
+    """Create a Flask app for exploring a ProformaModel.
+
+    Args:
+        model: An instantiated ProformaModel.
+        tables: Dict of label → TableDef for the Tables nav section.
+        charts: Dict of label → ChartDef for the Charts nav section.
+        views: Dict of label → view definition for the Views nav section.
+        home_view: Name of a view to show at '/' instead of the default index.
+            Must match a key in `views`. If None or not found, the default
+            line item index is shown.
+
+    Returns:
+        Flask app instance.
+
+    Usage:
+        from pyproforma import ProformaModel, FixedLine
+        from pyproforma.explorer import create_app
+
+        class MyModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100_000, 2025: 110_000})
+
+        model = MyModel(periods=[2024, 2025])
+        app = create_app(model, home_view="Financial Summary")
+        app.run(debug=True)
+    """
+    app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
+    app.secret_key = "pyproforma-explorer"
+
+    class _State:
+        pass
+
+    state = _State()
+    state.model = model
+    state.model_class = type(model)
+    state.periods = model.periods
+
+    all_input_names = type(model)._scalar_input_names + type(model)._input_line_names
+    state.inputs_group = (
+        InputGroup(names=all_input_names, orient="horizontal") if all_input_names else None
+    )
+
+    try:
+        import openpyxl  # noqa: F401
+
+        state.excel_available = True
+    except ImportError:
+        state.excel_available = False
+
+    all_items_def = TableDef(
+        rows=[HeaderRow(), *[ItemRow(name=n) for n in model.line_item_names]],
+        title="All Line Items",
+    )
+    state.tables = {"All Line Items": all_items_def, **(tables or {})}
+    state.charts = charts or {}
+    state.views = views or {}
+    if home_view is not None and home_view not in (views or {}):
+        available = ", ".join(f"'{v}'" for v in (views or {})) or "none"
+        raise ValueError(
+            f"home_view '{home_view}' not found in views. Available views: {available}"
+        )
+    state.home_view = home_view
+
+    for view_label, view_def in (views or {}).items():
+        input_group_count = sum(
+            1 for row in view_def for comp in row if isinstance(comp, InputGroup)
+        )
+        if input_group_count > 1:
+            raise ValueError(
+                f"View '{view_label}' has {input_group_count} InputGroup components. "
+                f"At most one InputGroup is allowed per view."
+            )
+
+    _register_model_routes(app, state, include_inputs=True)
 
     return app
