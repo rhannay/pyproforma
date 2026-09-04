@@ -276,7 +276,7 @@ class ModelComparison:
         all_rows: list[list[Cell]] = []
 
         # Header row
-        header = [Cell(value="", bold=True, align="left")]
+        header = [Cell(value="Period", bold=True, align="left")]
         for period in self.common_periods:
             header.append(Cell(value=period, bold=True, align="center", value_format=None))
         all_rows.append(header)
