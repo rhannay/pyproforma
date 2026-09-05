@@ -25,6 +25,21 @@
         <div class="collapse navbar-collapse" id="navbar-menu">
           {% set in_compare = nav_scenarios is defined and current_scenario is none %}
           <ul class="navbar-nav me-auto ms-auto-sm">
+            {% if nav_scenarios %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                Scenario: {{ current_scenario or "Compare" }}
+              </a>
+              <div class="dropdown-menu">
+                {% for label in nav_scenarios %}
+                <a class="dropdown-item{% if label == current_scenario %} active{% endif %}" href="/scenario/{{ label | urlencode }}/">{{ label }}</a>
+                {% endfor %}
+              </div>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('compare.compare_overview') }}" class="nav-link{% if current_scenario is none %} active{% endif %}">Compare</a>
+            </li>
+            {% endif %}
             {% if not in_compare %}
             <li class="nav-item">
               <a href="{{ url_for('.items') }}" class="nav-link">Line Items</a>
@@ -77,21 +92,6 @@
                 {% endif %}
               </div>
             </li>
-            {% if nav_scenarios %}
-            <li class="nav-item dropdown">
-              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                Scenario: {{ current_scenario or "Compare" }}
-              </a>
-              <div class="dropdown-menu">
-                {% for label in nav_scenarios %}
-                <a class="dropdown-item{% if label == current_scenario %} active{% endif %}" href="/scenario/{{ label | urlencode }}/">{{ label }}</a>
-                {% endfor %}
-              </div>
-            </li>
-            <li class="nav-item">
-              <a href="{{ url_for('compare.compare_overview') }}" class="nav-link{% if current_scenario is none %} active{% endif %}">Compare</a>
-            </li>
-            {% endif %}
           </ul>
           <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
         </div>
