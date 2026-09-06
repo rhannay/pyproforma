@@ -251,6 +251,7 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
 
     @app.route("/")
     def root_redirect():
-        return redirect(url_for("compare.compare_overview"))
+        # Land on the base scenario (the first one declared), not compare mode.
+        return redirect(url_for("scenario_0.index"))
 
     return app

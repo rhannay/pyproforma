@@ -29,12 +29,12 @@ def models(base_model, scenario_model):
 
 
 class TestScenarioRoutes:
-    def test_root_redirects_to_compare_overview(self, models):
+    def test_root_redirects_to_base_scenario(self, models):
         app = create_scenario_app(models)
         client = app.test_client()
         response = client.get("/")
         assert response.status_code == 302
-        assert response.headers["Location"] == "/compare/"
+        assert response.headers["Location"] == "/scenario/Base/"
 
     def test_each_scenario_index_returns_200(self, models):
         app = create_scenario_app(models)

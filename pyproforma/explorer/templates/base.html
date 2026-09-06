@@ -28,16 +28,15 @@
             {% if nav_scenarios %}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                Scenario: {{ current_scenario or "Compare" }}
+                {% if current_scenario %}Scenario: {{ current_scenario }}{% else %}Compare{% endif %}
               </a>
               <div class="dropdown-menu">
                 {% for label in nav_scenarios %}
                 <a class="dropdown-item{% if label == current_scenario %} active{% endif %}" href="/scenario/{{ label | urlencode }}/">{{ label }}</a>
                 {% endfor %}
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item{% if current_scenario is none %} active{% endif %}" href="{{ url_for('compare.compare_overview') }}">Compare Scenarios</a>
               </div>
-            </li>
-            <li class="nav-item">
-              <a href="{{ url_for('compare.compare_overview') }}" class="nav-link{% if current_scenario is none %} active{% endif %}">Compare</a>
             </li>
             {% endif %}
             {% if not in_compare %}
