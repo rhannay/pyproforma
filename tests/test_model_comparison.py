@@ -361,6 +361,21 @@ class TestTable:
         # 1 label col + 2 period cols
         assert all(len(row) == 3 for row in result.cells)
 
+    def test_table_no_values(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.table(include_values=False)
+        # 1 header + 3 items * (1 label + 1 diff + 1 blank) = 1 + 9 = 10
+        assert len(result.cells) == 10
+
+    def test_table_no_values_diffs_only(self, two_models_different_revenue):
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.table(item_names=["revenue"], include_values=False)
+        row_labels = [row[0].value for row in result.cells]
+        assert all(label not in row_labels for label in cmp.labels)
+        assert "Difference" in row_labels
+
     def test_table_specific_items(self, two_models_different_revenue):
         base, opt = two_models_different_revenue
         cmp = ModelComparison(base, opt)

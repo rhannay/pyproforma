@@ -101,4 +101,17 @@ scenarios:
   Lower Rate Increases:
     rate_increase: {2026: 0.030, 2027: 0.025, 2028: 0.020, 2029: 0.020, 2030: 0.015}
 
+compare:
+  tables:
+    "Rate Increases":
+      items: [rate_increase]
+    "Coverage & Liquidity":
+      items: [net_revenue, dscr, days_cash_on_hand]
+    "Ending Cash Delta":
+      items: [ending_cash]
+      include_values: false
+  charts:
+    "DSCR": { item: dscr }
+    "Net Revenue": { item: net_revenue, chart_type: bar }
+
 home_view: Financial Summary

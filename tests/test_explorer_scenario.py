@@ -4,6 +4,7 @@ import pytest
 
 from pyproforma import FixedLine, FormulaLine, InputLine, ProformaModel
 from pyproforma.explorer import create_scenario_app
+from pyproforma.explorer.compare_defs import CompareChartDef, CompareTableDef
 from pyproforma.explorer.components import InputGroup, StatCard
 
 
@@ -151,7 +152,7 @@ class TestCompareRoutes:
     def test_compare_item_shows_both_scenarios(self, models):
         app = create_scenario_app(models)
         client = app.test_client()
-        response = client.get("/compare/cogs")
+        response = client.get("/compare/item/cogs")
         assert response.status_code == 200
         html = response.data.decode()
         assert "Base" in html
@@ -162,4 +163,69 @@ class TestCompareRoutes:
     def test_compare_unknown_item_returns_404(self, models):
         app = create_scenario_app(models)
         client = app.test_client()
-        assert client.get("/compare/nonexistent").status_code == 404
+        assert client.get("/compare/item/nonexistent").status_code == 404
+
+
+class TestCompareTablesAndCharts:
+    def _app(self, models):
+        return create_scenario_app(
+            models,
+            compare_tables={
+                "Profit Summary": CompareTableDef(
+                    title="Profit Summary",
+                    items=["profit"],
+                    include_values=True,
+                    include_difference=True,
+                ),
+                "Diffs Only": CompareTableDef(
+                    title="Diffs Only", items=["cogs"], include_values=False
+                ),
+            },
+            compare_charts={
+                "Profit": CompareChartDef(title="Profit", item="profit", chart_type="bar"),
+            },
+        )
+
+    def test_compare_nav_lists_compare_tables_and_charts(self, models):
+        client = self._app(models).test_client()
+        html = client.get("/compare/").data.decode()
+        assert "Profit Summary" in html
+        assert "Diffs Only" in html
+        assert ">Profit<" in html
+        # no in-page pills anymore
+        assert "nav nav-tabs" not in html
+
+    def test_compare_table_route_renders(self, models):
+        client = self._app(models).test_client()
+        response = client.get("/compare/table/0")
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Profit Summary" in html
+        assert "Difference" in html
+
+    def test_compare_table_diffs_only_renders(self, models):
+        client = self._app(models).test_client()
+        response = client.get("/compare/table/1")
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Diffs Only" in html
+        assert "Difference" in html
+
+    def test_compare_table_out_of_range_404(self, models):
+        client = self._app(models).test_client()
+        assert client.get("/compare/table/9").status_code == 404
+
+    def test_compare_chart_route_renders(self, models):
+        client = self._app(models).test_client()
+        response = client.get("/compare/chart/0")
+        assert response.status_code == 200
+        assert "ApexCharts" in response.data.decode()
+
+    def test_compare_chart_out_of_range_404(self, models):
+        client = self._app(models).test_client()
+        assert client.get("/compare/chart/9").status_code == 404
+
+    def test_no_compare_tables_hides_tables_dropdown(self, models):
+        client = create_scenario_app(models).test_client()
+        html = client.get("/compare/").data.decode()
+        assert "No tables configured" not in html

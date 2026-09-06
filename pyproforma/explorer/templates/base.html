@@ -35,15 +35,18 @@
                 <a class="dropdown-item{% if label == current_scenario %} active{% endif %}" href="/scenario/{{ label | urlencode }}/">{{ label }}</a>
                 {% endfor %}
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item{% if current_scenario is none %} active{% endif %}" href="{{ url_for('compare.compare_overview') }}">All (Compare)</a>
+                <a class="dropdown-item{% if current_scenario is none %} active{% endif %}" href="{{ url_for('compare.index') }}">All (Compare)</a>
               </div>
             </li>
             {% endif %}
-            {% if not in_compare %}
+            {% if in_compare %}
+            <li class="nav-item">
+              <a href="{{ url_for('compare.index') }}" class="nav-link">Overview</a>
+            </li>
+            {% endif %}
             <li class="nav-item">
               <a href="{{ url_for('.items') }}" class="nav-link">Line Items</a>
             </li>
-            {% endif %}
             {% if nav_has_inputs %}
             <li class="nav-item">
               <a href="{{ url_for('.inputs') }}" class="nav-link">Inputs</a>
@@ -79,6 +82,7 @@
               </div>
             </li>
             {% endif %}
+            {% if nav_tables or not in_compare %}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
               <div class="dropdown-menu">
@@ -91,6 +95,7 @@
                 {% endif %}
               </div>
             </li>
+            {% endif %}
           </ul>
           <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
         </div>

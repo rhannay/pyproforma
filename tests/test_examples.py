@@ -55,3 +55,31 @@ class TestExampleApps:
 
     def test_water_utility_inputs(self, water_utility_client):
         assert water_utility_client.get("/inputs").status_code == 200
+
+
+class TestExampleScenarioConfig:
+    @pytest.fixture
+    def water_utility_scenario_client(self):
+        from pyproforma.cli import build_app
+
+        app = build_app(
+            EXAMPLES_DIR / "water_utility" / "model.py",
+            config_path=EXAMPLES_DIR / "water_utility" / "config_w_scenario.yaml",
+        )
+        return app.test_client()
+
+    def test_scenario_index(self, water_utility_scenario_client):
+        c = water_utility_scenario_client
+        assert c.get("/scenario/Base/items").status_code == 200
+        assert c.get("/scenario/Lower%20Rate%20Increases/items").status_code == 200
+        # home_view is set, so the bare scenario root redirects to it
+        assert c.get("/scenario/Base/", follow_redirects=True).status_code == 200
+
+    def test_compare_overview_and_artifacts(self, water_utility_scenario_client):
+        c = water_utility_scenario_client
+        assert c.get("/compare/").status_code == 200
+        assert c.get("/compare/items").status_code == 200
+        assert c.get("/compare/table/0").status_code == 200
+        assert c.get("/compare/table/2").status_code == 200
+        assert c.get("/compare/chart/0").status_code == 200
+        assert c.get("/compare/chart/1").status_code == 200

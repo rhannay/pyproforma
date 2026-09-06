@@ -140,12 +140,23 @@ def _build_scenario_state(model, tables, charts, views, home_view, excel_availab
     return state
 
 
-def create_scenario_app(models, *, tables=None, charts=None, views=None, home_view=None):
+def create_scenario_app(
+    models,
+    *,
+    tables=None,
+    charts=None,
+    views=None,
+    home_view=None,
+    compare_tables=None,
+    compare_charts=None,
+):
     """Create a Flask app for browsing N named scenarios of one ProformaModel class.
 
     Every scenario shares the same tables/charts/views config, browsable
-    read-only under /scenario/<label>/..., plus a /compare area with
-    auto-generated per-item diffs across all scenarios.
+    read-only under /scenario/<label>/..., plus a /compare area whose top nav
+    mirrors the scenario nav: an auto-generated differing-inputs overview, a
+    browsable list of common line items, and any curated cross-scenario
+    comparison tables/charts from the config's `compare:` block.
 
     Args:
         models: Dict of label → ProformaModel instance. All must be the same
@@ -158,10 +169,16 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
             mode has no input editing.
         home_view: Name of a view to show at each scenario's '/' instead of
             the default index. Must match a key in `views`.
+        compare_tables: Dict of title → CompareTableDef for compare mode's
+            Tables nav section.
+        compare_charts: Dict of title → CompareChartDef for compare mode's
+            Charts nav section.
 
     Returns:
         Flask app instance.
     """
+    compare_tables = compare_tables or {}
+    compare_charts = compare_charts or {}
     if len(models) < 2:
         raise ValueError("scenarios: must declare at least one scenario.")
 
@@ -203,13 +220,15 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
         app.register_blueprint(bp)
 
     comparison = ModelComparison(*models.values(), labels=labels)
+    compare_table_titles = list(compare_tables.keys())
+    compare_chart_titles = list(compare_charts.keys())
     compare_bp = Blueprint("compare", __name__, url_prefix="/compare")
 
     @compare_bp.context_processor
     def inject_compare_nav():
         return {
-            "nav_tables": [],
-            "nav_charts": [],
+            "nav_tables": list(enumerate(compare_table_titles)),
+            "nav_charts": list(enumerate(compare_chart_titles)),
             "nav_views": [],
             "nav_tags": [],
             "nav_has_inputs": False,
@@ -219,7 +238,7 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
         }
 
     @compare_bp.route("/")
-    def compare_overview():
+    def index():
         inputs_table = _build_scenario_inputs_table(models, labels)
         return render_template(
             "compare_overview.html",
@@ -228,15 +247,15 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
         )
 
     @compare_bp.route("/items")
-    def compare_items():
+    def items():
         return render_template(
             "compare_items.html",
             model=models[labels[0]],
             items=comparison.common_items,
         )
 
-    @compare_bp.route("/<name>")
-    def compare_item(name):
+    @compare_bp.route("/item/<name>")
+    def line_item(name):
         if name not in comparison.common_items:
             abort(404)
         return render_template(
@@ -245,6 +264,40 @@ def create_scenario_app(models, *, tables=None, charts=None, views=None, home_vi
             name=name,
             table_html=comparison.table([name]).to_bootstrap_html(),
             chart_data=json.dumps(comparison.chart(name).to_apexcharts()),
+        )
+
+    @compare_bp.route("/table/<int:idx>")
+    def table_view(idx):
+        if idx >= len(compare_table_titles):
+            abort(404)
+        spec = compare_tables[compare_table_titles[idx]]
+        table = comparison.table(
+            spec.items or None,
+            include_values=spec.include_values,
+            include_difference=spec.include_difference,
+            include_percent_difference=spec.include_percent_difference,
+        )
+        return render_template(
+            "table_view.html",
+            model=models[labels[0]],
+            title=spec.title,
+            table_html=table.to_bootstrap_html(),
+            download_url=None,
+        )
+
+    @compare_bp.route("/chart/<int:idx>")
+    def chart_view(idx):
+        if idx >= len(compare_chart_titles):
+            abort(404)
+        spec = compare_charts[compare_chart_titles[idx]]
+        chart_data = comparison.chart(
+            spec.item, chart_type=spec.chart_type, title=spec.title
+        ).to_apexcharts()
+        return render_template(
+            "chart_view.html",
+            model=models[labels[0]],
+            title=spec.title,
+            chart_data=json.dumps(chart_data),
         )
 
     app.register_blueprint(compare_bp)

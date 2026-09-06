@@ -91,6 +91,58 @@ scenarios:
     growth: 0.20
 """
 
+COMPARE_YAML = """
+scenarios:
+  High Growth:
+    growth: 0.20
+  Low Growth:
+    growth: 0.02
+
+compare:
+  tables:
+    Net Income:
+      items: [net_income]
+      include_values: true
+      include_difference: true
+    Revenue Diffs:
+      items: [revenue]
+      include_values: false
+  charts:
+    Net Income:
+      item: net_income
+      chart_type: bar
+"""
+
+COMPARE_WITHOUT_SCENARIOS_YAML = """
+compare:
+  tables:
+    Net Income:
+      items: [net_income]
+"""
+
+COMPARE_BAD_ITEM_YAML = """
+scenarios:
+  High Growth:
+    growth: 0.20
+
+compare:
+  tables:
+    Bogus:
+      items: [not_a_line_item]
+"""
+
+COMPARE_BAD_KEY_YAML = """
+scenarios:
+  High Growth:
+    growth: 0.20
+
+compare:
+  tables:
+    Net Income:
+      items: [net_income]
+      include_diffs: true
+"""
+
 
 class TestLoadViewConfig:
     def test_table_rows_are_real_row_instances(self, tmp_path):
@@ -224,6 +276,43 @@ class TestLoadViewConfigScenarios:
             load_view_config(path, base_model=model)
 
 
+class TestLoadViewConfigCompare:
+    def test_parses_compare_tables_and_charts(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_YAML)
+        config = load_view_config(path, base_model=model)
+        assert set(config["compare_tables"]) == {"Net Income", "Revenue Diffs"}
+        assert config["compare_tables"]["Net Income"].items == ["net_income"]
+        assert config["compare_tables"]["Revenue Diffs"].include_values is False
+        assert config["compare_charts"]["Net Income"].item == "net_income"
+        assert config["compare_charts"]["Net Income"].chart_type == "bar"
+
+    def test_compare_without_scenarios_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_WITHOUT_SCENARIOS_YAML)
+        with pytest.raises(ValueError, match="declares 'compare' but no 'scenarios'"):
+            load_view_config(path, base_model=model)
+
+    def test_compare_unknown_item_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_BAD_ITEM_YAML)
+        with pytest.raises(ValueError, match="not_a_line_item"):
+            load_view_config(path, base_model=model)
+
+    def test_compare_unknown_key_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_BAD_KEY_YAML)
+        with pytest.raises(ValueError, match="include_diffs"):
+            load_view_config(path, base_model=model)
+
+    def test_scenarios_without_compare_still_sets_empty_dicts(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(SCENARIOS_YAML)
+        config = load_view_config(path, base_model=model)
+        assert config["compare_tables"] == {}
+        assert config["compare_charts"] == {}
+
+
 class TestLoadViewConfigScenarioIntegration:
     def test_create_scenario_app_from_config(self, model, tmp_path):
         path = tmp_path / "config.yaml"
@@ -235,3 +324,18 @@ class TestLoadViewConfigScenarioIntegration:
         assert client.get("/scenario/Base/items").status_code == 200
         assert client.get("/scenario/High%20Growth/items").status_code == 200
         assert client.get("/compare/").status_code == 200
+
+    def test_create_scenario_app_from_config_with_compare(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_YAML)
+        config = load_view_config(path, base_model=model)
+        app = create_scenario_app(**config)
+        client = app.test_client()
+
+        assert client.get("/compare/").status_code == 200
+        assert client.get("/compare/table/0").status_code == 200
+        assert client.get("/compare/table/1").status_code == 200
+        assert client.get("/compare/chart/0").status_code == 200
+        html = client.get("/compare/").data.decode()
+        assert "Net Income" in html
+        assert "Revenue Diffs" in html

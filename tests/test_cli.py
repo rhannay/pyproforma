@@ -135,3 +135,25 @@ class TestBuildApp:
         assert client.get("/compare/").status_code == 200
         # scenario mode has no /inputs route
         assert client.get("/scenario/Base/inputs").status_code == 404
+
+    def test_with_compare_config_serves_compare_artifacts(self, tmp_path):
+        model_path = tmp_path / "model.py"
+        model_path.write_text(SCENARIO_CAPABLE_MODEL)
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "scenarios:\n"
+            "  High Growth:\n"
+            "    growth: 0.25\n"
+            "compare:\n"
+            "  tables:\n"
+            "    Revenue:\n"
+            "      items: [revenue]\n"
+            "  charts:\n"
+            "    Revenue: { item: revenue }\n"
+        )
+
+        app = build_app(model_path, config_path=config_path)
+        client = app.test_client()
+
+        assert client.get("/compare/table/0").status_code == 200
+        assert client.get("/compare/chart/0").status_code == 200

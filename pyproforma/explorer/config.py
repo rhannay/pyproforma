@@ -12,6 +12,7 @@ from pathlib import Path
 
 import yaml
 
+from pyproforma.explorer.compare_defs import CompareChartDef, CompareTableDef
 from pyproforma.explorer.components import InputGroup
 from pyproforma.tables.table_def import TableDef
 
@@ -24,7 +25,10 @@ def load_view_config(path: Path, base_model=None) -> dict:
         path: Path to a .yaml/.yml file with optional top-level keys
             "tables", "charts", "views", "home_view" — matching create_app()'s
             tables/charts/views/home_view parameters — plus an optional
-            "scenarios" key (dict of scenario label -> constructor kwargs).
+            "scenarios" key (dict of scenario label -> constructor kwargs) and,
+            alongside it, an optional "compare" key (dict with "tables" and/or
+            "charts" sub-dicts) defining cross-scenario comparison artifacts for
+            the explorer's compare mode.
         base_model: The model already loaded from the target .py file. Only
             required when the config declares "scenarios" — used to derive
             the model class and periods for building each scenario instance.
@@ -33,15 +37,18 @@ def load_view_config(path: Path, base_model=None) -> dict:
         dict with keys "tables", "charts", "views", "home_view", ready to pass
         as create_app(model, **load_view_config(path)). If the config declares
         "scenarios", the dict also has a "models" key (dict of label ->
-        ProformaModel, including "Base" for base_model itself), ready to pass
-        as create_scenario_app(**load_view_config(path, base_model=model)).
+        ProformaModel, including "Base" for base_model itself) and
+        "compare_tables"/"compare_charts" keys, ready to pass as
+        create_scenario_app(**load_view_config(path, base_model=model)).
 
     Raises:
         FileNotFoundError: If path doesn't exist.
         ValueError: If path isn't a .yaml/.yml file, a view component
             references a table/chart ref that isn't defined, "scenarios" is
-            declared without a base_model, "scenarios" is empty, or
-            "scenarios" declares a scenario named "Base".
+            declared without a base_model, "scenarios" is empty,
+            "scenarios" declares a scenario named "Base", "compare" is
+            declared without "scenarios", or a compare table/chart references
+            a line item that isn't common to every scenario.
     """
     if not path.exists():
         raise FileNotFoundError(f"No such file: {path}")
@@ -91,6 +98,11 @@ def load_view_config(path: Path, base_model=None) -> dict:
     }
 
     scenarios = raw.get("scenarios")
+    compare = raw.get("compare")
+
+    if compare is not None and scenarios is None:
+        raise ValueError(f"{path} declares 'compare' but no 'scenarios' — compare mode needs both.")
+
     if scenarios is not None:
         if base_model is None:
             raise ValueError(f"{path} declares 'scenarios' but no base model was provided.")
@@ -108,4 +120,43 @@ def load_view_config(path: Path, base_model=None) -> dict:
             models[label] = model_class(periods=periods, **kwargs)
         result["models"] = models
 
+        compare_tables, compare_charts = _load_compare(compare or {}, models)
+        result["compare_tables"] = compare_tables
+        result["compare_charts"] = compare_charts
+
     return result
+
+
+def _load_compare(compare: dict, models: dict) -> tuple[dict, dict]:
+    """Parse a config's `compare:` block into CompareTableDef / CompareChartDef dicts.
+
+    Validates every referenced line item against the set common to all scenarios.
+    """
+    unknown = set(compare) - {"tables", "charts"}
+    if unknown:
+        raise ValueError(f"compare: unknown key(s) {sorted(unknown)}. Allowed: tables, charts.")
+
+    common_items = set(next(iter(models.values())).line_item_names)
+    for model in models.values():
+        common_items &= set(model.line_item_names)
+
+    def _check(names, ctx):
+        missing = [n for n in names if n not in common_items]
+        if missing:
+            raise ValueError(
+                f"{ctx} references line item(s) {missing} not common to all scenarios."
+            )
+
+    compare_tables = {}
+    for title, data in (compare.get("tables") or {}).items():
+        table_def = CompareTableDef.from_dict(title, data or {})
+        _check(table_def.items, f"compare table '{title}'")
+        compare_tables[title] = table_def
+
+    compare_charts = {}
+    for title, data in (compare.get("charts") or {}).items():
+        chart_def = CompareChartDef.from_dict(title, data or {})
+        _check([chart_def.item], f"compare chart '{title}'")
+        compare_charts[title] = chart_def
+
+    return compare_tables, compare_charts

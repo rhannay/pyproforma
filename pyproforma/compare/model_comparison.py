@@ -239,6 +239,7 @@ class ModelComparison:
     def table(
         self,
         item_names: Optional[list[str]] = None,
+        include_values: bool = True,
         include_difference: bool = True,
         include_percent_difference: bool = False,
     ) -> Table:
@@ -247,7 +248,7 @@ class ModelComparison:
 
         For each item the table contains:
         - A bold label row (item display label)
-        - One value row per model
+        - One value row per model (optional, default on)
         - An absolute difference row per comparison model (optional, default on)
         - A percent difference row per comparison model (optional, default off)
         - A blank separator row
@@ -256,6 +257,8 @@ class ModelComparison:
 
         Args:
             item_names: Items to include. Defaults to all common_items.
+            include_values: Show the per-model value rows. Defaults to True.
+                Set False for a differences-only table.
             include_difference: Show absolute difference rows. Defaults to True.
             include_percent_difference: Show percent difference rows. Defaults to False.
 
@@ -292,13 +295,17 @@ class ModelComparison:
             all_rows.append(label_row)
 
             # One value row per model
-            for model, label in zip(self.models, self.labels):
-                row = [Cell(value=label, align="left")]
-                for period in self.common_periods:
-                    row.append(
-                        Cell(value=model.get_value(item_name, period), value_format=value_format)
-                    )
-                all_rows.append(row)
+            if include_values:
+                for model, label in zip(self.models, self.labels):
+                    row = [Cell(value=label, align="left")]
+                    for period in self.common_periods:
+                        row.append(
+                            Cell(
+                                value=model.get_value(item_name, period),
+                                value_format=value_format,
+                            )
+                        )
+                    all_rows.append(row)
 
             # Difference row(s)
             if include_difference:
