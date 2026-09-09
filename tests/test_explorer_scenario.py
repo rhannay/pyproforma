@@ -184,6 +184,15 @@ class TestCompareTablesAndCharts:
             compare_charts={
                 "Profit": CompareChartDef(title="Profit", item="profit", chart_type="bar"),
             },
+            compare_views={
+                "Dashboard": [
+                    [{"type": "chart", "ref": "Profit"}],
+                    [
+                        {"type": "table", "ref": "Profit Summary"},
+                        {"type": "table", "ref": "Diffs Only"},
+                    ],
+                ],
+            },
         )
 
     def test_compare_nav_lists_compare_tables_and_charts(self, models):
@@ -192,8 +201,23 @@ class TestCompareTablesAndCharts:
         assert "Profit Summary" in html
         assert "Diffs Only" in html
         assert ">Profit<" in html
+        assert "Dashboard" in html
         # no in-page pills anymore
         assert "nav nav-tabs" not in html
+
+    def test_compare_view_route_renders_tables_and_chart(self, models):
+        client = self._app(models).test_client()
+        response = client.get("/compare/view/0")
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Dashboard" in html
+        assert "Profit Summary" in html
+        assert "Diffs Only" in html
+        assert "ApexCharts" in html
+
+    def test_compare_view_out_of_range_404(self, models):
+        client = self._app(models).test_client()
+        assert client.get("/compare/view/9").status_code == 404
 
     def test_compare_table_route_renders(self, models):
         client = self._app(models).test_client()

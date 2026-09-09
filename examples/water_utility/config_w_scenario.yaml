@@ -114,4 +114,14 @@ compare:
     "DSCR": { item: dscr }
     "Net Revenue": { item: net_revenue, chart_type: bar }
 
+  views:
+    "Rate Impact":
+      - - { type: chart, ref: "Net Revenue" }
+        - { type: chart, ref: "DSCR" }
+      - - { type: table, ref: "Rate Increases" }
+      - - { type: table, ref: "Coverage & Liquidity" }
+    "Cash Position":
+      - - { type: chart, ref: "DSCR" }
+      - - { type: table, ref: "Ending Cash Delta" }
+
 home_view: Financial Summary

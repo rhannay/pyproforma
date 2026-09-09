@@ -121,6 +121,23 @@ def _build_scenario_inputs_table(models, labels) -> Table:
     return Table(cells=rows)
 
 
+def _compare_table(comparison, spec):
+    """Build the comparison Table for a CompareTableDef."""
+    return comparison.table(
+        spec.items or None,
+        include_values=spec.include_values,
+        include_difference=spec.include_difference,
+        include_percent_difference=spec.include_percent_difference,
+    )
+
+
+def _compare_chart_apex(comparison, spec):
+    """Build the ApexCharts spec dict for a CompareChartDef."""
+    return comparison.chart(
+        spec.item, chart_type=spec.chart_type, title=spec.title
+    ).to_apexcharts()
+
+
 def _build_scenario_state(model, tables, charts, views, home_view, excel_available):
     class _State:
         pass
@@ -149,6 +166,7 @@ def create_scenario_app(
     home_view=None,
     compare_tables=None,
     compare_charts=None,
+    compare_views=None,
 ):
     """Create a Flask app for browsing N named scenarios of one ProformaModel class.
 
@@ -173,12 +191,16 @@ def create_scenario_app(
             Tables nav section.
         compare_charts: Dict of title → CompareChartDef for compare mode's
             Charts nav section.
+        compare_views: Dict of title → list of component rows for compare
+            mode's Views nav section. Each component is a dict
+            {"type": "table"|"chart", "ref": <compare_tables/compare_charts key>}.
 
     Returns:
         Flask app instance.
     """
     compare_tables = compare_tables or {}
     compare_charts = compare_charts or {}
+    compare_views = compare_views or {}
     if len(models) < 2:
         raise ValueError("scenarios: must declare at least one scenario.")
 
@@ -222,6 +244,7 @@ def create_scenario_app(
     comparison = ModelComparison(*models.values(), labels=labels)
     compare_table_titles = list(compare_tables.keys())
     compare_chart_titles = list(compare_charts.keys())
+    compare_view_titles = list(compare_views.keys())
     compare_bp = Blueprint("compare", __name__, url_prefix="/compare")
 
     @compare_bp.context_processor
@@ -229,7 +252,7 @@ def create_scenario_app(
         return {
             "nav_tables": list(enumerate(compare_table_titles)),
             "nav_charts": list(enumerate(compare_chart_titles)),
-            "nav_views": [],
+            "nav_views": list(enumerate(compare_view_titles)),
             "nav_tags": [],
             "nav_has_inputs": False,
             "excel_available": excel_available,
@@ -271,17 +294,11 @@ def create_scenario_app(
         if idx >= len(compare_table_titles):
             abort(404)
         spec = compare_tables[compare_table_titles[idx]]
-        table = comparison.table(
-            spec.items or None,
-            include_values=spec.include_values,
-            include_difference=spec.include_difference,
-            include_percent_difference=spec.include_percent_difference,
-        )
         return render_template(
             "table_view.html",
             model=models[labels[0]],
             title=spec.title,
-            table_html=table.to_bootstrap_html(),
+            table_html=_compare_table(comparison, spec).to_bootstrap_html(),
             download_url=None,
         )
 
@@ -290,14 +307,43 @@ def create_scenario_app(
         if idx >= len(compare_chart_titles):
             abort(404)
         spec = compare_charts[compare_chart_titles[idx]]
-        chart_data = comparison.chart(
-            spec.item, chart_type=spec.chart_type, title=spec.title
-        ).to_apexcharts()
         return render_template(
             "chart_view.html",
             model=models[labels[0]],
             title=spec.title,
-            chart_data=json.dumps(chart_data),
+            chart_data=json.dumps(_compare_chart_apex(comparison, spec)),
+        )
+
+    @compare_bp.route("/view/<int:idx>")
+    def view_page(idx):
+        if idx >= len(compare_view_titles):
+            abort(404)
+        title = compare_view_titles[idx]
+        rows = []
+        for row_idx, row in enumerate(compare_views[title]):
+            col_width = 12 // len(row)
+            processed = []
+            for col_idx, comp in enumerate(row):
+                c = dict(comp)
+                c["col_width"] = col_width
+                if comp["type"] == "chart":
+                    spec = compare_charts[comp["ref"]]
+                    c["chart_data"] = json.dumps(_compare_chart_apex(comparison, spec))
+                    c["chart_id"] = f"compare-view-chart-{row_idx}-{col_idx}"
+                else:  # table
+                    spec = compare_tables[comp["ref"]]
+                    c["html"] = _compare_table(comparison, spec).to_bootstrap_html()
+                    c["table_title"] = spec.title
+                    c["download_url"] = None
+                processed.append(c)
+            rows.append(processed)
+        return render_template(
+            "view.html",
+            model=models[labels[0]],
+            title=title,
+            rows=rows,
+            has_inputs=False,
+            form_action=None,
         )
 
     app.register_blueprint(compare_bp)

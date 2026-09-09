@@ -83,3 +83,5 @@ class TestExampleScenarioConfig:
         assert c.get("/compare/table/2").status_code == 200
         assert c.get("/compare/chart/0").status_code == 200
         assert c.get("/compare/chart/1").status_code == 200
+        assert c.get("/compare/view/0").status_code == 200
+        assert c.get("/compare/view/1").status_code == 200

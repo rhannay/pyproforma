@@ -150,6 +150,10 @@ class TestBuildApp:
             "      items: [revenue]\n"
             "  charts:\n"
             "    Revenue: { item: revenue }\n"
+            "  views:\n"
+            "    Dash:\n"
+            "      - - { type: chart, ref: Revenue }\n"
+            "        - { type: table, ref: Revenue }\n"
         )
 
         app = build_app(model_path, config_path=config_path)
@@ -157,3 +161,4 @@ class TestBuildApp:
 
         assert client.get("/compare/table/0").status_code == 200
         assert client.get("/compare/chart/0").status_code == 200
+        assert client.get("/compare/view/0").status_code == 200

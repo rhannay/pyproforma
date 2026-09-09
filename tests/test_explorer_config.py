@@ -111,6 +111,25 @@ compare:
     Net Income:
       item: net_income
       chart_type: bar
+  views:
+    Summary:
+      - - { type: chart, ref: Net Income }
+      - - { type: table, ref: Net Income }
+        - { type: table, ref: Revenue Diffs }
+"""
+
+COMPARE_BAD_VIEW_REF_YAML = """
+scenarios:
+  High Growth:
+    growth: 0.20
+
+compare:
+  tables:
+    Net Income:
+      items: [net_income]
+  views:
+    Summary:
+      - - { type: chart, ref: Nonexistent }
 """
 
 COMPARE_WITHOUT_SCENARIOS_YAML = """
@@ -287,6 +306,23 @@ class TestLoadViewConfigCompare:
         assert config["compare_charts"]["Net Income"].item == "net_income"
         assert config["compare_charts"]["Net Income"].chart_type == "bar"
 
+    def test_parses_compare_views(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_YAML)
+        config = load_view_config(path, base_model=model)
+        rows = config["compare_views"]["Summary"]
+        assert rows[0] == [{"type": "chart", "ref": "Net Income"}]
+        assert rows[1] == [
+            {"type": "table", "ref": "Net Income"},
+            {"type": "table", "ref": "Revenue Diffs"},
+        ]
+
+    def test_compare_view_unknown_ref_raises(self, model, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(COMPARE_BAD_VIEW_REF_YAML)
+        with pytest.raises(ValueError, match="unknown compare chart 'Nonexistent'"):
+            load_view_config(path, base_model=model)
+
     def test_compare_without_scenarios_raises(self, model, tmp_path):
         path = tmp_path / "config.yaml"
         path.write_text(COMPARE_WITHOUT_SCENARIOS_YAML)
@@ -311,6 +347,7 @@ class TestLoadViewConfigCompare:
         config = load_view_config(path, base_model=model)
         assert config["compare_tables"] == {}
         assert config["compare_charts"] == {}
+        assert config["compare_views"] == {}
 
 
 class TestLoadViewConfigScenarioIntegration:
@@ -336,6 +373,8 @@ class TestLoadViewConfigScenarioIntegration:
         assert client.get("/compare/table/0").status_code == 200
         assert client.get("/compare/table/1").status_code == 200
         assert client.get("/compare/chart/0").status_code == 200
+        assert client.get("/compare/view/0").status_code == 200
         html = client.get("/compare/").data.decode()
         assert "Net Income" in html
         assert "Revenue Diffs" in html
+        assert "Summary" in html
