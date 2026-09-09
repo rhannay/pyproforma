@@ -11,6 +11,7 @@ This layer knows about ProformaModel; the Table class beneath it does not.
 from typing import TYPE_CHECKING, Optional, Union
 
 from pyproforma.table import Table
+from pyproforma.table.col_widths import standard_col_widths
 
 from . import row_types as rt
 from .row_types import BaseRow, dict_to_row_config
@@ -127,10 +128,9 @@ class Tables:
                 # Single row returned
                 all_rows.append(result)
 
-        # Build default col_widths: 315px (≈45 Excel units) for label cols,
-        # 105px (≈15 Excel units) for each period col
-        n_periods = len(self._model.periods)
-        col_widths = [245] * label_col_count + [105] * n_periods
+        # Standard widths: wide label columns, narrow uniform period columns
+        # (shared with ModelComparison and the explorer's scenario tables).
+        col_widths = standard_col_widths(label_col_count, len(self._model.periods))
 
         return Table(cells=all_rows, col_widths=col_widths, title=title)
 

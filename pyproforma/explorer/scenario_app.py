@@ -10,6 +10,7 @@ from pyproforma.compare import ModelComparison
 from pyproforma.explorer.app import _register_model_routes
 from pyproforma.explorer.components import InputGroup
 from pyproforma.table import Cell, Table
+from pyproforma.table.col_widths import standard_col_widths
 from pyproforma.tables.row_types import HeaderRow, ItemRow
 from pyproforma.tables.table_def import TableDef
 
@@ -118,7 +119,7 @@ def _build_scenario_inputs_table(models, labels) -> Table:
             row += [Cell(value=v, value_format=value_format) for v in values]
             rows.append(pad(row))
 
-    return Table(cells=rows)
+    return Table(cells=rows, col_widths=standard_col_widths(1, n_cols - 1))
 
 
 def _compare_table(comparison, spec):

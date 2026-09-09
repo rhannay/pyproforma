@@ -135,6 +135,13 @@ class TestCompareOverview:
         assert "Revenue" not in html
         assert "Profit" not in html
 
+    def test_overview_inputs_table_has_standard_col_widths(self, models):
+        app = create_scenario_app(models)
+        client = app.test_client()
+        html = client.get("/compare/").data.decode()
+        assert "<colgroup>" in html
+        assert "width: 245px" in html
+
 
 class TestCompareItemsTab:
     def test_items_tab_lists_common_items(self, models):
@@ -226,6 +233,9 @@ class TestCompareTablesAndCharts:
         html = response.data.decode()
         assert "Profit Summary" in html
         assert "Difference" in html
+        # standardized column widths -> colgroup emitted like every other table
+        assert "<colgroup>" in html
+        assert "width: 245px" in html
 
     def test_compare_table_diffs_only_renders(self, models):
         client = self._app(models).test_client()

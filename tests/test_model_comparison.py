@@ -361,6 +361,14 @@ class TestTable:
         # 1 label col + 2 period cols
         assert all(len(row) == 3 for row in result.cells)
 
+    def test_table_has_standard_col_widths(self, two_models_different_revenue):
+        from pyproforma.table.col_widths import standard_col_widths
+
+        base, opt = two_models_different_revenue
+        cmp = ModelComparison(base, opt)
+        result = cmp.table()
+        assert result.col_widths == standard_col_widths(1, len(cmp.common_periods))
+
     def test_table_no_values(self, two_models_different_revenue):
         base, opt = two_models_different_revenue
         cmp = ModelComparison(base, opt)

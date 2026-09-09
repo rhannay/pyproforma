@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 from pyproforma.table import Cell, Format, Table
+from pyproforma.table.col_widths import standard_col_widths
 
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
@@ -337,7 +338,10 @@ class ModelComparison:
             # Blank separator
             all_rows.append([Cell(value="") for _ in range(1 + len(self.common_periods))])
 
-        return Table(cells=all_rows)
+        return Table(
+            cells=all_rows,
+            col_widths=standard_col_widths(1, len(self.common_periods)),
+        )
 
     def chart(
         self,
