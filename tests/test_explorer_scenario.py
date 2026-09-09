@@ -239,6 +239,27 @@ class TestCompareTablesAndCharts:
         client = self._app(models).test_client()
         assert client.get("/compare/table/9").status_code == 404
 
+    def test_compare_table_has_excel_download_link(self, models):
+        client = self._app(models).test_client()
+        html = client.get("/compare/table/0").data.decode()
+        assert "/compare/table/0/download" in html
+
+    def test_compare_table_download_returns_xlsx(self, models):
+        client = self._app(models).test_client()
+        response = client.get("/compare/table/0/download")
+        assert response.status_code == 200
+        assert "spreadsheetml" in response.headers["Content-Type"]
+        assert "profit_summary.xlsx" in response.headers["Content-Disposition"]
+
+    def test_compare_table_download_out_of_range_404(self, models):
+        client = self._app(models).test_client()
+        assert client.get("/compare/table/9/download").status_code == 404
+
+    def test_compare_view_table_has_download_link(self, models):
+        client = self._app(models).test_client()
+        html = client.get("/compare/view/0").data.decode()
+        assert "/compare/table/0/download" in html
+
     def test_compare_chart_route_renders(self, models):
         client = self._app(models).test_client()
         response = client.get("/compare/chart/0")

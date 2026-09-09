@@ -294,12 +294,31 @@ def create_scenario_app(
         if idx >= len(compare_table_titles):
             abort(404)
         spec = compare_tables[compare_table_titles[idx]]
+        download_url = url_for(".table_download", idx=idx) if excel_available else None
         return render_template(
             "table_view.html",
             model=models[labels[0]],
             title=spec.title,
             table_html=_compare_table(comparison, spec).to_bootstrap_html(),
-            download_url=None,
+            download_url=download_url,
+        )
+
+    @compare_bp.route("/table/<int:idx>/download")
+    def table_download(idx):
+        if idx >= len(compare_table_titles):
+            abort(404)
+        if not excel_available:
+            abort(501)
+        from flask import send_file
+
+        spec = compare_tables[compare_table_titles[idx]]
+        buf = _compare_table(comparison, spec).to_excel_bytes()
+        filename = spec.title.lower().replace(" ", "_") + ".xlsx"
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     @compare_bp.route("/chart/<int:idx>")
@@ -334,7 +353,10 @@ def create_scenario_app(
                     spec = compare_tables[comp["ref"]]
                     c["html"] = _compare_table(comparison, spec).to_bootstrap_html()
                     c["table_title"] = spec.title
-                    c["download_url"] = None
+                    table_idx = compare_table_titles.index(comp["ref"])
+                    c["download_url"] = (
+                        url_for(".table_download", idx=table_idx) if excel_available else None
+                    )
                 processed.append(c)
             rows.append(processed)
         return render_template(
