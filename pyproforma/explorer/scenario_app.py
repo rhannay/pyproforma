@@ -110,8 +110,13 @@ def _build_scenario_inputs_table(models, labels) -> Table:
     for i, block in enumerate(blocks):
         if i > 0:
             rows.append(pad([Cell(value="")]))
-        header = [Cell(value=block["corner"], bold=True, align="left")]
-        header += [Cell(value=h, bold=True, align="center") for h in block["col_headers"]]
+        header = [
+            Cell(value=block["corner"], bold=True, align="left", background_color="#f2f2f2")
+        ]
+        header += [
+            Cell(value=h, bold=True, align="center", background_color="#f2f2f2")
+            for h in block["col_headers"]
+        ]
         rows.append(pad(header))
         rows.append(pad([Cell(value=block["title"], bold=True, align="left")]))
         for row_label, values, value_format in block["rows"]:

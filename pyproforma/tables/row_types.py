@@ -40,10 +40,14 @@ class BaseRow(ABC):
 
 @dataclass
 class HeaderRow(BaseRow):
-    """Configuration for header row generation."""
+    """Configuration for header row generation.
+
+    Defaults to a light grey background (``#f2f2f2``); pass ``background_color=None``
+    for no shading.
+    """
 
     col_labels: Union[str, list[str], None] = None
-    background_color: Optional[str] = None
+    background_color: Optional[str] = "#f2f2f2"
 
     def generate_row(
         self, model: "ProformaModel", label_col_count: int = 1
