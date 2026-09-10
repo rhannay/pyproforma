@@ -235,6 +235,83 @@ app.run(debug=True)
 
 Requires `pip install pyproforma[explorer]`. The app shows all line items, their values, formula sources, and lets you update `InputLine` / `ScalarInputLine` values live. You can also pass named tables, charts, and views to build a richer dashboard.
 
+### CLI
+
+Launch the explorer straight from the command line, no wrapper script needed — point it at a `.py` file with a module-level `model`:
+
+```bash
+pyproforma my_model.py
+```
+
+Pass `-c config.yaml` to drive tables, charts, views, and a home page from a YAML file instead of Python:
+
+```yaml
+tables:
+  Income Statement:
+    rows:
+      - row_type: header
+      - row_type: item
+        name: revenue
+      - row_type: item
+        name: net_income
+        bold: true
+        top_border: single
+
+charts:
+  Revenue vs Net Income:
+    names: [revenue, net_income]
+
+views:
+  Overview:
+    - - type: chart
+        ref: Revenue vs Net Income
+      - type: table
+        ref: Income Statement
+
+home_view: Overview
+```
+
+```bash
+pyproforma my_model.py -c config.yaml
+```
+
+### Scenarios & compare mode
+
+Add a `scenarios:` block (each entry maps to constructor kwargs, e.g. `InputLine` / `ScalarInputLine` overrides) and the CLI switches to a multi-model app — a "Scenario" dropdown lets you browse each one read-only, plus an "All (Compare)" view:
+
+```yaml
+scenarios:
+  Upside:
+    margin: 0.52
+  Downside:
+    margin: 0.38
+```
+
+Add an optional `compare:` block to curate cross-scenario tables/charts/views (built on `ModelComparison` under the hood — value rows, absolute/percent difference rows, per-scenario chart series):
+
+```yaml
+compare:
+  tables:
+    Margin Impact:
+      items: [gross_profit, net_income]
+  charts:
+    Net Income: { item: net_income, chart_type: bar }
+  views:
+    Summary:
+      - - { type: chart, ref: "Net Income" }
+      - - { type: table, ref: "Margin Impact" }
+```
+
+Without a config file, compare mode still works from Python:
+
+```python
+from pyproforma.compare import ModelComparison
+
+comparison = ModelComparison(base, upside, downside, labels=["Base", "Upside", "Downside"])
+comparison.table(["revenue", "net_income"])   # value + difference rows, one column per period
+comparison.chart("net_income").show()         # one series per model
+```
+
 ---
 
 ## Installation

@@ -4,7 +4,9 @@ ModelComparison class for comparing two or more v2 ProformaModel instances.
 
 from typing import TYPE_CHECKING, Optional, Union
 
+from pyproforma.chart.chart import Chart, ChartSeries, ChartType
 from pyproforma.table import Cell, Format, Table
+from pyproforma.table.col_widths import standard_col_widths
 
 if TYPE_CHECKING:
     from pyproforma.proforma_model import ProformaModel
@@ -35,6 +37,7 @@ class ModelComparison:
         >>> cmp.difference("revenue", 2024)
         20000.0
         >>> cmp.table(["revenue", "expenses", "profit"])
+        >>> cmp.chart("revenue").show()
     """
 
     def __init__(
@@ -237,6 +240,7 @@ class ModelComparison:
     def table(
         self,
         item_names: Optional[list[str]] = None,
+        include_values: bool = True,
         include_difference: bool = True,
         include_percent_difference: bool = False,
     ) -> Table:
@@ -245,7 +249,7 @@ class ModelComparison:
 
         For each item the table contains:
         - A bold label row (item display label)
-        - One value row per model
+        - One value row per model (optional, default on)
         - An absolute difference row per comparison model (optional, default on)
         - A percent difference row per comparison model (optional, default off)
         - A blank separator row
@@ -254,6 +258,8 @@ class ModelComparison:
 
         Args:
             item_names: Items to include. Defaults to all common_items.
+            include_values: Show the per-model value rows. Defaults to True.
+                Set False for a differences-only table.
             include_difference: Show absolute difference rows. Defaults to True.
             include_percent_difference: Show percent difference rows. Defaults to False.
 
@@ -274,9 +280,18 @@ class ModelComparison:
         all_rows: list[list[Cell]] = []
 
         # Header row
-        header = [Cell(value="", bold=True, align="left")]
+        header_bg = "#f2f2f2"
+        header = [Cell(value="Period", bold=True, align="left", background_color=header_bg)]
         for period in self.common_periods:
-            header.append(Cell(value=period, bold=True, align="center", value_format=None))
+            header.append(
+                Cell(
+                    value=period,
+                    bold=True,
+                    align="center",
+                    value_format=None,
+                    background_color=header_bg,
+                )
+            )
         all_rows.append(header)
 
         for item_name in items:
@@ -290,26 +305,35 @@ class ModelComparison:
             all_rows.append(label_row)
 
             # One value row per model
-            for model, label in zip(self.models, self.labels):
-                row = [Cell(value=label, align="left")]
-                for period in self.common_periods:
-                    row.append(
-                        Cell(value=model.get_value(item_name, period), value_format=value_format)
-                    )
-                all_rows.append(row)
+            if include_values:
+                for model, label in zip(self.models, self.labels):
+                    row = [Cell(value=label, align="left")]
+                    for period in self.common_periods:
+                        row.append(
+                            Cell(
+                                value=model.get_value(item_name, period),
+                                value_format=value_format,
+                            )
+                        )
+                    all_rows.append(row)
 
             # Difference row(s)
             if include_difference:
                 compare_pairs = list(enumerate(self.labels[1:], start=1))
-                for i, label in compare_pairs:
+                for row_idx, (i, label) in enumerate(compare_pairs):
                     diff_label = "Difference" if two_model else f"Diff: {label}"
-                    diff_row = [Cell(value=diff_label, align="left")]
+                    # A top border on the first difference row separates it from
+                    # the value rows above.
+                    border = "single" if row_idx == 0 else None
+                    diff_row = [Cell(value=diff_label, align="left", top_border=border)]
                     for period in self.common_periods:
                         diff = (
                             self.models[i].get_value(item_name, period)
                             - self.base.get_value(item_name, period)
                         )
-                        diff_row.append(Cell(value=diff, value_format=value_format))
+                        diff_row.append(
+                            Cell(value=diff, value_format=value_format, top_border=border)
+                        )
                     all_rows.append(diff_row)
 
             # Percent difference row(s)
@@ -328,7 +352,59 @@ class ModelComparison:
             # Blank separator
             all_rows.append([Cell(value="") for _ in range(1 + len(self.common_periods))])
 
-        return Table(cells=all_rows)
+        return Table(
+            cells=all_rows,
+            col_widths=standard_col_widths(1, len(self.common_periods)),
+        )
+
+    def chart(
+        self,
+        item_name: str,
+        chart_type: ChartType = "line",
+        title: Optional[str] = None,
+        value_format=None,
+    ) -> Chart:
+        """
+        Build a chart comparing a single line item across all models.
+
+        One series per model (using self.labels), plotted over common_periods.
+
+        Args:
+            item_name: Name of the line item (must be in common_items).
+            chart_type: One of "line", "bar", "stacked_bar". Defaults to "line".
+            title: Chart title. Defaults to the item's label.
+            value_format: Override the item's value format for the y-axis.
+
+        Returns:
+            Chart ready for rendering.
+
+        Raises:
+            ValueError: If item_name is not in common_items.
+
+        Examples:
+            >>> cmp.chart("revenue").show()
+            >>> cmp.chart("revenue", chart_type="bar").show()
+        """
+        self._validate_item(item_name)
+
+        item_result = self.base[item_name]
+        item_label = item_result.label or item_name
+
+        series = [
+            ChartSeries(
+                label=label,
+                x_values=list(self.common_periods),
+                y_values=[model.get_value(item_name, p) for p in self.common_periods],
+            )
+            for model, label in zip(self.models, self.labels)
+        ]
+
+        return Chart(
+            series=series,
+            chart_type=chart_type,
+            title=title if title is not None else item_label,
+            value_format=value_format or item_result.value_format,
+        )
 
     def __repr__(self) -> str:
         return (

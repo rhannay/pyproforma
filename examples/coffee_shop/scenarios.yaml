@@ -1,0 +1,5 @@
+scenarios:
+  Current Supplier:
+    coffee_cogs: {2024: 98000, 2025: 107800, 2026: 118650}
+  New Supplier:
+    coffee_cogs: {2024: 85000, 2025: 92000, 2026: 98000}

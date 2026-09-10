@@ -41,7 +41,7 @@ def test_line_item_result_table_basic(simple_model):
 
     # Check header row
     header = table.cells[0]
-    assert header[0].value == "Label"
+    assert header[0].value == "Period"
     assert header[1].value == 2024
     assert header[2].value == 2025
     assert header[3].value == 2026

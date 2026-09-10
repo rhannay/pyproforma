@@ -2,6 +2,7 @@ from pyproforma import (
     FixedLine,
     Format,
     FormulaLine,
+    InputLine,
     ProformaModel,
     ScalarLine,
 )
@@ -31,16 +32,16 @@ class CoffeeShopModel(ProformaModel):
     )
 
     # --- COGS assumptions ---
-    coffee_cogs_rate = ScalarLine(
-        value=0.35, label="Coffee COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL
-    )
     food_cogs_rate = ScalarLine(
         value=0.45, label="Food COGS Rate", value_format=Format.PERCENT_ONE_DECIMAL
     )
 
     # --- Cost of Goods Sold ---
-    coffee_cogs = FormulaLine(
-        formula=lambda li, t: li.coffee_sales[t] * li.coffee_cogs_rate,
+    # Coffee COGS is an input rather than a formula so different supplier
+    # contracts can be modeled directly, without a rate. Default matches
+    # coffee_sales * coffee_cogs_rate so the base model is unchanged.
+    coffee_cogs = InputLine(
+        default={2024: 98_000, 2025: 107_800, 2026: 118_650},
         label="Coffee COGS",
         tags=["cogs"],
         value_format=Format.CURRENCY_NO_DECIMALS,

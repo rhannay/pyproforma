@@ -23,13 +23,33 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbar-menu">
+          {% set in_compare = nav_scenarios is defined and current_scenario is none %}
           <ul class="navbar-nav me-auto ms-auto-sm">
+            {% if nav_scenarios %}
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                Scenario: {% if current_scenario %}{{ current_scenario }}{% else %}All (Compare){% endif %}
+              </a>
+              <div class="dropdown-menu">
+                {% for label in nav_scenarios %}
+                <a class="dropdown-item{% if label == current_scenario %} active{% endif %}" href="/scenario/{{ label | urlencode }}/">{{ label }}</a>
+                {% endfor %}
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item{% if current_scenario is none %} active{% endif %}" href="{{ url_for('compare.index') }}">All (Compare)</a>
+              </div>
+            </li>
+            {% endif %}
+            {% if in_compare %}
             <li class="nav-item">
-              <a href="{{ url_for('items') }}" class="nav-link">Line Items</a>
+              <a href="{{ url_for('compare.index') }}" class="nav-link">Overview</a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a href="{{ url_for('.items') }}" class="nav-link">Line Items</a>
             </li>
             {% if nav_has_inputs %}
             <li class="nav-item">
-              <a href="{{ url_for('inputs') }}" class="nav-link">Inputs</a>
+              <a href="{{ url_for('.inputs') }}" class="nav-link">Inputs</a>
             </li>
             {% endif %}
             {% if nav_tags %}
@@ -37,7 +57,7 @@
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tags</a>
               <div class="dropdown-menu">
                 {% for tag in nav_tags %}
-                <a class="dropdown-item" href="{{ url_for('tag_view', tag_name=tag) }}">{{ tag }}</a>
+                <a class="dropdown-item" href="{{ url_for('.tag_view', tag_name=tag) }}">{{ tag }}</a>
                 {% endfor %}
               </div>
             </li>
@@ -47,7 +67,7 @@
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Views</a>
               <div class="dropdown-menu">
                 {% for idx, label in nav_views %}
-                <a class="dropdown-item" href="{{ url_for('view_page', idx=idx) }}">{{ label }}</a>
+                <a class="dropdown-item" href="{{ url_for('.view_page', idx=idx) }}">{{ label }}</a>
                 {% endfor %}
               </div>
             </li>
@@ -57,23 +77,25 @@
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Charts</a>
               <div class="dropdown-menu">
                 {% for idx, label in nav_charts %}
-                <a class="dropdown-item" href="{{ url_for('chart_view', idx=idx) }}">{{ label }}</a>
+                <a class="dropdown-item" href="{{ url_for('.chart_view', idx=idx) }}">{{ label }}</a>
                 {% endfor %}
               </div>
             </li>
             {% endif %}
+            {% if nav_tables or not in_compare %}
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Tables</a>
               <div class="dropdown-menu">
                 {% if nav_tables %}
                   {% for idx, label in nav_tables %}
-                  <a class="dropdown-item" href="{{ url_for('table_view', idx=idx) }}">{{ label }}</a>
+                  <a class="dropdown-item" href="{{ url_for('.table_view', idx=idx) }}">{{ label }}</a>
                   {% endfor %}
                 {% else %}
                   <span class="dropdown-item text-muted fst-italic small">No tables configured</span>
                 {% endif %}
               </div>
             </li>
+            {% endif %}
           </ul>
           <span class="navbar-text text-muted small">{{ model.__class__.__name__ }}</span>
         </div>

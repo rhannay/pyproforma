@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Compare{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none mt-3">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">Compare — Overview</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-header">
+    <h3 class="card-title">Scenarios</h3>
+  </div>
+  <div class="card-body p-0">
+    {{ inputs_table_html | safe }}
+  </div>
+</div>
+{% endblock %}

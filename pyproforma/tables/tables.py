@@ -8,9 +8,11 @@ build() method which accepts a TableDef or plain list of row configurations.
 This layer knows about ProformaModel; the Table class beneath it does not.
 """
 
+import dataclasses
 from typing import TYPE_CHECKING, Optional, Union
 
 from pyproforma.table import Table
+from pyproforma.table.col_widths import standard_col_widths
 
 from . import row_types as rt
 from .row_types import BaseRow, dict_to_row_config
@@ -50,6 +52,7 @@ class Tables:
         self,
         definition: "Union[TableDef, list[Union[dict, BaseRow]]]",
         col_labels: Optional[str | list[str]] = None,
+        hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
         Build a table from a TableDef or a bare list of row configurations.
@@ -58,6 +61,10 @@ class Tables:
             definition: Either a TableDef instance or a plain list of row
                 configurations (BaseRow instances or equivalent dicts).
             col_labels: String or list of strings for label columns. Defaults to None.
+            hardcoded_color: CSS color applied to every hardcoded (input / fixed)
+                cell in the table's ItemRow / TagItemsRow rows. Overrides
+                TableDef.hardcoded_color; a row that sets its own hardcoded_color
+                overrides both. Defaults to None.
 
         Returns:
             Table with title populated from TableDef.title when provided.
@@ -66,11 +73,14 @@ class Tables:
             >>> model.tables.build(TableDef(rows=[HeaderRow(), ItemRow(name="revenue")],
             ...                             title="Revenue"))
             >>> model.tables.build([HeaderRow(), ItemRow(name="revenue")])
+            >>> model.tables.build([...], hardcoded_color="#1f6feb")
         """
         from pyproforma.tables.table_def import TableDef as _TableDef
         if isinstance(definition, _TableDef):
             title = definition.title
             template = definition.rows
+            if hardcoded_color is None:
+                hardcoded_color = definition.hardcoded_color
         else:
             title = None
             template = definition
@@ -118,6 +128,15 @@ class Tables:
             if isinstance(config, dict):
                 config = dict_to_row_config(config)
 
+            # Apply the table-level hardcoded color to item rows that don't set
+            # their own (per-row hardcoded_color wins).
+            if (
+                hardcoded_color is not None
+                and isinstance(config, (rt.ItemRow, rt.TagItemsRow))
+                and config.hardcoded_color is None
+            ):
+                config = dataclasses.replace(config, hardcoded_color=hardcoded_color)
+
             # Generate row(s)
             result = config.generate_row(self._model, label_col_count=label_col_count)
             if isinstance(result, list) and result and isinstance(result[0], list):
@@ -127,10 +146,9 @@ class Tables:
                 # Single row returned
                 all_rows.append(result)
 
-        # Build default col_widths: 315px (≈45 Excel units) for label cols,
-        # 105px (≈15 Excel units) for each period col
-        n_periods = len(self._model.periods)
-        col_widths = [245] * label_col_count + [105] * n_periods
+        # Standard widths: wide label columns, narrow uniform period columns
+        # (shared with ModelComparison and the explorer's scenario tables).
+        col_widths = standard_col_widths(label_col_count, len(self._model.periods))
 
         return Table(cells=all_rows, col_widths=col_widths, title=title)
 
@@ -269,11 +287,13 @@ class Tables:
                 f"Available line items: {', '.join(sorted(self._model.line_item_names))}"
             )
 
-        # Build col_labels parameter
+        # Build col_labels parameter. With no Name column, this single header
+        # is the corner cell above periods running across the top, so it
+        # reads "Period" rather than "Label".
         if include_name:
             col_labels = ["Name", "Label"]
         else:
-            col_labels = "Label"
+            col_labels = "Period"
 
         # Build template with HeaderRow and single ItemRow
         template = [
@@ -325,7 +345,7 @@ class Tables:
             )
 
         line_item_def = getattr(self._model.__class__, name)
-        template = [rt.HeaderRow(col_labels="Label")]
+        template = [rt.HeaderRow(col_labels="Period")]
 
         if isinstance(line_item_def, FormulaLine) and line_item_def.precedents:
             precedent_names = [
@@ -342,4 +362,4 @@ class Tables:
 
         template.append(rt.ItemRow(name=name, bold=True, hardcoded_color=hardcoded_color))
 
-        return self.build(template, col_labels="Label")
+        return self.build(template, col_labels="Period")

@@ -710,6 +710,18 @@ class TestColWidths:
         transposed = table.transpose()
         assert transposed.col_widths is None
 
+    def test_standard_col_widths_helper(self):
+        """standard_col_widths builds label cols then period cols."""
+        from pyproforma.table.col_widths import (
+            LABEL_COL_PX,
+            PERIOD_COL_PX,
+            standard_col_widths,
+        )
+
+        assert standard_col_widths(1, 3) == [LABEL_COL_PX] + [PERIOD_COL_PX] * 3
+        assert standard_col_widths(2, 1) == [LABEL_COL_PX, LABEL_COL_PX, PERIOD_COL_PX]
+        assert standard_col_widths(1, 0) == [LABEL_COL_PX]
+
 
 class TestTableIndexing:
     """Test cases for Table indexing functionality."""
