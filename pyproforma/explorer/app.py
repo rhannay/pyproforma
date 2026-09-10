@@ -86,12 +86,17 @@ def _register_model_routes(target, state, *, include_inputs=True):
                 ]
                 for name in names:
                     result.append(
-                        ItemRow(name=name, bold=row.bold, href=url_for(".line_item", name=name))
+                        ItemRow(
+                            name=name,
+                            bold=row.bold,
+                            hardcoded_color=row.hardcoded_color,
+                            href=url_for(".line_item", name=name),
+                        )
                     )
             else:
                 result.append(row)
         if isinstance(definition, TableDef):
-            return TableDef(rows=result, title=definition.title)
+            return dataclasses.replace(definition, rows=result)
         return result
 
     def _render_line_items_index():

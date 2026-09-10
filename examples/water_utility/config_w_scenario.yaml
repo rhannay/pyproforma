@@ -1,6 +1,7 @@
 tables:
   Debt Service Coverage:
     title: "Debt Service Coverage"
+    hardcoded_color: "#1f6feb"   # blue for input/fixed values, black for calculated
     rows:
       - row_type: header
       - row_type: label

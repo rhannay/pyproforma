@@ -75,6 +75,10 @@ class TestExampleScenarioConfig:
         # home_view is set, so the bare scenario root redirects to it
         assert c.get("/scenario/Base/", follow_redirects=True).status_code == 200
 
+    def test_scenario_table_hardcoded_color(self, water_utility_scenario_client):
+        html = water_utility_scenario_client.get("/scenario/Base/table/1").data.decode()
+        assert "color: #1F6FEB" in html  # hardcoded_color from config_w_scenario.yaml
+
     def test_compare_overview_and_artifacts(self, water_utility_scenario_client):
         c = water_utility_scenario_client
         assert c.get("/compare/").status_code == 200
@@ -85,3 +89,18 @@ class TestExampleScenarioConfig:
         assert c.get("/compare/chart/1").status_code == 200
         assert c.get("/compare/view/0").status_code == 200
         assert c.get("/compare/view/1").status_code == 200
+
+
+class TestExampleSingleModelConfig:
+    def test_config_yaml_table_hardcoded_color(self):
+        from pyproforma.cli import build_app
+
+        app = build_app(
+            EXAMPLES_DIR / "water_utility" / "model.py",
+            config_path=EXAMPLES_DIR / "water_utility" / "config.yaml",
+        )
+        client = app.test_client()
+        # "Debt Service Coverage" is index 1 (0 is the synthetic "All Line Items")
+        html = client.get("/table/1").data.decode()
+        assert html.count("<table") >= 1
+        assert "color: #1F6FEB" in html  # hardcoded_color from the config

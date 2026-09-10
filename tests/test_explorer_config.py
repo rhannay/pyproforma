@@ -28,6 +28,7 @@ TABLE_AND_CHART_YAML = """
 tables:
   Income Statement:
     title: "Income Statement"
+    hardcoded_color: "#1f6feb"
     rows:
       - row_type: header
       - row_type: item
@@ -173,6 +174,12 @@ class TestLoadViewConfig:
         assert isinstance(rows[1], ItemRow)
         assert rows[1].name == "revenue"
         assert config["tables"]["Income Statement"].title == "Income Statement"
+
+    def test_table_hardcoded_color_parsed(self, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(TABLE_AND_CHART_YAML)
+        config = load_view_config(path)
+        assert config["tables"]["Income Statement"].hardcoded_color == "#1f6feb"
 
     def test_chart_passed_through_as_dict(self, tmp_path):
         path = tmp_path / "config.yaml"

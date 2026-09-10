@@ -12,6 +12,7 @@ from pyproforma.tables import (
     LabelRow,
     LineItemsTotalRow,
 )
+from pyproforma.tables.table_def import TableDef
 
 
 class SimpleModel(ProformaModel):
@@ -236,3 +237,50 @@ def test_from_template_comprehensive_example(simple_model):
     assert table.cells[1][0].value == "Income Statement"  # Label
     assert table.cells[2][0].value == ""  # Blank
     assert table.cells[3][0].value == "Revenue"  # Item
+
+
+def _revenue_cell_colors(table):
+    """Font colors of the Revenue row's period cells (revenue is a FixedLine)."""
+    for row in table.cells:
+        if row[0].value == "Revenue":
+            return [c.font_color for c in row[1:]]
+    raise AssertionError("no Revenue row")
+
+
+class TestTableLevelHardcodedColor:
+    def test_tabledef_hardcoded_color_fans_out_to_item_rows(self, simple_model):
+        td = TableDef(
+            rows=[HeaderRow(), ItemRow(name="revenue"), ItemRow(name="expenses")],
+            hardcoded_color="blue",
+        )
+        table = simple_model.tables.build(td)
+        # revenue is a FixedLine -> hardcoded -> colored
+        assert _revenue_cell_colors(table) == ["blue", "blue", "blue"]
+        # expenses is a FormulaLine -> calculated -> no color even though the flag is set
+        expenses_row = next(r for r in table.cells if r[0].value == "Operating Expenses")
+        assert all(c.font_color is None for c in expenses_row[1:])
+
+    def test_build_arg_overrides_tabledef(self, simple_model):
+        td = TableDef(rows=[HeaderRow(), ItemRow(name="revenue")], hardcoded_color="blue")
+        table = simple_model.tables.build(td, hardcoded_color="green")
+        assert _revenue_cell_colors(table) == ["green", "green", "green"]
+
+    def test_per_row_color_wins_over_table_level(self, simple_model):
+        td = TableDef(
+            rows=[HeaderRow(), ItemRow(name="revenue", hardcoded_color="red")],
+            hardcoded_color="blue",
+        )
+        table = simple_model.tables.build(td)
+        assert _revenue_cell_colors(table) == ["red", "red", "red"]
+
+    def test_bare_list_template_with_build_arg(self, simple_model):
+        table = simple_model.tables.build(
+            [HeaderRow(), ItemRow(name="revenue")], hardcoded_color="#1f6feb"
+        )
+        assert _revenue_cell_colors(table) == ["#1f6feb", "#1f6feb", "#1f6feb"]
+
+    def test_from_dict_parses_hardcoded_color(self):
+        td = TableDef.from_dict(
+            {"rows": [{"row_type": "item", "name": "revenue"}], "hardcoded_color": "#1f6feb"}
+        )
+        assert td.hardcoded_color == "#1f6feb"

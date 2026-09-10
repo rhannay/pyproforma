@@ -125,6 +125,38 @@ class TestTableAndChartRoutes:
     def test_view_out_of_range_returns_404(self, full_client):
         assert full_client.get("/view/99").status_code == 404
 
+    def test_table_hardcoded_color_renders(self, model):
+        tables = {
+            "Colored": TableDef(
+                rows=[HeaderRow(), ItemRow("revenue"), ItemRow("expenses")],
+                hardcoded_color="#1f6feb",
+            )
+        }
+        client = create_app(model, tables=tables).test_client()
+        html = client.get("/table/1").data.decode()  # 0 is the synthetic "All Line Items"
+        # revenue (FixedLine) cells are colored (renderer upper-cases the hex)
+        assert "color: #1F6FEB" in html
+
+    def test_table_hardcoded_color_reaches_tag_items_rows(self):
+        from pyproforma.tables.row_types import TagItemsRow
+
+        class TaggedModel(ProformaModel):
+            price = FixedLine(values={2024: 10, 2025: 11}, label="Price", tags=["inp"])
+            revenue = FormulaLine(formula=lambda li, t: li.price[t] * 5, label="Revenue")
+
+        m = TaggedModel(periods=[2024, 2025])
+        tables = {
+            "Tagged": TableDef(
+                rows=[HeaderRow(), TagItemsRow(tag="inp")],
+                hardcoded_color="#1f6feb",
+            )
+        }
+        client = create_app(m, tables=tables).test_client()
+        html = client.get("/table/1").data.decode()
+        # the tag-items row expands to Price (FixedLine) -> hardcoded -> colored,
+        # even though _add_hrefs rebuilds the row
+        assert "color: #1F6FEB" in html
+
 
 # ---------------------------------------------------------------------------
 # home_view

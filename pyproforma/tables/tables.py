@@ -8,6 +8,7 @@ build() method which accepts a TableDef or plain list of row configurations.
 This layer knows about ProformaModel; the Table class beneath it does not.
 """
 
+import dataclasses
 from typing import TYPE_CHECKING, Optional, Union
 
 from pyproforma.table import Table
@@ -51,6 +52,7 @@ class Tables:
         self,
         definition: "Union[TableDef, list[Union[dict, BaseRow]]]",
         col_labels: Optional[str | list[str]] = None,
+        hardcoded_color: Optional[str] = None,
     ) -> Table:
         """
         Build a table from a TableDef or a bare list of row configurations.
@@ -59,6 +61,10 @@ class Tables:
             definition: Either a TableDef instance or a plain list of row
                 configurations (BaseRow instances or equivalent dicts).
             col_labels: String or list of strings for label columns. Defaults to None.
+            hardcoded_color: CSS color applied to every hardcoded (input / fixed)
+                cell in the table's ItemRow / TagItemsRow rows. Overrides
+                TableDef.hardcoded_color; a row that sets its own hardcoded_color
+                overrides both. Defaults to None.
 
         Returns:
             Table with title populated from TableDef.title when provided.
@@ -67,11 +73,14 @@ class Tables:
             >>> model.tables.build(TableDef(rows=[HeaderRow(), ItemRow(name="revenue")],
             ...                             title="Revenue"))
             >>> model.tables.build([HeaderRow(), ItemRow(name="revenue")])
+            >>> model.tables.build([...], hardcoded_color="#1f6feb")
         """
         from pyproforma.tables.table_def import TableDef as _TableDef
         if isinstance(definition, _TableDef):
             title = definition.title
             template = definition.rows
+            if hardcoded_color is None:
+                hardcoded_color = definition.hardcoded_color
         else:
             title = None
             template = definition
@@ -118,6 +127,15 @@ class Tables:
             # Convert dict to dataclass if needed
             if isinstance(config, dict):
                 config = dict_to_row_config(config)
+
+            # Apply the table-level hardcoded color to item rows that don't set
+            # their own (per-row hardcoded_color wins).
+            if (
+                hardcoded_color is not None
+                and isinstance(config, (rt.ItemRow, rt.TagItemsRow))
+                and config.hardcoded_color is None
+            ):
+                config = dataclasses.replace(config, hardcoded_color=hardcoded_color)
 
             # Generate row(s)
             result = config.generate_row(self._model, label_col_count=label_col_count)
