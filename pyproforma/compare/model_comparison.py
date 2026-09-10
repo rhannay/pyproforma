@@ -311,15 +311,20 @@ class ModelComparison:
             # Difference row(s)
             if include_difference:
                 compare_pairs = list(enumerate(self.labels[1:], start=1))
-                for i, label in compare_pairs:
+                for row_idx, (i, label) in enumerate(compare_pairs):
                     diff_label = "Difference" if two_model else f"Diff: {label}"
-                    diff_row = [Cell(value=diff_label, align="left")]
+                    # A top border on the first difference row separates it from
+                    # the value rows above.
+                    border = "single" if row_idx == 0 else None
+                    diff_row = [Cell(value=diff_label, align="left", top_border=border)]
                     for period in self.common_periods:
                         diff = (
                             self.models[i].get_value(item_name, period)
                             - self.base.get_value(item_name, period)
                         )
-                        diff_row.append(Cell(value=diff, value_format=value_format))
+                        diff_row.append(
+                            Cell(value=diff, value_format=value_format, top_border=border)
+                        )
                     all_rows.append(diff_row)
 
             # Percent difference row(s)
