@@ -28,6 +28,16 @@ revenue = FixedLine(
 )
 ```
 
+A period can be explicitly mapped to `None` to mean "not applicable" — e.g. a product line that doesn't exist yet in an early period. It resolves to `None` (not an error), renders blank in tables, and is skipped by tag sums and total rows. This is different from leaving the period out of `values` entirely, which still raises an error when the model calculates it:
+
+```python
+new_product_revenue = FixedLine(
+    values={2024: None, 2025: 50_000},   # not applicable until 2025
+    label="New Product Revenue",
+    tags=["operating"],
+)
+```
+
 ### `FormulaLine`
 
 Calculated from other line items or assumptions. The formula is a lambda that receives a unified namespace `li` and the current period `t`:

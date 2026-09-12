@@ -482,9 +482,13 @@ class LineItemsTotalRow(BaseRow):
         for _ in range(label_col_count - len(cells)):
             cells.append(Cell(value=""))
 
-        # Calculate totals for each period
+        # Calculate totals for each period. Items with a None value (e.g. a
+        # FixedLine period marked "not applicable") are skipped, not treated as 0.
         for period in model.periods:
-            total = sum(model[name][period] for name in self.line_item_names)
+            total = sum(
+                v for name in self.line_item_names
+                if (v := model[name][period]) is not None
+            )
             cells.append(
                 Cell(
                     value=total,

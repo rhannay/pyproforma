@@ -169,6 +169,16 @@ class TestCalculateSingleLineItem:
         with pytest.raises(ValueError, match="No value defined for 'revenue' in period 2025"):
             _calculate_single_line_item(TestModel.revenue, ns, 2025)
 
+    def test_explicit_none_fixed_value_returns_none(self):
+        class TestModel(ProformaModel):
+            revenue = FixedLine(values={2024: 100, 2025: None})
+
+        li = LineItemValues(periods=[2024, 2025], names=["revenue"])
+        ns = ModelNamespace(li, {})
+
+        value = _calculate_single_line_item(TestModel.revenue, ns, 2025)
+        assert value is None
+
     def test_formula_error_raises_value_error(self):
         class TestModel(ProformaModel):
             bad_formula = FormulaLine(formula=lambda li, t: 1 / 0)

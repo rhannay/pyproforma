@@ -95,6 +95,9 @@ class LineItemSelection:
         """
         Get the sum of all selected line items for a specific period.
 
+        Line items with a value of None for the period (e.g. a FixedLine or
+        InputLine period marked "not applicable") are skipped, not treated as 0.
+
         Args:
             period: The period to sum values for.
 
@@ -113,7 +116,7 @@ class LineItemSelection:
             105
         """
         values = self.value(period)
-        return sum(values.values())
+        return sum(v for v in values.values() if v is not None)
 
     def table(
         self,
