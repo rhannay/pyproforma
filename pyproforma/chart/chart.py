@@ -23,11 +23,15 @@ ChartType = Literal["line", "bar", "stacked_bar"]
 
 @dataclass
 class ChartSeries:
-    """A single data series for a chart."""
+    """A single data series for a chart.
+
+    A y-value of None means "no data for this period" (e.g. a line item not
+    yet applicable) — renderers treat it as a gap, not zero.
+    """
 
     label: str
     x_values: list[int]
-    y_values: list[float]
+    y_values: list[float | None]
     color: str | None = None
 
 

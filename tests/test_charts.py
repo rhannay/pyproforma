@@ -404,6 +404,64 @@ def test_show_calls_pyplot_show(model):
 
 
 # ---------------------------------------------------------------------------
+# Matplotlib rendering — None values (gaps, not zeros)
+# ---------------------------------------------------------------------------
+
+
+def _series_with_gap():
+    return ChartSeries(label="A", x_values=[2024, 2025, 2026], y_values=[10, None, 30])
+
+
+def test_line_chart_none_renders_as_nan_gap():
+    import math
+
+    chart = Chart(series=[_series_with_gap()], chart_type="line")
+    fig = chart.figure()
+    ydata = list(fig.axes[0].lines[0].get_ydata())
+    assert ydata[0] == 10
+    assert math.isnan(ydata[1])
+    assert ydata[2] == 30
+
+
+def test_bar_chart_none_renders_as_nan_height():
+    import math
+
+    chart = Chart(series=[_series_with_gap()], chart_type="bar")
+    fig = chart.figure()
+    heights = [p.get_height() for p in fig.axes[0].patches]
+    assert heights[0] == 10
+    assert math.isnan(heights[1])
+    assert heights[2] == 30
+
+
+def test_stacked_bar_none_does_not_poison_other_series():
+    # Series A has a gap in the middle period; series B has real values
+    # everywhere. B's middle segment must still sit at bottom=0, not be
+    # blanked out by A's missing value.
+    series_a = ChartSeries(label="A", x_values=[2024, 2025, 2026], y_values=[10, None, 30])
+    series_b = ChartSeries(label="B", x_values=[2024, 2025, 2026], y_values=[5, 5, 5])
+    chart = Chart(series=[series_a, series_b], chart_type="stacked_bar")
+    fig = chart.figure()
+
+    patches = fig.axes[0].patches
+    b_middle = [p for p in patches if p.get_height() == 5 and p.get_x() > 0 and p.get_x() < 1][0]
+    assert b_middle.get_y() == 0
+
+
+def test_none_series_does_not_raise_for_any_chart_type():
+    for chart_type in ("line", "bar", "stacked_bar"):
+        chart = Chart(series=[_series_with_gap()], chart_type=chart_type)
+        chart.figure()  # must not raise
+
+
+def test_to_apexcharts_serializes_none_as_null():
+    chart = Chart(series=[_series_with_gap()], chart_type="line")
+    apex = chart.to_apexcharts()
+    assert apex["series"][0]["data"] == [10, None, 30]
+    assert json.dumps(apex)  # must be JSON-serializable
+
+
+# ---------------------------------------------------------------------------
 # Reserved word
 # ---------------------------------------------------------------------------
 
