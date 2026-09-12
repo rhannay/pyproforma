@@ -117,12 +117,11 @@ def _calculate_single_line_item(
         return period_values[period]  # None is a valid value — means "no input this period"
 
     if isinstance(line_item, FixedLine):
-        value = line_item.get_value(period)
-        if value is None:
+        if period not in line_item.values:
             raise ValueError(
                 f"No value defined for '{line_item.name}' in period {period}"
             )
-        return value
+        return line_item.get_value(period)  # None is a valid value — means "not applicable"
 
     if isinstance(line_item, FormulaLine):
         if period in line_item.values:
