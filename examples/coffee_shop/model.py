@@ -24,8 +24,9 @@ class CoffeeShopModel(ProformaModel):
         tags=["revenue"],
         value_format=Format.CURRENCY_NO_DECIMALS,
     )
+    # Merchandise line launched in 2025 — 2024 is not applicable, not $0.
     merchandise_sales = FixedLine(
-        values={2024: 25_000, 2025: 27_000, 2026: 30_000},
+        values={2024: None, 2025: 27_000, 2026: 30_000},
         label="Merchandise",
         tags=["revenue"],
         value_format=Format.CURRENCY_NO_DECIMALS,
