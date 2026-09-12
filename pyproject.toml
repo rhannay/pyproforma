@@ -55,6 +55,9 @@ explorer = [
     "flask>=2.0.0",
     "PyYAML>=6.0.0",
 ]
+all = [
+    "pyproforma[pandas,excel,charts,notebook,explorer]",
+]
 dev = [
     "pytest>=6.0",
     "pytest-cov",
