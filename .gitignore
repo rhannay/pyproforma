@@ -79,6 +79,9 @@ env/
 # MkDocs generated files
 site/
 
+# Great Docs generated files (ephemeral build output)
+great-docs/
+
 # Logs
 *.log
 *.out
