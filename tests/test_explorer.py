@@ -233,7 +233,9 @@ class TestInputUpdate:
 class InputModel(ProformaModel):
     from pyproforma.table import Format as _F
 
-    inflation = ScalarInputLine(default=0.03, label="Inflation Rate", value_format=_F.PERCENT_ONE_DECIMAL)
+    inflation = ScalarInputLine(
+        default=0.03, label="Inflation Rate", value_format=_F.PERCENT_ONE_DECIMAL
+    )
     revenue = FixedLine(values={2024: 100_000, 2025: 110_000}, label="Revenue")
     rate_increase = InputLine(
         default={2024: 0.05, 2025: 0.06},
