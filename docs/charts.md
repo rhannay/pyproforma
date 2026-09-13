@@ -39,6 +39,23 @@ model.charts.line_items(
 ).show()
 ```
 
+### Indexed (rebased) charts
+
+Compare line items with different units or scales — e.g. revenue in dollars vs. headcount — on a common axis by rebasing every series to 100 at a chosen period:
+
+```python
+# Rebase to the model's first period
+model.charts.indexed_line_items(["revenue", "headcount"]).show()
+
+# Rebase to a specific period instead
+model.charts.indexed_line_items(["revenue", "headcount"], base_period=2025).show()
+
+# Equivalent, via line_items()
+model.charts.line_items(["revenue", "headcount"], transform="indexed").show()
+```
+
+Each series becomes `value[t] / value[base_period] * 100`, so a series that doubles from the base period reads as `200`; one that halves reads as `50`. A period with a value of `None` (e.g. a line item marked "not applicable" — see `FixedLine`) stays `None` and renders as a gap rather than being divided. The base period's value must be a non-zero number for every series being indexed — a `None` or `0` base value raises `ValueError` rather than silently producing `Inf`/`NaN`.
+
 ### Convenience shortcut from `LineItemResult`
 
 ```python

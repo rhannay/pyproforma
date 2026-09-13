@@ -14,6 +14,7 @@ import pytest
 from pyproforma import FixedLine, FormulaLine, ProformaModel
 from pyproforma.chart.chart import Chart, ChartSeries
 from pyproforma.charts import Charts
+from pyproforma.charts.chart_def import ChartDef
 from pyproforma.table.format_value import Format
 
 # ---------------------------------------------------------------------------
@@ -239,6 +240,117 @@ def test_line_items_chart_type_stacked_bar(model):
 def test_line_items_invalid_name_raises_value_error(model):
     with pytest.raises(ValueError, match="not found in model"):
         model.charts.line_items(["revenue", "nonexistent"])
+
+
+# ---------------------------------------------------------------------------
+# Charts.line_items() / indexed_line_items() — transform="indexed"
+# ---------------------------------------------------------------------------
+
+
+class IndexModel(ProformaModel):
+    revenue = FixedLine(values={2024: 100, 2025: 110, 2026: 121}, label="Revenue")
+    headcount = FixedLine(values={2024: 10, 2025: None, 2026: 15}, label="Headcount")
+
+
+@pytest.fixture
+def index_model():
+    return IndexModel(periods=[2024, 2025, 2026])
+
+
+def test_indexed_rebases_to_100_at_first_period(index_model):
+    spec = index_model.charts.line_items(["revenue"], transform="indexed")
+    assert spec.series[0].y_values == pytest.approx([100.0, 110.0, 121.0])
+
+
+def test_indexed_base_period_override(index_model):
+    spec = index_model.charts.indexed_line_items(["revenue"], base_period=2025)
+    assert spec.series[0].y_values == pytest.approx([100 / 110 * 100, 100.0, 121 / 110 * 100])
+
+
+def test_indexed_none_value_stays_none_not_divided(index_model):
+    spec = index_model.charts.line_items(["headcount"], transform="indexed")
+    y = spec.series[0].y_values
+    assert y[0] == pytest.approx(100.0)
+    assert y[1] is None
+    assert y[2] == pytest.approx(150.0)
+
+
+def test_indexed_chart_type_is_line_by_default(index_model):
+    spec = index_model.charts.line_items(["revenue"], transform="indexed")
+    assert spec.chart_type == "line"
+
+
+def test_indexed_default_value_format_is_no_decimals(index_model):
+    spec = index_model.charts.line_items(["revenue"], transform="indexed")
+    assert spec.value_format == Format.NO_DECIMALS
+
+
+def test_indexed_value_format_override(index_model):
+    spec = index_model.charts.line_items(
+        ["revenue"], transform="indexed", value_format=Format.TWO_DECIMALS
+    )
+    assert spec.value_format == Format.TWO_DECIMALS
+
+
+def test_indexed_sets_y_label(index_model):
+    spec = index_model.charts.line_items(["revenue"], transform="indexed")
+    assert spec.y_label == "Index (Base = 100, 2024)"
+
+
+def test_indexed_line_items_matches_line_items_transform(index_model):
+    a = index_model.charts.indexed_line_items(["revenue"])
+    b = index_model.charts.line_items(["revenue"], transform="indexed")
+    assert a.series[0].y_values == b.series[0].y_values
+
+
+def test_base_period_without_transform_raises(index_model):
+    with pytest.raises(ValueError, match="only valid with transform='indexed'"):
+        index_model.charts.line_items(["revenue"], base_period=2024)
+
+
+def test_unrecognized_transform_raises(index_model):
+    with pytest.raises(ValueError, match="Unrecognized transform"):
+        index_model.charts.line_items(["revenue"], transform="bogus")
+
+
+def test_base_period_not_in_model_periods_raises(index_model):
+    with pytest.raises(ValueError, match="not in model periods"):
+        index_model.charts.indexed_line_items(["revenue"], base_period=1999)
+
+
+def test_indexed_none_base_value_raises():
+    class M(ProformaModel):
+        revenue = FixedLine(values={2024: None, 2025: 110}, label="Revenue")
+
+    m = M(periods=[2024, 2025])
+    with pytest.raises(ValueError, match="Cannot index 'revenue'"):
+        m.charts.indexed_line_items(["revenue"])
+
+
+def test_indexed_zero_base_value_raises():
+    class M(ProformaModel):
+        revenue = FixedLine(values={2024: 0, 2025: 110}, label="Revenue")
+
+    m = M(periods=[2024, 2025])
+    with pytest.raises(ValueError, match="Cannot index 'revenue'"):
+        m.charts.indexed_line_items(["revenue"])
+
+
+def test_indexed_chart_renders_without_raising(index_model):
+    index_model.charts.line_items(["revenue", "headcount"], transform="indexed").figure()
+
+
+def test_chart_def_indexed_from_dict():
+    d = ChartDef.from_dict({"names": ["revenue"], "transform": "indexed", "base_period": 2025})
+    assert d.transform == "indexed"
+    assert d.base_period == 2025
+
+
+def test_charts_build_dispatches_indexed(index_model):
+    spec = index_model.charts.build(
+        {"names": ["revenue"], "transform": "indexed", "base_period": 2025}
+    )
+    assert spec.series[0].y_values == pytest.approx([100 / 110 * 100, 100.0, 121 / 110 * 100])
 
 
 # ---------------------------------------------------------------------------

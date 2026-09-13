@@ -188,6 +188,12 @@ model.charts.line_item("net_income", chart_type="bar").show()
 model.charts.line_items(["revenue", "gross_profit", "net_income"]).show()
 ```
 
+Compare items with different units or scales by rebasing them all to 100 at a common period:
+
+```python
+model.charts.indexed_line_items(["revenue", "headcount"]).show()
+```
+
 Charts return a `ChartSpec` which can also render to a matplotlib `Figure`:
 
 ```python
