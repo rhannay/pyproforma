@@ -54,6 +54,9 @@ charts:
     names: [dscr, days_cash_on_hand]
   DSCR:
     names: [dscr]
+  Revenue vs Volume Growth:
+    names: [water_sales_revenue, mgd]
+    transform: indexed
 
 views:
   Update Rates:
@@ -62,6 +65,8 @@ views:
         label: "Annual Rate Increases"
       - type: chart
         ref: DSCR
+      - type: chart
+        ref: "Revenue vs Volume Growth"
 
   Update Assumptions:
     - - type: input_group
