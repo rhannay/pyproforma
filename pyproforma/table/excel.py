@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
+    from io import BytesIO
+
     from .table_class import Table
 
 from .colors import color_to_rgb

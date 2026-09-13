@@ -20,7 +20,8 @@ class StatCard:
     Args:
         name: Line item name.
         label: Display label. Defaults to the line item's own label.
-        aggregation: One of "min", "max", "latest", "first", "sum", "avg", "cagr". Defaults to "latest".
+        aggregation: One of "min", "max", "latest", "first", "sum", "avg", "cagr".
+            Defaults to "latest".
         value_format: Optional format override. Uses the line item's format if not set.
         start: Optional start period for the aggregation range.
         end: Optional end period for the aggregation range.
